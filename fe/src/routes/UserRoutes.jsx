@@ -1,0 +1,39 @@
+import { Routes, Route } from 'react-router-dom';
+import UserLayout from '../layouts/UserLayout';
+import Blog from '../pages/user/Blog';
+import BuildPC from '../pages/user/BuildPC';
+import Cart from '../pages/user/Cart';
+import Checkout from '../pages/user/Checkout';
+import Home from '../pages/user/Home';
+import OrderHistory from '../pages/user/OrderHistory';
+import ProductDetail from '../pages/user/ProductDetail';
+//import ProductList from '../pages/user/ProductList';
+import Profile from '../pages/user/Profile';
+import ReturnPolicy from '../pages/user/ReturnPolicy';
+import ShipTracking from '../pages/user/ShipTracking';
+import WarrantyCheck from '../pages/user/WarrantyCheck';
+import WarrantyPolicy from '../pages/user/WarrantyPolicy';
+import Wishlist from '../pages/user/Wishlist';
+
+const UserRoutes = () => {
+  return (
+    <Routes>
+      <Route path="/" element={<UserLayout />}>
+        <Route index element={<Home />} />
+        <Route path="build-pc" element={<BuildPC />} />
+        <Route path="blog" element={<Blog />} />
+        <Route path="cart" element={<Cart />} />
+        <Route path="checkout" element={<Checkout />} />
+        <Route path="orders" element={<OrderHistory />} />
+        <Route path="product/:productId" element={<ProductDetail />} />
+        <Route path="profile" element={<Profile />} />
+        <Route path="return-policy" element={<ReturnPolicy />} />
+        <Route path="shipping-track" element={<ShipTracking />} />
+        <Route path="warranty-check" element={<WarrantyCheck />} />
+        <Route path="warranty-policy" element={<WarrantyPolicy />} />
+        <Route path="wishlist" element={<Wishlist />} />
+      </Route>
+    </Routes>
+  );
+}
+export default UserRoutes;
