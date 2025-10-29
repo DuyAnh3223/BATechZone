@@ -1,27 +1,14 @@
-import {Toaster, toast} from 'sonner';
-import {BrowserRouter, Routes, Route} from 'react-router';
-import HomePage from "./pages/HomePage";
-
-
-
-
+import { Toaster } from 'sonner';
+import { BrowserRouter } from 'react-router-dom';
+import UserRoutes from './routes/UserRoutes';
 
 function App() {
-  
   return (
     <>
-    <Toaster/> 
-    <button onClick={() => toast("Hello World!")}> Toaster</button>
-    <BrowserRouter>
-      <Routes>
-
-        <Route path="/" element={<HomePage />} />
-
-      </Routes>
-    
-    </BrowserRouter>
-
-
+      <Toaster />
+      <BrowserRouter>
+        <UserRoutes />
+      </BrowserRouter>
     </>
   )
 }
