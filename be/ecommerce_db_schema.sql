@@ -40,7 +40,7 @@ CREATE TABLE users (
     email VARCHAR(100) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
     full_name VARCHAR(100),
-    phone VARCHAR(20),,
+    phone VARCHAR(20),
     role ENUM('customer', 'admin', 'shipper') DEFAULT 'customer',
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
