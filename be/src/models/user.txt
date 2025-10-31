@@ -1,0 +1,224 @@
+// Tạo user mới
+    static async create({ username, email, password, full_name, phone, role = 0 }) {
+        try {
+            const hashedPassword = await bcrypt.hash(password, 10);
+            const sql = `
+                INSERT INTO users (username, email, password_hash, full_name, phone, role)
+                VALUES (?, ?, ?, ?, ?, ?)
+            `;
+            const result = await query(sql, [username, email, hashedPassword, full_name, phone, role]);
+            return result.insertId;
+        } catch (error) {
+            throw new Error(`Error creating user: ${error.message}`);
+        }
+    }
+
+    // Tìm user theo ID
+    static async findById(userId) {
+        try {
+            const sql = `
+                SELECT user_id, username, email, full_name, phone, role, is_active, 
+                       created_at, updated_at, last_login
+                FROM users 
+                WHERE user_id = ?
+            `;
+            const users = await query(sql, [userId]);
+            return users.length ? new User(users[0]) : null;
+        } catch (error) {
+            throw new Error(`Error finding user: ${error.message}`);
+        }
+    }
+
+    // Tìm user theo email
+    static async findByEmail(email) {
+        try {
+            const sql = 'SELECT * FROM users WHERE email = ?';
+            const users = await query(sql, [email]);
+            return users.length ? new User(users[0]) : null;
+        } catch (error) {
+            throw new Error(`Error finding user by email: ${error.message}`);
+        }
+    }
+
+    // Tìm user theo username
+    static async findByUsername(username) {
+        try {
+            const sql = 'SELECT * FROM users WHERE username = ?';
+            const users = await query(sql, [username]);
+            return users.length ? new User(users[0]) : null;
+        } catch (error) {
+            throw new Error(`Error finding user by username: ${error.message}`);
+        }
+    }
+
+    // Lấy danh sách users với phân trang và filter
+    static async findAll({ 
+        page = 1, 
+        limit = 10, 
+        role = null, 
+        isActive = null,
+        search = ''
+    }) {
+        try {
+            let conditions = [];
+            let params = [];
+            let sql = `
+                SELECT user_id, username, email, full_name, phone, role, 
+                       is_active, created_at, updated_at, last_login
+                FROM users
+                WHERE 1=1
+            `;
+
+            if (role !== null) {
+                conditions.push('role = ?');
+                params.push(role);
+            }
+
+            if (isActive !== null) {
+                conditions.push('is_active = ?');
+                params.push(isActive);
+            }
+
+            if (search) {
+                conditions.push('(username LIKE ? OR email LIKE ? OR full_name LIKE ?)');
+                params.push(`%${search}%`, `%${search}%`, `%${search}%`);
+            }
+
+            if (conditions.length) {
+                sql += ` AND ${conditions.join(' AND ')}`;
+            }
+
+            // Add pagination
+            sql += ' LIMIT ? OFFSET ?';
+            params.push(limit, (page - 1) * limit);
+
+            // Get total count for pagination
+            const countSql = `
+                SELECT COUNT(*) as total 
+                FROM users 
+                WHERE ${conditions.length ? conditions.join(' AND ') : '1=1'}
+            `;
+            
+            const [users, [{ total }]] = await Promise.all([
+                query(sql, params),
+                query(countSql, params.slice(0, -2))
+            ]);
+
+            return {
+                users: users.map(user => new User(user)),
+                pagination: {
+                    page,
+                    limit,
+                    total,
+                    totalPages: Math.ceil(total / limit)
+                }
+            };
+        } catch (error) {
+            throw new Error(`Error finding users: ${error.message}`);
+        }
+    }
+
+    // Cập nhật thông tin user
+    async update(updateData) {
+        try {
+            const allowedFields = ['username', 'email', 'full_name', 'phone', 'role', 'is_active'];
+            const updates = [];
+            const values = [];
+
+            Object.keys(updateData).forEach(key => {
+                if (allowedFields.includes(key)) {
+                    updates.push(`${key} = ?`);
+                    values.push(updateData[key]);
+                }
+            });
+
+            if (!updates.length) return false;
+
+            values.push(this.user_id);
+            const sql = `
+                UPDATE users 
+                SET ${updates.join(', ')} 
+                WHERE user_id = ?
+            `;
+
+            const result = await query(sql, values);
+            return result.affectedRows > 0;
+        } catch (error) {
+            throw new Error(`Error updating user: ${error.message}`);
+        }
+    }
+
+    // Cập nhật mật khẩu
+    async updatePassword(newPassword) {
+        try {
+            const hashedPassword = await bcrypt.hash(newPassword, 10);
+            const sql = 'UPDATE users SET password_hash = ? WHERE user_id = ?';
+            const result = await query(sql, [hashedPassword, this.user_id]);
+            return result.affectedRows > 0;
+        } catch (error) {
+            throw new Error(`Error updating password: ${error.message}`);
+        }
+    }
+
+    // Xác thực mật khẩu
+    async verifyPassword(password) {
+        try {
+            return await bcrypt.compare(password, this.password_hash);
+        } catch (error) {
+            throw new Error(`Error verifying password: ${error.message}`);
+        }
+    }
+
+    // Cập nhật thời gian đăng nhập cuối
+    async updateLastLogin() {
+        try {
+            const sql = 'UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE user_id = ?';
+            await query(sql, [this.user_id]);
+            this.last_login = new Date();
+        } catch (error) {
+            throw new Error(`Error updating last login: ${error.message}`);
+        }
+    }
+
+    // Soft delete user (set is_active = false)
+    async deactivate() {
+        try {
+            const sql = 'UPDATE users SET is_active = FALSE WHERE user_id = ?';
+            const result = await query(sql, [this.user_id]);
+            this.is_active = false;
+            return result.affectedRows > 0;
+        } catch (error) {
+            throw new Error(`Error deactivating user: ${error.message}`);
+        }
+    }
+
+    // Reactivate user
+    async activate() {
+        try {
+            const sql = 'UPDATE users SET is_active = TRUE WHERE user_id = ?';
+            const result = await query(sql, [this.user_id]);
+            this.is_active = true;
+            return result.affectedRows > 0;
+        } catch (error) {
+            throw new Error(`Error activating user: ${error.message}`);
+        }
+    }
+
+    // Helper method to get user role name
+    getRoleName() {
+        const roles = {
+            0: 'customer',
+            1: 'shipper',
+            2: 'admin'
+        };
+        return roles[this.role] || 'unknown';
+    }
+
+    // Convert to safe object (exclude password_hash)
+    toJSON() {
+        const { password_hash, ...safeUser } = this;
+        return {
+            ...safeUser,
+            roleName: this.getRoleName()
+        };
+    }
