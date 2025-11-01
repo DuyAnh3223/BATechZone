@@ -1,7 +1,8 @@
-import { Outlet } from 'react-router';
-import { Link } from 'react-router';
+import { Outlet, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useState } from 'react';
-import { ShoppingCart, User, Menu, X, Search } from "lucide-react";
+import { ShoppingCart, User, Menu, X, Search, LogIn, LogOut } from "lucide-react";
+import { useAuth } from '@/context/AuthContext';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { 
@@ -31,8 +32,19 @@ const categories = [
 ];
 
 const UserLayout = () => {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/auth/signin');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col w-full">
@@ -79,13 +91,41 @@ const UserLayout = () => {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
-                  <DropdownMenuItem>
-                    <Link to="/profile">Tài khoản</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <Link to="/orders">Đơn hàng</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem>Đăng xuất</DropdownMenuItem>
+                  {user ? (
+                    <>
+                      <DropdownMenuItem asChild>
+                        <Link to="/profile" className="flex items-center">
+                          <User className="h-4 w-4 mr-2" />
+                          Tài khoản
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link to="/orders" className="flex items-center">
+                          <ShoppingCart className="h-4 w-4 mr-2" />
+                          Đơn hàng
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onSelect={handleLogout}>
+                        <LogOut className="h-4 w-4 mr-2" />
+                        Đăng xuất
+                      </DropdownMenuItem>
+                    </>
+                  ) : (
+                    <>
+                      <DropdownMenuItem asChild>
+                        <Link to="/auth/signin" className="flex items-center">
+                          <LogIn className="h-4 w-4 mr-2" />
+                          Đăng nhập
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link to="/auth/signup" className="flex items-center">
+                          <User className="h-4 w-4 mr-2" />
+                          Đăng ký
+                        </Link>
+                      </DropdownMenuItem>
+                    </>
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
