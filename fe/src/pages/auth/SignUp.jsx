@@ -23,11 +23,21 @@ const Register = () => {
 			toast.error('Mật khẩu nhập lại không khớp');
 			return;
 		}
+		if (password.length < 6) {
+			toast.error('Mật khẩu phải có ít nhất 6 ký tự');
+			return;
+		}
         try {
 			setIsSubmitting(true);
-            await register({ username: displayName || fullName, email, password });
+            await register({
+				fullName,
+				email,
+				username: displayName || fullName,
+				phone,
+				password
+			});
 			toast.success('Tạo tài khoản thành công');
-			navigate('/');
+			navigate('/auth/signin');
 		} catch (err) {
 			toast.error(err.message || 'Đăng ký thất bại');
 		} finally {
@@ -49,7 +59,7 @@ const Register = () => {
                 <form onSubmit={handleSubmit} className="mt-8 space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 						<div>
-							<label className="block text-sm font-medium text-gray-700">Họ và tên <span className="text-red-500">*</span></label>
+							<label className="block text-sm font-medium text-gray-700">Họ và tên</label>
 							<div className="mt-1 relative">
 								<span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"><UserRound className="w-4 h-4"/></span>
 								<input type="text" className="w-full rounded-lg border border-gray-300 pl-10 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600" placeholder="Nhập họ và tên của bạn" value={fullName} onChange={(e) => setFullName(e.target.value)} required />
@@ -66,7 +76,7 @@ const Register = () => {
 
 
 					<div>
-						<label className="block text-sm font-medium text-gray-700">Tên hiển thị <span className="text-red-500">*</span></label>
+						<label className="block text-sm font-medium text-gray-700">Tên đăng nhập <span className="text-red-500">*</span></label>
 						<div className="mt-1 relative">
 							<span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"><UserRound className="w-4 h-4"/></span>
 							<input type="text" className="w-full rounded-lg border border-gray-300 pl-10 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600" placeholder="Tên sẽ hiển thị công khai" value={displayName} onChange={(e) => setDisplayName(e.target.value)} required />
@@ -74,7 +84,7 @@ const Register = () => {
 					</div>
 
 					<div>
-						<label className="block text-sm font-medium text-gray-700">Số điện thoại <span className="text-red-500">*</span></label>
+						<label className="block text-sm font-medium text-gray-700">Số điện thoại </label>
 						<div className="mt-1 relative">
 							<span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"><Phone className="w-4 h-4"/></span>
 							<input type="tel" className="w-full rounded-lg border border-gray-300 pl-10 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600" placeholder="0987654321" value={phone} onChange={(e) => setPhone(e.target.value)} required />
@@ -105,13 +115,12 @@ const Register = () => {
 				</form>
 
 				<div className="mt-6 text-sm text-gray-600 text-center">
-					Đã có tài khoản? <Link to="/" className="text-blue-600 hover:underline">Đăng nhập ngay</Link>
-				</div>
+					Đã có tài khoản? <Link to="/auth/signin" className="text-blue-600 hover:underline">Đăng nhập ngay</Link>
+			</div>
 			</div>
 		</div>
 	);
 };
 
 export default Register;
-
 

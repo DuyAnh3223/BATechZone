@@ -1,74 +1,120 @@
-import React, {createContext, useContext, useEffect, useMemo, useState} from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
+import axios from '@/lib/axios';
+import { toast } from 'sonner';
 
-const AuthContext = createContext(null);
+const AuthContext = createContext();
 
-const AUTH_STORAGE_KEY = 'batech_auth_v1';
+export const useAuth = () => {
+    const context = useContext(AuthContext);
+    if (!context) {
+        throw new Error('useAuth must be used within an AuthProvider');
+    }
+    return context;
+};
 
-export function AuthProvider({children}) {
-	const [user, setUser] = useState(null);
+export const AuthProvider = ({ children }) => {
+    const [user, setUser] = useState(null);
+    const [loading, setLoading] = useState(true);
 
-	useEffect(() => {
-		try {
-			const raw = localStorage.getItem(AUTH_STORAGE_KEY);
-			if (raw) {
-				const parsed = JSON.parse(raw);
-				setUser(parsed);
-			}
-		} catch (e) {
-			console.error('Failed to load auth from storage', e);
-		}
-	}, []);
+    // Kiểm tra trạng thái đăng nhập khi load trang
+    useEffect(() => {
+        const checkAuth = async () => {
+            try {
+                const token = localStorage.getItem('token');
+                if (token) {
+                    const response = await axios.get('/auth/me');
+                    setUser(response.data.user);
+                }
+            } catch (error) {
+                localStorage.removeItem('token');
+                setUser(null);
+            } finally {
+                setLoading(false);
+            }
+        };
 
-	useEffect(() => {
-		if (user) {
-			localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
-		} else {
-			localStorage.removeItem(AUTH_STORAGE_KEY);
-		}
-	}, [user]);
+        checkAuth();
+    }, []);
 
-	const login = async ({emailOrUsername, password, role = 'customer'}) => {
-		// Placeholder client-only auth. Replace with real API call.
-		if (!emailOrUsername || !password) {
-			throw new Error('Vui lòng nhập đầy đủ thông tin');
-		}
-		const fakeUser = {
-			id: 1,
-			username: emailOrUsername,
-			role,
-			fullName: role === 'admin' ? 'Administrator' : 'Customer',
-		};
-		setUser(fakeUser);
-		return fakeUser;
-	};
+    const login = async (credentials) => {
+        try {
+            const response = await axios.post('/auth/signin', credentials);
+            const { user, token } = response.data;
+            
+            setUser(user);
+            localStorage.setItem('token', token);
+            
+            // Thêm token vào header mặc định của axios
+            axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+            
+            return user;
+        } catch (error) {
+            const message = error.response?.data?.message || 'Đăng nhập thất bại';
+            throw new Error(message);
+        }
+    };
 
-	const register = async ({username, email, password}) => {
-		if (!username || !email || !password) {
-			throw new Error('Vui lòng nhập đầy đủ thông tin');
-		}
-		const newUser = {id: Date.now(), username, email, role: 'customer'};
-		setUser(newUser);
-		return newUser;
-	};
+    const register = async (userData) => {
+        try {
+            const response = await axios.post('/auth/signup', userData);
+            toast.success('Đăng ký thành công! Vui lòng đăng nhập.');
+            return response.data;
+        } catch (error) {
+            const message = error.response?.data?.message || 'Đăng ký thất bại';
+            throw new Error(message);
+        }
+    };
 
-	const logout = () => setUser(null);
+    const logout = async () => {
+        try {
+            await axios.post('/auth/signout');
+            setUser(null);
+            localStorage.removeItem('token');
+            delete axios.defaults.headers.common['Authorization'];
+            toast.success('Đăng xuất thành công');
+        } catch (error) {
+            console.error('Logout error:', error);
+            toast.error('Có lỗi xảy ra khi đăng xuất');
+        }
+    };
 
-	const value = useMemo(() => ({
-		user,
-		isAuthenticated: !!user,
-		isAdmin: user?.role === 'admin',
-		login,
-		register,
-		logout,
-	}), [user]);
+    const updateProfile = async (profileData) => {
+        try {
+            const response = await axios.put('/auth/profile', profileData);
+            setUser(response.data.user);
+            toast.success('Cập nhật thông tin thành công');
+            return response.data.user;
+        } catch (error) {
+            const message = error.response?.data?.message || 'Cập nhật thất bại';
+            throw new Error(message);
+        }
+    };
 
-	return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-}
+    const changePassword = async (passwordData) => {
+        try {
+            await axios.put('/auth/change-password', passwordData);
+            toast.success('Đổi mật khẩu thành công');
+        } catch (error) {
+            const message = error.response?.data?.message || 'Đổi mật khẩu thất bại';
+            throw new Error(message);
+        }
+    };
 
-export function useAuth() {
-	const ctx = useContext(AuthContext);
-	if (!ctx) throw new Error('useAuth must be used within AuthProvider');
-	return ctx;
-}
+    const value = {
+        user,
+        loading,
+        login,
+        register,
+        logout,
+        updateProfile,
+        changePassword
+    };
 
+    return (
+        <AuthContext.Provider value={value}>
+            {!loading && children}
+        </AuthContext.Provider>
+    );
+};
 
+export default AuthContext;

@@ -14,11 +14,14 @@ import ShipTracking from '../pages/user/ShipTracking';
 import WarrantyCheck from '../pages/user/WarrantyCheck';
 import WarrantyPolicy from '../pages/user/WarrantyPolicy';
 import Wishlist from '../pages/user/Wishlist';
+import SignIn from '../pages/auth/SignIn';
+import SignUp from '../pages/auth/SignUp';
 
 const UserRoutes = () => {
   return (
     <Routes>
-      <Route path="/" element={<UserLayout />}>
+      {/* <Route path="/" element={<UserLayout />}>  */}
+      <Route path="/" element={<UserLayout />}> 
         <Route index element={<Home />} />
         <Route path="build-pc" element={<BuildPC />} />
         <Route path="blog" element={<Blog />} />
@@ -32,6 +35,10 @@ const UserRoutes = () => {
         <Route path="warranty-check" element={<WarrantyCheck />} />
         <Route path="warranty-policy" element={<WarrantyPolicy />} />
         <Route path="wishlist" element={<Wishlist />} />
+      </Route>
+      <Route path="/auth">
+        <Route path="signin" element={<SignIn />} />
+        <Route path="signup" element={<SignUp />} />
       </Route>
     </Routes>
   );
