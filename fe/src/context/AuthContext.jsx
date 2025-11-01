@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import axios from '@/lib/axios';
+import api from '@/lib/axios';
 import { toast } from 'sonner';
 
 const AuthContext = createContext();
@@ -22,7 +22,7 @@ export const AuthProvider = ({ children }) => {
             try {
                 const token = localStorage.getItem('token');
                 if (token) {
-                    const response = await axios.get('/auth/me');
+                    const response = await api.get('/auth/me');
                     setUser(response.data.user);
                 }
             } catch (error) {
@@ -38,14 +38,14 @@ export const AuthProvider = ({ children }) => {
 
     const login = async (credentials) => {
         try {
-            const response = await axios.post('/auth/signin', credentials);
+            const response = await api.post('/auth/signin', credentials);
             const { user, token } = response.data;
             
             setUser(user);
             localStorage.setItem('token', token);
             
-            // Thêm token vào header mặc định của axios
-            axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+            // Thêm token vào header mặc định của api
+            api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
             
             return user;
         } catch (error) {
@@ -56,7 +56,7 @@ export const AuthProvider = ({ children }) => {
 
     const register = async (userData) => {
         try {
-            const response = await axios.post('/auth/signup', userData);
+            const response = await api.post('/auth/signup', userData);
             toast.success('Đăng ký thành công! Vui lòng đăng nhập.');
             return response.data;
         } catch (error) {
@@ -67,10 +67,10 @@ export const AuthProvider = ({ children }) => {
 
     const logout = async () => {
         try {
-            await axios.post('/auth/signout');
+            await api.post('/auth/signout');
             setUser(null);
             localStorage.removeItem('token');
-            delete axios.defaults.headers.common['Authorization'];
+            delete api.defaults.headers.common['Authorization'];
             toast.success('Đăng xuất thành công');
         } catch (error) {
             console.error('Logout error:', error);
@@ -80,7 +80,7 @@ export const AuthProvider = ({ children }) => {
 
     const updateProfile = async (profileData) => {
         try {
-            const response = await axios.put('/auth/profile', profileData);
+            const response = await api.put('/auth/profile', profileData);
             setUser(response.data.user);
             toast.success('Cập nhật thông tin thành công');
             return response.data.user;
@@ -92,7 +92,7 @@ export const AuthProvider = ({ children }) => {
 
     const changePassword = async (passwordData) => {
         try {
-            await axios.put('/auth/change-password', passwordData);
+            await api.put('/auth/change-password', passwordData);
             toast.success('Đổi mật khẩu thành công');
         } catch (error) {
             const message = error.response?.data?.message || 'Đổi mật khẩu thất bại';

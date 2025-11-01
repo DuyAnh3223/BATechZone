@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom';
+import { Route } from 'react-router-dom';
 import AdminLogin from '../pages/admin/AdminLogin';
 import AdminDashboard from '../pages/admin/AdminDashboard';
 import AdminLayout from '../layouts/AdminLayout';
@@ -21,9 +21,10 @@ import AdminModeration from '../pages/admin/AdminModeration';
 import AdminServiceCenter from '../pages/admin/AdminServiceCenter';
 
 const AdminRoutes = () => (
-  <Routes>
-    <Route path="login" element={<AdminLogin />} />
-    <Route element={<AdminLayout />}>
+  <>
+    <Route path="/admin/login" element={<AdminLogin />} />
+    <Route path="/admin/*" element={<AdminLayout />}>
+      <Route index element={<AdminDashboard />} />
       <Route path="dashboard" element={<AdminDashboard />} />
       <Route path="products" element={<AdminProduct />} />
       <Route path="products/:productId" element={<AdminProductDetail />} />
@@ -44,7 +45,7 @@ const AdminRoutes = () => (
       <Route path="service-center" element={<AdminServiceCenter />} />
       {/* Các màn admin khác có thể thêm ở đây */}
     </Route>
-  </Routes>
+  </>
 );
 
 export default AdminRoutes;
