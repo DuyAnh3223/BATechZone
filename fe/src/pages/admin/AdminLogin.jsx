@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { useNavigate, Link } from 'react-router';
+import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Shield, User2, Lock, Eye, EyeOff, BarChart3 } from 'lucide-react';
 
@@ -18,7 +18,7 @@ const AdminLogin = () => {
 			setIsSubmitting(true);
 			await login({ emailOrUsername: username, password, role: 'admin' });
 			toast.success('Đăng nhập admin thành công');
-			navigate('/admin');
+			navigate('/admin/dashboard'); // <-- chuyển về dashboard admin
 		} catch (err) {
 			toast.error(err.message || 'Đăng nhập thất bại');
 		} finally {
@@ -89,7 +89,7 @@ const AdminLogin = () => {
 
 						</form>
 						<div className="mt-6 text-sm text-gray-600">
-							Quay lại <Link to="/login" className="text-gray-900 hover:underline">Đăng nhập khách hàng</Link>
+							Quay lại <Link to="/" className="text-gray-900 hover:underline">Đăng nhập khách hàng</Link>
 						</div>
 					</div>
 				</div>

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { useNavigate, Link } from 'react-router';
+import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { UserRound, Mail, Phone, Lock, Eye, EyeOff } from 'lucide-react';
 
@@ -116,7 +116,7 @@ const Register = () => {
 
 				<div className="mt-6 text-sm text-gray-600 text-center">
 					Đã có tài khoản? <Link to="/auth/signin" className="text-blue-600 hover:underline">Đăng nhập ngay</Link>
-				</div>
+			</div>
 			</div>
 		</div>
 	);

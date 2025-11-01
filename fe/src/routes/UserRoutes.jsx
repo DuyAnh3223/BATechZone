@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom';
+import { Route } from 'react-router-dom';
 import UserLayout from '../layouts/UserLayout';
 import Blog from '../pages/user/Blog';
 import BuildPC from '../pages/user/BuildPC';
@@ -19,9 +19,8 @@ import SignUp from '../pages/auth/SignUp';
 
 const UserRoutes = () => {
   return (
-    <Routes>
-      {/* <Route path="/" element={<UserLayout />}>  */}
-      <Route path="/" element={<UserLayout />}> 
+    <>
+      <Route path="/" element={<UserLayout />}>
         <Route index element={<Home />} />
         <Route path="build-pc" element={<BuildPC />} />
         <Route path="blog" element={<Blog />} />
@@ -36,11 +35,9 @@ const UserRoutes = () => {
         <Route path="warranty-policy" element={<WarrantyPolicy />} />
         <Route path="wishlist" element={<Wishlist />} />
       </Route>
-      <Route path="/auth">
-        <Route path="signin" element={<SignIn />} />
-        <Route path="signup" element={<SignUp />} />
-      </Route>
-    </Routes>
+      <Route path="/auth/signin" element={<SignIn />} />
+      <Route path="/auth/signup" element={<SignUp />} />
+    </>
   );
 }
 export default UserRoutes;

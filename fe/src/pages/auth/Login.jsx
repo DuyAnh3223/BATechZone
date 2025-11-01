@@ -18,12 +18,7 @@ const Login = () => {
 		e.preventDefault();
 		try {
 			setIsSubmitting(true);
-			const loginData = {
-				[tab === 'email' ? 'email' : 'phone']: emailOrUsername,
-				password,
-				remember
-			};
-			await login(loginData);
+			await login({ emailOrUsername, password, role: 'customer' });
 			toast.success('Đăng nhập thành công');
 			navigate('/');
 		} catch (err) {
@@ -138,9 +133,11 @@ const Login = () => {
 						</div>
 
 						<div className="mt-6 text-sm text-gray-600 text-center">
-							Chưa có tài khoản? <Link to="/auth/signup" className="text-blue-600 hover:underline">Đăng ký ngay</Link>
+							Chưa có tài khoản? <Link to="/register" className="text-blue-600 hover:underline">Đăng ký ngay</Link>
 						</div>
-						
+						<div className="mt-2 text-xs text-gray-400 text-center">
+							Quản trị? <Link to="/admin/login" className="text-blue-600 hover:underline">Đăng nhập Admin</Link>
+						</div>
 					</div>
 				</div>
 			</div>
@@ -149,4 +146,5 @@ const Login = () => {
 };
 
 export default Login;
+
 
