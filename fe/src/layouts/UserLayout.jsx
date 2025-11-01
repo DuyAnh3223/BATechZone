@@ -40,7 +40,7 @@ const UserLayout = () => {
   const handleLogout = async () => {
     try {
       await logout();
-      navigate('/auth/signin');
+      navigate('/');
     } catch (error) {
       console.error('Logout error:', error);
     }

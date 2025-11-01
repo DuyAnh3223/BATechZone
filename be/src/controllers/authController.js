@@ -78,21 +78,78 @@ export const signUp = async (req, res) => {
     }
 };
 
+
+export const adminSignIn = async(req,res)=>{
+    try {
+        const { username, password } = req.body;
+        if (!username || !password) {
+            return res.status(400).json({ message: "Thiếu username hoặc password" });
+        }
+
+        // Kiểm tra thông tin đăng nhập của admin
+        const admin = await User.findByUsername(username);
+        if (!admin || admin.role !== 2) {
+            return res.status(401).json({ message: "Username hoặc password không đúng" });
+        }
+
+        const correctPassword = await bcrypt.compare(password, admin.password_hash);
+        if (!correctPassword) {
+            return res.status(401).json({ message: "Username hoặc password không đúng" });
+        }
+
+        // Tạo session token ngẫu nhiên
+        const sessionToken = crypto.randomBytes(32).toString('hex');
+
+        // Lưu sessionToken vào database
+        await User.updateSessionToken(admin.user_id, sessionToken);
+
+        // Trả token về client
+        res.cookie('session_token', sessionToken, {
+            httpOnly: true,
+            secure: false,
+            sameSite: 'strict',
+            maxAge: 14 * 24 * 60 * 60 * 1000
+        });
+
+        return res.json({
+            success: true,
+            message: "Đăng nhập admin thành công",
+            user: {
+                user_id: admin.user_id,
+                username: admin.username,
+                role: admin.role,
+            }
+        });
+
+    } catch (error) {
+        console.error('Error during admin sign in:', error);
+        return res.status(500).json({
+            success: false,
+            message: "Đã có lỗi xảy ra khi đăng nhập admin",
+        });
+    }
+};
+
+
+    
+
+
+
 export const signIn = async(req,res)=>{
     try {
-        // Lấy inputs: username, password
-        const {username, password} = req.body;
-        if(!username || !password){
-            return res.status(400).json({message: " Thiếu username hoặc password"});
+        // Lấy inputs: email, password
+        const {email, password} = req.body;
+        if(!email || !password){
+            return res.status(400).json({message: " Thiếu email hoặc password"});
         }
         // Lấy hashed password trong db để so sánh với password từ input
-        const user = await User.findByUsername(username);
+        const user = await User.findByEmail(email);
         if(!user) {
-            return res.status(401).json({message: "username hoặc password không đúng"});
+            return res.status(401).json({message: "email hoặc password không đúng"});
         }
         const correctPassword = await bcrypt.compare(password, user.password_hash);
         if(!correctPassword){
-            return res.status(401).json({message: "username hoặc password không đúng"});
+            return res.status(401).json({message: "email hoặc password không đúng"});
         }
         // // Nếu đúng, tạo accessToken với JWT
         // const accessToken = jwt.sign({userID: user._id}, process.env.ACCESS_TOKEN_SECRET,{expiresIn: ACCESS_TOKEN_TTL} )

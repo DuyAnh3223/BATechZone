@@ -17,6 +17,7 @@ class User {
         this.session_token = userData.session_token;
     }
 
+
     static async updateSessionToken(userId, sessionToken) {
         try {
             const sql = 'UPDATE users SET session_token = ? WHERE user_id = ?';

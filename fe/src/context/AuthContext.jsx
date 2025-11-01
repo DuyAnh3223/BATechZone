@@ -36,6 +36,24 @@ export const AuthProvider = ({ children }) => {
         checkAuth();
     }, []);
 
+    const adminLogin = async (credentials) => {
+        try {
+            const response = await api.post('/auth/admin_signin', credentials);
+            const { user, token } = response.data;
+            
+            setUser(user);
+            localStorage.setItem('token', token);
+            
+            // Thêm token vào header mặc định của api
+            api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+            
+            return user;
+        } catch (error) {
+            const message = error.response?.data?.message || 'Đăng nhập thất bại';
+            throw new Error(message);
+        }
+    };
+
     const login = async (credentials) => {
         try {
             const response = await api.post('/auth/signin', credentials);
@@ -107,7 +125,8 @@ export const AuthProvider = ({ children }) => {
         register,
         logout,
         updateProfile,
-        changePassword
+        changePassword,
+        adminLogin
     };
 
     return (

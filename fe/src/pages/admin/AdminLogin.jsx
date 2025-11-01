@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import { Shield, User2, Lock, Eye, EyeOff, BarChart3 } from 'lucide-react';
 
 const AdminLogin = () => {
-	const { login } = useAuth();
+	const { adminLogin } = useAuth();
 	const navigate = useNavigate();
 	const [username, setUsername] = useState('');
 	const [password, setPassword] = useState('');
@@ -16,7 +16,11 @@ const AdminLogin = () => {
 		e.preventDefault();
 		try {
 			setIsSubmitting(true);
-			await login({ emailOrUsername: username, password, role: 'admin' });
+			// Đảm bảo gửi đúng format mà API yêu cầu
+			await adminLogin({ 
+				username: username,  // Gửi đúng tên trường là 'username'
+				password: password
+			});
 			toast.success('Đăng nhập admin thành công');
 			navigate('/admin/dashboard'); // <-- chuyển về dashboard admin
 		} catch (err) {
