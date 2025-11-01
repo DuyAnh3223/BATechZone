@@ -23,11 +23,21 @@ const Register = () => {
 			toast.error('Mật khẩu nhập lại không khớp');
 			return;
 		}
+		if (password.length < 6) {
+			toast.error('Mật khẩu phải có ít nhất 6 ký tự');
+			return;
+		}
         try {
 			setIsSubmitting(true);
-            await register({ username: displayName || fullName, email, password });
+            await register({
+				fullName,
+				email,
+				username: displayName || fullName,
+				phone,
+				password
+			});
 			toast.success('Tạo tài khoản thành công');
-			navigate('/');
+			navigate('/auth/signin');
 		} catch (err) {
 			toast.error(err.message || 'Đăng ký thất bại');
 		} finally {

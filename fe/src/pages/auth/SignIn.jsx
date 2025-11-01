@@ -18,7 +18,12 @@ const Login = () => {
 		e.preventDefault();
 		try {
 			setIsSubmitting(true);
-			await login({ emailOrUsername, password, role: 'customer' });
+			const loginData = {
+				[tab === 'email' ? 'email' : 'phone']: emailOrUsername,
+				password,
+				remember
+			};
+			await login(loginData);
 			toast.success('Đăng nhập thành công');
 			navigate('/');
 		} catch (err) {
