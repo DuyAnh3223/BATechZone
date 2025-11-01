@@ -9,6 +9,7 @@ import Cart from './pages/user/Cart';
 import Checkout from './pages/user/Checkout';
 import OrderHistory from './pages/user/OrderHistory';
 import ProductDetail from './pages/user/ProductDetail';
+import ProductList from './pages/user/ProductList';
 import Profile from './pages/user/Profile';
 import ReturnPolicy from './pages/user/ReturnPolicy';
 import ShipTracking from './pages/user/ShipTracking';
@@ -41,8 +42,8 @@ function App() {
   return (
     <>
       <Toaster />
-      <BrowserRouter>
-        <Routes>
+    <BrowserRouter>
+      <Routes>
           {/* User Routes */}
           <Route path="/" element={<UserLayout />}>
             <Route index element={<Home />} />
@@ -52,6 +53,7 @@ function App() {
             <Route path="checkout" element={<Checkout />} />
             <Route path="orders" element={<OrderHistory />} />
             <Route path="product/:productId" element={<ProductDetail />} />
+            <Route path="category/:categoryId" element={<ProductList />} />
             <Route path="profile" element={<Profile />} />
             <Route path="return-policy" element={<ReturnPolicy />} />
             <Route path="shipping-track" element={<ShipTracking />} />
@@ -85,8 +87,8 @@ function App() {
             <Route path="moderation" element={<AdminModeration />} />
             <Route path="service-center" element={<AdminServiceCenter />} />
           </Route>
-        </Routes>
-      </BrowserRouter>
+      </Routes>
+    </BrowserRouter>
     </>
   );
 }
