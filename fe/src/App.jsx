@@ -7,7 +7,6 @@ import Blog from './pages/user/Blog';
 import BuildPC from './pages/user/BuildPC';
 import Cart from './pages/user/Cart';
 import Checkout from './pages/user/Checkout';
-import OrderHistory from './pages/user/OrderHistory';
 import ProductDetail from './pages/user/ProductDetail';
 import ProductList from './pages/user/ProductList';
 import Profile from './pages/user/Profile';
@@ -51,7 +50,6 @@ function App() {
             <Route path="blog" element={<Blog />} />
             <Route path="cart" element={<Cart />} />
             <Route path="checkout" element={<Checkout />} />
-            <Route path="orders" element={<OrderHistory />} />
             <Route path="product/:productId" element={<ProductDetail />} />
             <Route path="category/:categoryId" element={<ProductList />} />
             <Route path="profile" element={<Profile />} />

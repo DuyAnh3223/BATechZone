@@ -5,7 +5,6 @@ import BuildPC from '../pages/user/BuildPC';
 import Cart from '../pages/user/Cart';
 import Checkout from '../pages/user/Checkout';
 import Home from '../pages/user/Home';
-import OrderHistory from '../pages/user/OrderHistory';
 import ProductDetail from '../pages/user/ProductDetail';
 //import ProductList from '../pages/user/ProductList';
 import Profile from '../pages/user/Profile';
@@ -26,7 +25,6 @@ const UserRoutes = () => {
         <Route path="blog" element={<Blog />} />
         <Route path="cart" element={<Cart />} />
         <Route path="checkout" element={<Checkout />} />
-        <Route path="orders" element={<OrderHistory />} />
         <Route path="product/:productId" element={<ProductDetail />} />
         <Route path="profile" element={<Profile />} />
         <Route path="return-policy" element={<ReturnPolicy />} />

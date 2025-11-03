@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { Link } from "react-router-dom";
 import {
   Card,
   CardContent,
@@ -36,6 +37,8 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
+import { Star, ShoppingCart, Trash2, Eye } from "lucide-react";
+import { toast } from "sonner";
 
 // Mock user data
 const mockUser = {
@@ -80,10 +83,107 @@ const mockUser = {
   ],
 };
 
+// Mock notifications data
+const mockNotifications = [
+  {
+    id: 1,
+    type: 'order',
+    message: 'Đơn hàng #HD123456 đã được giao thành công',
+    isRead: false,
+    created_at: '2025-10-31T10:00:00Z'
+  },
+  {
+    id: 2,
+    type: 'promotion',
+    message: 'Giảm giá 20% cho các sản phẩm CPU AMD trong tuần này',
+    isRead: true,
+    created_at: '2025-10-30T08:30:00Z'
+  },
+];
+
+// Mock coupons data
+const mockCoupons = [
+  {
+    id: 1,
+    code: 'CPU20',
+    description: 'Giảm 20% cho CPU',
+    discount_value: 20,
+    discount_type: 'percent',
+    min_order: 1000000,
+    max_discount: 2000000,
+    valid_until: '2025-12-31',
+    category: 'CPU',
+    is_saved: false
+  },
+  {
+    id: 2,
+    code: 'VGA500K',
+    description: 'Giảm 500K cho VGA',
+    discount_value: 500000,
+    discount_type: 'fixed',
+    min_order: 5000000,
+    valid_until: '2025-11-30',
+    category: 'VGA',
+    is_saved: true
+  }
+];
+
+// Mock wishlist data
+const mockWishlist = [
+  {
+    id: 1,
+    name: "AMD Ryzen 7 5800X",
+    category: "CPU",
+    price: 8990000,
+    originalPrice: 9990000,
+    discount: 10,
+    image: "https://via.placeholder.com/300",
+    stock: true,
+  },
+  {
+    id: 2,
+    name: "NVIDIA RTX 4070",
+    category: "VGA",
+    price: 15990000,
+    originalPrice: 16990000,
+    discount: 5,
+    image: "https://via.placeholder.com/300",
+    stock: true,
+  }
+];
+
+// Mock reviews data
+const mockReviews = [
+  {
+    id: 1,
+    product_id: 1,
+    product_name: 'AMD Ryzen 7 5800X',
+    product_image: 'https://via.placeholder.com/100',
+    rating: 5,
+    comment: 'CPU tuyệt vời, hiệu năng cao',
+    created_at: '2025-10-15T09:00:00Z',
+    updated_at: '2025-10-15T09:00:00Z'
+  },
+  {
+    id: 2,
+    product_id: 2,
+    product_name: 'NVIDIA RTX 4070',
+    product_image: 'https://via.placeholder.com/100',
+    rating: 4,
+    comment: 'Card đồ họa mạnh mẽ, giá hơi cao',
+    created_at: '2025-10-20T14:30:00Z',
+    updated_at: '2025-10-20T14:30:00Z'
+  }
+];
+
 const Profile = () => {
   const [activeTab, setActiveTab] = useState("profile");
   const [isEditing, setIsEditing] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [notifications, setNotifications] = useState(mockNotifications);
+  const [wishlistItems, setWishlistItems] = useState(mockWishlist);
+  const [coupons, setCoupons] = useState(mockCoupons);
+  const [reviews, setReviews] = useState(mockReviews);
 
   const profileForm = useForm({
     defaultValues: {
@@ -124,16 +224,90 @@ const Profile = () => {
     return format(new Date(dateString), "dd/MM/yyyy", { locale: vi });
   };
 
+  // Notification handlers
+  const handleMarkAsRead = (notificationId) => {
+    setNotifications(prev => 
+      prev.map(notification =>
+        notification.id === notificationId 
+          ? { ...notification, isRead: true }
+          : notification
+      )
+    );
+    toast.success('Đã đánh dấu thông báo là đã đọc');
+  };
+
+  const handleMarkAllAsRead = () => {
+    setNotifications(prev =>
+      prev.map(notification => ({ ...notification, isRead: true }))
+    );
+    toast.success('Đã đánh dấu tất cả thông báo là đã đọc');
+  };
+
+  // Wishlist handlers
+  const handleRemoveFromWishlist = (id) => {
+    setWishlistItems(prev => prev.filter(item => item.id !== id));
+    toast.success('Đã xóa sản phẩm khỏi danh sách yêu thích');
+  };
+
+  const handleAddToCart = (item) => {
+    toast.success(`Đã thêm ${item.name} vào giỏ hàng`);
+  };
+
+  // Coupon handlers
+  const handleSaveCoupon = (couponId) => {
+    setCoupons(prev =>
+      prev.map(coupon =>
+        coupon.id === couponId
+          ? { ...coupon, is_saved: !coupon.is_saved }
+          : coupon
+      )
+    );
+    toast.success('Đã cập nhật trạng thái mã giảm giá');
+  };
+
+  // Review handlers
+  const handleDeleteReview = (reviewId) => {
+    setReviews(prev => prev.filter(review => review.id !== reviewId));
+    toast.success('Đã xóa đánh giá');
+  };
+
+  const handleEditReview = (review) => {
+    // Implement edit review logic
+    toast.info('Tính năng đang được phát triển');
+  };
+
   return (
     <div className="py-8">
-      <Tabs defaultValue="profile" value={activeTab} onValueChange={setActiveTab}>
+      <Tabs defaultValue="profile" value={activeTab} onValueChange={setActiveTab}  >
         <TabsList className="grid w-full grid-cols-1 md:grid-cols-4 mb-6">
-          <TabsTrigger value="profile">Thông tin cá nhân</TabsTrigger>
-          <TabsTrigger value="addresses">Sổ địa chỉ</TabsTrigger>
-          <TabsTrigger value="orders">Đơn hàng của tôi</TabsTrigger>
-          <TabsTrigger value="security">Bảo mật</TabsTrigger>
+          <TabsTrigger value="profile" >
+            Thông tin cá nhân
+          </TabsTrigger>
+          <TabsTrigger value="addresses">
+            Sổ địa chỉ
+          </TabsTrigger>
+          <TabsTrigger value="orders" >
+            Đơn hàng
+          </TabsTrigger>
+          <TabsTrigger value="security" >
+            Bảo mật
+          </TabsTrigger>
+          <TabsTrigger value="notifications" >
+            Thông báo
+          </TabsTrigger>
+          <TabsTrigger value="wishlist">
+            Yêu thích
+          </TabsTrigger>
+          <TabsTrigger value="coupons">
+            Mã giảm giá
+          </TabsTrigger>
+          <TabsTrigger value="reviews" >
+            Đánh giá
+          </TabsTrigger>
         </TabsList>
-
+    <div className="flex-1">    </div>
+    <div className="flex-1">    </div>
+    <div className="flex-1">    </div>
         {/* Profile Information */}
         <TabsContent value="profile">
           <Card>
@@ -241,7 +415,7 @@ const Profile = () => {
                     Quản lý địa chỉ giao hàng của bạn
                   </CardDescription>
                 </div>
-                <Button onClick={() => addressForm.reset()}>
+                <Button variant="outline" onClick={() => addressForm.reset()}>
                   Thêm địa chỉ mới
                 </Button>
               </CardHeader>
@@ -431,9 +605,298 @@ const Profile = () => {
             </CardContent>
           </Card>
         </TabsContent>
-      </Tabs>
+
+        {/* Notifications */}
+        <TabsContent value="notifications">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Thông báo</CardTitle>
+                <CardDescription>
+                  Các thông báo về đơn hàng và khuyến mãi
+                </CardDescription>
+              </div>
+              <Button variant="outline" onClick={handleMarkAllAsRead}>
+                Đánh dấu tất cả là đã đọc
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {notifications.map((notification) => (
+                  <div
+                    key={notification.id}
+                    className={`p-4 border rounded-lg ${
+                      notification.isRead ? 'bg-gray-50' : 'bg-blue-50'
+                    }`}
+                  >
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className={`${notification.isRead ? 'text-gray-600' : 'text-black'}`}>
+                          {notification.message}
+                        </p>
+                        <p className="text-sm text-gray-500 mt-1">
+                          {formatDate(notification.created_at)}
+                        </p>
+                      </div>
+                      {!notification.isRead && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleMarkAsRead(notification.id)}
+                        >
+                          Đánh dấu đã đọc
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+                {notifications.length === 0 && (
+                  <p className="text-center text-gray-500 py-8">
+                    Không có thông báo nào
+                  </p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Wishlist */}
+        <TabsContent value="wishlist">
+          <Card>
+            <CardHeader>
+              <CardTitle>Danh sách yêu thích</CardTitle>
+              <CardDescription>
+                {wishlistItems.length} sản phẩm trong danh sách yêu thích
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {wishlistItems.map((item) => (
+                  <Card key={item.id}>
+                    <CardContent className="p-4">
+                      <div className="relative group">
+                        <img
+                          src={item.image}
+                          alt={item.name}
+                          className="w-full aspect-square object-cover rounded-lg mb-4"
+                        />
+                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                          <Button variant="secondary" size="icon" asChild>
+                            <Link to={`/product/${item.id}`}>
+                              <Eye className="h-4 w-4" />
+                            </Link>
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="icon"
+                            onClick={() => handleRemoveFromWishlist(item.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <Link
+                              to={`/product/${item.id}`}
+                              className="font-medium hover:text-blue-600 transition-colors line-clamp-2"
+                            >
+                              {item.name}
+                            </Link>
+                            <div className="text-sm text-gray-500">{item.category}</div>
+                          </div>
+                          {item.discount > 0 && (
+                            <Badge variant="destructive">-{item.discount}%</Badge>
+                          )}
+                        </div>
+
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-lg font-bold text-red-600">
+                            {formatPrice(item.price)}
+                          </span>
+                          {item.discount > 0 && (
+                            <span className="text-sm text-gray-500 line-through">
+                              {formatPrice(item.originalPrice)}
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="space-y-2">
+                          <Badge variant="secondary" className="w-full">
+                            {item.stock ? 'Còn hàng' : 'Hết hàng'}
+                          </Badge>
+                          <Button
+                            className="w-full"
+                            disabled={!item.stock}
+                            onClick={() => handleAddToCart(item)}
+                          >
+                            <ShoppingCart className="h-4 w-4 mr-2" />
+                            Thêm vào giỏ
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+
+                {wishlistItems.length === 0 && (
+                  <div className="col-span-full text-center py-12">
+                    <p className="text-gray-500 mb-4">
+                      Danh sách yêu thích của bạn đang trống
+                    </p>
+                    <Button asChild>
+                      <Link to="/products">Tiếp tục mua sắm</Link>
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Coupons */}
+        <TabsContent value="coupons">
+          <Card>
+            <CardHeader>
+              <CardTitle>Mã giảm giá</CardTitle>
+              <CardDescription>
+                Các mã giảm giá có thể sử dụng
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {coupons.map((coupon) => (
+                  <Card key={coupon.id}>
+                    <CardContent className="p-4">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h4 className="font-bold text-lg">{coupon.code}</h4>
+                          <p className="text-sm text-gray-600 mt-1">
+                            {coupon.description}
+                          </p>
+                        </div>
+                        <Button
+                          variant={coupon.is_saved ? "secondary" : "default"}
+                          onClick={() => handleSaveCoupon(coupon.id)}
+                        >
+                          {coupon.is_saved ? 'Đã lưu' : 'Lưu mã'}
+                        </Button>
+                      </div>
+                      <Separator className="my-4" />
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Giá trị giảm:</span>
+                          <span className="font-medium">
+                            {coupon.discount_type === 'percent' 
+                              ? `${coupon.discount_value}%`
+                              : formatPrice(coupon.discount_value)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Đơn tối thiểu:</span>
+                          <span className="font-medium">{formatPrice(coupon.min_order)}</span>
+                        </div>
+                        {coupon.max_discount && (
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Giảm tối đa:</span>
+                            <span className="font-medium">{formatPrice(coupon.max_discount)}</span>
+                          </div>
+                        )}
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Hiệu lực đến:</span>
+                          <span className="font-medium">{formatDate(coupon.valid_until)}</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Reviews */}
+        <TabsContent value="reviews">
+          <Card>
+            <CardHeader>
+              <CardTitle>Đánh giá của tôi</CardTitle>
+              <CardDescription>
+                Các đánh giá bạn đã viết cho sản phẩm
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                {reviews.map((review) => (
+                  <div key={review.id} className="border rounded-lg p-4">
+                    <div className="flex items-start gap-4">
+                      <img
+                        src={review.product_image}
+                        alt={review.product_name}
+                        className="w-20 h-20 object-cover rounded"
+                      />
+                      <div className="flex-1">
+                        <Link
+                          to={`/product/${review.product_id}`}
+                          className="font-medium hover:text-blue-600"
+                        >
+                          {review.product_name}
+                        </Link>
+                        <div className="flex items-center gap-2 mt-1">
+                          <div className="flex">
+                            {[...Array(5)].map((_, i) => (
+                              <Star
+                                key={i}
+                                className={`w-4 h-4 ${
+                                  i < review.rating
+                                    ? 'text-yellow-400 fill-yellow-400'
+                                    : 'text-gray-300'
+                                }`}
+                              />
+                            ))}
+                          </div>
+                          <span className="text-sm text-gray-500">
+                            {formatDate(review.created_at)}
+                          </span>
+                        </div>
+                        <p className="mt-2 text-gray-600">{review.comment}</p>
+                      </div>
+                      <div className="space-x-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {/* Handle edit */}}
+                        >
+                          Sửa
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleDeleteReview(review.id)}
+                        >
+                          Xóa
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
+                {reviews.length === 0 && (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500">
+                      Bạn chưa có đánh giá nào
+                    </p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+          
+        </Tabs>
     </div>
-  );
+    );
 };
 
 export default Profile;

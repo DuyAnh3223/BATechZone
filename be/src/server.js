@@ -6,7 +6,6 @@ import { testConnection } from './libs/db.js';
 import authRoute from './routes/authRoute.js';
 
 
-
 dotenv.config();
 
 const app = express();
@@ -30,6 +29,8 @@ app.get('/api/test', (req, res) => {
 
 //public routes
 app.use('/api/auth', authRoute);
+
+
 
 // Handle 404
 app.use((req, res) => {
