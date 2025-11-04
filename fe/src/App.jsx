@@ -72,14 +72,12 @@ function App() {
             <Route path="users" element={<AdminUser />} />
             <Route path="users/:userId" element={<AdminUserDetail />} />
             <Route path="coupons" element={<AdminCoupon />} />
-            <Route path="addresses" element={<AdminAddress />} />
             <Route path="orders" element={<AdminOrder />} />
             <Route path="notifications" element={<AdminNotification />} />
             <Route path="builds" element={<AdminBuild />} />
             <Route path="categories" element={<AdminCategory />} />
             <Route path="posts" element={<AdminPost />} />
             <Route path="posts/:postId" element={<AdminPostDetail />} />
-            <Route path="wishlists" element={<AdminWishlist />} />
             <Route path="payments" element={<AdminPayment />} />
             <Route path="recent-views" element={<AdminRecentView />} />
             <Route path="moderation" element={<AdminModeration />} />

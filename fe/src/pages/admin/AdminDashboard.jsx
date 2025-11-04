@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { Users, Box, DollarSign, Eye } from "lucide-react";
 
 const summary = {
 	users: 1286,
@@ -85,11 +86,14 @@ const computeStatusSegments = () => {
 	return Object.values(map);
 };
 
-const Card = ({title, value}) => (
-	<div className="bg-white rounded-xl shadow p-5">
-		<div className="text-gray-500 text-sm">{title}</div>
-		<div className="text-2xl font-bold mt-1">{value}</div>
-	</div>
+const Card = ({title, value, icon, accentClass = "bg-blue-50 text-blue-600"}) => (
+    <div className="bg-white rounded-xl shadow p-5 flex items-center gap-4">
+        <div className={`shrink-0 rounded-lg ${accentClass} p-3`}>{icon}</div>
+        <div>
+            <div className="text-gray-500 text-sm">{title}</div>
+            <div className="text-2xl font-bold mt-1">{value}</div>
+        </div>
+    </div>
 );
 
 const AdminDashboard = () => {
@@ -110,12 +114,12 @@ const AdminDashboard = () => {
 			<h1 className="text-2xl md:text-3xl font-bold text-gray-800">Trang quản trị BATechZone</h1>
 
 			{/* Tổng quan */}
-			<div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-				<Card title="Tổng người dùng" value={summary.users} />
-				<Card title="Tổng sản phẩm" value={summary.products} />
-				<Card title="Doanh thu" value={summary.revenue.toLocaleString('vi-VN')} />
-				<Card title="Sản phẩm được theo dõi" value={summary.watchlisted} />
-			</div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <Card title="Tổng người dùng" value={summary.users} icon={<Users className="size-6"/>} accentClass="bg-blue-50 text-blue-600" />
+                <Card title="Tổng sản phẩm" value={summary.products} icon={<Box className="size-6"/>} accentClass="bg-violet-50 text-violet-600" />
+                <Card title="Doanh thu" value={summary.revenue.toLocaleString('vi-VN') + ' ₫'} icon={<DollarSign className="size-6"/>} accentClass="bg-emerald-50 text-emerald-600" />
+                <Card title="Sản phẩm được theo dõi" value={summary.watchlisted} icon={<Eye className="size-6"/>} accentClass="bg-amber-50 text-amber-600" />
+            </div>
 
 			{/* Tổng quan đơn hàng (Biểu đồ cột) với chọn thời gian */}
 			<div>

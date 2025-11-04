@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { translateOrderStatus, translatePaymentStatus, translatePaymentMethod } from '../../utils/statusTranslations';
 
 const orders = [
@@ -81,6 +81,13 @@ const getPaymentStatusClass = (status) => {
 const AdminOrder = () => {
   const [showDetail, setShowDetail] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState("");
+  const [payStatus, setPayStatus] = useState("");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  const PAGE_SIZE_OPTIONS = [5, 10, 20];
 
   const openDetail = (order) => { setSelectedOrder(order); setShowDetail(true); };
   const closeDetail = () => { setShowDetail(false); setSelectedOrder(null); };
@@ -89,11 +96,54 @@ const AdminOrder = () => {
   const sumSubtotal = (rows) => rows.reduce((t, r) => t + r.subtotal, 0);
   const sumPayments = (rows) => rows.reduce((t, r) => t + (r.amount || 0), 0);
 
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return orders.filter(o => {
+      const matchText = !q || o.order_number.toLowerCase().includes(q) || String(o.user_id).includes(q);
+      const matchStatus = !status || o.order_status === status;
+      const matchPay = !payStatus || o.payment_status === payStatus;
+      return matchText && matchStatus && matchPay;
+    });
+  }, [search, status, payStatus]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const paginated = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filtered.slice(start, start + pageSize);
+  }, [filtered, currentPage, pageSize]);
+
+  const goPage = (p) => setPage(Math.min(Math.max(1, p), totalPages));
+
   return (
   <section>
     <div className="mb-6 flex items-center justify-between">
       <h1 className="text-2xl font-bold text-gray-800">Quản lý đơn hàng</h1>
       <button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:opacity-90 text-white px-6 py-2 rounded-lg font-semibold shadow transition">+ Thêm đơn hàng</button>
+    </div>
+    {/* Bộ lọc nhanh */}
+    <div className="mb-3 flex flex-wrap items-center gap-2">
+      <input value={search} onChange={(e)=>{ setSearch(e.target.value); setPage(1); }} className="border rounded px-3 py-2 w-full md:w-72" placeholder="Tìm theo mã đơn/ID user..." />
+      <select value={status} onChange={(e)=>{ setStatus(e.target.value); setPage(1); }} className="border rounded px-3 py-2">
+        <option value="">Tất cả trạng thái đơn</option>
+        <option value="delivered">Hoàn thành</option>
+        <option value="shipping">Đang giao</option>
+        <option value="processing">Đang xử lý</option>
+        <option value="pending">Chờ xử lý</option>
+        <option value="cancelled">Đã hủy</option>
+      </select>
+      <select value={payStatus} onChange={(e)=>{ setPayStatus(e.target.value); setPage(1); }} className="border rounded px-3 py-2">
+        <option value="">Tất cả thanh toán</option>
+        <option value="paid">Đã thanh toán</option>
+        <option value="unpaid">Chưa thanh toán</option>
+      </select>
+      <div className="ml-auto flex items-center gap-2">
+        <span className="text-sm text-gray-500">Hiển thị</span>
+        <select value={pageSize} onChange={(e)=>{ setPageSize(Number(e.target.value)); setPage(1); }} className="border rounded px-2 py-1 text-sm">
+          {PAGE_SIZE_OPTIONS.map(s => (<option key={s} value={s}>{s}</option>))}
+        </select>
+        <span className="text-sm text-gray-500">mục/trang</span>
+      </div>
     </div>
     <div className="overflow-x-auto rounded-xl bg-white shadow pb-2">
       <table className="min-w-[1000px] w-full text-left">
@@ -111,7 +161,7 @@ const AdminOrder = () => {
           </tr>
         </thead>
         <tbody className="divide-y">
-          {orders.map((order) => (
+          {paginated.map((order) => (
             <tr key={order.order_id} className="hover:bg-blue-50 transition">
               <td className="px-4 py-3 font-medium text-gray-800">{order.order_id}</td>
               <td className="px-4 py-3">{order.user_id}</td>
@@ -129,6 +179,19 @@ const AdminOrder = () => {
           ))}
         </tbody>
       </table>
+      {/* Phân trang */}
+      <div className="flex items-center justify-between px-3 py-2 text-sm text-gray-600">
+        <div>Tổng: <span className="font-medium text-gray-800">{filtered.length}</span> đơn — Trang {currentPage}/{totalPages}</div>
+        <div className="flex items-center gap-1">
+          <button onClick={()=>goPage(currentPage-1)} disabled={currentPage===1} className="px-3 py-1 rounded border disabled:opacity-50">Trước</button>
+          {Array.from({length: totalPages}).slice(0,5).map((_,i)=>{
+            const p = i+1; return (
+              <button key={p} onClick={()=>goPage(p)} className={`px-3 py-1 rounded border ${p===currentPage ? 'bg-indigo-100 text-indigo-700' : 'hover:bg-gray-100'}`}>{p}</button>
+            );
+          })}
+          <button onClick={()=>goPage(currentPage+1)} disabled={currentPage===totalPages} className="px-3 py-1 rounded border disabled:opacity-50">Sau</button>
+        </div>
+      </div>
     </div>
 
     {showDetail && selectedOrder && (

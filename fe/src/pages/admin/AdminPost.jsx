@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { Button } from "@/components/ui/button";
 import { translatePostStatus, translatePostType } from '../../utils/statusTranslations';
 
 const posts = [
@@ -50,12 +51,66 @@ const statusClass = status =>
     : status === 'draft' ? 'bg-yellow-100 text-yellow-700'
     : 'bg-gray-100 text-gray-500';
 
-const AdminPost = () => (
+const PAGE_SIZE_OPTIONS = [5, 10, 20];
+
+const AdminPost = () => {
+  const [search, setSearch] = useState("");
+  const [type, setType] = useState("");
+  const [status, setStatus] = useState("");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  const types = useMemo(() => Array.from(new Set(posts.map(p => p.post_type))), []);
+  const statuses = useMemo(() => Array.from(new Set(posts.map(p => p.status))), []);
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return posts.filter(p => {
+      const t = p.title.toLowerCase();
+      const s = p.slug.toLowerCase();
+      const matchText = !q || t.includes(q) || s.includes(q);
+      const matchType = !type || p.post_type === type;
+      const matchStatus = !status || p.status === status;
+      return matchText && matchType && matchStatus;
+    });
+  }, [search, type, status]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const paginated = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filtered.slice(start, start + pageSize);
+  }, [filtered, currentPage, pageSize]);
+
+  const goPage = (p) => setPage(Math.min(Math.max(1, p), totalPages));
+
+  return (
   <section>
     <div className="mb-6 flex items-center justify-between">
       <h1 className="text-2xl font-bold text-gray-800">Quản lý bài viết (Posts)</h1>
       <button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:opacity-90 text-white px-6 py-2 rounded-lg font-semibold shadow transition">+ Thêm bài viết</button>
     </div>
+
+    {/* Bộ lọc nhanh */}
+    <div className="mb-3 flex flex-wrap items-center gap-2">
+      <input value={search} onChange={(e)=>{ setSearch(e.target.value); setPage(1); }} className="border rounded px-3 py-2 w-full md:w-72" placeholder="Tìm theo tiêu đề/slug..." />
+      <select value={type} onChange={(e)=>{ setType(e.target.value); setPage(1); }} className="border rounded px-3 py-2">
+        <option value="">Tất cả loại</option>
+        {types.map(t => (<option key={t} value={t}>{t}</option>))}
+      </select>
+      <select value={status} onChange={(e)=>{ setStatus(e.target.value); setPage(1); }} className="border rounded px-3 py-2">
+        <option value="">Tất cả trạng thái</option>
+        {statuses.map(s => (<option key={s} value={s}>{s}</option>))}
+      </select>
+      <div className="ml-auto flex items-center gap-2">
+        <span className="text-sm text-gray-500">Hiển thị</span>
+        <select value={pageSize} onChange={(e)=>{ setPageSize(Number(e.target.value)); setPage(1); }} className="border rounded px-2 py-1 text-sm">
+          {PAGE_SIZE_OPTIONS.map(s => (<option key={s} value={s}>{s}</option>))}
+        </select>
+        <span className="text-sm text-gray-500">mục/trang</span>
+      </div>
+    </div>
+
     <div className="overflow-x-auto rounded-xl bg-white shadow pb-2">
       <table className="min-w-[1300px] w-full text-left">
         <thead className="bg-gray-50">
@@ -74,7 +129,7 @@ const AdminPost = () => (
           </tr>
         </thead>
         <tbody className="divide-y">
-          {posts.map(post => (
+          {paginated.map(post => (
             <tr key={post.post_id} className="hover:bg-blue-50 transition">
               <td className="px-4 py-3 font-medium text-gray-800">{post.post_id}</td>
               <td className="px-4 py-3">{post.user_id}</td>
@@ -96,7 +151,21 @@ const AdminPost = () => (
         </tbody>
       </table>
     </div>
+    {/* Phân trang */}
+    <div className="flex items-center justify-between px-1 md:px-0 py-2 text-sm text-gray-600">
+      <div>Tổng: <span className="font-medium text-gray-800">{filtered.length}</span> bài — Trang {currentPage}/{totalPages}</div>
+      <div className="flex items-center gap-1">
+        <button onClick={()=>goPage(currentPage-1)} disabled={currentPage===1} className="px-3 py-1 rounded border disabled:opacity-50">Trước</button>
+        {Array.from({length: totalPages}).slice(0,5).map((_,i)=>{
+          const p = i+1; return (
+            <button key={p} onClick={()=>goPage(p)} className={`px-3 py-1 rounded border ${p===currentPage ? 'bg-indigo-100 text-indigo-700' : 'hover:bg-gray-100'}`}>{p}</button>
+          );
+        })}
+        <button onClick={()=>goPage(currentPage+1)} disabled={currentPage===totalPages} className="px-3 py-1 rounded border disabled:opacity-50">Sau</button>
+      </div>
+    </div>
   </section>
-);
+  );
+};
 
 export default AdminPost;

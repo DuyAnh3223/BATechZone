@@ -23,8 +23,9 @@
   --card-foreground: oklch(0.129 0.042 264.695);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.129 0.042 264.695);
-  --primary: oklch(0.208 0.042 265.755);
-  --primary-foreground: oklch(0.984 0.003 247.858);
+  /* Align primary to Tailwind blue-600 */
+  --primary: #2563eb;
+  --primary-foreground: #ffffff;
   --secondary: oklch(0.968 0.007 247.896);
   --secondary-foreground: oklch(0.208 0.042 265.755);
   --muted: oklch(0.968 0.007 247.896);
@@ -70,7 +71,7 @@ h1 {
   line-height: 1.1;
 }
 
-button {
+button:not([data-slot='button']) {
   border-radius: 8px;
   border: 1px solid transparent;
   padding: 0.6em 1.2em;
@@ -81,11 +82,11 @@ button {
   cursor: pointer;
   transition: border-color 0.25s;
 }
-button:hover {
+button:not([data-slot='button']):hover {
   border-color: #646cff;
 }
-button:focus,
-button:focus-visible {
+button:not([data-slot='button']):focus,
+button:not([data-slot='button']):focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
 
@@ -97,7 +98,7 @@ button:focus-visible {
   a:hover {
     color: #747bff;
   }
-  button {
+  button:not([data-slot='button']) {
     background-color: #f9f9f9;
   }
 }
@@ -147,8 +148,9 @@ button:focus-visible {
   --card-foreground: oklch(0.984 0.003 247.858);
   --popover: oklch(0.208 0.042 265.755);
   --popover-foreground: oklch(0.984 0.003 247.858);
-  --primary: oklch(0.929 0.013 255.508);
-  --primary-foreground: oklch(0.208 0.042 265.755);
+  /* Align primary to Tailwind blue-500 for dark mode */
+  --primary: #3b82f6;
+  --primary-foreground: #0b1220;
   --secondary: oklch(0.279 0.041 260.031);
   --secondary-foreground: oklch(0.984 0.003 247.858);
   --muted: oklch(0.279 0.041 260.031);

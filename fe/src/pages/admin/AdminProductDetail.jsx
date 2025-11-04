@@ -40,7 +40,12 @@ const mockVariantImages = [
 ];
 
 const TabButton = ({active, children, onClick}) => (
-  <button onClick={onClick} className={`px-4 py-2 rounded-lg text-sm font-medium ${active ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>{children}</button>
+  <button
+    onClick={onClick}
+    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${active ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100 text-gray-700 hover:bg-indigo-100 hover:text-indigo-700'}`}
+  >
+    {children}
+  </button>
 );
 
 const AdminProductDetail = () => {

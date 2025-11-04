@@ -51,7 +51,7 @@ const UserLayout = () => {
       {/* Top Navigation */}
       <nav className="bg-blue-600 w-full">
         <div className="w-full max-w-[1920px] mx-auto px-4">
-          <div className="flex items-center justify-between h-16">
+          <div className="flex items-center justify-between h-20">
             {/* Logo */}
             <Link to="/" className="flex-shrink-0">
               <span className="text-white text-xl font-bold">PC Hardware Store</span>
@@ -62,32 +62,32 @@ const UserLayout = () => {
               <div className="relative flex items-center w-full">
                 <Input
                   type="text"
-                  className="w-full pr-10"
+                  className="w-full pr-12 bg-white text-gray-900 placeholder-gray-500 border-white/80 focus-visible:ring-white/40"
                   placeholder="Tìm kiếm sản phẩm..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
                 <Button 
                   variant="ghost" 
-                  className="absolute right-0 hover:bg-transparent"
+                  className="absolute right-2 hover:bg-transparent p-2 z-10 text-white"
                 >
-                  <Search className="h-5 w-5 text-gray-500" />
+                  <Search className="size-8" />
                 </Button>
               </div>
             </div>
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-4">
-              <Button variant="ghost" asChild className="text-white hover:text-gray-200">
+              <Button variant="ghost" size="icon-lg" asChild className="text-white hover:text-gray-200">
                 <Link to="/cart">
-                  <ShoppingCart className="h-5 w-5" />
+                  <ShoppingCart className="size-9 text-white" />
                 </Link>
               </Button>
               
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="text-white hover:text-gray-200">
-                    <User className="h-5 w-5" />
+                  <Button variant="ghost" size="icon-lg" className="text-white hover:text-gray-200">
+                    <User className="size-9 text-white" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
@@ -95,18 +95,18 @@ const UserLayout = () => {
                     <>
                       <DropdownMenuItem asChild>
                         <Link to="/profile" className="flex items-center">
-                          <User className="h-4 w-4 mr-2" />
+                  <User className="size-5 mr-2" />
                           Tài khoản
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
                         <Link to="/orders" className="flex items-center">
-                          <ShoppingCart className="h-4 w-4 mr-2" />
+                  <ShoppingCart className="size-5 mr-2" />
                           Đơn hàng
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem onSelect={handleLogout}>
-                        <LogOut className="h-4 w-4 mr-2" />
+                  <LogOut className="size-5 mr-2" />
                         Đăng xuất
                       </DropdownMenuItem>
                     </>
@@ -114,13 +114,13 @@ const UserLayout = () => {
                     <>
                       <DropdownMenuItem asChild>
                         <Link to="/auth/signin" className="flex items-center">
-                          <LogIn className="h-4 w-4 mr-2" />
+                          <LogIn className="size-5 mr-2" />
                           Đăng nhập
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
                         <Link to="/auth/signup" className="flex items-center">
-                          <User className="h-4 w-4 mr-2" />
+                          <User className="size-5 mr-2" />
                           Đăng ký
                         </Link>
                       </DropdownMenuItem>
@@ -134,14 +134,14 @@ const UserLayout = () => {
             <div className="md:hidden">
               <Button
                 variant="ghost"
-                size="icon"
+                size="icon-lg"
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
                 className="text-white hover:text-gray-200"
               >
                 {isMenuOpen ? (
-                  <X className="h-5 w-5" />
+                  <X className="size-9 text-white" />
                 ) : (
-                  <Menu className="h-5 w-5" />
+                  <Menu className="size-9 text-white" />
                 )}
               </Button>
             </div>
@@ -174,16 +174,16 @@ const UserLayout = () => {
       {/* Mobile Menu */}
       {isMenuOpen && (
         <div className="md:hidden bg-white shadow-lg">
-          <nav className="px-2 pt-2 pb-3 space-y-1">
-            <Button variant="ghost" className="w-full justify-start" asChild>
+          <nav className="px-2 pt-2 pb-3 space-y-2">
+            <Button variant="ghost" size="lg" className="w-full justify-start" asChild>
               <Link to="/cart" className="flex items-center">
-                <ShoppingCart className="h-5 w-5 mr-2" />
+                <ShoppingCart className="size-9 mr-2 text-blue-600" />
                 Giỏ hàng
               </Link>
             </Button>
-            <Button variant="ghost" className="w-full justify-start" asChild>
+            <Button variant="ghost" size="lg" className="w-full justify-start" asChild>
               <Link to="/profile" className="flex items-center">
-                <User className="h-5 w-5 mr-2" />
+                <User className="size-9 mr-2 text-blue-600" />
                 Tài khoản
               </Link>
             </Button>

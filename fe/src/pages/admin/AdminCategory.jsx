@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 
 const categories = [
   {
@@ -42,12 +42,56 @@ const categories = [
   }
 ];
 
-const AdminCategory = () => (
+const PAGE_SIZE_OPTIONS = [5, 10, 20];
+
+const AdminCategory = () => {
+  const [search, setSearch] = useState("");
+  const [active, setActive] = useState("");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return categories.filter(cat => {
+      const matchText = !q || cat.category_name.toLowerCase().includes(q) || cat.slug.toLowerCase().includes(q);
+      const matchActive = active === "" || String(cat.is_active) === active;
+      return matchText && matchActive;
+    });
+  }, [search, active]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const paginated = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filtered.slice(start, start + pageSize);
+  }, [filtered, currentPage, pageSize]);
+
+  const goPage = (p) => setPage(Math.min(Math.max(1, p), totalPages));
+
+  return (
   <section>
     <div className="mb-6 flex items-center justify-between">
       <h1 className="text-2xl font-bold text-gray-800">Quản lý danh mục (Categories)</h1>
       <button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:opacity-90 text-white px-6 py-2 rounded-lg font-semibold shadow transition">+ Thêm danh mục</button>
     </div>
+
+    {/* Bộ lọc nhanh */}
+    <div className="mb-3 flex flex-wrap items-center gap-2">
+      <input value={search} onChange={(e)=>{ setSearch(e.target.value); setPage(1); }} className="border rounded px-3 py-2 w-full md:w-72" placeholder="Tìm theo tên/slug..." />
+      <select value={active} onChange={(e)=>{ setActive(e.target.value); setPage(1); }} className="border rounded px-3 py-2">
+        <option value="">Tất cả</option>
+        <option value="true">Kích hoạt</option>
+        <option value="false">Vô hiệu</option>
+      </select>
+      <div className="ml-auto flex items-center gap-2">
+        <span className="text-sm text-gray-500">Hiển thị</span>
+        <select value={pageSize} onChange={(e)=>{ setPageSize(Number(e.target.value)); setPage(1); }} className="border rounded px-2 py-1 text-sm">
+          {PAGE_SIZE_OPTIONS.map(s => (<option key={s} value={s}>{s}</option>))}
+        </select>
+        <span className="text-sm text-gray-500">mục/trang</span>
+      </div>
+    </div>
+
     <div className="overflow-x-auto rounded-xl bg-white shadow pb-2">
       <table className="min-w-[1100px] w-full text-left">
         <thead className="bg-gray-50">
@@ -65,7 +109,7 @@ const AdminCategory = () => (
           </tr>
         </thead>
         <tbody className="divide-y">
-          {categories.map((cat) => (
+          {paginated.map((cat) => (
             <tr key={cat.category_id} className="hover:bg-blue-50 transition">
               <td className="px-4 py-3 font-medium text-gray-800">{cat.category_id}</td>
               <td className="px-4 py-3 font-semibold">{cat.category_name}</td>
@@ -84,8 +128,22 @@ const AdminCategory = () => (
           ))}
         </tbody>
       </table>
+      {/* Phân trang */}
+      <div className="flex items-center justify-between px-3 py-2 text-sm text-gray-600">
+        <div>Tổng: <span className="font-medium text-gray-800">{filtered.length}</span> danh mục — Trang {currentPage}/{totalPages}</div>
+        <div className="flex items-center gap-1">
+          <button onClick={()=>goPage(currentPage-1)} disabled={currentPage===1} className="px-3 py-1 rounded border disabled:opacity-50">Trước</button>
+          {Array.from({length: totalPages}).slice(0,5).map((_,i)=>{
+            const p = i+1; return (
+              <button key={p} onClick={()=>goPage(p)} className={`px-3 py-1 rounded border ${p===currentPage ? 'bg-indigo-100 text-indigo-700' : 'hover:bg-gray-100'}`}>{p}</button>
+            );
+          })}
+          <button onClick={()=>goPage(currentPage+1)} disabled={currentPage===totalPages} className="px-3 py-1 rounded border disabled:opacity-50">Sau</button>
+        </div>
+      </div>
     </div>
   </section>
-);
+  );
+};
 
 export default AdminCategory;

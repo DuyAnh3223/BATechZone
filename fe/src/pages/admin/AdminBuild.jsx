@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
+import { Button } from "@/components/ui/button";
 
 const builds = [
   {
@@ -38,9 +39,33 @@ const build_items = [
   { build_item_id: 5, build_id: 2, variant_id: 2002, component_type: 'SSD', quantity: 1, unit_price: 5990000, notes: 'WD SN850X 2TB', added_at: '2024-03-25' },
 ];
 
+const PAGE_SIZE_OPTIONS = [5, 10, 20];
+
 const AdminBuild = () => {
   const [showDetail, setShowDetail] = useState(false);
   const [selectedBuild, setSelectedBuild] = useState(null);
+  const [search, setSearch] = useState("");
+  const [isPublic, setIsPublic] = useState("");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return builds.filter(b => {
+      const matchText = !q || b.build_name.toLowerCase().includes(q) || (b.description || '').toLowerCase().includes(q);
+      const matchPublic = isPublic === "" || String(b.is_public) === isPublic;
+      return matchText && matchPublic;
+    });
+  }, [search, isPublic]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const paginated = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filtered.slice(start, start + pageSize);
+  }, [filtered, currentPage, pageSize]);
+
+  const goPage = (p) => setPage(Math.min(Math.max(1, p), totalPages));
 
   const openDetail = (build) => {
     setSelectedBuild(build);
@@ -54,10 +79,28 @@ const AdminBuild = () => {
 
   return (
     <section>
+      {/* Tiêu đề quản lý nằm trên thanh lọc nhanh */}
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-800">Quản lý cấu hình PC (Builds)</h1>
         <button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:opacity-90 text-white px-6 py-2 rounded-lg font-semibold shadow transition">+ Thêm cấu hình</button>
       </div>
+      {/* Bộ lọc nhanh */}
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <input value={search} onChange={(e)=>{ setSearch(e.target.value); setPage(1); }} className="border rounded px-3 py-2 w-full md:w-72" placeholder="Tìm theo tên/mô tả..." />
+        <select value={isPublic} onChange={(e)=>{ setIsPublic(e.target.value); setPage(1); }} className="border rounded px-3 py-2">
+          <option value="">Tất cả</option>
+          <option value="true">Public</option>
+          <option value="false">Private</option>
+        </select>
+        <div className="ml-auto flex items-center gap-2">
+          <span className="text-sm text-gray-500">Hiển thị</span>
+          <select value={pageSize} onChange={(e)=>{ setPageSize(Number(e.target.value)); setPage(1); }} className="border rounded px-2 py-1 text-sm">
+            {PAGE_SIZE_OPTIONS.map(s => (<option key={s} value={s}>{s}</option>))}
+          </select>
+          <span className="text-sm text-gray-500">mục/trang</span>
+        </div>
+      </div>
+      
       <div className="overflow-x-auto rounded-xl bg-white shadow pb-2">
         <table className="min-w-[1200px] w-full text-left">
             <thead className="bg-gray-50">
@@ -76,7 +119,7 @@ const AdminBuild = () => {
             </tr>
           </thead>
           <tbody className="divide-y">
-            {builds.map((build) => (
+          {paginated.map((build) => (
               <tr key={build.build_id} className="hover:bg-blue-50 transition">
                 <td className="px-4 py-3 font-medium text-gray-800">{build.build_id}</td>
                 <td className="px-4 py-3">{build.user_id}</td>
@@ -89,7 +132,7 @@ const AdminBuild = () => {
                 <td className="px-4 py-3 text-center">{build.like_count}</td>
                 <td className="px-4 py-3">{build.created_at}</td>
                 <td className="px-4 py-3 flex gap-2 whitespace-nowrap">
-                  <button onClick={() => openDetail(build)} className="px-3 py-1 bg-gray-200 hover:bg-blue-100 text-blue-900 rounded text-xs font-medium shadow">Chi tiết</button>
+                  <button onClick={() => openDetail(build)} className="px-3 py-1 bg-indigo-100 hover:bg-indigo-200 text-indigo-600 rounded text-xs font-medium">Chi tiết</button>
                   <button className="px-3 py-1 bg-indigo-100 hover:bg-indigo-200 text-indigo-600 rounded text-xs font-medium">Sửa</button>
                   <button className="px-3 py-1 bg-pink-100 hover:bg-pink-200 text-pink-600 rounded text-xs font-medium">Xóa</button>
                 </td>
@@ -97,6 +140,19 @@ const AdminBuild = () => {
             ))}
           </tbody>
         </table>
+      </div>
+      {/* Phân trang */}
+      <div className="flex items-center justify-between px-1 md:px-0 py-2 text-sm text-gray-600">
+        <div>Tổng: <span className="font-medium text-gray-800">{filtered.length}</span> builds — Trang {currentPage}/{totalPages}</div>
+        <div className="flex items-center gap-1">
+          <button onClick={()=>goPage(currentPage-1)} disabled={currentPage===1} className="px-3 py-1 rounded border disabled:opacity-50">Trước</button>
+          {Array.from({length: totalPages}).slice(0,5).map((_,i)=>{
+            const p = i+1; return (
+              <button key={p} onClick={()=>goPage(p)} className={`px-3 py-1 rounded border ${p===currentPage ? 'bg-indigo-100 text-indigo-700' : 'hover:bg-gray-100'}`}>{p}</button>
+            );
+          })}
+          <button onClick={()=>goPage(currentPage+1)} disabled={currentPage===totalPages} className="px-3 py-1 rounded border disabled:opacity-50">Sau</button>
+        </div>
       </div>
 
       {showDetail && selectedBuild && (

@@ -5,7 +5,12 @@ const reviews = [ { review_id: 2, user_id: 3, variant_id: 11, rating: 4, title: 
 const reports = [ { report_id: 2, user_id: 3, variant_id: 2005, report_type: 'inappropriate_content', description: 'Mô tả không phù hợp', status: 'reviewing', created_at: '2024-04-25' } ];
 
 const Tab = ({active, onClick, children}) => (
-  <button onClick={onClick} className={`px-4 py-2 rounded-lg text-sm font-medium ${active ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>{children}</button>
+  <button
+    onClick={onClick}
+    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${active ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100 text-gray-700 hover:bg-indigo-100 hover:text-indigo-700'}`}
+  >
+    {children}
+  </button>
 );
 
 const AdminModeration = () => {

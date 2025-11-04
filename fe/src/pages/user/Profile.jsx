@@ -278,36 +278,39 @@ const Profile = () => {
 
   return (
     <div className="py-8">
-      <Tabs defaultValue="profile" value={activeTab} onValueChange={setActiveTab}  >
-        <TabsList className="grid w-full grid-cols-1 md:grid-cols-4 mb-6">
-          <TabsTrigger value="profile" >
-            Thông tin cá nhân
-          </TabsTrigger>
-          <TabsTrigger value="addresses">
-            Sổ địa chỉ
-          </TabsTrigger>
-          <TabsTrigger value="orders" >
-            Đơn hàng
-          </TabsTrigger>
-          <TabsTrigger value="security" >
-            Bảo mật
-          </TabsTrigger>
-          <TabsTrigger value="notifications" >
-            Thông báo
-          </TabsTrigger>
-          <TabsTrigger value="wishlist">
-            Yêu thích
-          </TabsTrigger>
-          <TabsTrigger value="coupons">
-            Mã giảm giá
-          </TabsTrigger>
-          <TabsTrigger value="reviews" >
-            Đánh giá
-          </TabsTrigger>
-        </TabsList>
-    <div className="flex-1">    </div>
-    <div className="flex-1">    </div>
-    <div className="flex-1">    </div>
+      <Tabs defaultValue="profile" value={activeTab} onValueChange={setActiveTab} orientation="vertical">
+        <div className="flex flex-col md:flex-row gap-6">
+          {/* Sidebar */}
+          <aside className="w-full md:w-64 shrink-0">
+            <TabsList className="flex flex-col h-auto items-stretch gap-2 w-full bg-transparent p-0">
+              <TabsTrigger className="justify-start w-full" value="profile">
+                Thông tin cá nhân
+              </TabsTrigger>
+              <TabsTrigger className="justify-start w-full" value="addresses">
+                Sổ địa chỉ
+              </TabsTrigger>
+              <TabsTrigger className="justify-start w-full" value="orders">
+                Đơn hàng
+              </TabsTrigger>
+              <TabsTrigger className="justify-start w-full" value="security">
+                Bảo mật
+              </TabsTrigger>
+              <TabsTrigger className="justify-start w-full" value="notifications">
+                Thông báo
+              </TabsTrigger>
+              <TabsTrigger className="justify-start w-full" value="wishlist">
+                Yêu thích
+              </TabsTrigger>
+              <TabsTrigger className="justify-start w-full" value="coupons">
+                Mã giảm giá
+              </TabsTrigger>
+              <TabsTrigger className="justify-start w-full" value="reviews">
+                Đánh giá
+              </TabsTrigger>
+            </TabsList>
+          </aside>
+          {/* Content */}
+          <section className="flex-1 min-w-0">
         {/* Profile Information */}
         <TabsContent value="profile">
           <Card>
@@ -383,14 +386,17 @@ const Profile = () => {
                             <Button
                               type="button"
                               variant="outline"
+                              className="hover:bg-gray-200"
                               onClick={() => setIsEditing(false)}
                             >
                               Hủy
                             </Button>
-                            <Button type="submit">Lưu thay đổi</Button>
+                            <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white">
+                              Lưu thay đổi
+                            </Button>
                           </div>
                         ) : (
-                          <Button type="button" onClick={() => setIsEditing(true)}>
+                          <Button type="button" className="bg-blue-600 hover:bg-blue-700 text-white" onClick={() => setIsEditing(true)}>
                             Chỉnh sửa
                           </Button>
                         )}
@@ -442,10 +448,10 @@ const Profile = () => {
                         </div>
                       </div>
                       <div className="space-x-2">
-                        <Button variant="outline" size="sm">
+                        <Button variant="outline" size="sm" className="hover:bg-gray-200">
                           Sửa
                         </Button>
-                        <Button variant="destructive" size="sm">
+                        <Button variant="destructive" size="sm" className="hover:bg-red-600 hover:text-white">
                           Xóa
                         </Button>
                       </div>
@@ -584,15 +590,17 @@ const Profile = () => {
                           <Button
                             type="button"
                             variant="outline"
+                            className="hover:bg-gray-200"
                             onClick={() => setIsChangingPassword(false)}
                           >
                             Hủy
                           </Button>
-                          <Button type="submit">Đổi mật khẩu</Button>
+                          <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white">Đổi mật khẩu</Button>
                         </div>
                       ) : (
                         <Button
                           type="button"
+                          className="bg-blue-600 hover:bg-blue-700 text-white"
                           onClick={() => setIsChangingPassword(true)}
                         >
                           Đổi mật khẩu
@@ -616,7 +624,7 @@ const Profile = () => {
                   Các thông báo về đơn hàng và khuyến mãi
                 </CardDescription>
               </div>
-              <Button variant="outline" onClick={handleMarkAllAsRead}>
+              <Button variant="outline" className="hover:bg-gray-200" onClick={handleMarkAllAsRead}>
                 Đánh dấu tất cả là đã đọc
               </Button>
             </CardHeader>
@@ -689,6 +697,7 @@ const Profile = () => {
                           <Button
                             variant="destructive"
                             size="icon"
+                            className="hover:bg-red-600 hover:text-white"
                             onClick={() => handleRemoveFromWishlist(item.id)}
                           >
                             <Trash2 className="h-4 w-4" />
@@ -728,7 +737,7 @@ const Profile = () => {
                             {item.stock ? 'Còn hàng' : 'Hết hàng'}
                           </Badge>
                           <Button
-                            className="w-full"
+                            className="w-full bg-blue-600 hover:bg-blue-700 text-white"
                             disabled={!item.stock}
                             onClick={() => handleAddToCart(item)}
                           >
@@ -779,6 +788,7 @@ const Profile = () => {
                         </div>
                         <Button
                           variant={coupon.is_saved ? "secondary" : "default"}
+                          className="hover:bg-blue-600 hover:text-white"
                           onClick={() => handleSaveCoupon(coupon.id)}
                         >
                           {coupon.is_saved ? 'Đã lưu' : 'Lưu mã'}
@@ -866,6 +876,7 @@ const Profile = () => {
                         <Button
                           variant="outline"
                           size="sm"
+                          className="hover:bg-gray-200"
                           onClick={() => {/* Handle edit */}}
                         >
                           Sửa
@@ -873,6 +884,7 @@ const Profile = () => {
                         <Button
                           variant="destructive"
                           size="sm"
+                          className="hover:bg-red-600 hover:text-white"
                           onClick={() => handleDeleteReview(review.id)}
                         >
                           Xóa
@@ -893,8 +905,9 @@ const Profile = () => {
             </CardContent>
           </Card>
         </TabsContent>
-          
-        </Tabs>
+          </section>
+        </div>
+      </Tabs>
     </div>
     );
 };
