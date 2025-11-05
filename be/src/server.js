@@ -4,7 +4,7 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import { testConnection } from './libs/db.js';
 import authRoute from './routes/authRoute.js';
-
+import routes from './routes/index.js';
 
 dotenv.config();
 
@@ -30,6 +30,9 @@ app.get('/api/test', (req, res) => {
 //public routes
 app.use('/api/auth', authRoute);
 
+
+//private routes
+app.use('/api', routes);
 
 
 // Handle 404
