@@ -10,25 +10,21 @@ class Category {
       const [result] = await conn.query(
         `INSERT INTO categories (
           category_name,
-          parent_id,
-          description,
-          image_url,
-          display_order,
-          is_active,
           slug,
-          meta_title,
-          meta_description
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          description,
+          parent_category_id,
+          image_url,
+          is_active,
+          display_order
+        ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
         [
           categoryData.categoryName,
-          categoryData.parentId || null,
+          categoryData.slug || null,
           categoryData.description || null,
+          categoryData.parentId || null,
           categoryData.imageUrl || null,
-          categoryData.displayOrder || 0,
           categoryData.isActive !== undefined ? categoryData.isActive : true,
-          categoryData.slug,
-          categoryData.metaTitle || null,
-          categoryData.metaDescription || null
+          categoryData.displayOrder || 0,
         ]
       );
 
@@ -42,121 +38,49 @@ class Category {
     }
   }
 
-  // Get category by ID
-  async getById(categoryId) {
-    const [categories] = await db.query(
-      `SELECT 
-        c.*,
-        p.category_name as parent_name,
-        (
-          SELECT JSON_ARRAYAGG(
-            JSON_OBJECT(
-              'categoryId', child.category_id,
-              'categoryName', child.category_name,
-              'slug', child.slug,
-              'imageUrl', child.image_url,
-              'isActive', child.is_active
-            )
-          )
-          FROM categories child
-          WHERE child.parent_id = c.category_id
-        ) as children,
-        (
-          SELECT COUNT(*)
-          FROM products p
-          WHERE p.category_id = c.category_id
-        ) as product_count
-      FROM categories c
-      LEFT JOIN categories p ON c.parent_id = p.category_id
-      WHERE c.category_id = ?`,
+  // Delete category
+  // Soft delete category using is_active
+async delete(categoryId) {
+  const conn = await db.getConnection();
+  try {
+    await conn.beginTransaction();
+
+    // Check if category has active children
+    const [children] = await conn.query(
+      'SELECT category_id FROM categories WHERE parent_category_id = ? AND is_active = 1',
       [categoryId]
     );
-    return categories[0];
-  }
 
-  // Update category
-  async update(categoryId, categoryData) {
-    const conn = await db.getConnection();
-    try {
-      await conn.beginTransaction();
-
-      const [result] = await conn.query(
-        `UPDATE categories 
-        SET 
-          category_name = ?,
-          parent_id = ?,
-          description = ?,
-          image_url = ?,
-          display_order = ?,
-          is_active = ?,
-          slug = ?,
-          meta_title = ?,
-          meta_description = ?
-        WHERE category_id = ?`,
-        [
-          categoryData.categoryName,
-          categoryData.parentId || null,
-          categoryData.description || null,
-          categoryData.imageUrl || null,
-          categoryData.displayOrder || 0,
-          categoryData.isActive !== undefined ? categoryData.isActive : true,
-          categoryData.slug,
-          categoryData.metaTitle || null,
-          categoryData.metaDescription || null,
-          categoryId
-        ]
-      );
-
-      await conn.commit();
-      return result.affectedRows > 0;
-    } catch (error) {
-      await conn.rollback();
-      throw error;
-    } finally {
-      await conn.release();
+    if (children.length > 0) {
+      throw new Error('Cannot delete category with active children');
     }
-  }
 
-  // Delete category
-  async delete(categoryId) {
-    const conn = await db.getConnection();
-    try {
-      await conn.beginTransaction();
+    // Check if category has active products
+    const [products] = await conn.query(
+      'SELECT product_id FROM products WHERE category_id = ? AND is_active = 1',
+      [categoryId]
+    );
 
-      // Check if category has children
-      const [children] = await conn.query(
-        'SELECT category_id FROM categories WHERE parent_id = ?',
-        [categoryId]
-      );
-
-      if (children.length > 0) {
-        throw new Error('Cannot delete category with children');
-      }
-
-      // Check if category has products
-      const [products] = await conn.query(
-        'SELECT product_id FROM products WHERE category_id = ?',
-        [categoryId]
-      );
-
-      if (products.length > 0) {
-        throw new Error('Cannot delete category with associated products');
-      }
-
-      const [result] = await conn.query(
-        'DELETE FROM categories WHERE category_id = ?',
-        [categoryId]
-      );
-
-      await conn.commit();
-      return result.affectedRows > 0;
-    } catch (error) {
-      await conn.rollback();
-      throw error;
-    } finally {
-      await conn.release();
+    if (products.length > 0) {
+      throw new Error('Cannot delete category with active products');
     }
+
+    // Soft delete: set is_active = 0
+    const [result] = await conn.query(
+      'UPDATE categories SET is_active = 0 WHERE category_id = ?',
+      [categoryId]
+    );
+
+    await conn.commit();
+    return result.affectedRows > 0;
+  } catch (error) {
+    await conn.rollback();
+    throw error;
+  } finally {
+    await conn.release();
   }
+}
+
 
   // List categories with filtering and pagination
   async list(params = {}) {
@@ -195,18 +119,19 @@ class Category {
       `SELECT 
         c.*,
         p.category_name as parent_name,
-        (
-          SELECT JSON_ARRAYAGG(
-            JSON_OBJECT(
-              'categoryId', child.category_id,
+        (SELECT CONCAT(
+        '[',
+        GROUP_CONCAT(
+          JSON_OBJECT(
+            'categoryId', child.category_id,
               'categoryName', child.category_name,
               'slug', child.slug,
               'imageUrl', child.image_url,
               'isActive', child.is_active
-            )
           )
+        ), ']') 
           FROM categories child
-          WHERE child.parent_id = c.category_id
+          WHERE child.parent_category_id = c.category_id
         ) as children,
         (
           SELECT COUNT(*)
@@ -214,7 +139,7 @@ class Category {
           WHERE prod.category_id = c.category_id
         ) as product_count
       FROM categories c
-      LEFT JOIN categories p ON c.parent_id = p.category_id
+      LEFT JOIN categories p ON c.parent_category_id = p.category_id
       WHERE ${conditions.join(' AND ')}
       GROUP BY c.category_id
       ORDER BY c.${sortBy} ${sortOrder}
@@ -238,6 +163,26 @@ class Category {
         totalPages: Math.ceil(count[0].total / limit)
       }
     };
+  }
+
+  // Get category by ID
+  async getById(categoryId) {
+    const [rows] = await db.query(
+      `SELECT 
+        c.*,
+        p.category_name as parent_name,
+        (
+          SELECT COUNT(*)
+          FROM products prod
+          WHERE prod.category_id = c.category_id
+        ) as product_count
+      FROM categories c
+      LEFT JOIN categories p ON c.parent_category_id = p.category_id
+      WHERE c.category_id = ?
+      LIMIT 1`,
+      [categoryId]
+    );
+    return rows[0];
   }
 
   // Get category tree (for navigation)

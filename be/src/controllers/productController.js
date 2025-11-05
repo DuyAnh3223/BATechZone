@@ -1,8 +1,8 @@
 import Product from '../models/Product.js';
 
-const productController = {
+
   // Get all products with filtering and pagination
-  async getProducts(req, res) {
+  export const listProducts = async (req, res) => {
     try {
       const filters = {
         page: parseInt(req.query.page) || 1,
@@ -28,10 +28,10 @@ const productController = {
         error: error.message
       });
     }
-  },
+  };
 
   // Get single product by ID
-  async getProduct(req, res) {
+  export const getProduct = async (req, res) => {
     try {
       const product = await Product.getById(req.params.id);
       if (!product) {
@@ -51,10 +51,10 @@ const productController = {
         error: error.message
       });
     }
-  },
+  };
 
   // Create new product
-  async createProduct(req, res) {
+  export const createProduct = async (req, res) => {
     try {
       const productData = {
         productName: req.body.productName,
@@ -88,10 +88,10 @@ const productController = {
         error: error.message
       });
     }
-  },
+  };
 
   // Update product
-  async updateProduct(req, res) {
+  export const updateProduct = async (req, res) => {
     try {
       const productId = req.params.id;
       const productData = {
@@ -125,10 +125,10 @@ const productController = {
         error: error.message
       });
     }
-  },
+  };
 
   // Delete product
-  async deleteProduct(req, res) {
+  export const deleteProduct = async (req, res) => {
     try {
       const product = await Product.getById(req.params.id);
       if (!product) {
@@ -150,10 +150,10 @@ const productController = {
         error: error.message
       });
     }
-  },
+  };
 
   // Search products
-  async searchProducts(req, res) {
+  export const searchProducts = async (req, res) => {
     try {
       const searchParams = {
         query: req.query.q,
@@ -185,10 +185,10 @@ const productController = {
         error: error.message
       });
     }
-  },
+  };
 
   // Get products by category
-  async getProductsByCategory(req, res) {
+  export const getProductsByCategory = async (req, res) => {
     try {
       const { categoryId } = req.params;
       const includeSubcategories = req.query.includeSubcategories === 'true';
@@ -206,6 +206,6 @@ const productController = {
       });
     }
   }
-};
 
-export default productController;
+
+

@@ -24,45 +24,8 @@ export const createCategory = async (req, res) => {
   }
 };
 
-export const getCategory = async (req, res) => {
-  try {
-    const category = await Category.getById(req.params.id);
-    if (!category) {
-      return res.status(404).json({ message: 'Category not found' });
-    }
-    res.json(category);
-  } catch (error) {
-    console.error('Error getting category:', error);
-    res.status(500).json({ message: 'Internal server error' });
-  }
-};
 
-export const updateCategory = async (req, res) => {
-  try {
-    // If updating name, update slug if not provided
-    if (req.body.categoryName && !req.body.slug) {
-      req.body.slug = req.body.categoryName
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-+|-+$/g, '');
-    }
 
-    const updated = await Category.update(req.params.id, req.body);
-    if (!updated) {
-      return res.status(404).json({ message: 'Category not found' });
-    }
-    const category = await Category.getById(req.params.id);
-    res.json(category);
-  } catch (error) {
-    console.error('Error updating category:', error);
-    if (error.code === 'ER_DUP_ENTRY') {
-      return res.status(400).json({ 
-        message: 'A category with this name or slug already exists' 
-      });
-    }
-    res.status(500).json({ message: 'Internal server error' });
-  }
-};
 
 export const deleteCategory = async (req, res) => {
   try {

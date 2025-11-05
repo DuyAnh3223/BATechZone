@@ -35,10 +35,10 @@ class Attribute {
 
   
   // Delete attribute
-  async delete(attributeName) {
+  async delete(attributeId) {
     const [result] = await db.query(
-      'DELETE FROM attributes WHERE attribute_name = ?',
-      [attributeName]
+      'DELETE FROM attributes WHERE attribute_id = ?',
+      [attributeId]
     );
     return result.affectedRows > 0;
   }

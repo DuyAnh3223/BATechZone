@@ -1,13 +1,17 @@
 import express from 'express';
-//import productRoutes from './productsRoute.js';
-import variantRoutes from './variantsRoute.js';
-import attributesRoutes from './attributesRoute.js';
+import categoryRoutes from './categoryRoutes.js';
+import productRoutes from './productRoutes.js';
+import variantRoutes from './variantRoutes.js';
+import attributesRoutes from './attributeRoutes.js';
+import attributeValueRoutes from './attributeValueRoutes.js';
 
 const router = express.Router();
 
 //router.use('/users', userRoutes);
-//router.use('/products', productRoutes);
+router.use('/categories', categoryRoutes);
+router.use('/products', productRoutes);
 router.use('/variants', variantRoutes);
 router.use('/attributes', attributesRoutes);
+router.use('/attribute-values', attributeValueRoutes);
 
 export default router;

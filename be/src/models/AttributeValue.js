@@ -6,9 +6,24 @@ class AttributeValue {
     const [result] = await db.query(
       `INSERT INTO attribute_values (
         attribute_id,
-        value
-      ) VALUES (?, ?)`,
-      [valueData.attributeId, valueData.value]
+        value_name,
+        numeric_value,
+        unit,
+        color_code,
+        image_url,
+        display_order,
+        is_active
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        valueData.attributeId,
+        valueData.valueName,
+        valueData.numericValue || null,
+        valueData.unit || null,
+        valueData.colorCode || null,
+        valueData.imageUrl || null,
+        valueData.displayOrder || 0,
+        valueData.isActive ?? 1
+      ]
     );
     return result.insertId;
   }
@@ -16,7 +31,7 @@ class AttributeValue {
   // Get attribute value by ID
   async getById(valueId) {
     const [values] = await db.query(
-      `SELECT av.*, a.attribute_name, a.attribute_type
+      `SELECT av.*, a.attribute_name 
       FROM attribute_values av
       JOIN attributes a ON av.attribute_id = a.attribute_id
       WHERE av.attribute_value_id = ?`,
@@ -26,17 +41,17 @@ class AttributeValue {
   }
 
   // Update attribute value
-  async update(valueId, valueData) {
-    const [result] = await db.query(
-      `UPDATE attribute_values 
-      SET 
-        value = ?,
-        attribute_id = ?
-      WHERE attribute_value_id = ?`,
-      [valueData.value, valueData.attributeId, valueId]
-    );
-    return result.affectedRows > 0;
-  }
+  // async update(valueId, valueData) {
+  //   const [result] = await db.query(
+  //     `UPDATE attribute_values 
+  //     SET 
+  //       value = ?,
+  //       attribute_id = ?
+  //     WHERE attribute_value_id = ?`,
+  //     [valueData.value, valueData.attributeId, valueId]
+  //   );
+  //   return result.affectedRows > 0;
+  // }
 
   // Delete attribute value
   async delete(valueId) {
@@ -77,8 +92,7 @@ class AttributeValue {
     const [attributeValues] = await db.query(
       `SELECT 
         av.*,
-        a.attribute_name,
-        a.attribute_type
+        a.attribute_name
       FROM attribute_values av
       JOIN attributes a ON av.attribute_id = a.attribute_id
       WHERE ${conditions.join(' AND ')}
