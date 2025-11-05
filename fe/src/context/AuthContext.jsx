@@ -16,17 +16,17 @@ export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    // Kiểm tra trạng thái đăng nhập khi load trang
+    // Kiểm tra trạng thái đăng nhập khi load trang (dựa trên cookie)
     useEffect(() => {
         const checkAuth = async () => {
             try {
-                const token = localStorage.getItem('token');
-                if (token) {
-                    const response = await api.get('/auth/me');
+                const response = await api.get('/auth/me');
+                if (response.data?.success) {
                     setUser(response.data.user);
+                } else {
+                    setUser(null);
                 }
             } catch (error) {
-                localStorage.removeItem('token');
                 setUser(null);
             } finally {
                 setLoading(false);
@@ -39,14 +39,8 @@ export const AuthProvider = ({ children }) => {
     const adminLogin = async (credentials) => {
         try {
             const response = await api.post('/auth/admin_signin', credentials);
-            const { user, token } = response.data;
-            
+            const { user } = response.data;
             setUser(user);
-            localStorage.setItem('token', token);
-            
-            // Thêm token vào header mặc định của api
-            api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-            
             return user;
         } catch (error) {
             const message = error.response?.data?.message || 'Đăng nhập thất bại';
@@ -57,14 +51,8 @@ export const AuthProvider = ({ children }) => {
     const login = async (credentials) => {
         try {
             const response = await api.post('/auth/signin', credentials);
-            const { user, token } = response.data;
-            
+            const { user } = response.data;
             setUser(user);
-            localStorage.setItem('token', token);
-            
-            // Thêm token vào header mặc định của api
-            api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-            
             return user;
         } catch (error) {
             const message = error.response?.data?.message || 'Đăng nhập thất bại';
@@ -87,8 +75,6 @@ export const AuthProvider = ({ children }) => {
         try {
             await api.post('/auth/signout');
             setUser(null);
-            localStorage.removeItem('token');
-            delete api.defaults.headers.common['Authorization'];
             toast.success('Đăng xuất thành công');
         } catch (error) {
             console.error('Logout error:', error);
@@ -100,38 +86,17 @@ export const AuthProvider = ({ children }) => {
         try {
             const response = await api.put('/auth/profile', profileData);
             setUser(response.data.user);
-            toast.success('Cập nhật thông tin thành công');
-            return response.data.user;
+            toast.success('Cập nhật hồ sơ thành công');
+            return response.data;
         } catch (error) {
             const message = error.response?.data?.message || 'Cập nhật thất bại';
             throw new Error(message);
         }
     };
 
-    const changePassword = async (passwordData) => {
-        try {
-            await api.put('/auth/change-password', passwordData);
-            toast.success('Đổi mật khẩu thành công');
-        } catch (error) {
-            const message = error.response?.data?.message || 'Đổi mật khẩu thất bại';
-            throw new Error(message);
-        }
-    };
-
-    const value = {
-        user,
-        loading,
-        login,
-        register,
-        logout,
-        updateProfile,
-        changePassword,
-        adminLogin
-    };
-
     return (
-        <AuthContext.Provider value={value}>
-            {!loading && children}
+        <AuthContext.Provider value={{ user, loading, adminLogin, login, register, logout, updateProfile }}>
+            {children}
         </AuthContext.Provider>
     );
 };

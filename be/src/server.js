@@ -2,8 +2,19 @@ import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { testConnection } from './libs/db.js';
 import authRoute from './routes/authRoute.js';
+import adminUserRoute from './routes/adminUserRoute.js';
+import adminProductRoute from './routes/adminProductRoute.js';
+import adminVariantRoute from './routes/adminVariantRoute.js';
+import adminCouponRoute from './routes/adminCouponRoute.js';
+import adminCategoryRoute from './routes/adminCategoryRoute.js';
+
+// resolve __dirname in ESModule
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 
 dotenv.config();
@@ -30,6 +41,15 @@ app.get('/api/test', (req, res) => {
 //public routes
 app.use('/api/auth', authRoute);
 
+// serve uploads statically
+app.use('/uploads', express.static(path.join(__dirname, '..', '..', 'uploads')));
+
+//admin routes
+app.use('/api/admin', adminUserRoute);
+app.use('/api/admin', adminProductRoute);
+app.use('/api/admin', adminVariantRoute);
+app.use('/api/admin', adminCouponRoute);
+app.use('/api/admin', adminCategoryRoute);
 
 
 // Handle 404

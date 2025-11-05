@@ -87,10 +87,12 @@ export const adminSignIn = async(req,res)=>{
             return res.status(400).json({ message: "Thiếu username hoặc password" });
         }
 
-        // Kiểm tra thông tin đăng nhập của admin
         const admin = await User.findByUsername(username);
         if (!admin || admin.role !== 2) {
             return res.status(401).json({ message: "Username hoặc password không đúng" });
+        }
+        if (!admin.is_active) {
+            return res.status(403).json({ message: "Tài khoản đã bị vô hiệu hóa" });
         }
 
         const correctPassword = await bcrypt.compare(password, admin.password_hash);
@@ -98,13 +100,9 @@ export const adminSignIn = async(req,res)=>{
             return res.status(401).json({ message: "Username hoặc password không đúng" });
         }
 
-        // Tạo session token ngẫu nhiên
         const sessionToken = crypto.randomBytes(32).toString('hex');
-
-        // Lưu sessionToken vào database
         await User.updateSessionToken(admin.user_id, sessionToken);
 
-        // Trả token về client
         res.cookie('session_token', sessionToken, {
             httpOnly: true,
             secure: false,
@@ -138,57 +136,43 @@ export const adminSignIn = async(req,res)=>{
 
 export const signIn = async(req,res)=>{
     try {
-        // Lấy inputs: email, password
         const {email, password} = req.body;
         if(!email || !password){
             return res.status(400).json({message: " Thiếu email hoặc password"});
         }
-        // Lấy hashed password trong db để so sánh với password từ input
         const user = await User.findByEmail(email);
         if(!user) {
             return res.status(401).json({message: "email hoặc password không đúng"});
+        }
+        if (!user.is_active) {
+            return res.status(403).json({ message: "Tài khoản đã bị vô hiệu hóa" });
         }
         const correctPassword = await bcrypt.compare(password, user.password_hash);
         if(!correctPassword){
             return res.status(401).json({message: "email hoặc password không đúng"});
         }
-        // // Nếu đúng, tạo accessToken với JWT
-        // const accessToken = jwt.sign({userID: user._id}, process.env.ACCESS_TOKEN_SECRET,{expiresIn: ACCESS_TOKEN_TTL} )
-        // // tạo refreshToken 
-        // const refreshToken = crypto.randomBytes(64).toString('hex');
-        // // tạo session mới để lưu refreshToken 
-        // // trả refreshToken về cookie
-        // // trả accessToken về client trong res
 
-        // ✅ Tạo session token ngẫu nhiên
         const sessionToken = crypto.randomBytes(32).toString('hex');
-
-        // ✅ Lưu sessionToken vào database (giả sử bạn có cột `session_token`)
         await User.updateSessionToken(user.user_id, sessionToken);
 
-        // ✅ Trả token về client (qua cookie hoặc JSON)
         res.cookie('session_token', sessionToken, {
             httpOnly: true,
-            secure: false, // true nếu dùng HTTPS
+            secure: false,
             sameSite: 'strict',
-            maxAge: 14 * 24 * 60 * 60 * 1000 // 14 ngày
+            maxAge: 14 * 24 * 60 * 60 * 1000
         });
         return res.json({
             success: true,
-            message: "Đăng nhập thành công",
             user: {
                 user_id: user.user_id,
                 username: user.username,
-                role: user.role,
+                email: user.email,
+                role: user.role
             }
-        })
-
-    } catch (error) {
-        console.error('Error during sign up:', error);
-        return res.status(500).json({
-            success: false,
-            message: "Đã có lỗi xảy ra khi đăng ký",
         });
+    } catch (error) {
+        console.error('Error during sign in:', error);
+        return res.status(500).json({ success: false, message: 'Lỗi đăng nhập' });
     }
 };
 
@@ -233,5 +217,31 @@ export const signOut = async(req,res)=>{
             success: false,
             message: "Đã có lỗi xảy ra khi đăng xuất"
         });
+    }
+};
+
+export const getMe = async (req, res) => {
+    try {
+        const sessionToken = req.cookies?.session_token;
+        if (!sessionToken) {
+            return res.status(401).json({ success: false, message: 'Chưa đăng nhập' });
+        }
+        const user = await User.findBySessionToken(sessionToken);
+        if (!user) {
+            return res.status(401).json({ success: false, message: 'Phiên đăng nhập không hợp lệ' });
+        }
+        if (!user.is_active) {
+            res.clearCookie('session_token');
+            return res.status(403).json({ success: false, message: 'Tài khoản đã bị vô hiệu hóa' });
+        }
+        return res.json({ success: true, user: {
+            user_id: user.user_id,
+            username: user.username,
+            email: user.email,
+            role: user.role,
+            is_active: user.is_active,
+        }});
+    } catch (e) {
+        return res.status(500).json({ success: false, message: 'Lỗi lấy thông tin người dùng' });
     }
 };
