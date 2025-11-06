@@ -111,6 +111,8 @@ class User {
 
             if (!updates.length) return false;
 
+            // Thêm updated_at vào updates
+            updates.push('updated_at = NOW()');
             values.push(this.user_id);
             const sql = `
                 UPDATE users 
