@@ -2,6 +2,8 @@ import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { testConnection } from './libs/db.js';
 import authRoute from './routes/authRoute.js';
 import routes from './routes/index.js';
