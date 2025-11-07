@@ -6,12 +6,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { testConnection } from './libs/db.js';
 import authRoute from './routes/authRoute.js';
-import routes from './routes/index.js';
-import adminUserRoute from './routes/adminUserRoute.js';
-import adminProductRoute from './routes/adminProductRoute.js';
-import adminVariantRoute from './routes/adminVariantRoute.js';
-import adminCouponRoute from './routes/adminCouponRoute.js';
-import adminCategoryRoute from './routes/adminCategoryRoute.js';
+import routes, { adminUserRouter, adminCouponRouter } from './routes/index.js';
 
 // resolve __dirname in ESModule
 const __filename = fileURLToPath(import.meta.url);
@@ -46,11 +41,8 @@ app.use('/api/auth', authRoute);
 app.use('/uploads', express.static(path.join(__dirname, '..', '..', 'uploads')));
 
 //admin routes
-app.use('/api/admin', adminUserRoute);
-app.use('/api/admin', adminProductRoute);
-app.use('/api/admin', adminVariantRoute);
-app.use('/api/admin', adminCouponRoute);
-app.use('/api/admin', adminCategoryRoute);
+app.use('/api/admin', adminUserRouter);
+app.use('/api/admin', adminCouponRouter);
 
 //private routes
 app.use('/api', routes);
