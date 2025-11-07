@@ -1,17 +1,18 @@
 import React, { useState } from 'react';
-import { useAuth } from '../../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { UserRound, Mail, Phone, Lock, Eye, EyeOff } from 'lucide-react';
+import { useAuthStore } from '@/stores/useAuthStore';
 
 const Register = () => {
-	const { register } = useAuth();
+	const { signUp } = useAuthStore();
 	const navigate = useNavigate();
-	const [fullName, setFullName] = useState('');
+
     const [email, setEmail] = useState('');
     const [displayName, setDisplayName] = useState('');
-	const [phone, setPhone] = useState('');
 	const [password, setPassword] = useState('');
+	const [fullName, setFullName] = useState('');
+	const [phone, setPhone] = useState('');
 	const [confirmPassword, setConfirmPassword] = useState('');
 	const [showPassword, setShowPassword] = useState(false);
 	const [showConfirm, setShowConfirm] = useState(false);
@@ -29,14 +30,8 @@ const Register = () => {
 		}
         try {
 			setIsSubmitting(true);
-            await register({
-				fullName,
-				email,
-				username: displayName || fullName,
-				phone,
-				password
-			});
-			toast.success('Tạo tài khoản thành công');
+			// Gọi signUp với username, password, email
+            await signUp(displayName, password, email);
 			navigate('/auth/signin');
 		} catch (err) {
 			toast.error(err.message || 'Đăng ký thất bại');

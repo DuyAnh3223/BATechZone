@@ -6,6 +6,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { testConnection } from './libs/db.js';
 import authRoute from './routes/authRoute.js';
+import routes from './routes/index.js';
 import adminUserRoute from './routes/adminUserRoute.js';
 import adminProductRoute from './routes/adminProductRoute.js';
 import adminVariantRoute from './routes/adminVariantRoute.js';
@@ -51,6 +52,8 @@ app.use('/api/admin', adminVariantRoute);
 app.use('/api/admin', adminCouponRoute);
 app.use('/api/admin', adminCategoryRoute);
 
+//private routes
+app.use('/api', routes);
 
 // Handle 404
 app.use((req, res) => {
