@@ -5,6 +5,7 @@ import variantRoutes from './variantRoutes.js';
 import attributesRoutes from './attributeRoutes.js';
 import attributeValueRoutes from './attributeValueRoutes.js';
 import userAddressRoute from './userAddressRoute.js';
+import userProfileRoute from './userProfileRoute.js';
 import couponRoutes from './couponRoutes.js';
 import { createUser, updateUser, getUserById, listUsers } from '../controllers/authController.js';
 import { listCoupons, createCoupon, getCouponById, updateCoupon, deleteCoupon } from '../controllers/couponController.js';
@@ -17,6 +18,7 @@ router.use('/variants', variantRoutes);
 router.use('/attributes', attributesRoutes);
 router.use('/attribute-values', attributeValueRoutes);
 router.use('/addresses', userAddressRoute);
+router.use('/user/profile', userProfileRoute);
 router.use('/coupons', couponRoutes);
 
 const adminUserRouter = express.Router();

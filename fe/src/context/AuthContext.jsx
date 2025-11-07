@@ -1,6 +1,5 @@
-import { createContext, useContext, useState, useEffect } from 'react';
-import api from '@/lib/axios';
-import { toast } from 'sonner';
+import { createContext, useContext, useEffect } from 'react';
+import { useAuthStore } from '@/stores/useAuthStore';
 
 const AuthContext = createContext();
 
@@ -13,85 +12,37 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }) => {
-    const [user, setUser] = useState(null);
-    const [loading, setLoading] = useState(true);
+    const user = useAuthStore((state) => state.user);
+    const loading = useAuthStore((state) => state.loading);
+    const checkAuth = useAuthStore((state) => state.checkAuth);
+    const storeSignIn = useAuthStore((state) => state.signIn);
+    const storeAdminSignIn = useAuthStore((state) => state.adminSignIn);
+    const storeSignUp = useAuthStore((state) => state.signUp);
+    const storeSignOut = useAuthStore((state) => state.signOut);
+    const storeUpdateProfile = useAuthStore((state) => state.updateProfile);
 
-    // Kiểm tra trạng thái đăng nhập khi load trang (dựa trên cookie)
     useEffect(() => {
-        const checkAuth = async () => {
-            try {
-                const response = await api.get('/auth/me');
-                if (response.data?.success) {
-                    setUser(response.data.user);
-                } else {
-                    setUser(null);
-                }
-            } catch (error) {
-                setUser(null);
-            } finally {
-                setLoading(false);
-            }
-        };
-
         checkAuth();
-    }, []);
+    }, [checkAuth]);
 
-    const adminLogin = async (credentials) => {
-        try {
-            const response = await api.post('/auth/admin_signin', credentials);
-            const { user } = response.data;
-            setUser(user);
-            return user;
-        } catch (error) {
-            const message = error.response?.data?.message || 'Đăng nhập thất bại';
-            throw new Error(message);
-        }
+    const adminLogin = async ({ username, password }) => {
+        return storeAdminSignIn(username, password);
     };
 
-    const login = async (credentials) => {
-        try {
-            const response = await api.post('/auth/signin', credentials);
-            const { user } = response.data;
-            setUser(user);
-            return user;
-        } catch (error) {
-            const message = error.response?.data?.message || 'Đăng nhập thất bại';
-            throw new Error(message);
-        }
+    const login = async ({ email, password }) => {
+        return storeSignIn(email, password);
     };
 
-    const register = async (userData) => {
-        try {
-            const response = await api.post('/auth/signup', userData);
-            toast.success('Đăng ký thành công! Vui lòng đăng nhập.');
-            return response.data;
-        } catch (error) {
-            const message = error.response?.data?.message || 'Đăng ký thất bại';
-            throw new Error(message);
-        }
+    const register = async ({ username, email, password }) => {
+        return storeSignUp(username, password, email);
     };
 
     const logout = async () => {
-        try {
-            await api.post('/auth/signout');
-            setUser(null);
-            toast.success('Đăng xuất thành công');
-        } catch (error) {
-            console.error('Logout error:', error);
-            toast.error('Có lỗi xảy ra khi đăng xuất');
-        }
+        await storeSignOut();
     };
 
-    const updateProfile = async (profileData) => {
-        try {
-            const response = await api.put('/auth/profile', profileData);
-            setUser(response.data.user);
-            toast.success('Cập nhật hồ sơ thành công');
-            return response.data;
-        } catch (error) {
-            const message = error.response?.data?.message || 'Cập nhật thất bại';
-            throw new Error(message);
-        }
+    const updateProfile = async ({ fullName, phone, email }) => {
+        return storeUpdateProfile(fullName, phone, email);
     };
 
     return (

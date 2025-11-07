@@ -21,9 +21,9 @@ export const useAuthStore = create((set, get) => ({
     },
 
     // Đăng nhập admin
-    adminSignIn: async (email, password) => {
+    adminSignIn: async (username, password) => {
         try {
-            const response = await authService.adminSignIn(email, password);
+            const response = await authService.adminSignIn(username, password);
             const { user } = response;
             set({ user });
             return user;

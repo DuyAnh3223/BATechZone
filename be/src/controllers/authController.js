@@ -129,11 +129,6 @@ export const adminSignIn = async(req,res)=>{
     }
 };
 
-
-    
-
-
-
 export const signIn = async(req,res)=>{
     try {
         const {email, password} = req.body;

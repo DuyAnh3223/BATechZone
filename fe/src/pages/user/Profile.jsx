@@ -40,6 +40,7 @@ import { vi } from "date-fns/locale";
 import { Star, ShoppingCart, Trash2, Eye } from "lucide-react";
 import { toast } from "sonner";
 import api from "@/lib/axios";
+import { useUserAddressStore } from "@/stores/userAddressStore";
 import {
   Dialog,
   DialogContent,
@@ -195,9 +196,14 @@ const Profile = () => {
   const [coupons, setCoupons] = useState(mockCoupons);
   const [reviews, setReviews] = useState(mockReviews);
   
-  // Address states
-  const [addresses, setAddresses] = useState([]);
-  const [loadingAddresses, setLoadingAddresses] = useState(false);
+  const {
+    addresses,
+    loading: addressStoreLoading,
+    fetchAddresses,
+    addAddress,
+    updateAddress: updateAddressStore,
+    removeAddress,
+  } = useUserAddressStore();
   const [isAddAddressOpen, setIsAddAddressOpen] = useState(false);
   const [isEditAddressOpen, setIsEditAddressOpen] = useState(false);
   const [editingAddressId, setEditingAddressId] = useState(null);
@@ -240,19 +246,12 @@ const Profile = () => {
     },
   });
 
-  // Load addresses from API
-  const loadAddresses = async () => {
-    try {
-      setLoadingAddresses(true);
-      const res = await api.get('/user/addresses', { withCredentials: true });
-      setAddresses(res.data?.data || []);
-    } catch (error) {
-      console.error('Error loading addresses:', error);
-      toast.error(error.response?.data?.message || 'Không thể tải danh sách địa chỉ');
-    } finally {
-      setLoadingAddresses(false);
+  // Load addresses when addresses tab is active
+  useEffect(() => {
+    if (activeTab === 'addresses') {
+      fetchAddresses();
     }
-  };
+  }, [activeTab, fetchAddresses]);
 
   // Load profile from API
   const loadProfile = async () => {
@@ -280,13 +279,6 @@ const Profile = () => {
   useEffect(() => {
     if (activeTab === 'profile') {
       loadProfile();
-    }
-  }, [activeTab]);
-
-  // Load addresses when addresses tab is active
-  useEffect(() => {
-    if (activeTab === 'addresses') {
-      loadAddresses();
     }
   }, [activeTab]);
 
@@ -331,21 +323,19 @@ const Profile = () => {
     try {
       setIsSubmittingAddress(true);
       if (editingAddressId) {
-        // Update address
-        await api.put(`/user/addresses/${editingAddressId}`, data, { withCredentials: true });
-        toast.success('Cập nhật địa chỉ thành công');
+        await updateAddressStore(editingAddressId, data);
         setIsEditAddressOpen(false);
+        setEditingAddressId(null);
       } else {
-        // Create address
-        await api.post('/user/addresses', data, { withCredentials: true });
-        toast.success('Thêm địa chỉ thành công');
+        await addAddress(data);
         setIsAddAddressOpen(false);
       }
-      await loadAddresses();
       addressForm.reset();
     } catch (error) {
       console.error('Error submitting address:', error);
-      toast.error(error.response?.data?.message || 'Có lỗi xảy ra');
+      if (error?.message) {
+        toast.error(error.message);
+      }
     } finally {
       setIsSubmittingAddress(false);
     }
@@ -356,12 +346,12 @@ const Profile = () => {
       return;
     }
     try {
-      await api.delete(`/user/addresses/${addressId}`, { withCredentials: true });
-      toast.success('Đã xóa địa chỉ');
-      await loadAddresses();
+      await removeAddress(addressId);
     } catch (error) {
       console.error('Error deleting address:', error);
-      toast.error(error.response?.data?.message || 'Không thể xóa địa chỉ');
+      if (error?.message) {
+        toast.error(error.message);
+      }
     }
   };
 
@@ -650,7 +640,7 @@ const Profile = () => {
                 </Button>
               </CardHeader>
               <CardContent>
-                {loadingAddresses ? (
+                {addressStoreLoading ? (
                   <div className="text-center py-8">
                     <p className="text-gray-500">Đang tải...</p>
                   </div>

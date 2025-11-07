@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { useAuth } from '../../context/AuthContext';
+import { useAuthStore } from '@/stores/useAuthStore';
 import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Mail, Phone, Lock, Eye, EyeOff, ShieldCheck, ShoppingBag } from 'lucide-react';
 
 const Login = () => {
-	const { login } = useAuth();
+	const { signIn } = useAuthStore();
 	const navigate = useNavigate();
 	const [tab, setTab] = useState('email');
 	const [emailOrUsername, setEmailOrUsername] = useState('');
@@ -18,12 +18,11 @@ const Login = () => {
 		e.preventDefault();
 		try {
 			setIsSubmitting(true);
-			const loginData = {
-				[tab === 'email' ? 'email' : 'phone']: emailOrUsername,
-				password,
-				remember
-			};
-			await login(loginData);
+			if (tab !== 'email') {
+				toast.error('Tính năng đăng nhập bằng số điện thoại chưa được hỗ trợ');
+				return;
+			}
+			await signIn(emailOrUsername, password);
 			toast.success('Đăng nhập thành công');
 			navigate('/');
 		} catch (err) {
