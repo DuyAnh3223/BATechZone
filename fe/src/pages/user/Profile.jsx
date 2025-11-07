@@ -40,7 +40,7 @@ import { vi } from "date-fns/locale";
 import { Star, ShoppingCart, Trash2, Eye } from "lucide-react";
 import { toast } from "sonner";
 import api from "@/lib/axios";
-import { useUserAddressStore } from "@/stores/userAddressStore";
+import { useUserAddressStore } from "@/stores/useAddressStore";
 import {
   Dialog,
   DialogContent,
