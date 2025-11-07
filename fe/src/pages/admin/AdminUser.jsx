@@ -1,5 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { translateUserRole } from '../../utils/statusTranslations';
+import React, { useEffect, useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -11,9 +10,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { UserRound, Mail, Phone, Lock, Eye, EyeOff } from 'lucide-react';
-import api from '@/lib/axios';
-
-// Remove mock users; we'll load from API
+import { useUserStore } from '@/stores/useUserStore';
 
 const roleClass = (role) =>
   role === 2 || role === 'admin' ? 'bg-pink-100 text-pink-700' :
@@ -30,6 +27,9 @@ const formatDate = (value) => {
 };
 
 const AdminUser = () => {
+  // Get store methods and state
+  const { users, loading, pagination, listUsers, createUser, updateUser, getUserById } = useUserStore();
+  
   const [search, setSearch] = useState("");
   const [role, setRole] = useState("");
   const [active, setActive] = useState("");
@@ -39,10 +39,6 @@ const AdminUser = () => {
   const [isEditUserOpen, setIsEditUserOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingUserId, setEditingUserId] = useState(null);
-
-  const [users, setUsers] = useState([]);
-  const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(false);
 
   // Form states
   const [formData, setFormData] = useState({
@@ -56,30 +52,18 @@ const AdminUser = () => {
   });
   const [showPassword, setShowPassword] = useState(false);
 
-  const roles = useMemo(() => [
-    'customer','shipper','admin'
-  ], []);
-
   const loadUsers = async () => {
     try {
-      setLoading(true);
-      const res = await api.get('/admin/users', {
-        params: {
-          search: search.trim(),
-          role,
-          is_active: active,
-          page,
-          pageSize
-        },
-        withCredentials: true
+      await listUsers({ 
+        search: search.trim(), 
+        role, 
+        is_active: active, 
+        page, 
+        pageSize 
       });
-      const data = res.data?.data || [];
-      setUsers(data);
-      setTotal(res.data?.pagination?.total ?? data.length);
-    } catch (e) {
-      toast.error(e.response?.data?.message || 'Không tải được danh sách người dùng');
-    } finally {
-      setLoading(false);
+    } catch (error) {
+      // Error is already handled in store
+      console.error('Error loading users:', error);
     }
   };
 
@@ -88,6 +72,7 @@ const AdminUser = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search, role, active, page, pageSize]);
 
+  const total = pagination?.total || 0;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const currentPage = Math.min(page, totalPages);
 
@@ -113,22 +98,20 @@ const AdminUser = () => {
     }
     try {
       setIsSubmitting(true);
-      await api.post('/admin/users', {
+      await createUser({
         username: formData.username,
         email: formData.email,
         password: formData.password,
         full_name: formData.full_name || null,
         phone: formData.phone || null,
         role: parseInt(formData.role)
-      }, { withCredentials: true });
-
-      toast.success('Thêm user thành công!');
+      });
       setIsAddUserOpen(false);
       resetForm();
       loadUsers();
     } catch (error) {
-      const message = error.response?.data?.message || 'Có lỗi xảy ra khi thêm user';
-      toast.error(message);
+      // Error is already handled in store
+      console.error('Error adding user:', error);
     } finally {
       setIsSubmitting(false);
     }
@@ -150,8 +133,7 @@ const AdminUser = () => {
   const handleEditClick = async (user) => {
     try {
       setIsSubmitting(true);
-      const response = await api.get(`/admin/users/${user.user_id}`, { withCredentials: true });
-      const userData = response.data.data;
+      const userData = await getUserById(user.user_id);
       setFormData({
         username: userData.username || '',
         email: userData.email || '',
@@ -164,7 +146,8 @@ const AdminUser = () => {
       setEditingUserId(user.user_id);
       setIsEditUserOpen(true);
     } catch (error) {
-      toast.error('Không thể tải thông tin user');
+      // Error is already handled in store
+      console.error('Error loading user:', error);
     } finally {
       setIsSubmitting(false);
     }
@@ -178,23 +161,21 @@ const AdminUser = () => {
     }
     try {
       setIsSubmitting(true);
-      await api.put(`/admin/users/${editingUserId}`, {
+      await updateUser(editingUserId, {
         username: formData.username,
         email: formData.email,
         full_name: formData.full_name || null,
         phone: formData.phone || null,
         role: parseInt(formData.role),
         is_active: formData.is_active
-      }, { withCredentials: true });
-
-      toast.success('Cập nhật user thành công!');
+      });
       setIsEditUserOpen(false);
       setEditingUserId(null);
       resetForm();
       loadUsers();
     } catch (error) {
-      const message = error.response?.data?.message || 'Có lỗi xảy ra khi cập nhật user';
-      toast.error(message);
+      // Error is already handled in store
+      console.error('Error updating user:', error);
     } finally {
       setIsSubmitting(false);
     }
@@ -263,7 +244,7 @@ const AdminUser = () => {
                 <td className="px-4 py-3">{user.email}</td>
                 <td className="px-4 py-3">{user.full_name || '-'}</td>
                 <td className="px-4 py-3">{user.phone || '-'}</td>
-                <td className="px-4 py-3"><span className={`px-3 py-0.5 rounded-full text-xs font-semibold ${roleClass(user.role)}`}>{translateUserRole(user.role)}</span></td>
+                <td className="px-4 py-3"><span className={`px-3 py-0.5 rounded-full text-xs font-semibold ${roleClass(user.role)}`}>{user.role === 0 ? 'Khách hàng' : user.role === 1 ? 'Người giao hàng' : 'Quản trị viên'}</span></td>
                 <td className="px-4 py-3 text-center">
                   {user.is_active ? <span className="text-green-600 font-bold">●</span> : <span className="text-gray-400 font-bold">●</span>}
                 </td>

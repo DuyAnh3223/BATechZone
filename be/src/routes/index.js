@@ -7,8 +7,7 @@ import attributeValueRoutes from './attributeValueRoutes.js';
 import userAddressRoute from './userAddressRoute.js';
 import userProfileRoute from './userProfileRoute.js';
 import couponRoutes from './couponRoutes.js';
-import { createUser, updateUser, getUserById, listUsers } from '../controllers/authController.js';
-import { listCoupons, createCoupon, getCouponById, updateCoupon, deleteCoupon } from '../controllers/couponController.js';
+import userRoutes from './userRoutes.js';
 const router = express.Router();
 
 //router.use('/users', userRoutes);
@@ -20,19 +19,7 @@ router.use('/attribute-values', attributeValueRoutes);
 router.use('/addresses', userAddressRoute);
 router.use('/user/profile', userProfileRoute);
 router.use('/coupons', couponRoutes);
-
-const adminUserRouter = express.Router();
-adminUserRouter.get('/users', listUsers);
-adminUserRouter.post('/users', createUser);
-adminUserRouter.get('/users/:userId', getUserById);
-adminUserRouter.put('/users/:userId', updateUser);
-
-const adminCouponRouter = express.Router();
-adminCouponRouter.get('/coupons', listCoupons);
-adminCouponRouter.post('/coupons', createCoupon);
-adminCouponRouter.get('/coupons/:couponId', getCouponById);
-adminCouponRouter.put('/coupons/:couponId', updateCoupon);
-adminCouponRouter.delete('/coupons/:couponId', deleteCoupon);
+router.use('/users', userRoutes);
 
 export default router;
-export { adminUserRouter, adminCouponRouter };
+

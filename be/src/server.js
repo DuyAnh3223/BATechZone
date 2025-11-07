@@ -6,7 +6,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { testConnection } from './libs/db.js';
 import authRoute from './routes/authRoute.js';
-import routes, { adminUserRouter, adminCouponRouter } from './routes/index.js';
+import routes from './routes/index.js';
 
 // resolve __dirname in ESModule
 const __filename = fileURLToPath(import.meta.url);
@@ -39,10 +39,6 @@ app.use('/api/auth', authRoute);
 
 // serve uploads statically
 app.use('/uploads', express.static(path.join(__dirname, '..', '..', 'uploads')));
-
-//admin routes
-app.use('/api/admin', adminUserRouter);
-app.use('/api/admin', adminCouponRouter);
 
 //private routes
 app.use('/api', routes);
