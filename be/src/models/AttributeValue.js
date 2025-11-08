@@ -7,18 +7,14 @@ class AttributeValue {
       `INSERT INTO attribute_values (
         attribute_id,
         value_name,
-        numeric_value,
-        unit,
         color_code,
         image_url,
         display_order,
         is_active
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?)`,
       [
         valueData.attributeId,
         valueData.valueName,
-        valueData.numericValue || null,
-        valueData.unit || null,
         valueData.colorCode || null,
         valueData.imageUrl || null,
         valueData.displayOrder || 0,
@@ -48,14 +44,6 @@ class AttributeValue {
     if (valueData.valueName !== undefined) {
       updateFields.push('value_name = ?');
       updateValues.push(valueData.valueName);
-    }
-    if (valueData.numericValue !== undefined) {
-      updateFields.push('numeric_value = ?');
-      updateValues.push(valueData.numericValue || null);
-    }
-    if (valueData.unit !== undefined) {
-      updateFields.push('unit = ?');
-      updateValues.push(valueData.unit || null);
     }
     if (valueData.colorCode !== undefined) {
       updateFields.push('color_code = ?');
@@ -155,16 +143,52 @@ class AttributeValue {
     };
   }
 
-  // Get values by attribute ID
-  async getByAttributeId(attributeId) {
+  // Get values by attribute ID with pagination
+  async getByAttributeId(attributeId, params = {}) {
+    const {
+      page = 1,
+      limit = 10,
+      sortBy = 'display_order',
+      sortOrder = 'ASC'
+    } = params;
+
+    // Sanitize sortBy to prevent SQL injection
+    const allowedSortColumns = ['attribute_value_id', 'value_name', 'display_order', 'created_at', 'is_active'];
+    const sanitizedSortBy = allowedSortColumns.includes(sortBy) ? sortBy : 'display_order';
+    const sanitizedSortOrder = sortOrder.toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
+
+    const offset = (page - 1) * limit;
+    const limitValue = parseInt(limit);
+    const offsetValue = parseInt(offset);
+
+    // Get values with pagination
     const [values] = await db.query(
       `SELECT av.*, a.attribute_name, a.attribute_type
       FROM attribute_values av
       JOIN attributes a ON av.attribute_id = a.attribute_id
+      WHERE av.attribute_id = ?
+      ORDER BY av.${sanitizedSortBy} ${sanitizedSortOrder}
+      LIMIT ? OFFSET ?`,
+      [attributeId, limitValue, offsetValue]
+    );
+
+    // Get total count
+    const [count] = await db.query(
+      `SELECT COUNT(*) as total
+      FROM attribute_values av
       WHERE av.attribute_id = ?`,
       [attributeId]
     );
-    return values;
+
+    return {
+      data: values,
+      pagination: {
+        total: count[0]?.total || 0,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        totalPages: Math.ceil((count[0]?.total || 0) / limit)
+      }
+    };
   }
 
   // Bulk create attribute values

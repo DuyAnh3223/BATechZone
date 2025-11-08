@@ -1,23 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-  SheetBody,
-  SheetFooter,
-} from '@/components/ui/sheet';
-import { Tag, Search, Filter, Plus, Edit2, Trash2 } from 'lucide-react';
+import { Tag, Search, Filter, Plus, Edit2, Trash2, X } from 'lucide-react';
 import { useAttributeStore } from '@/stores/useAttributeStore';
 import { useAttributeValueStore } from '@/stores/useAttributeValueStore';
 import { useCategoryStore } from '@/stores/useCategoryStore';
@@ -36,6 +19,7 @@ const AdminAttribute = () => {
 
   const {
     currentValues,
+    valuesTotal,
     loading: loadingValues,
     fetchAttributeValuesByAttributeId,
     createAttributeValue,
@@ -49,18 +33,20 @@ const AdminAttribute = () => {
   const [categoryFilter, setCategoryFilter] = useState('');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formData, setFormData] = useState({
-    attribute_name: '',
-  });
+  const [attributeInput, setAttributeInput] = useState('');
   
-  // Drawer state
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  // Selected attribute for right column
   const [selectedAttribute, setSelectedAttribute] = useState(null);
   const [editingValue, setEditingValue] = useState(null);
+  const [valuePage, setValuePage] = useState(1);
+  const [valuePageSize, setValuePageSize] = useState(10);
   const [valueFormData, setValueFormData] = useState({
     value_name: '',
+    color_code: '',
+    image_url: '',
+    display_order: 0,
+    is_active: true
   });
 
   // Load categories on mount
@@ -93,29 +79,45 @@ const AdminAttribute = () => {
 
   const goPage = (p) => setPage(Math.min(Math.max(1, p), totalPages));
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+  // Load values when attribute is selected or pagination changes
+  useEffect(() => {
+    if (selectedAttribute) {
+      loadAttributeValues();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedAttribute, valuePage, valuePageSize]);
+
+  const loadAttributeValues = async () => {
+    if (!selectedAttribute) return;
+    try {
+      await fetchAttributeValuesByAttributeId(selectedAttribute.attribute_id, {
+        page: valuePage,
+        limit: valuePageSize
+      });
+    } catch (error) {
+      console.error('Error loading attribute values:', error);
+    }
   };
 
-  const resetForm = () => {
-    setFormData({ attribute_name: '' });
-  };
+  const valuesTotalPages = Math.max(1, Math.ceil(valuesTotal / valuePageSize));
+  const valuesCurrentPage = Math.min(valuePage, valuesTotalPages);
+
+  const goValuePage = (p) => setValuePage(Math.min(Math.max(1, p), valuesTotalPages));
 
   const handleAddAttribute = async (e) => {
     e.preventDefault();
     
-    if (!formData.attribute_name.trim()) {
+    if (!attributeInput.trim()) {
       return;
     }
 
     try {
       setIsSubmitting(true);
       await createAttribute({
-        attribute_name: formData.attribute_name.trim()
+        attribute_name: attributeInput.trim()
       });
-      setIsAddDialogOpen(false);
-      resetForm();
+      setAttributeInput('');
+      setPage(1); // Reset về trang 1 sau khi thêm
       loadAttributes();
     } catch (error) {
       console.error('Error adding attribute:', error);
@@ -124,34 +126,37 @@ const AdminAttribute = () => {
     }
   };
 
-  const handleDeleteAttribute = async (attributeId) => {
+  const handleDeleteAttribute = async (attributeId, e) => {
+    e.stopPropagation();
     if (!confirm('Bạn có chắc chắn muốn xóa thuộc tính này?')) return;
 
     try {
       await deleteAttribute(attributeId);
-      // Store đã tự động cập nhật local state
+      if (selectedAttribute?.attribute_id === attributeId) {
+        setSelectedAttribute(null);
+      }
+      loadAttributes();
     } catch (error) {
       console.error('Error deleting attribute:', error);
     }
   };
 
-  // Drawer handlers
-  const handleOpenDrawer = async (attribute) => {
+  const handleSelectAttribute = (attribute) => {
     setSelectedAttribute(attribute);
-    setIsDrawerOpen(true);
-    await fetchAttributeValuesByAttributeId(attribute.attribute_id);
-  };
-
-  const handleCloseDrawer = () => {
-    setIsDrawerOpen(false);
-    setSelectedAttribute(null);
     setEditingValue(null);
-    setValueFormData({ value_name: '' });
+    setValuePage(1); // Reset về trang 1 khi chọn attribute mới
+    setValueFormData({
+      value_name: '',
+      color_code: '',
+      image_url: '',
+      display_order: 0,
+      is_active: true
+    });
   };
 
   const handleAddValue = async (e) => {
     e.preventDefault();
-    if (!valueFormData.value_name.trim()) {
+    if (!valueFormData.value_name.trim() || !selectedAttribute) {
       return;
     }
 
@@ -159,10 +164,21 @@ const AdminAttribute = () => {
       setIsSubmitting(true);
       await createAttributeValue({
         attribute_id: selectedAttribute.attribute_id,
-        value_name: valueFormData.value_name.trim()
+        value_name: valueFormData.value_name.trim(),
+        color_code: valueFormData.color_code.trim() || null,
+        image_url: valueFormData.image_url.trim() || null,
+        display_order: parseInt(valueFormData.display_order) || 0,
+        is_active: valueFormData.is_active
       });
-      setValueFormData({ value_name: '' });
-      await fetchAttributeValuesByAttributeId(selectedAttribute.attribute_id);
+      setValueFormData({
+        value_name: '',
+        color_code: '',
+        image_url: '',
+        display_order: 0,
+        is_active: true
+      });
+      setValuePage(1); // Reset về trang 1 sau khi thêm
+      await loadAttributeValues();
       loadAttributes(); // Reload để cập nhật số lượng values
     } catch (error) {
       console.error('Error adding value:', error);
@@ -173,23 +189,39 @@ const AdminAttribute = () => {
 
   const handleEditValue = (value) => {
     setEditingValue(value);
-    setValueFormData({ value_name: value.value_name || '' });
+    setValueFormData({
+      value_name: value.value_name || '',
+      color_code: value.color_code || '',
+      image_url: value.image_url || '',
+      display_order: value.display_order || 0,
+      is_active: value.is_active !== undefined ? value.is_active : true
+    });
   };
 
   const handleUpdateValue = async (e) => {
     e.preventDefault();
-    if (!valueFormData.value_name.trim()) {
+    if (!valueFormData.value_name.trim() || !editingValue) {
       return;
     }
 
     try {
       setIsSubmitting(true);
       await updateAttributeValue(editingValue.attribute_value_id, {
-        value_name: valueFormData.value_name.trim()
+        value_name: valueFormData.value_name.trim(),
+        color_code: valueFormData.color_code.trim() || null,
+        image_url: valueFormData.image_url.trim() || null,
+        display_order: parseInt(valueFormData.display_order) || 0,
+        is_active: valueFormData.is_active
       });
       setEditingValue(null);
-      setValueFormData({ value_name: '' });
-      await fetchAttributeValuesByAttributeId(selectedAttribute.attribute_id);
+      setValueFormData({
+        value_name: '',
+        color_code: '',
+        image_url: '',
+        display_order: 0,
+        is_active: true
+      });
+      await loadAttributeValues();
       loadAttributes();
     } catch (error) {
       console.error('Error updating value:', error);
@@ -198,12 +230,18 @@ const AdminAttribute = () => {
     }
   };
 
-  const handleDeleteValue = async (valueId) => {
+  const handleDeleteValue = async (valueId, e) => {
+    e.stopPropagation();
     if (!confirm('Bạn có chắc chắn muốn xóa giá trị này?')) return;
 
     try {
       await deleteAttributeValue(valueId);
-      await fetchAttributeValuesByAttributeId(selectedAttribute.attribute_id);
+      // Nếu xóa hết items trên trang hiện tại và không phải trang 1, quay về trang trước
+      if (currentValues.length === 1 && valuePage > 1) {
+        setValuePage(valuePage - 1);
+      } else {
+        await loadAttributeValues();
+      }
       loadAttributes();
     } catch (error) {
       console.error('Error deleting value:', error);
@@ -212,39 +250,37 @@ const AdminAttribute = () => {
 
   const cancelEdit = () => {
     setEditingValue(null);
-    setValueFormData({ value_name: '' });
+    setValueFormData({
+      value_name: '',
+      color_code: '',
+      image_url: '',
+      display_order: 0,
+      is_active: true
+    });
   };
 
-  const parseAttributeValues = (valuesJson) => {
-    if (!valuesJson || valuesJson === 'null' || valuesJson === '[]') return [];
-    try {
-      // Nếu là string, parse nó
-      const parsed = typeof valuesJson === 'string' ? JSON.parse(valuesJson) : valuesJson;
-      // Đảm bảo là array và filter các giá trị hợp lệ
-      if (Array.isArray(parsed)) {
-        return parsed.filter(v => v && (v.value || v.value_name));
-      }
-      return [];
-    } catch (e) {
-      console.warn('Error parsing attribute values:', e, valuesJson);
-      return [];
-    }
+  const handleValueFormChange = (field, value) => {
+    setValueFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
   };
+
+  // Get selected category name
+  const selectedCategory = categoryFilter 
+    ? parentCategories.find(cat => cat.category_id === parseInt(categoryFilter))
+    : null;
 
   return (
-    <section>
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800">Quản lý thuộc tính sản phẩm</h1>
-          <p className="text-gray-500 text-sm mt-1">Quản lý các thuộc tính như màu sắc, kích thước, cấu hình...</p>
-        </div>
-        <Button 
-          onClick={() => setIsAddDialogOpen(true)}
-          className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:opacity-90"
-        >
-          <Tag className="w-4 h-4 mr-2" />
-          Thêm thuộc tính
-        </Button>
+    <section className="h-full flex flex-col">
+      {/* Header */}
+      <div className="mb-4">
+        <h1 className="text-2xl font-bold text-gray-800">Quản lý thuộc tính sản phẩm</h1>
+        <p className="text-gray-500 text-sm mt-1">
+          {selectedCategory 
+            ? `Đang hiển thị thuộc tính của danh mục: ${selectedCategory.category_name}` 
+            : 'Quản lý các thuộc tính như màu sắc, kích thước, cấu hình...'}
+        </p>
       </div>
 
       {/* Bộ lọc */}
@@ -278,7 +314,7 @@ const AdminAttribute = () => {
             </select>
           </div>
 
-          <div className="flex items-center gap-2 ml-auto">
+          <div className="flex items-center gap-2">
             <span className="text-sm text-gray-500">Hiển thị</span>
             <select 
               value={pageSize} 
@@ -294,343 +330,457 @@ const AdminAttribute = () => {
         </div>
       </div>
 
-      {/* Bảng dữ liệu */}
-      <div className="overflow-x-auto rounded-xl bg-white shadow">
-        <table className="min-w-[900px] w-full text-left">
-          <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
-            <tr>
-              <th className="px-6 py-4 font-semibold text-gray-700">ID</th>
-              <th className="px-6 py-4 font-semibold text-gray-700">Tên thuộc tính</th>
-              <th className="px-6 py-4 font-semibold text-gray-700">Danh mục liên kết</th>
-              <th className="px-6 py-4 font-semibold text-gray-700">Giá trị</th>
-              <th className="px-6 py-4 font-semibold text-gray-700">Ngày tạo</th>
-              <th className="px-6 py-4 font-semibold text-gray-700 text-center">Hành động</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {loading ? (
-              <tr>
-                <td className="px-6 py-8 text-gray-500 text-center" colSpan={6}>
-                  <div className="flex items-center justify-center gap-2">
-                    <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-                    <span>Đang tải...</span>
-                  </div>
-                </td>
-              </tr>
-            ) : attributes.length === 0 ? (
-              <tr>
-                <td className="px-6 py-8 text-gray-500 text-center" colSpan={6}>
-                  <div className="flex flex-col items-center gap-2">
-                    <Tag className="w-12 h-12 text-gray-300" />
-                    <span>Không tìm thấy thuộc tính nào</span>
-                  </div>
-                </td>
-              </tr>
-            ) : (
-              attributes.map((attr) => {
-                const values = parseAttributeValues(attr.attributeValues);
-                return (
-                  <tr 
-                    key={attr.attribute_id} 
-                    className="hover:bg-blue-50 transition cursor-pointer"
-                    onClick={() => handleOpenDrawer(attr)}
-                  >
-                    <td className="px-6 py-4 font-medium text-gray-800">#{attr.attribute_id}</td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <Tag className="w-4 h-4 text-blue-600" />
-                        <span className="font-medium text-gray-800">{attr.attribute_name}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="text-gray-400 text-sm">Không liên kết trực tiếp</span>
-                      <p className="text-xs text-gray-400 mt-1">Thuộc tính được liên kết qua sản phẩm</p>
-                    </td>
-                    <td className="px-6 py-4">
-                      {values.length > 0 ? (
-                        <div className="flex flex-wrap gap-1">
-                          {values.slice(0, 3).map((val, idx) => (
-                            <span key={val.valueId || idx} className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-medium">
-                              {val.value || val.value_name || 'N/A'}
-                            </span>
-                          ))}
-                          {values.length > 3 && (
-                            <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs font-medium">
-                              +{values.length - 3}
-                            </span>
-                          )}
-                        </div>
-                      ) : (
-                        <span className="text-gray-400 text-sm">Chưa có giá trị</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 text-gray-600 text-sm">
-                      {attr.created_at ? new Date(attr.created_at).toLocaleDateString('vi-VN') : '-'}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center justify-center gap-2" onClick={(e) => e.stopPropagation()}>
-                        <Button 
-                          size="sm" 
-                          variant="destructive"
-                          onClick={() => handleDeleteAttribute(attr.attribute_id)}
-                        >
-                          Xóa
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
-        
-        {/* Phân trang */}
-        <div className="flex items-center justify-between px-6 py-4 border-t bg-gray-50">
-          <div className="text-sm text-gray-600">
-            Hiển thị <span className="font-semibold text-gray-800">{attributes.length}</span> trong tổng số{' '}
-            <span className="font-semibold text-gray-800">{total}</span> thuộc tính
-            <span className="mx-2">•</span>
-            Trang <span className="font-semibold text-gray-800">{currentPage}</span> / {totalPages}
+      {/* Two Column Layout */}
+      <div className="flex-1 grid grid-cols-2 gap-4 min-h-0">
+        {/* Left Column: Attributes */}
+        <div className="flex flex-col bg-white rounded-lg shadow overflow-hidden">
+          {/* Header */}
+          <div className="p-4 border-b bg-gradient-to-r from-gray-50 to-gray-100">
+            <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+              <Tag className="w-5 h-5 text-blue-600" />
+              Danh sách thuộc tính
+            </h2>
           </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => goPage(currentPage - 1)}
-              disabled={currentPage === 1}
-            >
-              ← Trước
-            </Button>
-            {Array.from({ length: Math.min(5, totalPages) }).map((_, i) => {
-              const pageNum = i + 1;
-              return (
-                <Button
-                  key={pageNum}
-                  variant={pageNum === currentPage ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => goPage(pageNum)}
-                  className={pageNum === currentPage ? 'bg-blue-600' : ''}
-                >
-                  {pageNum}
-                </Button>
-              );
-            })}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => goPage(currentPage + 1)}
-              disabled={currentPage === totalPages}
-            >
-              Sau →
-            </Button>
-          </div>
-        </div>
-      </div>
 
-      {/* Add Attribute Dialog */}
-      <Dialog open={isAddDialogOpen} onOpenChange={(open) => {
-        setIsAddDialogOpen(open);
-        if (!open) resetForm();
-      }}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Thêm thuộc tính mới</DialogTitle>
-            <DialogDescription>
-              Tạo thuộc tính mới để sử dụng cho các sản phẩm trong hệ thống
-            </DialogDescription>
-          </DialogHeader>
-          
-          <form onSubmit={handleAddAttribute} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Tên thuộc tính <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                  type="text"
-                  name="attribute_name"
-                  value={formData.attribute_name}
-                  onChange={handleInputChange}
-                  className="w-full rounded-lg border border-gray-300 pl-10 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                  placeholder="Ví dụ: Màu sắc, Kích thước, RAM, ROM..."
-                  required
-                />
-              </div>
-              <p className="text-xs text-gray-500 mt-1">
-                Nhập tên thuộc tính mô tả đặc điểm của sản phẩm
-              </p>
-            </div>
-
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-              <p className="text-sm text-blue-800">
-                💡 <strong>Lưu ý:</strong> Sau khi tạo thuộc tính, bạn có thể thêm các giá trị cụ thể (VD: Đỏ, Xanh, Vàng...) 
-                và liên kết với danh mục sản phẩm phù hợp.
-              </p>
-            </div>
-
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsAddDialogOpen(false)}
+          {/* Add Attribute Form */}
+          <div className="p-4 border-b">
+            <form onSubmit={handleAddAttribute} className="flex gap-2">
+              <input
+                type="text"
+                value={attributeInput}
+                onChange={(e) => setAttributeInput(e.target.value)}
+                className="flex-1 border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                placeholder="Nhập tên thuộc tính mới..."
                 disabled={isSubmitting}
-              >
-                Hủy
-              </Button>
+              />
               <Button
                 type="submit"
-                disabled={isSubmitting}
-                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:opacity-90"
+                disabled={isSubmitting || !attributeInput.trim()}
+                className="bg-blue-600 hover:bg-blue-700"
               >
-                {isSubmitting ? 'Đang tạo...' : 'Tạo thuộc tính'}
+                <Plus className="w-4 h-4 mr-1" />
+                Thêm
               </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+            </form>
+          </div>
 
-      {/* Drawer for Attribute Values */}
-      <Sheet open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
-        <SheetContent side="right" onClose={handleCloseDrawer} className="w-full sm:max-w-2xl">
-          <SheetHeader>
-            <SheetTitle className="flex items-center gap-2">
-              <Tag className="w-5 h-5 text-blue-600" />
-              {selectedAttribute?.attribute_name || 'Chi tiết thuộc tính'}
-            </SheetTitle>
-            <SheetDescription>
-              Quản lý các giá trị của thuộc tính này
-            </SheetDescription>
-          </SheetHeader>
-
-          <SheetBody>
-            {/* Add/Edit Value Form */}
-            <div className="mb-6 p-4 bg-gray-50 rounded-lg border">
-              {editingValue ? (
-                <form onSubmit={handleUpdateValue} className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="text"
-                      value={valueFormData.value_name}
-                      onChange={(e) => setValueFormData({ value_name: e.target.value })}
-                      className="flex-1 rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                      placeholder="Nhập tên giá trị..."
-                      required
-                    />
-                    <Button
-                      type="submit"
-                      size="sm"
-                      disabled={isSubmitting}
-                      className="bg-blue-600 hover:bg-blue-700"
-                    >
-                      {isSubmitting ? 'Đang lưu...' : 'Cập nhật'}
-                    </Button>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      onClick={cancelEdit}
-                      disabled={isSubmitting}
-                    >
-                      Hủy
-                    </Button>
-                  </div>
-                </form>
-              ) : (
-                <form onSubmit={handleAddValue} className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <Plus className="w-4 h-4 text-gray-400" />
-                    <input
-                      type="text"
-                      value={valueFormData.value_name}
-                      onChange={(e) => setValueFormData({ value_name: e.target.value })}
-                      className="flex-1 rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                      placeholder="Nhập tên giá trị mới..."
-                      required
-                    />
-                    <Button
-                      type="submit"
-                      size="sm"
-                      disabled={isSubmitting}
-                      className="bg-blue-600 hover:bg-blue-700"
-                    >
-                      {isSubmitting ? 'Đang thêm...' : 'Thêm'}
-                    </Button>
-                  </div>
-                </form>
-              )}
-            </div>
-
-            {/* Values List */}
-            <div className="space-y-2">
-              <h3 className="font-semibold text-gray-700 mb-3">
-                Danh sách giá trị ({currentValues.length})
-              </h3>
-              
-              {loadingValues ? (
-                <div className="flex items-center justify-center py-8">
-                  <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-                  <span className="ml-2 text-gray-500">Đang tải...</span>
-                </div>
-              ) : currentValues.length === 0 ? (
-                <div className="text-center py-8 text-gray-400">
-                  <Tag className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                  <p>Chưa có giá trị nào</p>
-                  <p className="text-xs mt-1">Thêm giá trị đầu tiên bằng form phía trên</p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {currentValues.map((value) => (
-                    <div
-                      key={value.attribute_value_id}
-                      className="flex items-center justify-between p-3 bg-white border rounded-lg hover:shadow-sm transition"
-                    >
+          {/* Attributes List */}
+          <div className="flex-1 overflow-y-auto">
+            {loading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                <span className="ml-2 text-gray-500">Đang tải...</span>
+              </div>
+            ) : attributes.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+                <Tag className="w-12 h-12 mb-2 opacity-50" />
+                <p>Chưa có thuộc tính nào</p>
+                <p className="text-xs mt-1">Thêm thuộc tính đầu tiên bằng form phía trên</p>
+              </div>
+            ) : (
+              <div className="divide-y">
+                {attributes.map((attr) => (
+                  <div
+                    key={attr.attribute_id}
+                    onClick={() => handleSelectAttribute(attr)}
+                    className={`p-4 cursor-pointer transition hover:bg-blue-50 ${
+                      selectedAttribute?.attribute_id === attr.attribute_id 
+                        ? 'bg-blue-50 border-l-4 border-l-blue-600' 
+                        : ''
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3 flex-1">
-                        <div className="w-2 h-2 bg-blue-600 rounded-full" />
-                        <span className="font-medium text-gray-800">
-                          {value.value_name || 'N/A'}
-                        </span>
-                        {value.color_code && (
-                          <div
-                            className="w-6 h-6 rounded border border-gray-300"
-                            style={{ backgroundColor: value.color_code }}
-                            title={`Màu: ${value.color_code}`}
-                          />
-                        )}
+                        <Tag className={`w-4 h-4 ${
+                          selectedAttribute?.attribute_id === attr.attribute_id 
+                            ? 'text-blue-600' 
+                            : 'text-gray-400'
+                        }`} />
+                        <div>
+                          <p className="font-medium text-gray-800">{attr.attribute_name}</p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            ID: {attr.attribute_id}
+                          </p>
+                        </div>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={(e) => handleDeleteAttribute(attr.attribute_id, e)}
+                        className="hover:bg-red-50 hover:text-red-600"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Pagination */}
+            {attributes.length > 0 && (
+              <div className="border-t p-4 bg-gray-50">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div className="text-sm text-gray-600">
+                    Hiển thị <span className="font-semibold text-gray-800">{attributes.length}</span> trong tổng số{' '}
+                    <span className="font-semibold text-gray-800">{total}</span> thuộc tính
+                    <span className="mx-2">•</span>
+                    Trang <span className="font-semibold text-gray-800">{currentPage}</span> / {totalPages}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => goPage(currentPage - 1)}
+                      disabled={currentPage === 1}
+                    >
+                      ← Trước
+                    </Button>
+                    {Array.from({ length: Math.min(5, totalPages) }).map((_, i) => {
+                      const pageNum = i + 1;
+                      return (
+                        <Button
+                          key={pageNum}
+                          variant={pageNum === currentPage ? 'default' : 'outline'}
+                          size="sm"
+                          onClick={() => goPage(pageNum)}
+                          className={pageNum === currentPage ? 'bg-blue-600' : ''}
+                        >
+                          {pageNum}
+                        </Button>
+                      );
+                    })}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => goPage(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                    >
+                      Sau →
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Right Column: Attribute Values */}
+        <div className="flex flex-col bg-white rounded-lg shadow overflow-hidden">
+          {selectedAttribute ? (
+            <>
+              {/* Header */}
+              <div className="p-4 border-b bg-gradient-to-r from-gray-50 to-gray-100">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                      <Tag className="w-5 h-5 text-blue-600" />
+                      {selectedAttribute.attribute_name}
+                    </h2>
+                    <p className="text-xs text-gray-500 mt-1">Quản lý giá trị thuộc tính</p>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => {
+                      setSelectedAttribute(null);
+                      setEditingValue(null);
+                      setValueFormData({
+                        value_name: '',
+                        color_code: '',
+                        image_url: '',
+                        display_order: 0,
+                        is_active: true
+                      });
+                    }}
+                    className="hover:bg-gray-200"
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+
+              {/* Add/Edit Value Form */}
+              <div className="p-4 border-b overflow-y-auto max-h-[400px]">
+                <form onSubmit={editingValue ? handleUpdateValue : handleAddValue} className="space-y-3">
+                  {/* Value Name */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Tên giá trị <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={valueFormData.value_name}
+                      onChange={(e) => handleValueFormChange('value_name', e.target.value)}
+                      className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                      placeholder="Ví dụ: Đỏ, 16GB, XL..."
+                      disabled={isSubmitting}
+                      required
+                    />
+                  </div>
+
+                  {/* Color Code */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Mã màu (Hex)
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={valueFormData.color_code}
+                        onChange={(e) => handleValueFormChange('color_code', e.target.value)}
+                        className="flex-1 border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                        placeholder="#FF0000"
+                        disabled={isSubmitting}
+                        maxLength={7}
+                      />
+                      {valueFormData.color_code && (
+                        <div
+                          className="w-10 h-10 rounded border border-gray-300"
+                          style={{ backgroundColor: valueFormData.color_code }}
+                          title={valueFormData.color_code}
+                        />
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Image URL */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      URL hình ảnh
+                    </label>
+                    <input
+                      type="url"
+                      value={valueFormData.image_url}
+                      onChange={(e) => handleValueFormChange('image_url', e.target.value)}
+                      className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                      placeholder="https://example.com/image.jpg"
+                      disabled={isSubmitting}
+                    />
+                  </div>
+
+                  {/* Display Order & Is Active */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Thứ tự hiển thị
+                      </label>
+                      <input
+                        type="number"
+                        value={valueFormData.display_order}
+                        onChange={(e) => handleValueFormChange('display_order', e.target.value)}
+                        className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                        placeholder="0"
+                        disabled={isSubmitting}
+                        min="0"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Trạng thái
+                      </label>
+                      <select
+                        value={valueFormData.is_active ? '1' : '0'}
+                        onChange={(e) => handleValueFormChange('is_active', e.target.value === '1')}
+                        className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                        disabled={isSubmitting}
+                      >
+                        <option value="1">Kích hoạt</option>
+                        <option value="0">Tắt</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex gap-2 pt-2">
+                    {editingValue ? (
+                      <>
+                        <Button
+                          type="submit"
+                          disabled={isSubmitting || !valueFormData.value_name.trim()}
+                          className="flex-1 bg-blue-600 hover:bg-blue-700"
+                        >
+                          {isSubmitting ? 'Đang lưu...' : 'Cập nhật'}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={cancelEdit}
+                          disabled={isSubmitting}
+                        >
+                          Hủy
+                        </Button>
+                      </>
+                    ) : (
+                      <Button
+                        type="submit"
+                        disabled={isSubmitting || !valueFormData.value_name.trim()}
+                        className="flex-1 bg-blue-600 hover:bg-blue-700"
+                      >
+                        <Plus className="w-4 h-4 mr-1" />
+                        Thêm giá trị
+                      </Button>
+                    )}
+                  </div>
+                </form>
+              </div>
+
+              {/* Values List Header with Page Size */}
+              <div className="px-4 py-3 border-b bg-gray-50 flex items-center justify-between">
+                <h3 className="font-semibold text-gray-700 text-sm">
+                  Danh sách giá trị ({valuesTotal})
+                </h3>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-gray-500">Hiển thị</span>
+                  <select 
+                    value={valuePageSize} 
+                    onChange={(e) => { setValuePageSize(Number(e.target.value)); setValuePage(1); }} 
+                    className="border rounded px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  >
+                    {PAGE_SIZE_OPTIONS.map(s => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                  <span className="text-xs text-gray-500">mục/trang</span>
+                </div>
+              </div>
+
+              {/* Values List */}
+              <div className="flex-1 overflow-y-auto">
+                {loadingValues ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                    <span className="ml-2 text-gray-500">Đang tải...</span>
+                  </div>
+                ) : currentValues.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+                    <Tag className="w-12 h-12 mb-2 opacity-50" />
+                    <p>Chưa có giá trị nào</p>
+                    <p className="text-xs mt-1">Thêm giá trị đầu tiên bằng form phía trên</p>
+                  </div>
+                ) : (
+                  <div className="divide-y">
+                    {currentValues.map((value) => (
+                      <div
+                        key={value.attribute_value_id}
+                        className={`p-4 transition hover:bg-gray-50 ${
+                          editingValue?.attribute_value_id === value.attribute_value_id 
+                            ? 'bg-blue-50 border-l-4 border-l-blue-600' 
+                            : ''
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3 flex-1">
+                            <div className="w-2 h-2 bg-blue-600 rounded-full" />
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                <p className="font-medium text-gray-800">{value.value_name || 'N/A'}</p>
+                                {value.is_active === 0 && (
+                                  <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded">Tắt</span>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2 mt-1">
+                                {value.color_code && (
+                                  <div className="flex items-center gap-1">
+                                    <div
+                                      className="w-4 h-4 rounded border border-gray-300"
+                                      style={{ backgroundColor: value.color_code }}
+                                      title={`Màu: ${value.color_code}`}
+                                    />
+                                    <span className="text-xs text-gray-500">{value.color_code}</span>
+                                  </div>
+                                )}
+                                {value.image_url && (
+                                  <span className="text-xs text-gray-500">📷 Có hình ảnh</span>
+                                )}
+                                {value.display_order !== undefined && value.display_order > 0 && (
+                                  <span className="text-xs text-gray-500">Thứ tự: {value.display_order}</span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleEditValue(value)}
+                              className="hover:bg-blue-50 hover:text-blue-600"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={(e) => handleDeleteValue(value.attribute_value_id, e)}
+                              className="hover:bg-red-50 hover:text-red-600"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Values Pagination */}
+                {currentValues.length > 0 && (
+                  <div className="border-t p-4 bg-gray-50">
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <div className="text-sm text-gray-600">
+                        Hiển thị <span className="font-semibold text-gray-800">{currentValues.length}</span> trong tổng số{' '}
+                        <span className="font-semibold text-gray-800">{valuesTotal}</span> giá trị
+                        <span className="mx-2">•</span>
+                        Trang <span className="font-semibold text-gray-800">{valuesCurrentPage}</span> / {valuesTotalPages}
                       </div>
                       <div className="flex items-center gap-2">
                         <Button
-                          size="sm"
                           variant="outline"
-                          onClick={() => handleEditValue(value)}
-                          className="hover:bg-blue-50 hover:text-blue-600"
+                          size="sm"
+                          onClick={() => goValuePage(valuesCurrentPage - 1)}
+                          disabled={valuesCurrentPage === 1}
                         >
-                          <Edit2 className="w-4 h-4" />
+                          ← Trước
                         </Button>
+                        {Array.from({ length: Math.min(5, valuesTotalPages) }).map((_, i) => {
+                          const pageNum = i + 1;
+                          return (
+                            <Button
+                              key={pageNum}
+                              variant={pageNum === valuesCurrentPage ? 'default' : 'outline'}
+                              size="sm"
+                              onClick={() => goValuePage(pageNum)}
+                              className={pageNum === valuesCurrentPage ? 'bg-blue-600' : ''}
+                            >
+                              {pageNum}
+                            </Button>
+                          );
+                        })}
                         <Button
-                          size="sm"
                           variant="outline"
-                          onClick={() => handleDeleteValue(value.attribute_value_id)}
-                          className="hover:bg-red-50 hover:text-red-600"
+                          size="sm"
+                          onClick={() => goValuePage(valuesCurrentPage + 1)}
+                          disabled={valuesCurrentPage === valuesTotalPages}
                         >
-                          <Trash2 className="w-4 h-4" />
+                          Sau →
                         </Button>
                       </div>
                     </div>
-                  ))}
-                </div>
-              )}
+                  </div>
+                )}
+              </div>
+            </>
+          ) : (
+            <div className="flex items-center justify-center h-full text-gray-400">
+              <div className="text-center">
+                <Tag className="w-16 h-16 mx-auto mb-4 opacity-30" />
+                <p className="text-lg font-medium">Chọn một thuộc tính</p>
+                <p className="text-sm mt-2">Chọn thuộc tính từ cột bên trái để quản lý giá trị</p>
+              </div>
             </div>
-          </SheetBody>
-
-          <SheetFooter>
-            <Button variant="outline" onClick={handleCloseDrawer}>
-              Đóng
-            </Button>
-          </SheetFooter>
-        </SheetContent>
-      </Sheet>
+          )}
+        </div>
+      </div>
     </section>
   );
 };

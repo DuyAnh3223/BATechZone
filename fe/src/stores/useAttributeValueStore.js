@@ -5,6 +5,7 @@ import { attributeValueService } from '@/services/attributeValueService';
 export const useAttributeValueStore = create((set, get) => ({
     attributeValues: [],
     currentValues: [],
+    valuesTotal: 0,
     loading: false,
     error: null,
 
@@ -26,20 +27,22 @@ export const useAttributeValueStore = create((set, get) => ({
         }
     },
 
-    // Lấy các values của một attribute cụ thể
-    fetchAttributeValuesByAttributeId: async (attributeId) => {
+    // Lấy các values của một attribute cụ thể (có phân trang)
+    fetchAttributeValuesByAttributeId: async (attributeId, params = {}) => {
         set({ loading: true, error: null });
         try {
-            const response = await attributeValueService.getAttributeValues(attributeId);
-            const values = Array.isArray(response) ? response : (response.data || []);
+            const response = await attributeValueService.getAttributeValues(attributeId, params);
+            const values = response.data || [];
+            const total = response.pagination?.total || 0;
             set({ 
                 currentValues: values, 
+                valuesTotal: total,
                 loading: false 
             });
-            return values;
+            return response;
         } catch (error) {
             const message = error.response?.data?.message || 'Không tải được danh sách giá trị';
-            set({ error: message, loading: false, currentValues: [] });
+            set({ error: message, loading: false, currentValues: [], valuesTotal: 0 });
             toast.error(message);
             throw error;
         }
@@ -112,6 +115,7 @@ export const useAttributeValueStore = create((set, get) => ({
     reset: () => set({ 
         attributeValues: [], 
         currentValues: [], 
+        valuesTotal: 0,
         loading: false, 
         error: null 
     })

@@ -10,9 +10,10 @@ export const attributeValueService = {
         return response.data;
     },
 
-    // Lấy các values của một attribute cụ thể
-    getAttributeValues: async (attributeId) => {
+    // Lấy các values của một attribute cụ thể (có phân trang)
+    getAttributeValues: async (attributeId, params = {}) => {
         const response = await api.get(`/attribute-values/${attributeId}/values`, {
+            params,
             withCredentials: true
         });
         return response.data;

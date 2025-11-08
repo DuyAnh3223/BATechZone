@@ -3,12 +3,25 @@ import AttributeValue from '../models/AttributeValue.js';
 // Attribute Value Controllers
 export const createAttributeValue = async (req, res) => {
   try {
-    const { value_name, attribute_id } = req.body;
+    const { 
+      value_name, 
+      attribute_id, 
+      color_code, 
+      image_url, 
+      display_order, 
+      is_active 
+    } = req.body;
+    
     const attributeValueId = await AttributeValue.create({
-          attributeId: attribute_id,
-          valueName: value_name,
-        });
-        const attributeValue = await AttributeValue.getById(attributeValueId);
+      attributeId: attribute_id,
+      valueName: value_name,
+      colorCode: color_code,
+      imageUrl: image_url,
+      displayOrder: display_order,
+      isActive: is_active
+    });
+    
+    const attributeValue = await AttributeValue.getById(attributeValueId);
     res.status(201).json(attributeValue);
   } catch (error) {
     console.error('Error creating attribute value:', error);
@@ -31,11 +44,9 @@ export const getAttributeValue = async (req, res) => {
 
 export const updateAttributeValue = async (req, res) => {
   try {
-    const { value_name, numeric_value, unit, color_code, image_url, display_order, is_active } = req.body;
+    const { value_name, color_code, image_url, display_order, is_active } = req.body;
     const valueData = {
       valueName: value_name,
-      numericValue: numeric_value,
-      unit: unit,
       colorCode: color_code,
       imageUrl: image_url,
       displayOrder: display_order,
@@ -81,8 +92,14 @@ export const listAttributeValues = async (req, res) => {
 
 export const getAttributeValues = async (req, res) => {
   try {
-    const values = await AttributeValue.getByAttributeId(req.params.attributeId);
-    res.json(values);
+    const { page, limit, sortBy, sortOrder } = req.query;
+    const result = await AttributeValue.getByAttributeId(req.params.attributeId, {
+      page: page || 1,
+      limit: limit || 10,
+      sortBy,
+      sortOrder
+    });
+    res.json(result);
   } catch (error) {
     console.error('Error getting attribute values:', error);
     res.status(500).json({ message: 'Internal server error' });
