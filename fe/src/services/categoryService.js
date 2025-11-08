@@ -48,5 +48,17 @@ export const categoryService = {
             withCredentials: true 
         });
         return response.data;
+    },
+
+    // Lấy category tree
+    getCategoryTree: async () => {
+        const response = await api.get('/categories/tree', { 
+            withCredentials: true 
+        });
+        // Handle both formats: { success: true, data: [...] } or [...]
+        if (response.data?.success && response.data?.data) {
+            return response.data.data;
+        }
+        return response.data || [];
     }
 };

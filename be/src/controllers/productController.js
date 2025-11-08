@@ -12,7 +12,8 @@ export const listProducts = async (req, res) => {
       maxPrice: req.query.maxPrice,
       sortBy: req.query.sortBy,
       sortOrder: req.query.sortOrder?.toUpperCase() || 'DESC',
-      is_active: req.query.is_active !== undefined ? (req.query.is_active === 'true' || req.query.is_active === true) : undefined
+      is_active: req.query.is_active !== undefined ? (req.query.is_active === 'true' || req.query.is_active === true) : undefined,
+      is_featured: req.query.is_featured !== undefined ? (req.query.is_featured === 'true' || req.query.is_featured === true) : undefined
     };
 
     const result = await Product.list(filters);

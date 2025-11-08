@@ -78,7 +78,9 @@ export const listCategories = async (req, res) => {
       isActive: req.query.is_active !== undefined && req.query.is_active !== '' 
         ? (req.query.is_active === 'true' || req.query.is_active === true) 
         : undefined,
-      parentId: req.query.parentId !== undefined ? req.query.parentId : undefined,
+      parentId: req.query.parentId !== undefined 
+        ? (req.query.parentId === 'null' || req.query.parentId === null ? null : req.query.parentId)
+        : undefined,
       sortBy: req.query.sortBy,
       sortOrder: req.query.sortOrder
     };
@@ -95,10 +97,11 @@ export const listCategories = async (req, res) => {
 export const getCategoryTree = async (req, res) => {
   try {
     const tree = await Category.getTree();
-    res.json(tree);
+    res.json({ success: true, data: tree });
   } catch (error) {
     console.error('Error getting category tree:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    console.error('Error stack:', error.stack);
+    res.status(500).json({ success: false, message: 'Internal server error', error: error.message });
   }
 };
 

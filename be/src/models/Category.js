@@ -288,28 +288,29 @@ async delete(categoryId) {
         SELECT 
           category_id,
           category_name,
-          parent_id,
+          parent_category_id as parent_id,
           slug,
           image_url,
           display_order,
           is_active,
           0 as level
         FROM categories
-        WHERE parent_id IS NULL
+        WHERE parent_category_id IS NULL AND is_active = 1
         
         UNION ALL
         
         SELECT 
           c.category_id,
           c.category_name,
-          c.parent_id,
+          c.parent_category_id as parent_id,
           c.slug,
           c.image_url,
           c.display_order,
           c.is_active,
           ct.level + 1
         FROM categories c
-        INNER JOIN CategoryTree ct ON c.parent_id = ct.category_id
+        INNER JOIN CategoryTree ct ON c.parent_category_id = ct.category_id
+        WHERE c.is_active = 1
       )
       SELECT * FROM CategoryTree
       ORDER BY level, display_order, category_name`
@@ -318,7 +319,10 @@ async delete(categoryId) {
     // Convert flat structure to tree
     const buildTree = (items, parentId = null, level = 0) => {
       return items
-        .filter(item => item.parent_id === parentId && item.level === level)
+        .filter(item => {
+          const itemParentId = item.parent_id === null || item.parent_id === undefined ? null : item.parent_id;
+          return itemParentId === parentId && item.level === level;
+        })
         .map(item => ({
           ...item,
           children: buildTree(items, item.category_id, level + 1)

@@ -1,72 +1,15 @@
-import { useState } from 'react';
-import { Link } from 'react-router';
-
-// Mock data for featured products
-const featuredProducts = [
-  {
-    id: 1,
-    name: 'AMD Ryzen 7 5800X',
-    category: 'CPU',
-    price: 8990000,
-    image: 'https://via.placeholder.com/300',
-    discount: 10,
-  },
-  {
-    id: 2,
-    name: 'NVIDIA RTX 4070',
-    category: 'VGA',
-    price: 15990000,
-    image: 'https://via.placeholder.com/300',
-    discount: 5,
-  },
-  {
-    id: 3,
-    name: 'Samsung 970 EVO Plus 1TB',
-    category: 'SSD',
-    price: 2990000,
-    image: 'https://via.placeholder.com/300',
-    discount: 15,
-  },
-  {
-    id: 4,
-    name: 'ASUS ROG STRIX B550-F',
-    category: 'Mainboard',
-    price: 4990000,
-    image: 'https://via.placeholder.com/300',
-    discount: 0,
-  },
-];
-
-// Mock data for featured categories
-const featuredCategories = [
-  {
-    id: 1,
-    name: 'CPU - Bộ vi xử lý',
-    image: 'https://via.placeholder.com/200',
-    href: '/category/cpu',
-  },
-  {
-    id: 2,
-    name: 'VGA - Card màn hình',
-    image: 'https://via.placeholder.com/200',
-    href: '/category/vga',
-  },
-  {
-    id: 3,
-    name: 'RAM - Bộ nhớ trong',
-    image: 'https://via.placeholder.com/200',
-    href: '/category/ram',
-  },
-  {
-    id: 4,
-    name: 'SSD - Ổ cứng',
-    image: 'https://via.placeholder.com/200',
-    href: '/category/storage',
-  },
-];
+import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { useProductStore } from '@/stores/useProductStore';
+import { useCategoryStore } from '@/stores/useCategoryStore';
+import ProductCard from '@/components/common/ProductCard';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 
 const Home = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
+  const { products, loading: productsLoading, fetchProducts } = useProductStore();
+  const { categories, loading: categoriesLoading, fetchCategories } = useCategoryStore();
 
   const banners = [
     'https://via.placeholder.com/1200x400?text=Gaming+PC+Sale',
@@ -74,20 +17,50 @@ const Home = () => {
     'https://via.placeholder.com/1200x400?text=SSD+Promotion',
   ];
 
+  // Fetch featured products (is_featured = true, is_active = true)
+  useEffect(() => {
+    const loadFeaturedProducts = async () => {
+      try {
+        await fetchProducts({
+          is_active: true,
+          is_featured: true,
+          limit: 8,
+          page: 1,
+          sortBy: 'created_at',
+          sortOrder: 'DESC'
+        });
+      } catch (error) {
+        console.error('Error loading featured products:', error);
+      }
+    };
+
+    loadFeaturedProducts();
+  }, [fetchProducts]);
+
+  // Fetch featured categories (active categories, chỉ lấy parent categories)
+  useEffect(() => {
+    const loadFeaturedCategories = async () => {
+      try {
+        await fetchCategories({
+          is_active: true,
+          parentId: null, // Chỉ lấy parent categories (null = không có parent)
+          limit: 8,
+          page: 1
+        });
+      } catch (error) {
+        console.error('Error loading categories:', error);
+      }
+    };
+
+    loadFeaturedCategories();
+  }, [fetchCategories]);
+
   const nextSlide = () => {
     setCurrentSlide((prev) => (prev + 1) % banners.length);
   };
 
   const prevSlide = () => {
     setCurrentSlide((prev) => (prev - 1 + banners.length) % banners.length);
-  };
-
-  // Format price with VND currency
-  const formatPrice = (price) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND',
-    }).format(price);
   };
 
   return (
@@ -127,67 +100,49 @@ const Home = () => {
       {/* Featured Categories */}
       <section className="max-w-7xl mx-auto px-4">
         <h2 className="text-2xl font-bold mb-6">Danh mục nổi bật</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {featuredCategories.map((category) => (
-            <Link
-              key={category.id}
-              to={category.href}
-              className="group relative overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-shadow"
-            >
-              <img
-                src={category.image}
-                alt={category.name}
-                className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
-              />
-              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
-                <h3 className="text-white font-semibold">{category.name}</h3>
-              </div>
-            </Link>
-          ))}
-        </div>
+        {categoriesLoading ? (
+          <div className="text-center py-8">Đang tải danh mục...</div>
+        ) : categories.length > 0 ? (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {categories.slice(0, 8).map((category) => (
+              <Link
+                key={category.category_id}
+                to={`/category/${category.category_id}`}
+                className="group relative overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-shadow"
+              >
+                <img
+                  src={category.image_url || 'https://via.placeholder.com/200'}
+                  alt={category.category_name}
+                  className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                  onError={(e) => {
+                    e.target.src = 'https://via.placeholder.com/200';
+                  }}
+                />
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
+                  <h3 className="text-white font-semibold">{category.category_name}</h3>
+                </div>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-8 text-gray-500">Chưa có danh mục nào</div>
+        )}
       </section>
 
       {/* Featured Products */}
       <section className="max-w-7xl mx-auto px-4">
         <h2 className="text-2xl font-bold mb-6">Sản phẩm nổi bật</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-          {featuredProducts.map((product) => (
-            <div
-              key={product.id}
-              className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow"
-            >
-              <img
-                src={product.image}
-                alt={product.name}
-                className="w-full h-48 object-cover"
-              />
-              <div className="p-4">
-                <span className="text-sm text-gray-500">{product.category}</span>
-                <h3 className="font-semibold text-lg mb-2 hover:text-blue-600">
-                  {product.name}
-                </h3>
-                <div className="flex items-baseline mb-2">
-                  <span className="text-xl font-bold text-red-600">
-                    {formatPrice(product.price * (1 - product.discount / 100))}
-                  </span>
-                  {product.discount > 0 && (
-                    <>
-                      <span className="ml-2 text-sm text-gray-500 line-through">
-                        {formatPrice(product.price)}
-                      </span>
-                      <span className="ml-2 text-sm text-red-600">
-                        -{product.discount}%
-                      </span>
-                    </>
-                  )}
-                </div>
-                <button className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors">
-                  Thêm vào giỏ
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
+        {productsLoading ? (
+          <div className="text-center py-8">Đang tải sản phẩm...</div>
+        ) : products.length > 0 ? (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            {products.map((product) => (
+              <ProductCard key={product.product_id} product={product} />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-8 text-gray-500">Chưa có sản phẩm nổi bật nào</div>
+        )}
       </section>
 
       {/* Why Choose Us */}
@@ -231,18 +186,39 @@ const Home = () => {
         <div className="max-w-7xl mx-auto px-4 text-center">
           <h2 className="text-2xl font-bold mb-4">Đăng ký nhận tin khuyến mãi</h2>
           <p className="mb-6">Nhận thông tin về sản phẩm mới và khuyến mãi hấp dẫn</p>
-          <form className="max-w-md mx-auto flex gap-4">
-            <input
+          <form className="max-w-2xl mx-auto flex items-center w-full gap-0">
+            <Input
               type="email"
               placeholder="Nhập email của bạn"
-              className="flex-1 px-4 py-2 rounded-lg text-gray-900"
+              className="flex-[8] rounded-r-none"
+              style={{
+                backgroundColor: '#ffffff',
+                color: '#111827',
+                border: '1px solid rgba(255, 255, 255, 0.3)',
+                borderRight: 'none',
+                borderRadius: '6px 0 0 6px'
+              }}
             />
-            <button
+            <Button
               type="submit"
-              className="px-6 py-2 bg-yellow-500 text-gray-900 font-semibold rounded-lg hover:bg-yellow-400 transition-colors"
+              className="flex-[2] px-3 py-1 rounded-l-none h-9 flex items-center justify-center font-semibold"
+              style={{
+                backgroundColor: '#dc2626', // red-600
+                color: '#ffffff',
+                border: '1px solid rgba(255, 255, 255, 0.3)',
+                borderLeft: 'none',
+                borderRadius: '0 6px 6px 0',
+                height: '36px'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#b91c1c'; // red-700
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = '#dc2626'; // red-600
+              }}
             >
               Đăng ký
-            </button>
+            </Button>
           </form>
         </div>
       </section>

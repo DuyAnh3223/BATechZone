@@ -5,11 +5,13 @@ import {
   listCategories,
   getCategory,
   updateCategory,
-  getSimpleCategories
+  getSimpleCategories,
+  getCategoryTree
 } from '../controllers/categoryController.js';
 
 const router = express.Router();
 
+router.get('/tree', getCategoryTree);
 router.get('/simple', getSimpleCategories);
 router.get('/', listCategories);
 router.get('/:id', getCategory);

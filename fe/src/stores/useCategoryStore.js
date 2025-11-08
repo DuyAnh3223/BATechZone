@@ -5,6 +5,7 @@ import { categoryService } from '@/services/categoryService';
 export const useCategoryStore = create((set, get) => ({
     categories: [],
     parentCategories: [],
+    categoryTree: [],
     currentCategory: null,
     total: 0,
     loading: false,
@@ -57,6 +58,23 @@ export const useCategoryStore = create((set, get) => ({
             console.error('Error loading parent categories:', error);
             set({ parentCategories: [] });
             return { data: [] };
+        }
+    },
+
+    // Lấy category tree
+    fetchCategoryTree: async () => {
+        try {
+            const response = await categoryService.getCategoryTree();
+            // Handle different response formats
+            const tree = Array.isArray(response) ? response : (response?.data || response || []);
+            console.log('Category tree fetched:', tree);
+            set({ categoryTree: tree });
+            return tree;
+        } catch (error) {
+            console.error('Error loading category tree:', error);
+            console.error('Error details:', error.response?.data);
+            set({ categoryTree: [] });
+            return [];
         }
     },
 
@@ -134,6 +152,7 @@ export const useCategoryStore = create((set, get) => ({
     reset: () => set({ 
         categories: [], 
         parentCategories: [],
+        categoryTree: [],
         currentCategory: null,
         total: 0,
         loading: false, 

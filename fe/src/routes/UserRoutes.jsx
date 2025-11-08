@@ -6,7 +6,7 @@ import Cart from '../pages/user/Cart';
 import Checkout from '../pages/user/Checkout';
 import Home from '../pages/user/Home';
 import ProductDetail from '../pages/user/ProductDetail';
-//import ProductList from '../pages/user/ProductList';
+import ProductList from '../pages/user/ProductList';
 import Profile from '../pages/user/Profile';
 import ReturnPolicy from '../pages/user/ReturnPolicy';
 import ShipTracking from '../pages/user/ShipTracking';
@@ -26,6 +26,8 @@ const UserRoutes = () => {
         <Route path="cart" element={<Cart />} />
         <Route path="checkout" element={<Checkout />} />
         <Route path="product/:productId" element={<ProductDetail />} />
+        <Route path="category/:categoryId" element={<ProductList />} />
+        <Route path="products" element={<ProductList />} />
         <Route path="profile" element={<Profile />} />
         <Route path="return-policy" element={<ReturnPolicy />} />
         <Route path="shipping-track" element={<ShipTracking />} />

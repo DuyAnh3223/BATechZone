@@ -1,41 +1,98 @@
 import { Outlet, useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
-import { useState } from 'react';
-import { ShoppingCart, User, Menu, X, Search, LogIn, LogOut } from "lucide-react";
+import { useState, useEffect } from 'react';
+import { ShoppingCart, User, Menu, X, Search, LogIn, LogOut, ChevronRight, Bell } from "lucide-react";
 import { useAuth } from '@/context/AuthContext';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { 
-  NavigationMenu,
-  NavigationMenuList,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuTrigger,
-  NavigationMenuContent,
-} from "@/components/ui/navigation-menu";
+import { Badge } from "@/components/ui/badge";
+import { useCategoryStore } from '@/stores/useCategoryStore';
+import { useNotificationStore } from '@/stores/useNotificationStore';
+import { useCartItemStore } from '@/stores/useCartItemStore';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-
-const categories = [
-  { name: 'CPU - Bộ vi xử lý', href: '/category/cpu' },
-  { name: 'Mainboard - Bo mạch chủ', href: '/category/mainboard' },
-  { name: 'RAM - Bộ nhớ trong', href: '/category/ram' },
-  { name: 'VGA - Card màn hình', href: '/category/vga' },
-  { name: 'SSD - Ổ cứng', href: '/category/storage' },
-  { name: 'PSU - Nguồn máy tính', href: '/category/psu' },
-  { name: 'Case - Vỏ máy tính', href: '/category/case' },
-  { name: 'Cooling - Tản nhiệt', href: '/category/cooling' },
-];
 
 const UserLayout = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isCategoryMenuOpen, setIsCategoryMenuOpen] = useState(false);
+  const [menuCloseTimeout, setMenuCloseTimeout] = useState(null);
+  const { categoryTree, fetchCategoryTree, categories, fetchCategories, loading: categoriesLoading } = useCategoryStore();
+  const { notifications, unreadCount, loading: notificationsLoading, fetchNotifications, markAsRead, markAllAsRead } = useNotificationStore();
+  const { cartItems } = useCartItemStore();
+  
+  // Calculate total cart items count (sum of quantities)
+  const cartItemsCount = cartItems.reduce((total, item) => total + (item.quantity || 1), 0);
+
+  // Fetch category tree on mount
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        // Try to fetch tree first
+        const tree = await fetchCategoryTree();
+        // If tree is empty, try to fetch parent categories as fallback
+        if (!tree || tree.length === 0) {
+          console.log('Tree is empty, fetching parent categories as fallback...');
+          await fetchCategories({
+            is_active: true,
+            parentId: null,
+            limit: 100,
+            page: 1
+          });
+        }
+      } catch (error) {
+        console.error('Failed to load categories:', error);
+        // Fallback: try to fetch parent categories
+        try {
+          await fetchCategories({
+            is_active: true,
+            parentId: null,
+            limit: 100,
+            page: 1
+          });
+        } catch (fallbackError) {
+          console.error('Fallback also failed:', fallbackError);
+        }
+      }
+    };
+    loadCategories();
+  }, [fetchCategoryTree, fetchCategories]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (menuCloseTimeout) {
+        clearTimeout(menuCloseTimeout);
+      }
+    };
+  }, [menuCloseTimeout]);
+
+  // Fetch notifications when user is logged in
+  useEffect(() => {
+    if (user) {
+      const loadNotifications = async () => {
+        try {
+          await fetchNotifications({ limit: 10, page: 1 });
+        } catch (error) {
+          console.error('Failed to load notifications:', error);
+        }
+      };
+      loadNotifications();
+      // Refresh notifications every 30 seconds
+      const interval = setInterval(loadNotifications, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [user, fetchNotifications]);
 
   const handleLogout = async () => {
     try {
@@ -59,35 +116,273 @@ const UserLayout = () => {
 
             {/* Search Bar */}
             <div className="flex-1 max-w-3xl mx-4">
-              <div className="relative flex items-center w-full">
+              <div className="flex items-center w-full gap-0">
                 <Input
                   type="text"
-                  className="w-full pr-12 bg-white text-gray-900 placeholder-gray-500 border-white/80 focus-visible:ring-white/40"
+                  className="flex-[8] bg-white text-gray-900 placeholder-gray-500 border-white/80 focus-visible:ring-white/40 rounded-r-none border-r-0"
                   placeholder="Tìm kiếm sản phẩm..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      // Handle search
+                      navigate(`/products?search=${encodeURIComponent(searchQuery)}`);
+                    }
+                  }}
                 />
                 <Button 
                   variant="ghost" 
-                  className="absolute right-2 hover:bg-transparent p-2 z-10 text-white"
+                  className="flex-[2] bg-white text-gray-900 hover:bg-gray-100 px-3 py-1 rounded-l-none border border-l-0 border-white/80 h-9 flex items-center justify-center"
+                  onClick={() => {
+                    if (searchQuery.trim()) {
+                      navigate(`/products?search=${encodeURIComponent(searchQuery)}`);
+                    }
+                  }}
                 >
-                  <Search className="size-8" />
+                  <Search className="size-4 mr-1.5" />
+                  <span className="text-sm font-medium whitespace-nowrap">Tìm kiếm</span>
                 </Button>
               </div>
             </div>
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-4">
-              <Button variant="ghost" size="icon-lg" asChild className="text-white hover:text-gray-200">
-                <Link to="/cart">
-                  <ShoppingCart className="size-9 text-white" />
-                </Link>
-              </Button>
+              {/* Shopping Cart Icon - Circular with blue background */}
+              <Link 
+                to="/cart" 
+                className="relative transition-all duration-300 ease-in-out inline-flex items-center justify-center"
+                style={{
+                  position: 'relative',
+                  backgroundColor: '#3b82f6', // blue-500
+                  color: '#ffffff',
+                  borderRadius: '50%',
+                  width: '48px',
+                  height: '48px',
+                  padding: '0',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transform: 'scale(1)',
+                  transition: 'all 0.3s ease-in-out',
+                  border: 'none',
+                  textDecoration: 'none'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#2563eb'; // blue-600 (darker on hover)
+                  e.currentTarget.style.transform = 'scale(1.1)';
+                  e.currentTarget.style.transition = 'all 0.3s ease-in-out';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#3b82f6'; // blue-500
+                  e.currentTarget.style.transform = 'scale(1)';
+                  e.currentTarget.style.transition = 'all 0.3s ease-in-out';
+                }}
+              >
+                <ShoppingCart className="size-6" style={{ color: '#ffffff' }} />
+                {cartItemsCount > 0 && (
+                  <Badge 
+                    className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1.5 flex items-center justify-center bg-red-500 text-white text-xs font-bold border-2 border-white rounded-full"
+                    style={{
+                      position: 'absolute',
+                      top: '-4px',
+                      right: '-4px',
+                      minWidth: '20px',
+                      height: '20px',
+                      padding: '0 6px',
+                      backgroundColor: '#ef4444',
+                      color: '#ffffff',
+                      fontSize: '12px',
+                      fontWeight: 'bold',
+                      border: '2px solid #ffffff',
+                      borderRadius: '9999px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    {cartItemsCount > 99 ? '99+' : cartItemsCount}
+                  </Badge>
+                )}
+              </Link>
+
+              {/* Notification Bell - Only show if user is logged in */}
+              {user && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      size="icon-lg" 
+                      className="relative transition-all duration-300 ease-in-out"
+                      style={{
+                        position: 'relative',
+                        backgroundColor: '#fbbf24', // yellow-400
+                        color: '#ffffff',
+                        borderRadius: '50%',
+                        width: '48px',
+                        height: '48px',
+                        padding: '0',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        transform: 'scale(1)',
+                        transition: 'all 0.3s ease-in-out',
+                        border: 'none'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = '#f59e0b'; // yellow-500 (darker on hover)
+                        e.currentTarget.style.transform = 'scale(1.1)';
+                        e.currentTarget.style.transition = 'all 0.3s ease-in-out';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = '#fbbf24'; // yellow-400
+                        e.currentTarget.style.transform = 'scale(1)';
+                        e.currentTarget.style.transition = 'all 0.3s ease-in-out';
+                      }}
+                    >
+                      <Bell className="size-6" style={{ color: '#ffffff' }} />
+                      {unreadCount > 0 && (
+                        <Badge 
+                          className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1.5 flex items-center justify-center bg-red-500 text-white text-xs font-bold border-2 border-white rounded-full"
+                          style={{
+                            position: 'absolute',
+                            top: '-4px',
+                            right: '-4px',
+                            minWidth: '20px',
+                            height: '20px',
+                            padding: '0 6px',
+                            backgroundColor: '#ef4444',
+                            color: '#ffffff',
+                            fontSize: '12px',
+                            fontWeight: 'bold',
+                            border: '2px solid #ffffff',
+                            borderRadius: '9999px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                          }}
+                        >
+                          {unreadCount > 99 ? '99+' : unreadCount}
+                        </Badge>
+                      )}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-80 max-h-[400px] overflow-y-auto">
+                    <div className="flex items-center justify-between px-2 py-1.5 border-b">
+                      <span className="font-semibold text-sm">Thông báo</span>
+                      {unreadCount > 0 && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 px-2 text-xs"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            markAllAsRead();
+                          }}
+                        >
+                          Đánh dấu tất cả đã đọc
+                        </Button>
+                      )}
+                    </div>
+                    {notificationsLoading ? (
+                      <div className="px-4 py-8 text-center text-gray-500 text-sm">
+                        Đang tải thông báo...
+                      </div>
+                    ) : notifications.length > 0 ? (
+                      <>
+                        {notifications.map((notification) => {
+                          const notifId = notification.notification_id || notification.id;
+                          const isRead = notification.is_read || false;
+                          return (
+                            <DropdownMenuItem
+                              key={notifId}
+                              className={`px-3 py-2.5 cursor-pointer ${!isRead ? 'bg-blue-50' : ''}`}
+                              onClick={() => {
+                                if (!isRead) {
+                                  markAsRead(notifId);
+                                }
+                                if (notification.link_url) {
+                                  navigate(notification.link_url);
+                                }
+                              }}
+                            >
+                              <div className="flex flex-col w-full">
+                                <div className="flex items-start justify-between gap-2">
+                                  <div className="flex-1">
+                                    <p className={`text-sm font-medium ${!isRead ? 'text-gray-900' : 'text-gray-600'}`}>
+                                      {notification.title || notification.content}
+                                    </p>
+                                    {notification.content && notification.title && (
+                                      <p className="text-xs text-gray-500 mt-1 line-clamp-2">
+                                        {notification.content}
+                                      </p>
+                                    )}
+                                    <p className="text-xs text-gray-400 mt-1">
+                                      {new Date(notification.created_at).toLocaleDateString('vi-VN', {
+                                        day: '2-digit',
+                                        month: '2-digit',
+                                        year: 'numeric',
+                                        hour: '2-digit',
+                                        minute: '2-digit'
+                                      })}
+                                    </p>
+                                  </div>
+                                  {!isRead && (
+                                    <div className="w-2 h-2 bg-blue-600 rounded-full flex-shrink-0 mt-1" />
+                                  )}
+                                </div>
+                              </div>
+                            </DropdownMenuItem>
+                          );
+                        })}
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem asChild>
+                          <Link to="/profile?tab=notifications" className="text-center text-sm text-blue-600 hover:text-blue-700">
+                            Xem tất cả thông báo
+                          </Link>
+                        </DropdownMenuItem>
+                      </>
+                    ) : (
+                      <div className="px-4 py-8 text-center text-gray-500 text-sm">
+                        Chưa có thông báo nào
+                      </div>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
               
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon-lg" className="text-white hover:text-gray-200">
-                    <User className="size-9 text-white" />
+                  <Button 
+                    variant="ghost" 
+                    size="icon-lg" 
+                    className="relative transition-all duration-300 ease-in-out"
+                    style={{
+                      position: 'relative',
+                      backgroundColor: '#10b981', // green-500
+                      color: '#ffffff',
+                      borderRadius: '50%',
+                      width: '48px',
+                      height: '48px',
+                      padding: '0',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      transform: 'scale(1)',
+                      transition: 'all 0.3s ease-in-out',
+                      border: 'none'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = '#059669'; // green-600 (darker on hover)
+                      e.currentTarget.style.transform = 'scale(1.1)';
+                      e.currentTarget.style.transition = 'all 0.3s ease-in-out';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = '#10b981'; // green-500
+                      e.currentTarget.style.transform = 'scale(1)';
+                      e.currentTarget.style.transition = 'all 0.3s ease-in-out';
+                    }}
+                  >
+                    <User className="size-6" style={{ color: '#ffffff' }} />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
@@ -152,22 +447,125 @@ const UserLayout = () => {
       {/* Categories Navigation */}
       <div className="bg-gray-100 shadow-md w-full">
         <div className="w-full max-w-[1920px] mx-auto px-4">
-          <NavigationMenu className="w-full">
-            <NavigationMenuList className="flex items-center space-x-8 py-3 overflow-x-auto">
-              {categories.map((category) => (
-                <NavigationMenuItem key={category.name}>
-                  <NavigationMenuLink asChild>
-                    <Link
-                      to={category.href}
-                      className="text-gray-600 hover:text-blue-600 whitespace-nowrap text-sm font-medium"
-                    >
-                      {category.name}
-                    </Link>
-                  </NavigationMenuLink>
-                </NavigationMenuItem>
-              ))}
-            </NavigationMenuList>
-          </NavigationMenu>
+          <div className="flex items-center py-3">
+            {/* Category Menu Button */}
+            <div 
+              className="relative group"
+              onMouseEnter={() => {
+                // Clear any pending close timeout
+                if (menuCloseTimeout) {
+                  clearTimeout(menuCloseTimeout);
+                  setMenuCloseTimeout(null);
+                }
+                setIsCategoryMenuOpen(true);
+              }}
+              onMouseLeave={() => {
+                // Delay closing menu to allow user to move mouse into menu
+                const timeout = setTimeout(() => {
+                  setIsCategoryMenuOpen(false);
+                }, 500); // 500ms delay - enough time to move mouse into menu
+                setMenuCloseTimeout(timeout);
+              }}
+            >
+              <Button
+                data-slot="button"
+                className="flex items-center gap-2 px-4 py-2 rounded-lg transition-colors font-medium text-sm"
+                style={{
+                  backgroundColor: '#1f2937', // gray-800
+                  color: '#ffffff',
+                  border: 'none'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#374151'; // gray-700
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#1f2937'; // gray-800
+                }}
+              >
+                <Menu className="size-5" />
+                <span>Danh mục</span>
+              </Button>
+
+              {/* Dropdown Menu */}
+              {isCategoryMenuOpen && (
+                <div 
+                  className="absolute top-full left-0 mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 z-50 py-2 max-h-[80vh] overflow-y-auto"
+                  onMouseEnter={() => {
+                    // Clear close timeout when mouse enters menu
+                    if (menuCloseTimeout) {
+                      clearTimeout(menuCloseTimeout);
+                      setMenuCloseTimeout(null);
+                    }
+                    setIsCategoryMenuOpen(true);
+                  }}
+                  onMouseLeave={() => {
+                    // Delay closing when mouse leaves menu
+                    const timeout = setTimeout(() => {
+                      setIsCategoryMenuOpen(false);
+                    }, 500); // 500ms delay - enough time to move mouse back
+                    setMenuCloseTimeout(timeout);
+                  }}
+                >
+                  {categoriesLoading ? (
+                    <div className="px-4 py-8 text-center text-gray-500 text-sm">
+                      Đang tải danh mục...
+                    </div>
+                  ) : (categoryTree && categoryTree.length > 0) ? (
+                    categoryTree.map((parentCategory) => (
+                      <div key={parentCategory.category_id} className="group/sub relative">
+                        <Link
+                          to={`/category/${parentCategory.category_id}`}
+                          className="flex items-center justify-between px-4 py-2.5 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors rounded-md mx-1"
+                          onClick={() => setIsCategoryMenuOpen(false)}
+                        >
+                          <span className="font-medium text-sm">{parentCategory.category_name}</span>
+                          {parentCategory.children && parentCategory.children.length > 0 && (
+                            <ChevronRight className="size-4 text-gray-400 group-hover/sub:text-blue-600 transition-colors" />
+                          )}
+                        </Link>
+                        
+                        {/* Subcategories */}
+                        {parentCategory.children && parentCategory.children.length > 0 && (
+                          <div className="absolute left-full top-0 ml-1 w-64 bg-white rounded-lg shadow-xl border border-gray-200 opacity-0 invisible group-hover/sub:opacity-100 group-hover/sub:visible transition-all duration-200 py-2 z-50">
+                            {parentCategory.children.map((childCategory) => (
+                              <Link
+                                key={childCategory.category_id}
+                                to={`/category/${childCategory.category_id}`}
+                                className="block px-4 py-2.5 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-sm rounded-md mx-1"
+                                onClick={() => setIsCategoryMenuOpen(false)}
+                              >
+                                {childCategory.category_name}
+                              </Link>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))
+                  ) : (categories && categories.length > 0) ? (
+                    // Fallback: Use categories if tree is empty
+                    categories
+                      .filter(cat => !cat.parent_category_id || cat.parent_category_id === null)
+                      .map((category) => (
+                        <div key={category.category_id} className="group/sub relative">
+                          <Link
+                            to={`/category/${category.category_id}`}
+                            className="flex items-center justify-between px-4 py-2.5 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors rounded-md mx-1"
+                            onClick={() => setIsCategoryMenuOpen(false)}
+                          >
+                            <span className="font-medium text-sm">{category.category_name}</span>
+                          </Link>
+                        </div>
+                      ))
+                  ) : (
+                    <div className="px-4 py-8 text-center text-gray-500 text-sm">
+                      Chưa có danh mục nào
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+          </div>
         </div>
       </div>
 
@@ -175,12 +573,54 @@ const UserLayout = () => {
       {isMenuOpen && (
         <div className="md:hidden bg-white shadow-lg">
           <nav className="px-2 pt-2 pb-3 space-y-2">
-            <Button variant="ghost" size="lg" className="w-full justify-start" asChild>
+            <Button variant="ghost" size="lg" className="w-full justify-start relative" asChild>
               <Link to="/cart" className="flex items-center">
                 <ShoppingCart className="size-9 mr-2 text-blue-600" />
                 Giỏ hàng
+                {cartItemsCount > 0 && (
+                  <Badge 
+                    className="ml-auto bg-red-500 text-white text-xs font-bold min-w-[20px] h-5 px-1.5 flex items-center justify-center"
+                    style={{
+                      backgroundColor: '#ef4444',
+                      color: '#ffffff',
+                      fontSize: '12px',
+                      fontWeight: 'bold',
+                      minWidth: '20px',
+                      height: '20px',
+                      padding: '0 6px',
+                      borderRadius: '9999px'
+                    }}
+                  >
+                    {cartItemsCount > 99 ? '99+' : cartItemsCount}
+                  </Badge>
+                )}
               </Link>
             </Button>
+            {user && (
+              <Button variant="ghost" size="lg" className="w-full justify-start relative" asChild>
+                <Link to="/profile?tab=notifications" className="flex items-center">
+                  <Bell className="size-9 mr-2 text-blue-600" />
+                  Thông báo
+                  {unreadCount > 0 && (
+                    <Badge 
+                      className="ml-auto bg-red-500 text-white text-xs font-bold min-w-[20px] h-5 px-1.5 flex items-center justify-center"
+                      style={{
+                        backgroundColor: '#ef4444',
+                        color: '#ffffff',
+                        fontSize: '12px',
+                        fontWeight: 'bold',
+                        minWidth: '20px',
+                        height: '20px',
+                        padding: '0 6px',
+                        borderRadius: '9999px'
+                      }}
+                    >
+                      {unreadCount > 99 ? '99+' : unreadCount}
+                    </Badge>
+                  )}
+                </Link>
+              </Button>
+            )}
             <Button variant="ghost" size="lg" className="w-full justify-start" asChild>
               <Link to="/profile" className="flex items-center">
                 <User className="size-9 mr-2 text-blue-600" />
@@ -226,17 +666,136 @@ const UserLayout = () => {
             </div>
             <div>
               <h3 className="text-lg font-bold mb-4">Kết nối với chúng tôi</h3>
-              <div className="flex space-x-4">
-                <a href="#" className="text-gray-400 hover:text-white">
-                  <span className="sr-only">Facebook</span>
-                  <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
-                    <path fillRule="evenodd" d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z" clipRule="evenodd" />
+              <div className="flex items-center space-x-4">
+                {/* Facebook - Blue */}
+                <a 
+                  href="#" 
+                  className="transition-all duration-200 hover:scale-110"
+                  style={{
+                    color: '#1877F2', // Facebook blue
+                    textDecoration: 'none'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.color = '#42A5F5'; // Lighter blue on hover
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.color = '#1877F2'; // Facebook blue
+                  }}
+                  aria-label="Facebook"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <svg 
+                    style={{
+                      width: '28px',
+                      height: '28px',
+                      fill: 'currentColor'
+                    }}
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
                   </svg>
                 </a>
-                <a href="#" className="text-gray-400 hover:text-white">
-                  <span className="sr-only">Youtube</span>
-                  <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
-                    <path fillRule="evenodd" d="M19.812 5.418c.861.23 1.538.907 1.768 1.768C21.998 8.746 22 12 22 12s0 3.255-.418 4.814a2.504 2.504 0 0 1-1.768 1.768c-1.56.419-7.814.419-7.814.419s-6.255 0-7.814-.419a2.505 2.505 0 0 1-1.768-1.768C2 15.255 2 12 2 12s0-3.255.417-4.814a2.507 2.507 0 0 1 1.768-1.768C5.744 5 11.998 5 11.998 5s6.255 0 7.814.418ZM15.194 12 10 15V9l5.194 3Z" clipRule="evenodd" />
+                
+                {/* YouTube - Red */}
+                <a 
+                  href="#" 
+                  className="transition-all duration-200 hover:scale-110"
+                  style={{
+                    color: '#FF0000', // YouTube red
+                    textDecoration: 'none'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.color = '#FF4444'; // Lighter red on hover
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.color = '#FF0000'; // YouTube red
+                  }}
+                  aria-label="YouTube"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <svg 
+                    style={{
+                      width: '28px',
+                      height: '28px',
+                      fill: 'currentColor'
+                    }}
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                  </svg>
+                </a>
+                
+                {/* Instagram - Gradient (Purple/Pink/Orange) */}
+                <a 
+                  href="#" 
+                  className="transition-all duration-200 hover:scale-110"
+                  style={{
+                    textDecoration: 'none',
+                    display: 'inline-block'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.opacity = '0.8';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.opacity = '1';
+                  }}
+                  aria-label="Instagram"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <svg 
+                    style={{
+                      width: '28px',
+                      height: '28px'
+                    }}
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <defs>
+                      <linearGradient id="instagram-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stopColor="#f09433" />
+                        <stop offset="25%" stopColor="#e6683c" />
+                        <stop offset="50%" stopColor="#dc2743" />
+                        <stop offset="75%" stopColor="#cc2366" />
+                        <stop offset="100%" stopColor="#bc1888" />
+                      </linearGradient>
+                    </defs>
+                    <path fill="url(#instagram-gradient)" d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.98-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.98-6.98C15.666.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm4.965-10.405a1.44 1.44 0 1 1-2.881 0 1.44 1.44 0 0 1 2.881 0z"/>
+                  </svg>
+                </a>
+                
+                {/* TikTok - White (for dark footer) */}
+                <a 
+                  href="#" 
+                  className="transition-all duration-200 hover:scale-110"
+                  style={{
+                    color: '#FFFFFF', // White for dark footer
+                    textDecoration: 'none'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.color = '#E5E7EB'; // Light gray on hover
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.color = '#FFFFFF'; // White
+                  }}
+                  aria-label="TikTok"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <svg 
+                    style={{
+                      width: '28px',
+                      height: '28px',
+                      fill: 'currentColor'
+                    }}
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/>
                   </svg>
                 </a>
               </div>

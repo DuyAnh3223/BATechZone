@@ -23,7 +23,7 @@ class Product {
   }
 
   // Lấy tất cả sản phẩm (có phân trang, lọc)
-  async list({ page = 1, limit = 10, search, category_id, minPrice, maxPrice, sortBy = 'created_at', sortOrder = 'DESC', is_active } = {}) {
+  async list({ page = 1, limit = 10, search, category_id, minPrice, maxPrice, sortBy = 'created_at', sortOrder = 'DESC', is_active, is_featured } = {}) {
     const offset = (page - 1) * limit;
     const conditions = [];
     const values = [];
@@ -32,6 +32,12 @@ class Product {
     if (is_active !== undefined) {
       conditions.push('p.is_active = ?');
       values.push(is_active ? 1 : 0);
+    }
+
+    // Filter by featured
+    if (is_featured !== undefined) {
+      conditions.push('p.is_featured = ?');
+      values.push(is_featured ? 1 : 0);
     }
 
     if (search) {
