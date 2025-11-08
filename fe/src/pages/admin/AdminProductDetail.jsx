@@ -12,6 +12,31 @@ import {
 import { toast } from 'sonner';
 import api from '@/lib/axios';
 
+// import api from '@/lib/axios'; // ❌ bỏ gọi API
+
+// 🧩 MOCK DATA
+const MOCK_VARIANTS = [
+  { variant_id: 1, sku: "CPU-I713700K", price: 9990000, stock: 10, is_active: true },
+  { variant_id: 2, sku: "CPU-I512600K", price: 6990000, stock: 20, is_active: true },
+  { variant_id: 3, sku: "CPU-I913900K", price: 13990000, stock: 5, is_active: false },
+];
+
+const MOCK_ATTRIBUTES = [
+  { attribute_id: 1, name: "Color", value: "Black" },
+  { attribute_id: 2, name: "Size", value: "ATX" },
+  { attribute_id: 3, name: "Socket", value: "LGA1700" },
+  { attribute_id: 4, name: "Chipset", value: "Z790" },
+];
+
+const MOCK_MAPPINGS = [
+  { id: 1, variant_id: 1, attribute_id: 1 },
+  { id: 2, variant_id: 1, attribute_id: 3 },
+  { id: 3, variant_id: 2, attribute_id: 1 },
+  { id: 4, variant_id: 2, attribute_id: 2 },
+  { id: 5, variant_id: 3, attribute_id: 4 },
+];
+
+
 const TabButton = ({ active, onClick, children }) => (
   <button
     onClick={onClick}
@@ -57,9 +82,14 @@ const AdminProductDetail = () => {
 
   const loadVariants = async () => {
     try {
+      // setLoadingVariants(true);
+      // const res = await api.get(`/admin/products/${productId}/variants`, { withCredentials: true });
+      // setVariants(res.data?.data || []);
       setLoadingVariants(true);
-      const res = await api.get(`/admin/products/${productId}/variants`, { withCredentials: true });
-      setVariants(res.data?.data || []);
+  setTimeout(() => {
+    setVariants(MOCK_VARIANTS);
+    setLoadingVariants(false);
+  }, 300);
     } catch (e) {
       toast.error(e.response?.data?.message || 'Không tải được danh sách biến thể');
     } finally {
@@ -69,9 +99,14 @@ const AdminProductDetail = () => {
 
   const loadAttributes = async () => {
     try {
+      // setLoadingAttributes(true);
+      // const res = await api.get(`/admin/products/${productId}/attributes`, { withCredentials: true });
+      // setAttributes(res.data?.data || []);
       setLoadingAttributes(true);
-      const res = await api.get(`/admin/products/${productId}/attributes`, { withCredentials: true });
-      setAttributes(res.data?.data || []);
+  setTimeout(() => {
+    setAttributes(MOCK_ATTRIBUTES);
+    setLoadingAttributes(false);
+  }, 300);
     } catch (e) {
       toast.error(e.response?.data?.message || 'Không tải được thuộc tính');
     } finally {
@@ -81,8 +116,11 @@ const AdminProductDetail = () => {
 
   const loadMappings = async () => {
     try {
-      const res = await api.get(`/admin/products/${productId}/variant-mappings`, { withCredentials: true });
-      setMappings(res.data?.data || []);
+      // const res = await api.get(`/admin/products/${productId}/variant-mappings`, { withCredentials: true });
+      // setMappings(res.data?.data || []);
+      setTimeout(() => {
+    setMappings(MOCK_MAPPINGS);
+  }, 200);
     } catch (e) {
       toast.error(e.response?.data?.message || 'Không tải được mapping');
     }
@@ -90,9 +128,32 @@ const AdminProductDetail = () => {
 
   const loadVariantImages = async (variantId) => {
     try {
+      // setLoadingImages(true);
+      // const res = await api.get(`/admin/variants/${variantId}/images`, { withCredentials: true });
+      // setVariantImages(res.data?.data || []);
       setLoadingImages(true);
-      const res = await api.get(`/admin/variants/${variantId}/images`, { withCredentials: true });
-      setVariantImages(res.data?.data || []);
+  // mô phỏng mỗi variant có ảnh riêng
+  const mockImages = [
+    {
+      image_id: 1,
+      variant_id: 1,
+      image_url: "https://placehold.co/300x200?text=Variant+1",
+    },
+    {
+      image_id: 2,
+      variant_id: 2,
+      image_url: "https://placehold.co/300x200?text=Variant+2",
+    },
+    {
+      image_id: 3,
+      variant_id: 3,
+      image_url: "https://placehold.co/300x200?text=Variant+3",
+    },
+  ];
+  setTimeout(() => {
+    setVariantImages(mockImages.filter(i => i.variant_id === variantId));
+    setLoadingImages(false);
+  }, 300);
     } catch (e) {
       toast.error(e.response?.data?.message || 'Không tải được ảnh biến thể');
     } finally {

@@ -22,6 +22,87 @@ const formatDate = (value) => {
 
 const PAGE_SIZE_OPTIONS = [5, 10, 20];
 
+// 🧩 MOCK DATA
+const MOCK_CATEGORIES = [
+  { category_id: 1, category_name: "CPU" },
+  { category_id: 2, category_name: "Mainboard" },
+  { category_id: 3, category_name: "RAM" },
+  { category_id: 4, category_name: "GPU" },
+];
+
+const MOCK_PRODUCTS = [
+  {
+    product_id: 101,
+    product_name: "Intel Core i7-13700K",
+    slug: "intel-core-i7-13700k",
+    category_id: 1,
+    category_name: "CPU",
+    description: "Bộ vi xử lý Intel thế hệ 13 mạnh mẽ, 16 nhân 24 luồng.",
+    brand: "Intel",
+    model: "i7-13700K",
+    base_price: 9990000,
+    is_active: true,
+    is_featured: true,
+    view_count: 2345,
+    rating_average: 4.8,
+    review_count: 56,
+    created_at: "2025-01-20T10:00:00Z",
+  },
+  {
+    product_id: 102,
+    product_name: "ASUS ROG STRIX B760-F",
+    slug: "asus-rog-strix-b760-f",
+    category_id: 2,
+    category_name: "Mainboard",
+    description: "Bo mạch chủ gaming cao cấp hỗ trợ Intel Gen 13.",
+    brand: "ASUS",
+    model: "ROG STRIX B760-F",
+    base_price: 6990000,
+    is_active: true,
+    is_featured: false,
+    view_count: 1023,
+    rating_average: 4.5,
+    review_count: 24,
+    created_at: "2025-02-11T08:00:00Z",
+  },
+  {
+    product_id: 103,
+    product_name: "Corsair Vengeance DDR5 32GB (2x16GB) 6000MHz",
+    slug: "corsair-vengeance-ddr5-32gb-6000",
+    category_id: 3,
+    category_name: "RAM",
+    description: "RAM hiệu năng cao cho game thủ và nhà sáng tạo nội dung.",
+    brand: "Corsair",
+    model: "Vengeance DDR5",
+    base_price: 3290000,
+    is_active: true,
+    is_featured: false,
+    view_count: 512,
+    rating_average: 4.7,
+    review_count: 14,
+    created_at: "2025-03-15T15:00:00Z",
+  },
+  {
+    product_id: 104,
+    product_name: "MSI GeForce RTX 4070 GAMING X TRIO",
+    slug: "msi-geforce-rtx-4070",
+    category_id: 4,
+    category_name: "GPU",
+    description: "Card đồ họa mạnh mẽ cho game và đồ họa chuyên nghiệp.",
+    brand: "MSI",
+    model: "RTX 4070 GAMING X TRIO",
+    base_price: 15990000,
+    is_active: true,
+    is_featured: true,
+    view_count: 4010,
+    rating_average: 4.9,
+    review_count: 77,
+    created_at: "2025-05-02T12:00:00Z",
+  },
+];
+
+
+
 const AdminProduct = () => {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("");
@@ -51,8 +132,11 @@ const AdminProduct = () => {
 
   const loadCategories = async () => {
     try {
-      const res = await api.get('/admin/categories/simple', { withCredentials: true });
-      setCategoriesList(res.data?.data || []);
+      // const res = await api.get('/admin/categories/simple', { withCredentials: true });
+      // setCategoriesList(res.data?.data || []);
+      setTimeout(() => {
+    setCategoriesList(MOCK_CATEGORIES);
+  }, 300);
     } catch (e) {
       console.error('Error loading categories:', e);
     }
@@ -60,18 +144,24 @@ const AdminProduct = () => {
 
   const loadProducts = async () => {
     try {
+      // setLoading(true);
+      // const res = await api.get('/admin/products', {
+      //   params: {
+      //     search: search.trim(),
+      //     category_id: category,
+      //     page,
+      //     pageSize
+      //   },
+      //   withCredentials: true
+      // });
+      // setProducts(res.data?.data || []);
+      // setTotal(res.data?.pagination?.total || 0);
       setLoading(true);
-      const res = await api.get('/admin/products', {
-        params: {
-          search: search.trim(),
-          category_id: category,
-          page,
-          pageSize
-        },
-        withCredentials: true
-      });
-      setProducts(res.data?.data || []);
-      setTotal(res.data?.pagination?.total || 0);
+  setTimeout(() => {
+    setProducts(MOCK_PRODUCTS);
+    setTotal(MOCK_PRODUCTS.length);
+    setLoading(false);
+  }, 500);
     } catch (e) {
       toast.error(e.response?.data?.message || 'Không tải được danh sách sản phẩm');
     } finally {
