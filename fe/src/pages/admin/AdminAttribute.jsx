@@ -42,11 +42,7 @@ const AdminAttribute = () => {
   const [valuePage, setValuePage] = useState(1);
   const [valuePageSize, setValuePageSize] = useState(10);
   const [valueFormData, setValueFormData] = useState({
-    value_name: '',
-    color_code: '',
-    image_url: '',
-    display_order: 0,
-    is_active: true
+    value_name: ''
   });
 
   // Load categories on mount
@@ -146,11 +142,7 @@ const AdminAttribute = () => {
     setEditingValue(null);
     setValuePage(1); // Reset về trang 1 khi chọn attribute mới
     setValueFormData({
-      value_name: '',
-      color_code: '',
-      image_url: '',
-      display_order: 0,
-      is_active: true
+      value_name: ''
     });
   };
 
@@ -164,18 +156,10 @@ const AdminAttribute = () => {
       setIsSubmitting(true);
       await createAttributeValue({
         attribute_id: selectedAttribute.attribute_id,
-        value_name: valueFormData.value_name.trim(),
-        color_code: valueFormData.color_code.trim() || null,
-        image_url: valueFormData.image_url.trim() || null,
-        display_order: parseInt(valueFormData.display_order) || 0,
-        is_active: valueFormData.is_active
+        value_name: valueFormData.value_name.trim()
       });
       setValueFormData({
-        value_name: '',
-        color_code: '',
-        image_url: '',
-        display_order: 0,
-        is_active: true
+        value_name: ''
       });
       setValuePage(1); // Reset về trang 1 sau khi thêm
       await loadAttributeValues();
@@ -190,11 +174,7 @@ const AdminAttribute = () => {
   const handleEditValue = (value) => {
     setEditingValue(value);
     setValueFormData({
-      value_name: value.value_name || '',
-      color_code: value.color_code || '',
-      image_url: value.image_url || '',
-      display_order: value.display_order || 0,
-      is_active: value.is_active !== undefined ? value.is_active : true
+      value_name: value.value_name || ''
     });
   };
 
@@ -207,19 +187,11 @@ const AdminAttribute = () => {
     try {
       setIsSubmitting(true);
       await updateAttributeValue(editingValue.attribute_value_id, {
-        value_name: valueFormData.value_name.trim(),
-        color_code: valueFormData.color_code.trim() || null,
-        image_url: valueFormData.image_url.trim() || null,
-        display_order: parseInt(valueFormData.display_order) || 0,
-        is_active: valueFormData.is_active
+        value_name: valueFormData.value_name.trim()
       });
       setEditingValue(null);
       setValueFormData({
-        value_name: '',
-        color_code: '',
-        image_url: '',
-        display_order: 0,
-        is_active: true
+        value_name: ''
       });
       await loadAttributeValues();
       loadAttributes();
@@ -251,11 +223,7 @@ const AdminAttribute = () => {
   const cancelEdit = () => {
     setEditingValue(null);
     setValueFormData({
-      value_name: '',
-      color_code: '',
-      image_url: '',
-      display_order: 0,
-      is_active: true
+      value_name: ''
     });
   };
 
@@ -486,11 +454,7 @@ const AdminAttribute = () => {
                       setSelectedAttribute(null);
                       setEditingValue(null);
                       setValueFormData({
-                        value_name: '',
-                        color_code: '',
-                        image_url: '',
-                        display_order: 0,
-                        is_active: true
+                        value_name: ''
                       });
                     }}
                     className="hover:bg-gray-200"
@@ -501,126 +465,52 @@ const AdminAttribute = () => {
               </div>
 
               {/* Add/Edit Value Form */}
-              <div className="p-4 border-b overflow-y-auto max-h-[400px]">
+              <div className="p-4 border-b">
                 <form onSubmit={editingValue ? handleUpdateValue : handleAddValue} className="space-y-3">
                   {/* Value Name */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Tên giá trị <span className="text-red-500">*</span>
                     </label>
-                    <input
-                      type="text"
-                      value={valueFormData.value_name}
-                      onChange={(e) => handleValueFormChange('value_name', e.target.value)}
-                      className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                      placeholder="Ví dụ: Đỏ, 16GB, XL..."
-                      disabled={isSubmitting}
-                      required
-                    />
-                  </div>
-
-                  {/* Color Code */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Mã màu (Hex)
-                    </label>
                     <div className="flex gap-2">
                       <input
                         type="text"
-                        value={valueFormData.color_code}
-                        onChange={(e) => handleValueFormChange('color_code', e.target.value)}
+                        value={valueFormData.value_name}
+                        onChange={(e) => handleValueFormChange('value_name', e.target.value)}
                         className="flex-1 border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                        placeholder="#FF0000"
+                        placeholder="Ví dụ: Đỏ, 16GB, XL..."
                         disabled={isSubmitting}
-                        maxLength={7}
+                        required
                       />
-                      {valueFormData.color_code && (
-                        <div
-                          className="w-10 h-10 rounded border border-gray-300"
-                          style={{ backgroundColor: valueFormData.color_code }}
-                          title={valueFormData.color_code}
-                        />
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Image URL */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      URL hình ảnh
-                    </label>
-                    <input
-                      type="url"
-                      value={valueFormData.image_url}
-                      onChange={(e) => handleValueFormChange('image_url', e.target.value)}
-                      className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                      placeholder="https://example.com/image.jpg"
-                      disabled={isSubmitting}
-                    />
-                  </div>
-
-                  {/* Display Order & Is Active */}
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Thứ tự hiển thị
-                      </label>
-                      <input
-                        type="number"
-                        value={valueFormData.display_order}
-                        onChange={(e) => handleValueFormChange('display_order', e.target.value)}
-                        className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                        placeholder="0"
-                        disabled={isSubmitting}
-                        min="0"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Trạng thái
-                      </label>
-                      <select
-                        value={valueFormData.is_active ? '1' : '0'}
-                        onChange={(e) => handleValueFormChange('is_active', e.target.value === '1')}
-                        className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                        disabled={isSubmitting}
-                      >
-                        <option value="1">Kích hoạt</option>
-                        <option value="0">Tắt</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="flex gap-2 pt-2">
-                    {editingValue ? (
-                      <>
+                      {editingValue ? (
+                        <>
+                          <Button
+                            type="submit"
+                            disabled={isSubmitting || !valueFormData.value_name.trim()}
+                            className="bg-blue-600 hover:bg-blue-700"
+                          >
+                            {isSubmitting ? 'Đang lưu...' : 'Cập nhật'}
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={cancelEdit}
+                            disabled={isSubmitting}
+                          >
+                            Hủy
+                          </Button>
+                        </>
+                      ) : (
                         <Button
                           type="submit"
                           disabled={isSubmitting || !valueFormData.value_name.trim()}
-                          className="flex-1 bg-blue-600 hover:bg-blue-700"
+                          className="bg-blue-600 hover:bg-blue-700"
                         >
-                          {isSubmitting ? 'Đang lưu...' : 'Cập nhật'}
+                          <Plus className="w-4 h-4 mr-1" />
+                          Thêm
                         </Button>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={cancelEdit}
-                          disabled={isSubmitting}
-                        >
-                          Hủy
-                        </Button>
-                      </>
-                    ) : (
-                      <Button
-                        type="submit"
-                        disabled={isSubmitting || !valueFormData.value_name.trim()}
-                        className="flex-1 bg-blue-600 hover:bg-blue-700"
-                      >
-                        <Plus className="w-4 h-4 mr-1" />
-                        Thêm giá trị
-                      </Button>
-                    )}
+                      )}
+                    </div>
                   </div>
                 </form>
               </div>
@@ -672,32 +562,7 @@ const AdminAttribute = () => {
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3 flex-1">
                             <div className="w-2 h-2 bg-blue-600 rounded-full" />
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2">
-                                <p className="font-medium text-gray-800">{value.value_name || 'N/A'}</p>
-                                {value.is_active === 0 && (
-                                  <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded">Tắt</span>
-                                )}
-                              </div>
-                              <div className="flex items-center gap-2 mt-1">
-                                {value.color_code && (
-                                  <div className="flex items-center gap-1">
-                                    <div
-                                      className="w-4 h-4 rounded border border-gray-300"
-                                      style={{ backgroundColor: value.color_code }}
-                                      title={`Màu: ${value.color_code}`}
-                                    />
-                                    <span className="text-xs text-gray-500">{value.color_code}</span>
-                                  </div>
-                                )}
-                                {value.image_url && (
-                                  <span className="text-xs text-gray-500">📷 Có hình ảnh</span>
-                                )}
-                                {value.display_order !== undefined && value.display_order > 0 && (
-                                  <span className="text-xs text-gray-500">Thứ tự: {value.display_order}</span>
-                                )}
-                              </div>
-                            </div>
+                            <p className="font-medium text-gray-800">{value.value_name || 'N/A'}</p>
                           </div>
                           <div className="flex items-center gap-2">
                             <Button
