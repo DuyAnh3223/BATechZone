@@ -3,82 +3,130 @@ import { db } from '../libs/db.js';
 class Product {
   // Tạo sản phẩm mới
   async create(data) {
-    const { category_id, product_name, slug, description, base_price, is_active, is_featured } = data;
+    const { category_id, product_name, slug, description, brand, model, base_price, is_active, is_featured } = data;
     const [result] = await db.query(
-      `INSERT INTO products (category_id, product_name, slug, description, base_price, is_active, is_featured)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [category_id, product_name, slug, description, base_price, is_active ?? 1, is_featured ?? 0]
+      `INSERT INTO products (category_id, product_name, slug, description, brand, model, base_price, is_active, is_featured)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        category_id, 
+        product_name, 
+        slug || null, 
+        description || null, 
+        brand || null,
+        model || null,
+        base_price, 
+        is_active ?? 1, 
+        is_featured ?? 0
+      ]
     );
     return result.insertId;
   }
 
   // Lấy tất cả sản phẩm (có phân trang, lọc)
-  async list({ page = 1, limit = 10, search, category_id, minPrice, maxPrice, sortBy = 'created_at', sortOrder = 'DESC' }) {
+  async list({ page = 1, limit = 10, search, category_id, minPrice, maxPrice, sortBy = 'created_at', sortOrder = 'DESC', is_active } = {}) {
     const offset = (page - 1) * limit;
-    const conditions = ['is_active = 1'];
+    const conditions = [];
     const values = [];
 
+    // Admin có thể xem cả products không active
+    if (is_active !== undefined) {
+      conditions.push('p.is_active = ?');
+      values.push(is_active ? 1 : 0);
+    }
+
     if (search) {
-      conditions.push('product_name LIKE ?');
-      values.push(`%${search}%`);
+      conditions.push('(p.product_name LIKE ? OR p.slug LIKE ?)');
+      values.push(`%${search}%`, `%${search}%`);
     }
 
     if (category_id) {
-      conditions.push('category_id = ?');
+      conditions.push('p.category_id = ?');
       values.push(category_id);
     }
 
     if (minPrice) {
-      conditions.push('base_price >= ?');
+      conditions.push('p.base_price >= ?');
       values.push(minPrice);
     }
 
     if (maxPrice) {
-      conditions.push('base_price <= ?');
+      conditions.push('p.base_price <= ?');
       values.push(maxPrice);
     }
 
+    // Sanitize sortBy to prevent SQL injection
+    const allowedSortColumns = ['product_id', 'product_name', 'created_at', 'base_price', 'view_count', 'rating_average'];
+    const sanitizedSortBy = allowedSortColumns.includes(sortBy) ? sortBy : 'created_at';
+    const sanitizedSortOrder = sortOrder.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
+
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
     values.push(limit, offset);
 
     const [rows] = await db.query(
-      `SELECT * FROM products 
-       WHERE ${conditions.join(' AND ')} 
-       ORDER BY ${sortBy} ${sortOrder}
-       LIMIT ? OFFSET ?`,
+      `SELECT 
+        p.*,
+        c.category_name
+      FROM products p
+      LEFT JOIN categories c ON p.category_id = c.category_id
+      ${whereClause}
+      ORDER BY p.${sanitizedSortBy} ${sanitizedSortOrder}
+      LIMIT ? OFFSET ?`,
       values
     );
 
-    const [[{ total }]] = await db.query(
-      `SELECT COUNT(*) AS total FROM products WHERE ${conditions.join(' AND ')}`,
-      values.slice(0, -2)
+    const countValues = values.slice(0, -2);
+    const [count] = await db.query(
+      `SELECT COUNT(*) AS total 
+      FROM products p
+      ${whereClause}`,
+      countValues
     );
 
     return {
-      data: rows,
+      data: rows || [],
       pagination: {
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit)
+        total: count[0]?.total || 0,
+        page: parseInt(page) || 1,
+        limit: parseInt(limit) || 10,
+        totalPages: Math.ceil((count[0]?.total || 0) / limit)
       }
     };
   }
 
   // Lấy 1 sản phẩm theo ID
   async getById(id) {
-    const [rows] = await db.query('SELECT * FROM products WHERE product_id = ? AND is_active = 1', [id]);
+    const [rows] = await db.query(
+      `SELECT 
+        p.*,
+        c.category_name
+      FROM products p
+      LEFT JOIN categories c ON p.category_id = c.category_id
+      WHERE p.product_id = ?`,
+      [id]
+    );
     return rows[0] || null;
   }
 
   // Cập nhật sản phẩm
   async update(id, data) {
-    const { category_id, product_name, slug, description, base_price, is_featured, is_active } = data;
+    const { category_id, product_name, slug, description, brand, model, base_price, is_featured, is_active } = data;
     await db.query(
       `UPDATE products 
        SET category_id = ?, product_name = ?, slug = ?, description = ?, 
-           base_price = ?, is_featured = ?, is_active = ?, updated_at = NOW()
+           brand = ?, model = ?, base_price = ?, is_featured = ?, is_active = ?, updated_at = NOW()
        WHERE product_id = ?`,
-      [category_id, product_name, slug, description, base_price, is_featured ?? 0, is_active ?? 1, id]
+      [
+        category_id, 
+        product_name, 
+        slug || null, 
+        description || null, 
+        brand || null,
+        model || null,
+        base_price, 
+        is_featured ?? 0, 
+        is_active ?? 1, 
+        id
+      ]
     );
     return true;
   }

@@ -1,9 +1,11 @@
 import { create } from 'zustand';
 import { couponService } from '@/services/couponService';
+import { toast } from 'sonner';
 
-export const useCouponStore = create((set) => ({
+export const useCouponStore = create((set, get) => ({
     coupons: [],
     currentCoupon: null,
+    total: 0,
     loading: false,
     error: null,
 
@@ -12,10 +14,19 @@ export const useCouponStore = create((set) => ({
         set({ loading: true, error: null });
         try {
             const response = await couponService.listCoupons(params);
-            set({ coupons: response.data || response, loading: false });
+            const couponsData = response.data || response;
+            const totalData = response.pagination?.total || couponsData.length || 0;
+            
+            set({ 
+                coupons: Array.isArray(couponsData) ? couponsData : [], 
+                total: totalData,
+                loading: false 
+            });
             return response;
         } catch (error) {
-            set({ error: error.message, loading: false });
+            const message = error.response?.data?.message || 'Có lỗi xảy ra khi tải danh sách coupon';
+            set({ error: message, loading: false });
+            toast.error(message);
             throw error;
         }
     },
@@ -25,10 +36,15 @@ export const useCouponStore = create((set) => ({
         set({ loading: true, error: null });
         try {
             const response = await couponService.getCouponById(couponId);
-            set({ currentCoupon: response.data || response, loading: false });
+            set({ 
+                currentCoupon: response.data || response, 
+                loading: false 
+            });
             return response;
         } catch (error) {
-            set({ error: error.message, loading: false });
+            const message = error.response?.data?.message || 'Có lỗi xảy ra khi tải coupon';
+            set({ error: message, loading: false });
+            toast.error(message);
             throw error;
         }
     },
@@ -38,13 +54,19 @@ export const useCouponStore = create((set) => ({
         set({ loading: true, error: null });
         try {
             const response = await couponService.createCoupon(data);
+            const newCoupon = response.data || response;
+            
             set((state) => ({
-                coupons: [...state.coupons, response.data || response],
+                coupons: [...state.coupons, newCoupon],
+                total: state.total + 1,
                 loading: false
             }));
+            toast.success('Thêm coupon thành công!');
             return response;
         } catch (error) {
-            set({ error: error.message, loading: false });
+            const message = error.response?.data?.message || 'Có lỗi xảy ra khi thêm coupon';
+            set({ error: message, loading: false });
+            toast.error(message);
             throw error;
         }
     },
@@ -54,15 +76,28 @@ export const useCouponStore = create((set) => ({
         set({ loading: true, error: null });
         try {
             const response = await couponService.updateCoupon(couponId, data);
+            
+            // Check if response has success flag
+            if (response.success === false) {
+                const message = response.message || 'Cập nhật coupon thất bại';
+                set({ error: message, loading: false });
+                toast.error(message);
+                throw new Error(message);
+            }
+            
+            const updatedCoupon = response.data || response;
             set((state) => ({
                 coupons: state.coupons.map(c => 
-                    c.coupon_id === couponId ? (response.data || response) : c
+                    c.coupon_id === couponId ? updatedCoupon : c
                 ),
                 loading: false
             }));
+            toast.success('Cập nhật coupon thành công!');
             return response;
         } catch (error) {
-            set({ error: error.message, loading: false });
+            const message = error.response?.data?.message || error.message || 'Cập nhật coupon thất bại';
+            set({ error: message, loading: false });
+            toast.error(message);
             throw error;
         }
     },
@@ -71,14 +106,17 @@ export const useCouponStore = create((set) => ({
     deleteCoupon: async (couponId) => {
         set({ loading: true, error: null });
         try {
-            const response = await couponService.deleteCoupon(couponId);
+            await couponService.deleteCoupon(couponId);
             set((state) => ({
                 coupons: state.coupons.filter(c => c.coupon_id !== couponId),
+                total: Math.max(0, state.total - 1),
                 loading: false
             }));
-            return response;
+            toast.success('Xóa coupon thành công!');
         } catch (error) {
-            set({ error: error.message, loading: false });
+            const message = error.response?.data?.message || 'Xóa coupon thất bại';
+            set({ error: message, loading: false });
+            toast.error(message);
             throw error;
         }
     },
@@ -87,5 +125,5 @@ export const useCouponStore = create((set) => ({
     clearError: () => set({ error: null }),
 
     // Reset state
-    reset: () => set({ coupons: [], currentCoupon: null, loading: false, error: null })
+    reset: () => set({ coupons: [], currentCoupon: null, total: 0, loading: false, error: null })
 }));

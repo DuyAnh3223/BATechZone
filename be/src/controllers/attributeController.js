@@ -51,11 +51,14 @@ export const deleteAttribute = async (req, res) => {
 
 export const listAttributes = async (req, res) => {
   try {
+    console.log('Listing attributes with params:', req.query);
     const result = await Attribute.list(req.query);
+    console.log('Attributes result:', result);
     res.json(result);
   } catch (error) {
     console.error('Error listing attributes:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    console.error('Error stack:', error.stack);
+    res.status(500).json({ message: 'Internal server error', error: error.message });
   }
 };
 

@@ -41,17 +41,53 @@ class AttributeValue {
   }
 
   // Update attribute value
-  // async update(valueId, valueData) {
-  //   const [result] = await db.query(
-  //     `UPDATE attribute_values 
-  //     SET 
-  //       value = ?,
-  //       attribute_id = ?
-  //     WHERE attribute_value_id = ?`,
-  //     [valueData.value, valueData.attributeId, valueId]
-  //   );
-  //   return result.affectedRows > 0;
-  // }
+  async update(valueId, valueData) {
+    const updateFields = [];
+    const updateValues = [];
+
+    if (valueData.valueName !== undefined) {
+      updateFields.push('value_name = ?');
+      updateValues.push(valueData.valueName);
+    }
+    if (valueData.numericValue !== undefined) {
+      updateFields.push('numeric_value = ?');
+      updateValues.push(valueData.numericValue || null);
+    }
+    if (valueData.unit !== undefined) {
+      updateFields.push('unit = ?');
+      updateValues.push(valueData.unit || null);
+    }
+    if (valueData.colorCode !== undefined) {
+      updateFields.push('color_code = ?');
+      updateValues.push(valueData.colorCode || null);
+    }
+    if (valueData.imageUrl !== undefined) {
+      updateFields.push('image_url = ?');
+      updateValues.push(valueData.imageUrl || null);
+    }
+    if (valueData.displayOrder !== undefined) {
+      updateFields.push('display_order = ?');
+      updateValues.push(valueData.displayOrder || 0);
+    }
+    if (valueData.isActive !== undefined) {
+      updateFields.push('is_active = ?');
+      updateValues.push(valueData.isActive ? 1 : 0);
+    }
+
+    if (updateFields.length === 0) {
+      return false;
+    }
+
+    updateValues.push(valueId);
+
+    const [result] = await db.query(
+      `UPDATE attribute_values 
+      SET ${updateFields.join(', ')}
+      WHERE attribute_value_id = ?`,
+      updateValues
+    );
+    return result.affectedRows > 0;
+  }
 
   // Delete attribute value
   async delete(valueId) {

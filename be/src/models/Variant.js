@@ -10,17 +10,21 @@ class Variant {
       // Insert variant
       const [variant] = await conn.query(
         `INSERT INTO product_variants (
-          product_id, sku, price, sale_price, 
-          stock_quantity, weight, is_active
-        ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          product_id, sku, variant_name, price, compare_at_price, cost_price, 
+          stock_quantity, weight, dimensions, is_active, is_default
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           variantData.productId,
-          variantData.sku,
+          variantData.sku || null,
+          variantData.variantName || null,
           variantData.price,
-          variantData.salePrice,
-          variantData.stockQuantity,
-          variantData.weight,
-          variantData.isActive ?? true
+          variantData.compareAtPrice || null,
+          variantData.costPrice || null,
+          variantData.stockQuantity || 0,
+          variantData.weight || null,
+          variantData.dimensions || null,
+          variantData.isActive ?? true,
+          variantData.isDefault ?? false
         ]
       );
       const variantId = variant.insertId;
@@ -94,26 +98,63 @@ class Variant {
     try {
       await conn.beginTransaction();
 
+      // Build dynamic update query
+      const updateFields = [];
+      const updateValues = [];
+
+      if (variantData.sku !== undefined) {
+        updateFields.push('sku = ?');
+        updateValues.push(variantData.sku);
+      }
+      if (variantData.variantName !== undefined) {
+        updateFields.push('variant_name = ?');
+        updateValues.push(variantData.variantName);
+      }
+      if (variantData.price !== undefined) {
+        updateFields.push('price = ?');
+        updateValues.push(variantData.price);
+      }
+      if (variantData.compareAtPrice !== undefined) {
+        updateFields.push('compare_at_price = ?');
+        updateValues.push(variantData.compareAtPrice);
+      }
+      if (variantData.costPrice !== undefined) {
+        updateFields.push('cost_price = ?');
+        updateValues.push(variantData.costPrice);
+      }
+      if (variantData.stockQuantity !== undefined) {
+        updateFields.push('stock_quantity = ?');
+        updateValues.push(variantData.stockQuantity);
+      }
+      if (variantData.weight !== undefined) {
+        updateFields.push('weight = ?');
+        updateValues.push(variantData.weight);
+      }
+      if (variantData.dimensions !== undefined) {
+        updateFields.push('dimensions = ?');
+        updateValues.push(variantData.dimensions);
+      }
+      if (variantData.isActive !== undefined) {
+        updateFields.push('is_active = ?');
+        updateValues.push(variantData.isActive);
+      }
+      if (variantData.isDefault !== undefined) {
+        updateFields.push('is_default = ?');
+        updateValues.push(variantData.isDefault);
+      }
+
+      if (updateFields.length === 0) {
+        await conn.rollback();
+        return false;
+      }
+
+      updateFields.push('updated_at = NOW()');
+      updateValues.push(variantId);
+
       // Update variant base info
       await conn.query(
-        `UPDATE product_variants SET
-          sku = ?,
-          price = ?,
-          sale_price = ?,
-          stock_quantity = ?,
-          weight = ?,
-          is_active = ?,
-          updated_at = NOW()
-        WHERE variant_id = ?`,
-        [
-          variantData.sku,
-          variantData.price,
-          variantData.salePrice,
-          variantData.stockQuantity,
-          variantData.weight,
-          variantData.isActive,
-          variantId
-        ]
+        `UPDATE product_variants SET ${updateFields.join(', ')} WHERE variant_id = ?`,
+        updateValues
       );
 
       // Update variant attributes
@@ -285,36 +326,68 @@ class Variant {
 
   // Get variants by product ID
   async getByProductId(productId) {
-    const [variants] = await db.query(
-      `SELECT 
-        pv.*,
-        JSON_ARRAYAGG(
-          JSON_OBJECT(
-            'attributeValueId', va.attribute_value_id,
-            'attributeName', a.attribute_name,
-            'value', av.value
-          )
-        ) as attributes,
-        (
-          SELECT JSON_ARRAYAGG(
-            JSON_OBJECT(
-              'imageId', vi.image_id,
-              'imageUrl', vi.image_url,
-              'isPrimary', vi.is_primary
-            )
-          )
-          FROM variant_images vi
-          WHERE vi.variant_id = pv.variant_id
-        ) as images
-      FROM product_variants pv
-      LEFT JOIN variant_attributes va ON pv.variant_id = va.variant_id
-      LEFT JOIN attribute_values av ON va.attribute_value_id = av.attribute_value_id
-      LEFT JOIN attributes a ON av.attribute_id = a.attribute_id
-      WHERE pv.product_id = ?
-      GROUP BY pv.variant_id`,
-      [productId]
-    );
-    return variants;
+    try {
+      const productIdInt = parseInt(productId);
+      if (isNaN(productIdInt)) {
+        throw new Error('Invalid product ID');
+      }
+
+      console.log('Querying variants for product_id:', productIdInt);
+      
+      // First, get all variants for the product - simplified query
+      const [variants] = await db.query(
+        `SELECT 
+          variant_id,
+          product_id,
+          sku,
+          variant_name,
+          price,
+          compare_at_price,
+          cost_price,
+          stock_quantity as stock,
+          weight,
+          dimensions,
+          is_active,
+          is_default,
+          created_at,
+          updated_at
+        FROM product_variants
+        WHERE product_id = ?
+        ORDER BY is_default DESC, created_at DESC`,
+        [productIdInt]
+      );
+      
+      console.log('Found variants:', variants?.length || 0);
+      
+      if (!variants || variants.length === 0) {
+        return [];
+      }
+      
+      // Map variants to return format
+      return variants.map(v => ({
+        variant_id: v.variant_id,
+        product_id: v.product_id,
+        sku: v.sku || null,
+        variant_name: v.variant_name || null,
+        price: v.price ? parseFloat(v.price) : 0,
+        compare_at_price: v.compare_at_price ? parseFloat(v.compare_at_price) : null,
+        cost_price: v.cost_price ? parseFloat(v.cost_price) : null,
+        stock: v.stock ? parseInt(v.stock) : 0,
+        weight: v.weight ? parseFloat(v.weight) : null,
+        dimensions: v.dimensions || null,
+        is_active: v.is_active === 1 || v.is_active === true || v.is_active === '1',
+        is_default: v.is_default === 1 || v.is_default === true || v.is_default === '1',
+        created_at: v.created_at,
+        updated_at: v.updated_at,
+        attributes: [], // Will be loaded separately if needed
+        images: [] // Will be loaded separately if needed
+      }));
+    } catch (error) {
+      console.error('Error in getByProductId:', error);
+      console.error('Error stack:', error.stack);
+      console.error('Error code:', error.code);
+      throw error;
+    }
   }
 }
 

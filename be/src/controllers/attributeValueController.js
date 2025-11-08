@@ -29,6 +29,32 @@ export const getAttributeValue = async (req, res) => {
   }
 };
 
+export const updateAttributeValue = async (req, res) => {
+  try {
+    const { value_name, numeric_value, unit, color_code, image_url, display_order, is_active } = req.body;
+    const valueData = {
+      valueName: value_name,
+      numericValue: numeric_value,
+      unit: unit,
+      colorCode: color_code,
+      imageUrl: image_url,
+      displayOrder: display_order,
+      isActive: is_active
+    };
+
+    const updated = await AttributeValue.update(req.params.id, valueData);
+    if (!updated) {
+      return res.status(404).json({ message: 'Attribute value not found' });
+    }
+
+    const value = await AttributeValue.getById(req.params.id);
+    res.json(value);
+  } catch (error) {
+    console.error('Error updating attribute value:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
 
 export const deleteAttributeValue = async (req, res) => {
   try {

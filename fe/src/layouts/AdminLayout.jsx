@@ -1,6 +1,6 @@
 import React from "react";
 import { Outlet, NavLink } from "react-router-dom";
-import { User2, Home, Box, ShoppingCart, ListOrdered, Percent, Bell, Search, Users, Star, MapPin, Wrench, Tags, Book, Heart, CreditCard, TriangleAlert, LifeBuoy, Eye } from "lucide-react";
+import { User2, Home, Box, ShoppingCart, ListOrdered, Percent, Bell, Search, Users, Star, MapPin, Wrench, Tags, Book, Heart, CreditCard, TriangleAlert, LifeBuoy, Eye, Palette } from "lucide-react";
 import adminAvatar from "../assets/react.svg"; // dùng tạm hình có sẵn
 
 const menu = [
@@ -8,6 +8,7 @@ const menu = [
   { icon: <Users size={18} />, label: "Users", to: "/admin/users" },
   { icon: <Box size={18} />, label: "Products", to: "/admin/products" },
   { icon: <Tags size={18} />, label: "Categories", to: "/admin/categories" },
+  { icon: <Palette size={18} />, label: "Attributes", to: "/admin/attributes" },
   { icon: <Book size={18} />, label: "Posts", to: "/admin/posts" },
   { icon: <Wrench size={18} />, label: "Builds", to: "/admin/builds" },
   { icon: <ListOrdered size={18} />, label: "Orders", to: "/admin/orders" },

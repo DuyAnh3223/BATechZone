@@ -10,7 +10,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { Tag, Hash, FileText, Image, LayoutGrid, ListOrdered } from 'lucide-react';
-import api from '@/lib/axios';
+import { useCategoryStore } from '@/stores/useCategoryStore';
 
 const formatDate = (value) => {
   if (!value) return '-';
@@ -22,14 +22,23 @@ const formatDate = (value) => {
 const PAGE_SIZE_OPTIONS = [5, 10, 20];
 
 const AdminCategory = () => {
+  const { 
+    categories, 
+    parentCategories, 
+    loading, 
+    total,
+    fetchCategories,
+    fetchSimpleCategories,
+    fetchCategory,
+    createCategory,
+    updateCategory,
+    deleteCategory
+  } = useCategoryStore();
+
   const [search, setSearch] = useState("");
   const [active, setActive] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [categories, setCategories] = useState([]);
-  const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(false);
-  const [parentCategories, setParentCategories] = useState([]);
   const [isAddCategoryOpen, setIsAddCategoryOpen] = useState(false);
   const [isEditCategoryOpen, setIsEditCategoryOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -46,44 +55,30 @@ const AdminCategory = () => {
     display_order: '0'
   });
 
-  const loadCategories = async () => {
-    try {
-      setLoading(true);
-      const res = await api.get('/admin/categories', {
-        params: {
-          search: search.trim(),
-          is_active: active,
-          page,
-          pageSize
-        },
-        withCredentials: true
-      });
-      setCategories(res.data?.data || []);
-      setTotal(res.data?.pagination?.total || 0);
-    } catch (e) {
-      toast.error(e.response?.data?.message || 'Không tải được danh sách danh mục');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadParentCategories = async () => {
-    try {
-      const res = await api.get('/admin/categories/simple', { withCredentials: true });
-      setParentCategories(res.data?.data || []);
-    } catch (e) {
-      console.error('Error loading parent categories:', e);
-    }
-  };
-
+  // Load parent categories on mount
   useEffect(() => {
-    loadParentCategories();
+    fetchSimpleCategories();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Load categories
   useEffect(() => {
     loadCategories();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search, active, page, pageSize]);
+
+  const loadCategories = async () => {
+    try {
+      await fetchCategories({
+        search: search.trim(),
+        is_active: active || undefined,
+        page,
+        pageSize
+      });
+    } catch (error) {
+      console.error('Error loading categories:', error);
+    }
+  };
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const currentPage = Math.min(page, totalPages);
@@ -119,7 +114,7 @@ const AdminCategory = () => {
     }
     try {
       setIsSubmitting(true);
-      await api.post('/admin/categories', {
+      await createCategory({
         category_name: formData.category_name,
         slug: formData.slug || undefined,
         description: formData.description || null,
@@ -128,14 +123,13 @@ const AdminCategory = () => {
         icon: formData.icon || null,
         is_active: formData.is_active,
         display_order: parseInt(formData.display_order || 0)
-      }, { withCredentials: true });
-      toast.success('Thêm danh mục thành công!');
+      });
       setIsAddCategoryOpen(false);
       resetForm();
       loadCategories();
-      loadParentCategories();
+      fetchSimpleCategories();
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi thêm danh mục');
+      console.error('Error adding category:', error);
     } finally {
       setIsSubmitting(false);
     }
@@ -144,8 +138,8 @@ const AdminCategory = () => {
   const handleEditClick = async (category) => {
     try {
       setIsSubmitting(true);
-      const response = await api.get(`/admin/categories/${category.category_id}`, { withCredentials: true });
-      const data = response.data.data;
+      const response = await fetchCategory(category.category_id);
+      const data = response.data || response;
       setFormData({
         category_name: data.category_name || '',
         slug: data.slug || '',
@@ -159,7 +153,7 @@ const AdminCategory = () => {
       setEditingCategoryId(category.category_id);
       setIsEditCategoryOpen(true);
     } catch (error) {
-      toast.error('Không thể tải thông tin danh mục');
+      console.error('Error loading category:', error);
     } finally {
       setIsSubmitting(false);
     }
@@ -173,7 +167,7 @@ const AdminCategory = () => {
     }
     try {
       setIsSubmitting(true);
-      await api.put(`/admin/categories/${editingCategoryId}`, {
+      await updateCategory(editingCategoryId, {
         category_name: formData.category_name,
         slug: formData.slug || undefined,
         description: formData.description || null,
@@ -182,17 +176,29 @@ const AdminCategory = () => {
         icon: formData.icon || null,
         is_active: formData.is_active,
         display_order: parseInt(formData.display_order || 0)
-      }, { withCredentials: true });
-      toast.success('Cập nhật danh mục thành công!');
+      });
       setIsEditCategoryOpen(false);
       setEditingCategoryId(null);
       resetForm();
       loadCategories();
-      loadParentCategories();
+      fetchSimpleCategories();
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi cập nhật danh mục');
+      console.error('Error updating category:', error);
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteCategory = async (categoryId) => {
+    if (!confirm('Bạn có chắc chắn muốn xóa danh mục này?')) return;
+    try {
+      await deleteCategory(categoryId);
+      // Store đã tự động cập nhật local state (remove category khỏi danh sách)
+      // Chỉ cần reload simple categories để update dropdown
+      fetchSimpleCategories();
+      // Không cần reload loadCategories() vì store đã update local state rồi
+    } catch (error) {
+      console.error('Error deleting category:', error);
     }
   };
 
@@ -267,7 +273,12 @@ const AdminCategory = () => {
                   >
                     Sửa
                   </button>
-                  <button className="px-3 py-1 bg-pink-100 hover:bg-pink-200 text-pink-600 rounded text-xs font-medium">Xóa</button>
+                  <button 
+                    onClick={() => handleDeleteCategory(cat.category_id)}
+                    className="px-3 py-1 bg-pink-100 hover:bg-pink-200 text-pink-600 rounded text-xs font-medium"
+                  >
+                    Xóa
+                  </button>
                 </td>
               </tr>
             ))

@@ -9,9 +9,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { toast } from 'sonner';
 import { Package, DollarSign, FileText, Building2, Tag, Hash } from 'lucide-react';
-import api from '@/lib/axios';
+import { toast } from 'sonner';
+import { useProductStore } from '@/stores/useProductStore';
+import { useCategoryStore } from '@/stores/useCategoryStore';
 
 const formatDate = (value) => {
   if (!value) return '-';
@@ -23,14 +24,23 @@ const formatDate = (value) => {
 const PAGE_SIZE_OPTIONS = [5, 10, 20];
 
 const AdminProduct = () => {
+  const {
+    products,
+    total,
+    loading,
+    fetchProducts,
+    fetchProduct,
+    createProduct,
+    updateProduct,
+    deleteProduct
+  } = useProductStore();
+
+  const { parentCategories, fetchSimpleCategories } = useCategoryStore();
+
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [products, setProducts] = useState([]);
-  const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(false);
-  const [categoriesList, setCategoriesList] = useState([]);
   const [isAddProductOpen, setIsAddProductOpen] = useState(false);
   const [isEditProductOpen, setIsEditProductOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -49,44 +59,30 @@ const AdminProduct = () => {
     is_featured: false
   });
 
-  const loadCategories = async () => {
-    try {
-      const res = await api.get('/admin/categories/simple', { withCredentials: true });
-      setCategoriesList(res.data?.data || []);
-    } catch (e) {
-      console.error('Error loading categories:', e);
-    }
-  };
-
-  const loadProducts = async () => {
-    try {
-      setLoading(true);
-      const res = await api.get('/admin/products', {
-        params: {
-          search: search.trim(),
-          category_id: category,
-          page,
-          pageSize
-        },
-        withCredentials: true
-      });
-      setProducts(res.data?.data || []);
-      setTotal(res.data?.pagination?.total || 0);
-    } catch (e) {
-      toast.error(e.response?.data?.message || 'Không tải được danh sách sản phẩm');
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // Load categories on mount
   useEffect(() => {
-    loadCategories();
+    fetchSimpleCategories();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Load products
   useEffect(() => {
     loadProducts();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search, category, page, pageSize]);
+
+  const loadProducts = async () => {
+    try {
+      await fetchProducts({
+        search: search.trim(),
+        category_id: category || undefined,
+        page,
+        pageSize
+      });
+    } catch (error) {
+      console.error('Error loading products:', error);
+    }
+  };
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const currentPage = Math.min(page, totalPages);
@@ -119,8 +115,18 @@ const AdminProduct = () => {
     e.preventDefault();
     
     // Validate
-    if (!formData.category_id || !formData.product_name || !formData.base_price) {
-      toast.error('Vui lòng điền đầy đủ thông tin bắt buộc (danh mục, tên sản phẩm, giá)');
+    if (!formData.category_id) {
+      toast.error('Vui lòng chọn danh mục');
+      return;
+    }
+
+    if (!formData.product_name || !formData.product_name.trim()) {
+      toast.error('Vui lòng nhập tên sản phẩm');
+      return;
+    }
+
+    if (!formData.base_price) {
+      toast.error('Vui lòng nhập giá sản phẩm');
       return;
     }
 
@@ -131,26 +137,23 @@ const AdminProduct = () => {
 
     try {
       setIsSubmitting(true);
-      // Call API to create product
-      const response = await api.post('/admin/products', {
+      await createProduct({
         category_id: parseInt(formData.category_id),
-        product_name: formData.product_name,
-        slug: formData.slug || undefined, // Auto-generate if empty
-        description: formData.description || null,
-        brand: formData.brand || null,
-        model: formData.model || null,
+        product_name: formData.product_name.trim(),
+        slug: formData.slug?.trim() || undefined,
+        description: formData.description?.trim() || null,
+        brand: formData.brand?.trim() || null,
+        model: formData.model?.trim() || null,
         base_price: parseFloat(formData.base_price),
-        is_active: formData.is_active,
-        is_featured: formData.is_featured
-      }, { withCredentials: true });
-
-      toast.success('Thêm sản phẩm thành công!');
+        is_active: formData.is_active !== undefined ? formData.is_active : true,
+        is_featured: formData.is_featured !== undefined ? formData.is_featured : false
+      });
       setIsAddProductOpen(false);
       resetForm();
       loadProducts();
     } catch (error) {
-      const message = error.response?.data?.message || 'Có lỗi xảy ra khi thêm sản phẩm';
-      toast.error(message);
+      console.error('Error adding product:', error);
+      // Error đã được xử lý trong store với toast notification
     } finally {
       setIsSubmitting(false);
     }
@@ -159,8 +162,8 @@ const AdminProduct = () => {
   const handleEditClick = async (product) => {
     try {
       setIsSubmitting(true);
-      const response = await api.get(`/admin/products/${product.product_id}`, { withCredentials: true });
-      const data = response.data.data;
+      const response = await fetchProduct(product.product_id);
+      const data = response.data || response;
       setFormData({
         category_id: String(data.category_id || ''),
         product_name: data.product_name || '',
@@ -175,7 +178,7 @@ const AdminProduct = () => {
       setEditingProductId(product.product_id);
       setIsEditProductOpen(true);
     } catch (error) {
-      toast.error('Không thể tải thông tin sản phẩm');
+      console.error('Error loading product:', error);
     } finally {
       setIsSubmitting(false);
     }
@@ -185,18 +188,16 @@ const AdminProduct = () => {
     e.preventDefault();
     
     if (!formData.category_id || !formData.product_name || !formData.base_price) {
-      toast.error('Vui lòng điền đầy đủ thông tin bắt buộc (danh mục, tên sản phẩm, giá)');
       return;
     }
 
     if (isNaN(formData.base_price) || parseFloat(formData.base_price) <= 0) {
-      toast.error('Giá sản phẩm phải là số dương');
       return;
     }
 
     try {
       setIsSubmitting(true);
-      await api.put(`/admin/products/${editingProductId}`, {
+      await updateProduct(editingProductId, {
         category_id: parseInt(formData.category_id),
         product_name: formData.product_name,
         slug: formData.slug || undefined,
@@ -206,18 +207,26 @@ const AdminProduct = () => {
         base_price: parseFloat(formData.base_price),
         is_active: formData.is_active,
         is_featured: formData.is_featured
-      }, { withCredentials: true });
-
-      toast.success('Cập nhật sản phẩm thành công!');
+      });
       setIsEditProductOpen(false);
       setEditingProductId(null);
       resetForm();
       loadProducts();
     } catch (error) {
-      const message = error.response?.data?.message || 'Có lỗi xảy ra khi cập nhật sản phẩm';
-      toast.error(message);
+      console.error('Error updating product:', error);
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteProduct = async (productId) => {
+    if (!confirm('Bạn có chắc chắn muốn xóa sản phẩm này?')) return;
+
+    try {
+      await deleteProduct(productId);
+      // Store đã tự động cập nhật local state
+    } catch (error) {
+      console.error('Error deleting product:', error);
     }
   };
 
@@ -247,7 +256,7 @@ const AdminProduct = () => {
         className="border rounded px-3 py-2"
       >
         <option value="">Tất cả danh mục</option>
-        {categoriesList.map(c => (<option key={c.category_id} value={c.category_id}>{c.category_name}</option>))}
+        {parentCategories.map(c => (<option key={c.category_id} value={c.category_id}>{c.category_name}</option>))}
       </select>
       <div className="ml-auto flex items-center gap-2">
         <span className="text-sm text-gray-500">Hiển thị</span>
@@ -307,7 +316,12 @@ const AdminProduct = () => {
                   >
                     Sửa
                   </button>
-                  <button className="px-3 py-1 bg-pink-100 hover:bg-pink-200 text-pink-600 rounded text-xs font-medium">Xóa</button>
+                  <button 
+                    onClick={() => handleDeleteProduct(prod.product_id)}
+                    className="px-3 py-1 bg-pink-100 hover:bg-pink-200 text-pink-600 rounded text-xs font-medium"
+                  >
+                    Xóa
+                  </button>
                 </td>
               </tr>
             ))
@@ -359,7 +373,7 @@ const AdminProduct = () => {
                 required
               >
                 <option value="">Chọn danh mục</option>
-                {categoriesList.map(cat => (
+                {parentCategories.map(cat => (
                   <option key={cat.category_id} value={cat.category_id}>{cat.category_name}</option>
                 ))}
               </select>
@@ -562,7 +576,7 @@ const AdminProduct = () => {
                 required
               >
                 <option value="">Chọn danh mục</option>
-                {categoriesList.map(cat => (
+                {parentCategories.map(cat => (
                   <option key={cat.category_id} value={cat.category_id}>{cat.category_name}</option>
                 ))}
               </select>

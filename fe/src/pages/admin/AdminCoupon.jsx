@@ -10,7 +10,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { Tag, Percent, DollarSign, Calendar, Hash } from 'lucide-react';
-import api from '@/lib/axios';
+import { useCouponStore } from '@/stores/useCouponStore';
 
 const formatDate = (value) => {
   if (!value) return '-';
@@ -34,14 +34,22 @@ const formatDateTimeLocal = (value) => {
 const PAGE_SIZE_OPTIONS = [5, 10, 20];
 
 const AdminCoupon = () => {
+  const { 
+    coupons, 
+    total,
+    loading, 
+    fetchCoupons,
+    fetchCoupon,
+    createCoupon,
+    updateCoupon,
+    deleteCoupon
+  } = useCouponStore();
+
   const [search, setSearch] = useState("");
   const [type, setType] = useState("");
   const [active, setActive] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [coupons, setCoupons] = useState([]);
-  const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(false);
   const [isAddCouponOpen, setIsAddCouponOpen] = useState(false);
   const [isEditCouponOpen, setIsEditCouponOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -62,23 +70,15 @@ const AdminCoupon = () => {
 
   const loadCoupons = async () => {
     try {
-      setLoading(true);
-      const res = await api.get('/admin/coupons', {
-        params: {
-          search: search.trim(),
-          discount_type: type === 'fixed' ? 'fixed_amount' : type,
-          is_active: active,
-          page,
-          pageSize
-        },
-        withCredentials: true
+      await fetchCoupons({
+        search: search.trim(),
+        discount_type: type === 'fixed' ? 'fixed_amount' : type,
+        is_active: active || undefined,
+        page,
+        pageSize
       });
-      setCoupons(res.data?.data || []);
-      setTotal(res.data?.pagination?.total || 0);
-    } catch (e) {
-      toast.error(e.response?.data?.message || 'Không tải được danh sách coupon');
-    } finally {
-      setLoading(false);
+    } catch (error) {
+      console.error('Error loading coupons:', error);
     }
   };
 
@@ -123,7 +123,7 @@ const AdminCoupon = () => {
     }
     try {
       setIsSubmitting(true);
-      await api.post('/admin/coupons', {
+      await createCoupon({
         coupon_code: formData.coupon_code,
         description: formData.description || null,
         discount_type: formData.discount_type,
@@ -134,13 +134,12 @@ const AdminCoupon = () => {
         is_active: formData.is_active,
         valid_from: formData.valid_from || null,
         valid_until: formData.valid_until || null
-      }, { withCredentials: true });
-      toast.success('Thêm coupon thành công!');
+      });
       setIsAddCouponOpen(false);
       resetForm();
       loadCoupons();
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi thêm coupon');
+      console.error('Error adding coupon:', error);
     } finally {
       setIsSubmitting(false);
     }
@@ -149,8 +148,8 @@ const AdminCoupon = () => {
   const handleEditClick = async (coupon) => {
     try {
       setIsSubmitting(true);
-      const response = await api.get(`/admin/coupons/${coupon.coupon_id}`, { withCredentials: true });
-      const data = response.data.data;
+      const response = await fetchCoupon(coupon.coupon_id);
+      const data = response.data || response;
       setFormData({
         coupon_code: data.coupon_code || '',
         description: data.description || '',
@@ -166,7 +165,7 @@ const AdminCoupon = () => {
       setEditingCouponId(coupon.coupon_id);
       setIsEditCouponOpen(true);
     } catch (error) {
-      toast.error('Không thể tải thông tin coupon');
+      console.error('Error loading coupon:', error);
     } finally {
       setIsSubmitting(false);
     }
@@ -180,7 +179,7 @@ const AdminCoupon = () => {
     }
     try {
       setIsSubmitting(true);
-      await api.put(`/admin/coupons/${editingCouponId}`, {
+      await updateCoupon(editingCouponId, {
         coupon_code: formData.coupon_code,
         description: formData.description || null,
         discount_type: formData.discount_type,
@@ -191,16 +190,26 @@ const AdminCoupon = () => {
         is_active: formData.is_active,
         valid_from: formData.valid_from || null,
         valid_until: formData.valid_until || null
-      }, { withCredentials: true });
-      toast.success('Cập nhật coupon thành công!');
+      });
       setIsEditCouponOpen(false);
       setEditingCouponId(null);
       resetForm();
       loadCoupons();
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi cập nhật coupon');
+      console.error('Error updating coupon:', error);
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteCoupon = async (couponId) => {
+    if (!confirm('Bạn có chắc chắn muốn xóa coupon này?')) return;
+    try {
+      await deleteCoupon(couponId);
+      // Store đã tự động cập nhật local state (remove coupon khỏi danh sách)
+      // Không cần reload loadCoupons() vì store đã update local state rồi
+    } catch (error) {
+      console.error('Error deleting coupon:', error);
     }
   };
 
@@ -284,7 +293,12 @@ const AdminCoupon = () => {
                   >
                     Sửa
                   </button>
-                  <button className="px-3 py-1 bg-pink-100 hover:bg-pink-200 text-pink-600 rounded text-xs font-medium">Xóa</button>
+                  <button 
+                    onClick={() => handleDeleteCoupon(c.coupon_id)}
+                    className="px-3 py-1 bg-pink-100 hover:bg-pink-200 text-pink-600 rounded text-xs font-medium"
+                  >
+                    Xóa
+                  </button>
                 </td>
               </tr>
             ))

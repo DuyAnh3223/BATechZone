@@ -29,6 +29,7 @@ import AdminOrder from './pages/admin/AdminOrder';
 import AdminNotification from './pages/admin/AdminNotification';
 import AdminBuild from './pages/admin/AdminBuild';
 import AdminCategory from './pages/admin/AdminCategory';
+import AdminAttribute from './pages/admin/AdminAttribute';
 import AdminPost from './pages/admin/AdminPost';
 import AdminPostDetail from './pages/admin/AdminPostDetail';
 import AdminWishlist from './pages/admin/AdminWishlist';
@@ -76,6 +77,7 @@ function App() {
             <Route path="notifications" element={<AdminNotification />} />
             <Route path="builds" element={<AdminBuild />} />
             <Route path="categories" element={<AdminCategory />} />
+            <Route path="attributes" element={<AdminAttribute />} />
             <Route path="posts" element={<AdminPost />} />
             <Route path="posts/:postId" element={<AdminPostDetail />} />
             <Route path="payments" element={<AdminPayment />} />

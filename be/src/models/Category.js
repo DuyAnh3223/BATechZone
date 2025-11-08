@@ -38,6 +38,87 @@ class Category {
     }
   }
 
+  // Update category
+  async update(categoryId, categoryData) {
+    const conn = await db.getConnection();
+    try {
+      await conn.beginTransaction();
+
+      // Prevent category from being its own parent
+      if (categoryData.parentId !== undefined && categoryData.parentId === parseInt(categoryId)) {
+        throw new Error('Category cannot be its own parent');
+      }
+
+      // Check if parent exists (if parentId is provided)
+      if (categoryData.parentId !== undefined && categoryData.parentId !== null) {
+        const [parent] = await conn.query(
+          'SELECT category_id FROM categories WHERE category_id = ?',
+          [categoryData.parentId]
+        );
+        if (parent.length === 0) {
+          throw new Error('Parent category not found');
+        }
+      }
+
+      // Build update query dynamically based on provided fields
+      const updateFields = [];
+      const updateValues = [];
+
+      if (categoryData.categoryName !== undefined) {
+        updateFields.push('category_name = ?');
+        updateValues.push(categoryData.categoryName);
+      }
+      if (categoryData.slug !== undefined) {
+        updateFields.push('slug = ?');
+        updateValues.push(categoryData.slug || null);
+      }
+      if (categoryData.description !== undefined) {
+        updateFields.push('description = ?');
+        updateValues.push(categoryData.description || null);
+      }
+      if (categoryData.parentId !== undefined) {
+        updateFields.push('parent_category_id = ?');
+        updateValues.push(categoryData.parentId || null);
+      }
+      if (categoryData.imageUrl !== undefined) {
+        updateFields.push('image_url = ?');
+        updateValues.push(categoryData.imageUrl || null);
+      }
+      if (categoryData.icon !== undefined) {
+        updateFields.push('icon = ?');
+        updateValues.push(categoryData.icon || null);
+      }
+      if (categoryData.isActive !== undefined) {
+        updateFields.push('is_active = ?');
+        updateValues.push(categoryData.isActive ? 1 : 0);
+      }
+      if (categoryData.displayOrder !== undefined) {
+        updateFields.push('display_order = ?');
+        updateValues.push(categoryData.displayOrder || 0);
+      }
+
+      if (updateFields.length === 0) {
+        await conn.rollback();
+        return false;
+      }
+
+      updateValues.push(categoryId);
+
+      const [result] = await conn.query(
+        `UPDATE categories SET ${updateFields.join(', ')} WHERE category_id = ?`,
+        updateValues
+      );
+
+      await conn.commit();
+      return result.affectedRows > 0;
+    } catch (error) {
+      await conn.rollback();
+      throw error;
+    } finally {
+      await conn.release();
+    }
+  }
+
   // Delete category
   // Soft delete category using is_active
 async delete(categoryId) {
@@ -94,12 +175,21 @@ async delete(categoryId) {
       sortOrder = 'ASC'
     } = params;
 
+    // Sanitize sortBy to prevent SQL injection
+    const allowedSortColumns = ['category_id', 'category_name', 'created_at', 'display_order', 'is_active', 'slug'];
+    const sanitizedSortBy = allowedSortColumns.includes(sortBy) ? sortBy : 'display_order';
+    const sanitizedSortOrder = sortOrder.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
+
     let conditions = ['1=1'];
     let values = [];
 
     if (parentId !== undefined) {
-      conditions.push('c.parent_id IS ?');
-      values.push(parentId === null ? null : parentId);
+      if (parentId === null || parentId === '') {
+        conditions.push('c.parent_category_id IS NULL');
+      } else {
+        conditions.push('c.parent_category_id = ?');
+        values.push(parentId);
+      }
     }
 
     if (search) {
@@ -113,25 +203,30 @@ async delete(categoryId) {
     }
 
     const offset = (page - 1) * limit;
-    values.push(limit, offset);
+    const limitValue = parseInt(limit) || 10;
+    const offsetValue = parseInt(offset) || 0;
+    values.push(limitValue, offsetValue);
 
     const [categories] = await db.query(
       `SELECT 
         c.*,
         p.category_name as parent_name,
-        (SELECT CONCAT(
-        '[',
-        GROUP_CONCAT(
-          JSON_OBJECT(
-            'categoryId', child.category_id,
-              'categoryName', child.category_name,
-              'slug', child.slug,
-              'imageUrl', child.image_url,
-              'isActive', child.is_active
-          )
-        ), ']') 
-          FROM categories child
-          WHERE child.parent_category_id = c.category_id
+        COALESCE(
+          (SELECT CONCAT(
+            '[',
+            GROUP_CONCAT(
+              JSON_OBJECT(
+                'categoryId', child.category_id,
+                'categoryName', child.category_name,
+                'slug', child.slug,
+                'imageUrl', child.image_url,
+                'isActive', child.is_active
+              )
+            ), ']') 
+            FROM categories child
+            WHERE child.parent_category_id = c.category_id
+          ),
+          '[]'
         ) as children,
         (
           SELECT COUNT(*)
@@ -142,25 +237,26 @@ async delete(categoryId) {
       LEFT JOIN categories p ON c.parent_category_id = p.category_id
       WHERE ${conditions.join(' AND ')}
       GROUP BY c.category_id
-      ORDER BY c.${sortBy} ${sortOrder}
+      ORDER BY c.${sanitizedSortBy} ${sanitizedSortOrder}
       LIMIT ? OFFSET ?`,
       values
     );
 
+    const countValues = values.slice(0, -2);
     const [count] = await db.query(
       `SELECT COUNT(*) as total
       FROM categories c
       WHERE ${conditions.join(' AND ')}`,
-      values.slice(0, -2)
+      countValues
     );
 
     return {
-      data: categories,
+      data: categories || [],
       pagination: {
-        total: count[0].total,
-        page: parseInt(page),
-        limit: parseInt(limit),
-        totalPages: Math.ceil(count[0].total / limit)
+        total: count[0]?.total || 0,
+        page: parseInt(page) || 1,
+        limit: limitValue,
+        totalPages: Math.ceil((count[0]?.total || 0) / limitValue)
       }
     };
   }
@@ -234,8 +330,11 @@ async delete(categoryId) {
 
   // Get categories by parent ID
   async getByParentId(parentId = null) {
-    const [categories] = await db.query(
-      `SELECT 
+    let query;
+    let values = [];
+    
+    if (parentId === null || parentId === undefined) {
+      query = `SELECT 
         c.*,
         (
           SELECT COUNT(*)
@@ -243,11 +342,39 @@ async delete(categoryId) {
           WHERE p.category_id = c.category_id
         ) as product_count
       FROM categories c
-      WHERE c.parent_id IS ?
-      ORDER BY c.display_order ASC, c.category_name ASC`,
-      [parentId]
-    );
+      WHERE c.parent_category_id IS NULL
+      ORDER BY c.display_order ASC, c.category_name ASC`;
+    } else {
+      query = `SELECT 
+        c.*,
+        (
+          SELECT COUNT(*)
+          FROM products p
+          WHERE p.category_id = c.category_id
+        ) as product_count
+      FROM categories c
+      WHERE c.parent_category_id = ?
+      ORDER BY c.display_order ASC, c.category_name ASC`;
+      values = [parentId];
+    }
+    
+    const [categories] = await db.query(query, values);
     return categories;
+  }
+
+  // Get simple categories list (id and name only, for dropdowns)
+  async getSimple() {
+    const [categories] = await db.query(
+      `SELECT 
+        category_id,
+        category_name,
+        parent_category_id,
+        slug
+      FROM categories
+      WHERE is_active = 1
+      ORDER BY display_order ASC, category_name ASC`
+    );
+    return categories || [];
   }
 }
 

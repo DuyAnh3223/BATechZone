@@ -5,18 +5,21 @@ export const listProducts = async (req, res) => {
   try {
     const filters = {
       page: parseInt(req.query.page) || 1,
-      limit: parseInt(req.query.limit) || 10,
+      limit: parseInt(req.query.limit) || (parseInt(req.query.pageSize) || 10),
       search: req.query.search,
       category_id: req.query.category_id,
       minPrice: req.query.minPrice,
       maxPrice: req.query.maxPrice,
       sortBy: req.query.sortBy,
-      sortOrder: req.query.sortOrder?.toUpperCase() || 'DESC'
+      sortOrder: req.query.sortOrder?.toUpperCase() || 'DESC',
+      is_active: req.query.is_active !== undefined ? (req.query.is_active === 'true' || req.query.is_active === true) : undefined
     };
 
     const result = await Product.list(filters);
     res.json({ success: true, ...result });
   } catch (error) {
+    console.error('Error listing products:', error);
+    console.error('Error stack:', error.stack);
     res.status(500).json({ success: false, message: 'Error retrieving products', error: error.message });
   }
 };
@@ -37,32 +40,86 @@ export const getProduct = async (req, res) => {
 // Tạo mới sản phẩm
 export const createProduct = async (req, res) => {
   try {
-    const { category_id, product_name, slug, description, base_price, is_active, is_featured } = req.body;
+    const { category_id, product_name, slug, description, brand, model, base_price, is_active, is_featured } = req.body;
 
-    if (!product_name || !category_id || !slug || !base_price) {
+    // Validate required fields
+    if (!product_name || !product_name.trim()) {
       return res.status(400).json({
         success: false,
-        message: 'Fields: category_id, product_name, slug, and base_price are required'
+        message: 'Tên sản phẩm là bắt buộc'
       });
     }
 
+    if (!category_id) {
+      return res.status(400).json({
+        success: false,
+        message: 'Danh mục là bắt buộc'
+      });
+    }
+
+    if (!base_price || isNaN(base_price) || parseFloat(base_price) <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Giá sản phẩm phải là số dương'
+      });
+    }
+
+    // Auto-generate slug if not provided
+    let finalSlug = slug?.trim();
+    if (!finalSlug) {
+      finalSlug = product_name
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '') // Remove diacritics
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+    }
+
     const productId = await Product.create({
-      category_id,
-      product_name,
-      slug,
-      description,
-      base_price,
-      is_active,
-      is_featured
+      category_id: parseInt(category_id),
+      product_name: product_name.trim(),
+      slug: finalSlug,
+      description: description?.trim() || null,
+      brand: brand?.trim() || null,
+      model: model?.trim() || null,
+      base_price: parseFloat(base_price),
+      is_active: is_active !== undefined ? (is_active ? 1 : 0) : 1,
+      is_featured: is_featured !== undefined ? (is_featured ? 1 : 0) : 0
     });
+
+    // Lấy lại product với category_name
+    const product = await Product.getById(productId);
 
     res.status(201).json({
       success: true,
       message: 'Product created successfully',
-      data: { productId }
+      data: product
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Error creating product', error: error.message });
+    console.error('Error creating product:', error);
+    console.error('Error stack:', error.stack);
+    
+    // Handle duplicate entry
+    if (error.code === 'ER_DUP_ENTRY') {
+      return res.status(400).json({
+        success: false,
+        message: 'Sản phẩm với tên hoặc slug này đã tồn tại'
+      });
+    }
+
+    // Handle foreign key constraint
+    if (error.code === 'ER_NO_REFERENCED_ROW_2') {
+      return res.status(400).json({
+        success: false,
+        message: 'Danh mục không tồn tại'
+      });
+    }
+
+    res.status(500).json({ 
+      success: false, 
+      message: 'Có lỗi xảy ra khi tạo sản phẩm',
+      error: error.message 
+    });
   }
 };
 
@@ -75,8 +132,18 @@ export const updateProduct = async (req, res) => {
     }
 
     await Product.update(req.params.id, req.body);
-    res.json({ success: true, message: 'Product updated successfully' });
+    
+    // Lấy lại product với category_name sau khi cập nhật
+    const updatedProduct = await Product.getById(req.params.id);
+    
+    res.json({ 
+      success: true, 
+      message: 'Product updated successfully',
+      data: updatedProduct
+    });
   } catch (error) {
+    console.error('Error updating product:', error);
+    console.error('Error stack:', error.stack);
     res.status(500).json({ success: false, message: 'Error updating product', error: error.message });
   }
 };

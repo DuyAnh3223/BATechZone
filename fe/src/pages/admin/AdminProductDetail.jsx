@@ -10,7 +10,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import api from '@/lib/axios';
+import { useVariantStore } from '@/stores/useVariantStore';
 
 const TabButton = ({ active, onClick, children }) => (
   <button
@@ -27,89 +27,103 @@ const AdminProductDetail = () => {
   const { productId } = useParams();
   const [tab, setTab] = useState('variants');
 
-  // Variants state
-  const [variants, setVariants] = useState([]);
-  const [loadingVariants, setLoadingVariants] = useState(false);
+  const {
+    variants,
+    attributes,
+    mappings,
+    variantImages,
+    loading,
+    loadingAttributes,
+    loadingImages,
+    fetchVariantsByProductId,
+    fetchAttributesByProductId,
+    fetchMappingsByProductId,
+    createVariantForProduct,
+    updateVariant,
+    deleteVariant,
+    updateVariantMappings,
+    fetchVariantImages,
+    uploadVariantImages,
+    deleteImage
+  } = useVariantStore();
+
   const [savingVariant, setSavingVariant] = useState(false);
-  const [variantForm, setVariantForm] = useState({ sku: '', price: '', stock: 0, is_active: true });
+  const [variantForm, setVariantForm] = useState({ 
+    sku: '', 
+    variant_name: '',
+    price: '', 
+    compare_at_price: '',
+    cost_price: '',
+    stock: 0, 
+    weight: '',
+    dimensions: '',
+    is_active: true,
+    is_default: false
+  });
   const [editingVariantId, setEditingVariantId] = useState(null);
   const [isVariantDialogOpen, setIsVariantDialogOpen] = useState(false);
 
-  // Attributes state
-  const [attributes, setAttributes] = useState([]);
-  const [loadingAttributes, setLoadingAttributes] = useState(false);
-  const [attrForm, setAttrForm] = useState({ name: '', value: '' });
-  const [isAttributeDialogOpen, setIsAttributeDialogOpen] = useState(false);
-
   // Mapping state
-  const [mappings, setMappings] = useState([]); // rows {id, variant_id, attribute_id}
   const [selectedVariantForMap, setSelectedVariantForMap] = useState(null);
   const [selectedAttrIds, setSelectedAttrIds] = useState([]);
   const [savingMapping, setSavingMapping] = useState(false);
 
   // Images state
   const [selectedVariantForImages, setSelectedVariantForImages] = useState(null);
-  const [variantImages, setVariantImages] = useState([]);
-  const [newImageUrl, setNewImageUrl] = useState('');
-  const [newImageOrder, setNewImageOrder] = useState(0);
-  const [loadingImages, setLoadingImages] = useState(false);
   const [savingImage, setSavingImage] = useState(false);
 
   const loadVariants = async () => {
     try {
-      setLoadingVariants(true);
-      const res = await api.get(`/admin/products/${productId}/variants`, { withCredentials: true });
-      setVariants(res.data?.data || []);
-    } catch (e) {
-      toast.error(e.response?.data?.message || 'Không tải được danh sách biến thể');
-    } finally {
-      setLoadingVariants(false);
+      await fetchVariantsByProductId(productId);
+    } catch (error) {
+      console.error('Error loading variants:', error);
     }
   };
 
   const loadAttributes = async () => {
     try {
-      setLoadingAttributes(true);
-      const res = await api.get(`/admin/products/${productId}/attributes`, { withCredentials: true });
-      setAttributes(res.data?.data || []);
-    } catch (e) {
-      toast.error(e.response?.data?.message || 'Không tải được thuộc tính');
-    } finally {
-      setLoadingAttributes(false);
+      await fetchAttributesByProductId(productId);
+    } catch (error) {
+      console.error('Error loading attributes:', error);
     }
   };
 
   const loadMappings = async () => {
     try {
-      const res = await api.get(`/admin/products/${productId}/variant-mappings`, { withCredentials: true });
-      setMappings(res.data?.data || []);
-    } catch (e) {
-      toast.error(e.response?.data?.message || 'Không tải được mapping');
+      await fetchMappingsByProductId(productId);
+    } catch (error) {
+      console.error('Error loading mappings:', error);
     }
   };
 
   const loadVariantImages = async (variantId) => {
     try {
-      setLoadingImages(true);
-      const res = await api.get(`/admin/variants/${variantId}/images`, { withCredentials: true });
-      setVariantImages(res.data?.data || []);
-    } catch (e) {
-      toast.error(e.response?.data?.message || 'Không tải được ảnh biến thể');
-    } finally {
-      setLoadingImages(false);
+      await fetchVariantImages(variantId);
+    } catch (error) {
+      console.error('Error loading variant images:', error);
     }
   };
 
   useEffect(() => {
     if (tab === 'variants') loadVariants();
-    if (tab === 'attributes') loadAttributes();
     if (tab === 'mapping') { loadVariants(); loadAttributes(); loadMappings(); }
     if (tab === 'images') { loadVariants(); }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab, productId]);
 
   const resetVariantForm = () => {
-    setVariantForm({ sku: '', price: '', stock: 0, is_active: true });
+    setVariantForm({ 
+      sku: '', 
+      variant_name: '',
+      price: '', 
+      compare_at_price: '',
+      cost_price: '',
+      stock: 0, 
+      weight: '',
+      dimensions: '',
+      is_active: true,
+      is_default: false
+    });
     setEditingVariantId(null);
     setIsVariantDialogOpen(false);
   };
@@ -127,27 +141,33 @@ const AdminProductDetail = () => {
     }
     try {
       setSavingVariant(true);
+      const variantData = {
+        sku: variantForm.sku || null,
+        variant_name: variantForm.variant_name || null,
+        price: Number(variantForm.price),
+        compare_at_price: variantForm.compare_at_price ? Number(variantForm.compare_at_price) : null,
+        cost_price: variantForm.cost_price ? Number(variantForm.cost_price) : null,
+        stock: parseInt(variantForm.stock || 0),
+        weight: variantForm.weight ? Number(variantForm.weight) : null,
+        dimensions: variantForm.dimensions || null,
+        is_active: !!variantForm.is_active,
+        is_default: !!variantForm.is_default,
+      };
       if (editingVariantId) {
-        await api.put(`/admin/variants/${editingVariantId}`, {
-          sku: variantForm.sku || null,
-          price: Number(variantForm.price),
-          stock: parseInt(variantForm.stock || 0),
-          is_active: !!variantForm.is_active,
-        }, { withCredentials: true });
-        toast.success('Đã cập nhật biến thể');
+        await updateVariant(editingVariantId, variantData);
+        toast.success('Cập nhật biến thể thành công');
       } else {
-        await api.post(`/admin/products/${productId}/variants`, {
-          sku: variantForm.sku || null,
-          price: Number(variantForm.price),
-          stock: parseInt(variantForm.stock || 0),
-          is_active: !!variantForm.is_active,
-        }, { withCredentials: true });
-        toast.success('Đã thêm biến thể');
+        await createVariantForProduct(productId, variantData);
+        // Don't show success toast here, store already handles it
       }
       resetVariantForm();
-      loadVariants();
-    } catch (e) {
-      toast.error(e.response?.data?.message || 'Lưu biến thể thất bại');
+      // Reload variants to ensure UI is in sync
+      await loadVariants();
+    } catch (error) {
+      console.error('Error saving variant:', error);
+      // Error toast is already shown in store
+      // Don't show duplicate error message
+      // Error đã được xử lý trong store với toast notification
     } finally {
       setSavingVariant(false);
     }
@@ -157,9 +177,15 @@ const AdminProductDetail = () => {
     setEditingVariantId(v.variant_id);
     setVariantForm({
       sku: v.sku || '',
+      variant_name: v.variant_name || '',
       price: v.price || '',
+      compare_at_price: v.compare_at_price || '',
+      cost_price: v.cost_price || '',
       stock: v.stock ?? 0,
+      weight: v.weight || '',
+      dimensions: v.dimensions || '',
       is_active: !!v.is_active,
+      is_default: !!v.is_default,
     });
     setIsVariantDialogOpen(true);
   };
@@ -171,46 +197,15 @@ const AdminProductDetail = () => {
 
   const handleDeleteVariant = async (v) => {
     try {
-      await api.delete(`/admin/variants/${v.variant_id}`, { withCredentials: true });
-      toast.success('Đã xóa biến thể');
+      await deleteVariant(v.variant_id);
       if (editingVariantId === v.variant_id) resetVariantForm();
       loadVariants();
-    } catch (e) {
-      toast.error(e.response?.data?.message || 'Xóa biến thể thất bại');
+    } catch (error) {
+      console.error('Error deleting variant:', error);
+      // Error đã được xử lý trong store với toast notification
     }
   };
 
-  const handleAttrChange = (e) => {
-    const { name, value } = e.target;
-    setAttrForm(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleAddAttribute = async (e) => {
-    e.preventDefault();
-    if (!attrForm.name || !attrForm.value) {
-      toast.error('Điền đủ tên và giá trị');
-      return;
-    }
-    try {
-      await api.post(`/admin/products/${productId}/attributes`, attrForm, { withCredentials: true });
-      setAttrForm({ name: '', value: '' });
-      setIsAttributeDialogOpen(false);
-      loadAttributes();
-      toast.success('Đã thêm thuộc tính');
-    } catch (e) {
-      toast.error(e.response?.data?.message || 'Thêm thuộc tính thất bại');
-    }
-  };
-
-  const handleDeleteAttribute = async (attr) => {
-    try {
-      await api.delete(`/admin/attributes/${attr.attribute_id}`, { withCredentials: true });
-      loadAttributes();
-      toast.success('Đã xóa thuộc tính');
-    } catch (e) {
-      toast.error(e.response?.data?.message || 'Xóa thuộc tính thất bại');
-    }
-  };
 
   useEffect(() => {
     if (!selectedVariantForMap) return setSelectedAttrIds([]);
@@ -229,11 +224,11 @@ const AdminProductDetail = () => {
     }
     try {
       setSavingMapping(true);
-      await api.put(`/admin/variants/${selectedVariantForMap}/mappings`, { attributeIds: selectedAttrIds }, { withCredentials: true });
-      toast.success('Đã lưu mapping');
+      await updateVariantMappings(selectedVariantForMap, selectedAttrIds);
       loadMappings();
-    } catch (e) {
-      toast.error(e.response?.data?.message || 'Lưu mapping thất bại');
+    } catch (error) {
+      console.error('Error saving mapping:', error);
+      // Error đã được xử lý trong store với toast notification
     } finally {
       setSavingMapping(false);
     }
@@ -242,43 +237,15 @@ const AdminProductDetail = () => {
   const onSelectVariantForImages = (vid) => {
     setSelectedVariantForImages(vid);
     if (vid) loadVariantImages(vid);
-    else setVariantImages([]);
   };
 
-  const addImage = async (e) => {
-    e.preventDefault();
-    if (!selectedVariantForImages) {
-      toast.error('Chọn biến thể');
-      return;
-    }
-    if (!newImageUrl) {
-      toast.error('Nhập URL ảnh');
-      return;
-    }
+  const handleDeleteImage = async (img) => {
     try {
-      setSavingImage(true);
-      await api.post(`/admin/variants/${selectedVariantForImages}/images`, {
-        image_url: newImageUrl,
-        display_order: Number(newImageOrder || 0)
-      }, { withCredentials: true });
-      setNewImageUrl('');
-      setNewImageOrder(0);
+      await deleteImage(img.image_id);
       loadVariantImages(selectedVariantForImages);
-      toast.success('Đã thêm ảnh');
-    } catch (e) {
-      toast.error(e.response?.data?.message || 'Thêm ảnh thất bại');
-    } finally {
-      setSavingImage(false);
-    }
-  };
-
-  const deleteImage = async (img) => {
-    try {
-      await api.delete(`/admin/images/${img.image_id}`, { withCredentials: true });
-      loadVariantImages(selectedVariantForImages);
-      toast.success('Đã xóa ảnh');
-    } catch (e) {
-      toast.error(e.response?.data?.message || 'Xóa ảnh thất bại');
+    } catch (error) {
+      console.error('Error deleting image:', error);
+      // Error đã được xử lý trong store với toast notification
     }
   };
 
@@ -287,54 +254,65 @@ const AdminProductDetail = () => {
       <div className="mb-4 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">Chi tiết sản phẩm #{productId}</h1>
-          <div className="text-gray-500 text-sm">Quản lý Variants · Attributes · Mapping · Images</div>
+          <div className="text-gray-500 text-sm">Quản lý Variants · Mapping · Images</div>
         </div>
         <Link to="/admin/products" className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm">← Quay lại danh sách</Link>
       </div>
 
       <div className="flex gap-2 mb-6">
         <TabButton active={tab==='variants'} onClick={()=>setTab('variants')}>Variants</TabButton>
-        <TabButton active={tab==='attributes'} onClick={()=>setTab('attributes')}>Attributes</TabButton>
         <TabButton active={tab==='mapping'} onClick={()=>setTab('mapping')}>Variant Mapping</TabButton>
         <TabButton active={tab==='images'} onClick={()=>setTab('images')}>Variant Images</TabButton>
       </div>
 
       {tab === 'variants' && (
         <div className="p-6 bg-white rounded-lg shadow">
-          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-4">
             <h3 className="font-semibold text-gray-800 text-lg">Danh sách biến thể</h3>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={loadVariants} disabled={loadingVariants}>Tải lại</Button>
+              <Button variant="outline" size="sm" onClick={loadVariants} disabled={loading}>Tải lại</Button>
               <Button onClick={handleAddVariantClick} className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:opacity-90">
                 + Thêm biến thể
               </Button>
             </div>
           </div>
             <div className="overflow-x-auto">
-              <table className="min-w-[700px] w-full text-left">
+              <table className="min-w-[1200px] w-full text-left">
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-3 py-2 text-gray-600">ID</th>
                     <th className="px-3 py-2 text-gray-600">SKU</th>
+                    <th className="px-3 py-2 text-gray-600">Tên biến thể</th>
                     <th className="px-3 py-2 text-gray-600">Giá</th>
+                    <th className="px-3 py-2 text-gray-600">Giá so sánh</th>
+                    <th className="px-3 py-2 text-gray-600">Giá vốn</th>
                     <th className="px-3 py-2 text-gray-600">Tồn kho</th>
+                    <th className="px-3 py-2 text-gray-600">Trọng lượng</th>
+                    <th className="px-3 py-2 text-gray-600">Kích thước</th>
+                    <th className="px-3 py-2 text-gray-600">Mặc định</th>
                     <th className="px-3 py-2 text-gray-600">Kích hoạt</th>
                     <th className="px-3 py-2 text-gray-600">Hành động</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
-                  {loadingVariants ? (
-                    <tr><td className="px-3 py-4 text-gray-500 text-center" colSpan={6}>Đang tải...</td></tr>
+                  {loading ? (
+                    <tr><td className="px-3 py-4 text-gray-500 text-center" colSpan={12}>Đang tải...</td></tr>
                   ) : !variants.length ? (
-                    <tr><td className="px-3 py-4 text-gray-500 text-center" colSpan={6}>Chưa có biến thể</td></tr>
+                    <tr><td className="px-3 py-4 text-gray-500 text-center" colSpan={12}>Chưa có biến thể</td></tr>
                   ) : (
                     variants.map(v => (
                       <tr key={v.variant_id} className="hover:bg-blue-50">
                         <td className="px-3 py-2 font-medium">{v.variant_id}</td>
                         <td className="px-3 py-2">{v.sku || '-'}</td>
-                        <td className="px-3 py-2 text-blue-700 font-semibold">{Number(v.price).toLocaleString()} ₫</td>
-                        <td className="px-3 py-2">{v.stock}</td>
-                        <td className="px-3 py-2">{v.is_active ? '✔' : '✖'}</td>
+                        <td className="px-3 py-2">{v.variant_name || '-'}</td>
+                        <td className="px-3 py-2 text-blue-700 font-semibold">{Number(v.price || 0).toLocaleString()} ₫</td>
+                        <td className="px-3 py-2 text-gray-600">{v.compare_at_price ? Number(v.compare_at_price).toLocaleString() + ' ₫' : '-'}</td>
+                        <td className="px-3 py-2 text-gray-600">{v.cost_price ? Number(v.cost_price).toLocaleString() + ' ₫' : '-'}</td>
+                        <td className="px-3 py-2">{v.stock || 0}</td>
+                        <td className="px-3 py-2">{v.weight ? v.weight + ' kg' : '-'}</td>
+                        <td className="px-3 py-2">{v.dimensions || '-'}</td>
+                        <td className="px-3 py-2 text-center">{v.is_default ? '⭐' : '-'}</td>
+                        <td className="px-3 py-2 text-center">{v.is_active ? <span className="text-green-600">✔</span> : <span className="text-gray-400">✖</span>}</td>
                         <td className="px-3 py-2 flex gap-2">
                           <Button size="sm" variant="outline" onClick={() => startEditVariant(v)}>Sửa</Button>
                           <Button size="sm" variant="destructive" onClick={() => handleDeleteVariant(v)}>Xóa</Button>
@@ -348,203 +326,7 @@ const AdminProductDetail = () => {
         </div>
       )}
 
-      {tab === 'variants' && (
-        /* Variant Dialog */
-        <Dialog open={isVariantDialogOpen} onOpenChange={(open) => {
-          setIsVariantDialogOpen(open);
-          if (!open) resetVariantForm();
-        }}>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>{editingVariantId ? 'Sửa biến thể' : 'Thêm biến thể mới'}</DialogTitle>
-              <DialogDescription>
-                {editingVariantId ? 'Cập nhật thông tin biến thể' : 'Điền thông tin để tạo biến thể mới'}
-              </DialogDescription>
-            </DialogHeader>
-            
-            <form onSubmit={handleCreateOrUpdateVariant} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">SKU</label>
-                <input
-                  type="text"
-                  name="sku"
-                  value={variantForm.sku}
-                  onChange={handleVariantChange}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                  placeholder="SKU (tùy chọn)"
-                />
-              </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Giá (₫) <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="number"
-                  name="price"
-                  value={variantForm.price}
-                  onChange={handleVariantChange}
-                  min="0"
-                  step="1000"
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Tồn kho</label>
-                <input
-                  type="number"
-                  name="stock"
-                  value={variantForm.stock}
-                  onChange={handleVariantChange}
-                  min="0"
-                  step="1"
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                />
-              </div>
-
-              <div>
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    name="is_active"
-                    checked={variantForm.is_active}
-                    onChange={handleVariantChange}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-600"
-                  />
-                  <span className="text-sm font-medium text-gray-700">Kích hoạt biến thể</span>
-                </label>
-              </div>
-
-              <DialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsVariantDialogOpen(false)}
-                  disabled={savingVariant}
-                >
-                  Hủy
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={savingVariant}
-                  className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:opacity-90"
-                >
-                  {savingVariant ? 'Đang lưu...' : (editingVariantId ? 'Cập nhật' : 'Thêm mới')}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
-      )}
-
-      {tab === 'attributes' && (
-        <div className="p-6 bg-white rounded-lg shadow">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-gray-800 text-lg">Danh sách thuộc tính</h3>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={loadAttributes} disabled={loadingAttributes}>Tải lại</Button>
-              <Button onClick={() => setIsAttributeDialogOpen(true)} className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:opacity-90">
-                + Thêm thuộc tính
-              </Button>
-            </div>
-          </div>
-            <div className="overflow-x-auto">
-              <table className="min-w-[650px] w-full text-left">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-3 py-2 text-gray-600">ID</th>
-                    <th className="px-3 py-2 text-gray-600">Tên</th>
-                    <th className="px-3 py-2 text-gray-600">Giá trị</th>
-                    <th className="px-3 py-2 text-gray-600">Hành động</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
-                  {loadingAttributes ? (
-                    <tr><td className="px-3 py-4 text-gray-500 text-center" colSpan={4}>Đang tải...</td></tr>
-                  ) : !attributes.length ? (
-                    <tr><td className="px-3 py-4 text-gray-500 text-center" colSpan={4}>Chưa có thuộc tính</td></tr>
-                  ) : (
-                    attributes.map(a => (
-                      <tr key={a.attribute_id} className="hover:bg-blue-50">
-                        <td className="px-3 py-2 font-medium">{a.attribute_id}</td>
-                        <td className="px-3 py-2">{a.name}</td>
-                        <td className="px-3 py-2">{a.value}</td>
-                        <td className="px-3 py-2">
-                          <Button size="sm" variant="destructive" onClick={() => handleDeleteAttribute(a)}>Xóa</Button>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-        </div>
-      )}
-
-      {tab === 'attributes' && (
-        /* Attribute Dialog */
-        <Dialog open={isAttributeDialogOpen} onOpenChange={(open) => {
-          setIsAttributeDialogOpen(open);
-          if (!open) setAttrForm({ name: '', value: '' });
-        }}>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>Thêm thuộc tính mới</DialogTitle>
-              <DialogDescription>
-                Điền thông tin để tạo thuộc tính mới cho sản phẩm
-              </DialogDescription>
-            </DialogHeader>
-            
-            <form onSubmit={handleAddAttribute} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Tên thuộc tính <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="name"
-                  value={attrForm.name}
-                  onChange={handleAttrChange}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                  placeholder="Ví dụ: Color, Size"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Giá trị <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="value"
-                  value={attrForm.value}
-                  onChange={handleAttrChange}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                  placeholder="Ví dụ: Red, XL"
-                  required
-                />
-              </div>
-              <DialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsAttributeDialogOpen(false)}
-                >
-                  Hủy
-                </Button>
-                <Button
-                  type="submit"
-                  className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:opacity-90"
-                >
-                  Thêm
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
-      )}
 
       {tab === 'mapping' && (
         <div className="grid md:grid-cols-2 gap-6">
@@ -563,17 +345,22 @@ const AdminProductDetail = () => {
 
             <h3 className="font-semibold text-gray-800">Chọn thuộc tính</h3>
             <div className="space-y-2 max-h-64 overflow-y-auto">
-              {attributes.map(a => (
-                <label key={a.attribute_id} className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={selectedAttrIds.includes(a.attribute_id)}
-                    onChange={() => toggleAttrSelection(a.attribute_id)}
-                  />
-                  <span>{a.name}: {a.value}</span>
-                </label>
-              ))}
-              {!attributes.length && <div className="text-gray-500 text-sm">Chưa có thuộc tính</div>}
+              {loadingAttributes ? (
+                <div className="text-gray-500 text-sm">Đang tải...</div>
+              ) : attributes.length === 0 ? (
+                <div className="text-gray-500 text-sm">Chưa có thuộc tính</div>
+              ) : (
+                attributes.map(a => (
+                  <label key={a.attribute_id} className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={selectedAttrIds.includes(a.attribute_id)}
+                      onChange={() => toggleAttrSelection(a.attribute_id)}
+                    />
+                    <span>{a.name}: {a.value}</span>
+                  </label>
+                ))
+              )}
             </div>
 
             <div className="flex justify-end">
@@ -637,16 +424,13 @@ const AdminProductDetail = () => {
                   setSavingImage(true);
                   const form = new FormData();
                   files.forEach(f => form.append('images', f));
-                  await api.post(`/admin/variants/${selectedVariantForImages}/images/upload-multiple`, form, {
-                    withCredentials: true,
-                    headers: { 'Content-Type': 'multipart/form-data' }
-                  });
+                  await uploadVariantImages(selectedVariantForImages, form);
                   // reset file input
                   fileInput.value = '';
                   loadVariantImages(selectedVariantForImages);
-                  toast.success('Đã upload ảnh');
-                } catch (err) {
-                  toast.error(err.response?.data?.message || 'Upload ảnh thất bại');
+                } catch (error) {
+                  console.error('Error uploading images:', error);
+                  // Error đã được xử lý trong store với toast notification
                 } finally {
                   setSavingImage(false);
                 }
@@ -675,13 +459,15 @@ const AdminProductDetail = () => {
             </div>
             {!selectedVariantForImages ? (
               <div className="text-gray-500 text-sm">Chọn một biến thể để xem ảnh</div>
+            ) : loadingImages ? (
+              <div className="text-gray-500 text-sm">Đang tải...</div>
             ) : (
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 {variantImages.map(img => (
                   <div key={img.image_id} className="border rounded overflow-hidden">
                     <img src={img.image_url} alt="variant" className="w-full h-28 object-cover" />
                     <div className="p-2 text-sm flex items-center justify-end">
-                      <Button size="sm" variant="destructive" onClick={() => deleteImage(img)}>Xóa</Button>
+                      <Button size="sm" variant="destructive" onClick={() => handleDeleteImage(img)}>Xóa</Button>
                     </div>
                   </div>
                 ))}
@@ -707,7 +493,7 @@ const AdminProductDetail = () => {
             </DialogDescription>
           </DialogHeader>
           
-          <form onSubmit={handleCreateOrUpdateVariant} className="space-y-4">
+          <form onSubmit={handleCreateOrUpdateVariant} className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">SKU</label>
               <input
@@ -721,35 +507,105 @@ const AdminProductDetail = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Giá (₫) <span className="text-red-500">*</span>
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Tên biến thể</label>
+              <input
+                type="text"
+                name="variant_name"
+                value={variantForm.variant_name}
+                onChange={handleVariantChange}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                placeholder="Tên biến thể (tùy chọn)"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Giá (₫) <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  name="price"
+                  value={variantForm.price}
+                  onChange={handleVariantChange}
+                  min="0"
+                  step="1000"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Giá so sánh (₫)</label>
+                <input
+                  type="number"
+                  name="compare_at_price"
+                  value={variantForm.compare_at_price}
+                  onChange={handleVariantChange}
+                  min="0"
+                  step="1000"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  placeholder="0"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Giá vốn (₫)</label>
               <input
                 type="number"
-                name="price"
-                value={variantForm.price}
+                name="cost_price"
+                value={variantForm.cost_price}
                 onChange={handleVariantChange}
                 min="0"
                 step="1000"
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                required
+                placeholder="0"
               />
             </div>
 
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Tồn kho</label>
+                <input
+                  type="number"
+                  name="stock"
+                  value={variantForm.stock}
+                  onChange={handleVariantChange}
+                  min="0"
+                  step="1"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Trọng lượng (kg)</label>
+                <input
+                  type="number"
+                  name="weight"
+                  value={variantForm.weight}
+                  onChange={handleVariantChange}
+                  min="0"
+                  step="0.1"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  placeholder="0"
+                />
+              </div>
+            </div>
+
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Tồn kho</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Kích thước</label>
               <input
-                type="number"
-                name="stock"
-                value={variantForm.stock}
+                type="text"
+                name="dimensions"
+                value={variantForm.dimensions}
                 onChange={handleVariantChange}
-                min="0"
-                step="1"
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                placeholder="VD: 10x20x30 cm"
               />
             </div>
 
-            <div>
+            <div className="flex gap-4">
               <label className="flex items-center gap-2">
                 <input
                   type="checkbox"
@@ -759,6 +615,17 @@ const AdminProductDetail = () => {
                   className="rounded border-gray-300 text-blue-600 focus:ring-blue-600"
                 />
                 <span className="text-sm font-medium text-gray-700">Kích hoạt biến thể</span>
+              </label>
+
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  name="is_default"
+                  checked={variantForm.is_default}
+                  onChange={handleVariantChange}
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-600"
+                />
+                <span className="text-sm font-medium text-gray-700">Biến thể mặc định</span>
               </label>
             </div>
 
@@ -783,66 +650,6 @@ const AdminProductDetail = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Attribute Dialog */}
-      <Dialog open={isAttributeDialogOpen} onOpenChange={(open) => {
-        setIsAttributeDialogOpen(open);
-        if (!open) setAttrForm({ name: '', value: '' });
-      }}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Thêm thuộc tính mới</DialogTitle>
-            <DialogDescription>
-              Điền thông tin để tạo thuộc tính mới cho sản phẩm
-            </DialogDescription>
-          </DialogHeader>
-          
-          <form onSubmit={handleAddAttribute} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Tên thuộc tính <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                name="name"
-                value={attrForm.name}
-                onChange={handleAttrChange}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                placeholder="Ví dụ: Color, Size"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Giá trị <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                name="value"
-                value={attrForm.value}
-                onChange={handleAttrChange}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                placeholder="Ví dụ: Red, XL"
-                required
-              />
-            </div>
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsAttributeDialogOpen(false)}
-              >
-                Hủy
-              </Button>
-              <Button
-                type="submit"
-                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:opacity-90"
-              >
-                Thêm
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
     </section>
   );
 };

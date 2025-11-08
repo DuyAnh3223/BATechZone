@@ -1,21 +1,29 @@
 import { create } from 'zustand';
+import { toast } from 'sonner';
 import { attributeService } from '@/services/attributeService';
 
-export const useAttributeStore = create((set) => ({
+export const useAttributeStore = create((set, get) => ({
     attributes: [],
     currentAttribute: null,
+    total: 0,
     loading: false,
     error: null,
 
     // Lấy danh sách attributes
-    fetchAttributes: async (params) => {
+    fetchAttributes: async (params = {}) => {
         set({ loading: true, error: null });
         try {
             const response = await attributeService.listAttributes(params);
-            set({ attributes: response.data || response, loading: false });
+            set({ 
+                attributes: response.data || [], 
+                total: response.pagination?.total || 0,
+                loading: false 
+            });
             return response;
         } catch (error) {
-            set({ error: error.message, loading: false });
+            const message = error.response?.data?.message || 'Không tải được danh sách thuộc tính';
+            set({ error: message, loading: false });
+            toast.error(message);
             throw error;
         }
     },
@@ -25,10 +33,15 @@ export const useAttributeStore = create((set) => ({
         set({ loading: true, error: null });
         try {
             const response = await attributeService.getAttribute(attributeId);
-            set({ currentAttribute: response.data || response, loading: false });
+            set({ 
+                currentAttribute: response.data || response, 
+                loading: false 
+            });
             return response;
         } catch (error) {
-            set({ error: error.message, loading: false });
+            const message = error.response?.data?.message || 'Không thể tải thông tin thuộc tính';
+            set({ error: message, loading: false });
+            toast.error(message);
             throw error;
         }
     },
@@ -38,13 +51,13 @@ export const useAttributeStore = create((set) => ({
         set({ loading: true, error: null });
         try {
             const response = await attributeService.createAttribute(attributeData);
-            set((state) => ({
-                attributes: [...state.attributes, response.data || response],
-                loading: false
-            }));
+            toast.success('Thêm thuộc tính thành công!');
+            set({ loading: false });
             return response;
         } catch (error) {
-            set({ error: error.message, loading: false });
+            const message = error.response?.data?.message || 'Có lỗi xảy ra khi thêm thuộc tính';
+            set({ error: message, loading: false });
+            toast.error(message);
             throw error;
         }
     },
@@ -54,13 +67,17 @@ export const useAttributeStore = create((set) => ({
         set({ loading: true, error: null });
         try {
             const response = await attributeService.deleteAttribute(attributeId);
+            toast.success('Xóa thuộc tính thành công!');
             set((state) => ({
-                attributes: state.attributes.filter(attr => attr.attribute_id !== attributeId),
+                attributes: state.attributes.filter(attr => attr.attribute_id !== parseInt(attributeId)),
+                total: Math.max(0, (state.total || 0) - 1),
                 loading: false
             }));
             return response;
         } catch (error) {
-            set({ error: error.message, loading: false });
+            const message = error.response?.data?.message || 'Có lỗi xảy ra khi xóa thuộc tính';
+            set({ error: message, loading: false });
+            toast.error(message);
             throw error;
         }
     },
@@ -69,5 +86,11 @@ export const useAttributeStore = create((set) => ({
     clearError: () => set({ error: null }),
 
     // Reset state
-    reset: () => set({ attributes: [], currentAttribute: null, loading: false, error: null })
+    reset: () => set({ 
+        attributes: [], 
+        currentAttribute: null,
+        total: 0,
+        loading: false, 
+        error: null 
+    })
 }));

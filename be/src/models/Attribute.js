@@ -16,21 +16,26 @@ class Attribute {
     const [attributes] = await db.query(
       `SELECT 
         a.*,
-        CONCAT(
-        '[',
-        GROUP_CONCAT(
-          JSON_OBJECT(
-            'valueId', av.attribute_value_id,
-            'value', av.value_name
-          )
-        ), ']') as attributeValues
+        COALESCE(
+          CONCAT(
+            '[',
+            GROUP_CONCAT(
+              JSON_OBJECT(
+                'valueId', av.attribute_value_id,
+                'value', av.value_name
+              )
+            ),
+            ']'
+          ),
+          '[]'
+        ) as attributeValues
       FROM attributes a
       LEFT JOIN attribute_values av ON a.attribute_id = av.attribute_id
       WHERE a.attribute_id = ?
       GROUP BY a.attribute_id`,
       [attributeId]
     );
-    return attributes[0];
+    return attributes[0] || null;
   }
 
   
@@ -50,55 +55,73 @@ class Attribute {
       limit = 10,
       type,
       search,
+      category_id,
       sortBy = 'created_at',
       sortOrder = 'DESC'
     } = params;
+
+    // Sanitize sortBy to prevent SQL injection
+    const allowedSortColumns = ['attribute_id', 'attribute_name', 'created_at', 'display_order', 'is_active'];
+    const sanitizedSortBy = allowedSortColumns.includes(sortBy) ? sortBy : 'created_at';
+    const sanitizedSortOrder = sortOrder.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
 
     let conditions = ['1=1'];
     let values = [];
 
     if (search) {
-      conditions.push('attribute_name LIKE ?');
+      conditions.push('a.attribute_name LIKE ?');
       values.push(`%${search}%`);
     }
 
+    if (type) {
+      conditions.push('a.attribute_type = ?');
+      values.push(type);
+    }
+
     const offset = (page - 1) * limit;
-    values.push(limit, offset);
+    const limitValue = parseInt(limit);
+    const offsetValue = parseInt(offset);
+    const countValues = [...values];
 
     const [attributes] = await db.query(
       `SELECT 
         a.*,
-        CONCAT(
-        '[',
-        GROUP_CONCAT(
-          JSON_OBJECT(
-            'valueId', av.attribute_value_id,
-            'value', av.value_name
-          )
-        ), ']') as attributeValues
+        COALESCE(
+          CONCAT(
+            '[',
+            GROUP_CONCAT(DISTINCT
+              JSON_OBJECT(
+                'valueId', av.attribute_value_id,
+                'value', av.value_name
+              )
+            ),
+            ']'
+          ),
+          '[]'
+        ) as attributeValues
       FROM attributes a
       LEFT JOIN attribute_values av ON a.attribute_id = av.attribute_id
       WHERE ${conditions.join(' AND ')}
       GROUP BY a.attribute_id
-      ORDER BY a.${sortBy} ${sortOrder}
+      ORDER BY a.${sanitizedSortBy} ${sanitizedSortOrder}
       LIMIT ? OFFSET ?`,
-      values
+      [...values, limitValue, offsetValue]
     );
 
     const [count] = await db.query(
-      `SELECT COUNT(*) as total
-      FROM attributes
+      `SELECT COUNT(DISTINCT a.attribute_id) as total
+      FROM attributes a
       WHERE ${conditions.join(' AND ')}`,
-      values.slice(0, -2)
+      countValues
     );
 
     return {
       data: attributes,
       pagination: {
-        total: count[0].total,
+        total: count[0]?.total || 0,
         page: parseInt(page),
         limit: parseInt(limit),
-        totalPages: Math.ceil(count[0].total / limit)
+        totalPages: Math.ceil((count[0]?.total || 0) / limit)
       }
     };
   }
