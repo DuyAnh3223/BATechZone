@@ -42,14 +42,11 @@ export const updateVariant = async (req, res) => {
       sku: req.body.sku,
       variantName: req.body.variant_name,
       price: req.body.price !== undefined ? parseFloat(req.body.price) : undefined,
-      compareAtPrice: req.body.compare_at_price !== undefined ? (req.body.compare_at_price ? parseFloat(req.body.compare_at_price) : null) : undefined,
-      costPrice: req.body.cost_price !== undefined ? (req.body.cost_price ? parseFloat(req.body.cost_price) : null) : undefined,
       stockQuantity: req.body.stock !== undefined ? parseInt(req.body.stock) : undefined,
-      weight: req.body.weight !== undefined ? (req.body.weight ? parseFloat(req.body.weight) : null) : undefined,
-      dimensions: req.body.dimensions,
       // Map boolean values correctly
       isActive: req.body.is_active !== undefined ? (req.body.is_active ? 1 : 0) : undefined,
-      isDefault: req.body.is_default !== undefined ? (req.body.is_default ? 1 : 0) : undefined
+      isDefault: req.body.is_default !== undefined ? (req.body.is_default ? 1 : 0) : undefined,
+      attributes: req.body.attribute_value_ids || undefined
     };
 
     // Remove undefined values
@@ -165,7 +162,7 @@ export const getVariantsByProduct = async (req, res) => {
 
 export const createVariantForProduct = async (req, res) => {
   try {
-    const { sku, variant_name, price, compare_at_price, cost_price, stock, weight, dimensions, is_active, is_default } = req.body;
+    const { sku, variant_name, price, stock, is_active, is_default, attribute_value_ids } = req.body;
     const productId = parseInt(req.params.productId);
     
     if (isNaN(productId)) {
@@ -181,13 +178,10 @@ export const createVariantForProduct = async (req, res) => {
       sku: sku || null,
       variantName: variant_name || null,
       price: parseFloat(price),
-      compareAtPrice: compare_at_price ? parseFloat(compare_at_price) : null,
-      costPrice: cost_price ? parseFloat(cost_price) : null,
       stockQuantity: parseInt(stock || 0),
-      weight: weight ? parseFloat(weight) : null,
-      dimensions: dimensions || null,
       isActive: is_active !== undefined ? (is_active ? 1 : 0) : 1,
-      isDefault: is_default !== undefined ? (is_default ? 1 : 0) : 0
+      isDefault: is_default !== undefined ? (is_default ? 1 : 0) : 0,
+      attributes: attribute_value_ids || []
     };
     
     console.log('Creating variant with data:', variantData);

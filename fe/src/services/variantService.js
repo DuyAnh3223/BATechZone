@@ -86,5 +86,11 @@ export const variantService = {
     deleteImage: async (imageId) => {
         const response = await api.delete(`/images/${imageId}`, { withCredentials: true });
         return response.data;
+    },
+
+    // Lấy attribute values theo product category
+    getAttributeValuesByProduct: async (productId) => {
+        const response = await api.get(`/products/${productId}/attribute-values`, { withCredentials: true });
+        return response.data;
     }
 };

@@ -1,4 +1,5 @@
 import Product from '../models/Product.js';
+import { db } from '../libs/db.js';
 
 // Lấy danh sách sản phẩm
 export const listProducts = async (req, res) => {
@@ -32,6 +33,19 @@ export const getProduct = async (req, res) => {
     if (!product) {
       return res.status(404).json({ success: false, message: 'Product not found' });
     }
+    
+    // Get applicable attributes from category
+    if (product.category_id) {
+      const [attributes] = await db.query(
+        `SELECT a.attribute_id, a.attribute_name
+        FROM attributes a
+        INNER JOIN attribute_categories ac ON a.attribute_id = ac.attribute_id
+        WHERE ac.category_id = ?`,
+        [product.category_id]
+      );
+      product.applicable_attributes = attributes;
+    }
+    
     res.json({ success: true, data: product });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Error retrieving product', error: error.message });
@@ -41,7 +55,7 @@ export const getProduct = async (req, res) => {
 // Tạo mới sản phẩm
 export const createProduct = async (req, res) => {
   try {
-    const { category_id, product_name, slug, description, brand, model, base_price, is_active, is_featured } = req.body;
+    const { category_id, product_name, slug, description, base_price, is_active, is_featured } = req.body;
 
     // Validate required fields
     if (!product_name || !product_name.trim()) {
@@ -81,8 +95,6 @@ export const createProduct = async (req, res) => {
       product_name: product_name.trim(),
       slug: finalSlug,
       description: description?.trim() || null,
-      brand: brand?.trim() || null,
-      model: model?.trim() || null,
       base_price: parseFloat(base_price),
       is_active: is_active !== undefined ? (is_active ? 1 : 0) : 1,
       is_featured: is_featured !== undefined ? (is_featured ? 1 : 0) : 0

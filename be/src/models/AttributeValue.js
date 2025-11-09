@@ -208,6 +208,35 @@ class AttributeValue {
     );
     return result.affectedRows;
   }
+
+  // Get all attribute values for a product based on its category
+  async getByProductCategory(productId) {
+    try {
+      const [result] = await db.query(
+        `SELECT 
+          av.attribute_value_id,
+          av.attribute_id,
+          av.value_name,
+          av.color_code,
+          av.image_url,
+          av.display_order,
+          av.is_active,
+          a.attribute_name,
+          a.attribute_type
+        FROM attribute_values av
+        JOIN attributes a ON av.attribute_id = a.attribute_id
+        JOIN attribute_categories ac ON a.attribute_id = ac.attribute_id
+        JOIN products p ON ac.category_id = p.category_id
+        WHERE p.product_id = ? AND av.is_active = 1
+        ORDER BY a.attribute_name, av.display_order ASC`,
+        [productId]
+      );
+      return result;
+    } catch (error) {
+      console.error('Error getting attribute values by product category:', error);
+      throw error;
+    }
+  }
 }
 
 export default new AttributeValue();

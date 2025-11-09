@@ -83,6 +83,13 @@ class Attribute {
     const offsetValue = parseInt(offset);
     const countValues = [...values];
 
+    // Add category filter if provided
+    if (category_id) {
+      conditions.push('EXISTS (SELECT 1 FROM attribute_categories ac WHERE ac.attribute_id = a.attribute_id AND ac.category_id = ?)');
+      values.push(category_id);
+      countValues.push(category_id);
+    }
+
     const [attributes] = await db.query(
       `SELECT 
         a.*,
@@ -108,6 +115,12 @@ class Attribute {
       [...values, limitValue, offsetValue]
     );
 
+    // Fetch categories for each attribute
+    for (const attr of attributes) {
+      const categories = await this.getCategories(attr.attribute_id);
+      attr.categories = categories;
+    }
+
     const [count] = await db.query(
       `SELECT COUNT(DISTINCT a.attribute_id) as total
       FROM attributes a
@@ -127,12 +140,58 @@ class Attribute {
   }
 
   async getByName(attributeName) {
-  const [rows] = await db.query(
-    `SELECT * FROM attributes WHERE attribute_name = ? LIMIT 1`,
-    [attributeName]
-  );
-  return rows[0] || null;
-}
+    const [rows] = await db.query(
+      `SELECT * FROM attributes WHERE attribute_name = ? LIMIT 1`,
+      [attributeName]
+    );
+    return rows[0] || null;
+  }
+
+  // Get categories for an attribute
+  async getCategories(attributeId) {
+    const [categories] = await db.query(
+      `SELECT c.category_id, c.category_name
+      FROM categories c
+      INNER JOIN attribute_categories ac ON c.category_id = ac.category_id
+      WHERE ac.attribute_id = ?`,
+      [attributeId]
+    );
+    return categories;
+  }
+
+  // Assign categories to attribute
+  async assignCategories(attributeId, categoryIds) {
+    if (!categoryIds || categoryIds.length === 0) return;
+
+    const values = categoryIds.map(categoryId => [categoryId, attributeId]);
+    await db.query(
+      `INSERT IGNORE INTO attribute_categories (category_id, attribute_id) VALUES ?`,
+      [values]
+    );
+  }
+
+  // Remove a category from attribute
+  async removeCategory(attributeId, categoryId) {
+    const [result] = await db.query(
+      `DELETE FROM attribute_categories WHERE attribute_id = ? AND category_id = ?`,
+      [attributeId, categoryId]
+    );
+    return result.affectedRows > 0;
+  }
+
+  // Update attribute categories (replace all)
+  async updateCategories(attributeId, categoryIds) {
+    // Delete existing relationships
+    await db.query(
+      `DELETE FROM attribute_categories WHERE attribute_id = ?`,
+      [attributeId]
+    );
+
+    // Add new relationships
+    if (categoryIds && categoryIds.length > 0) {
+      await this.assignCategories(attributeId, categoryIds);
+    }
+  }
 }
 
 export default new Attribute();

@@ -14,7 +14,6 @@ import {
 
 const router = express.Router();
 
-// Routes cụ thể - PHẢI đặt trước routes generic (/:id) để tránh xung đột
 // Ví dụ: /variants/123/images sẽ match route cụ thể này, không match /:id
 router.put('/:variantId/mappings', updateVariantMappings);
 router.get('/:variantId/images', getVariantImages);

@@ -145,6 +145,61 @@ export const useCategoryStore = create((set, get) => ({
         }
     },
 
+    // Lấy attributes của category
+    fetchCategoryAttributes: async (categoryId) => {
+        set({ loading: true, error: null });
+        try {
+            const response = await categoryService.getCategoryAttributes(categoryId);
+            set({ loading: false });
+            return response;
+        } catch (error) {
+            const message = error.response?.data?.message || 'Không thể tải thuộc tính của danh mục';
+            set({ error: message, loading: false });
+            toast.error(message);
+            throw error;
+        }
+    },
+
+    // Cập nhật attributes cho category
+    updateCategoryAttributes: async (categoryId, attributeIds) => {
+        set({ loading: true, error: null });
+        try {
+            const response = await categoryService.updateCategoryAttributes(categoryId, attributeIds);
+            toast.success('Cập nhật thuộc tính thành công!');
+            set({ loading: false });
+            // Refresh current category if it's the one being updated
+            if (get().currentCategory?.category_id === categoryId) {
+                await get().fetchCategory(categoryId);
+            }
+            return response;
+        } catch (error) {
+            const message = error.response?.data?.message || 'Có lỗi xảy ra khi cập nhật thuộc tính';
+            set({ error: message, loading: false });
+            toast.error(message);
+            throw error;
+        }
+    },
+
+    // Xóa attribute khỏi category
+    removeCategoryAttribute: async (categoryId, attributeId) => {
+        set({ loading: true, error: null });
+        try {
+            const response = await categoryService.removeCategoryAttribute(categoryId, attributeId);
+            toast.success('Xóa thuộc tính khỏi danh mục thành công!');
+            set({ loading: false });
+            // Refresh current category if it's the one being updated
+            if (get().currentCategory?.category_id === categoryId) {
+                await get().fetchCategory(categoryId);
+            }
+            return response;
+        } catch (error) {
+            const message = error.response?.data?.message || 'Có lỗi xảy ra khi xóa thuộc tính';
+            set({ error: message, loading: false });
+            toast.error(message);
+            throw error;
+        }
+    },
+
     // Clear error
     clearError: () => set({ error: null }),
 

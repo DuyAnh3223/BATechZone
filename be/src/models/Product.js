@@ -3,17 +3,15 @@ import { db } from '../libs/db.js';
 class Product {
   // Tạo sản phẩm mới
   async create(data) {
-    const { category_id, product_name, slug, description, brand, model, base_price, is_active, is_featured } = data;
+    const { category_id, product_name, slug, description, base_price, is_active, is_featured } = data;
     const [result] = await db.query(
-      `INSERT INTO products (category_id, product_name, slug, description, brand, model, base_price, is_active, is_featured)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO products (category_id, product_name, slug, description, base_price, is_active, is_featured)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
       [
         category_id, 
         product_name, 
         slug || null, 
         description || null, 
-        brand || null,
-        model || null,
         base_price, 
         is_active ?? 1, 
         is_featured ?? 0

@@ -121,7 +121,14 @@ export const getCategory = async (req, res) => {
     if (!category) {
       return res.status(404).json({ message: 'Category not found' });
     }
-    res.json({ data: category });
+    // Get attributes for this category
+    const attributes = await Category.getAttributes(req.params.id);
+    res.json({ 
+      data: {
+        ...category,
+        attributes
+      }
+    });
   } catch (error) {
     console.error('Error getting category:', error);
     res.status(500).json({ message: 'Internal server error' });
@@ -189,5 +196,60 @@ export const getSimpleCategories = async (req, res) => {
     console.error('Error getting simple categories:', error);
     console.error('Error stack:', error.stack);
     res.status(500).json({ message: 'Internal server error', error: error.message });
+  }
+};
+
+// Get category attributes
+export const getCategoryAttributes = async (req, res) => {
+  try {
+    const attributes = await Category.getAttributes(req.params.id);
+    res.json({ attributes });
+  } catch (error) {
+    console.error('Error getting category attributes:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+// Update category attributes
+export const updateCategoryAttributes = async (req, res) => {
+  try {
+    const { attribute_ids } = req.body;
+    const categoryId = req.params.id;
+
+    if (!Array.isArray(attribute_ids)) {
+      return res.status(400).json({ message: 'attribute_ids must be an array' });
+    }
+
+    await Category.updateAttributes(categoryId, attribute_ids);
+    const attributes = await Category.getAttributes(categoryId);
+
+    res.json({
+      success: true,
+      message: 'Attributes updated successfully',
+      attributes
+    });
+  } catch (error) {
+    console.error('Error updating category attributes:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+// Remove an attribute from category
+export const removeCategoryAttribute = async (req, res) => {
+  try {
+    const { id: categoryId, attributeId } = req.params;
+    const removed = await Category.removeAttribute(categoryId, attributeId);
+    
+    if (!removed) {
+      return res.status(404).json({ message: 'Attribute not found for this category' });
+    }
+
+    res.json({
+      success: true,
+      message: 'Attribute removed successfully'
+    });
+  } catch (error) {
+    console.error('Error removing category attribute:', error);
+    res.status(500).json({ message: 'Internal server error' });
   }
 };

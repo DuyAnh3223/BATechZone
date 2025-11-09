@@ -131,3 +131,15 @@ export const bulkDeleteAttributeValues = async (req, res) => {
     res.status(500).json({ message: 'Internal server error' });
   }
 };
+
+// Get attribute values by product category
+export const getAttributeValuesByProductCategory = async (req, res) => {
+  try {
+    const { productId } = req.params;
+    const values = await AttributeValue.getByProductCategory(productId);
+    res.json({ success: true, data: values });
+  } catch (error) {
+    console.error('Error getting attribute values by product category:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+};

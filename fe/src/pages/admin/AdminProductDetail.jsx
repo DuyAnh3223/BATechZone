@@ -9,29 +9,46 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { Tag } from 'lucide-react';
 import { toast } from 'sonner';
 import { useVariantStore } from '@/stores/useVariantStore';
+import { useProductStore } from '@/stores/useProductStore';
+import { useCategoryStore } from '@/stores/useCategoryStore';
 
 const TabButton = ({ active, onClick, children }) => (
   <button
     onClick={onClick}
     className={`px-3 py-1.5 rounded-md text-sm border transition ${
-      active ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+      active ? 'bg-blue-600 text-black border-blue-600 font-bold' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
     }`}
   >
     {children}
   </button>
 );
 
+const groupByAttribute = (values = []) => {
+  const map = {};
+  values.forEach(v => {
+    if (!map[v.attribute_id]) map[v.attribute_id] = { attribute_id: v.attribute_id, attribute_name: v.attribute_name, values: [] };
+    map[v.attribute_id].values.push(v);
+  });
+  return Object.values(map);
+};
+
 const AdminProductDetail = () => {
   const { productId } = useParams();
-  const [tab, setTab] = useState('variants');
+  const [tab, setTab] = useState('info'); // Changed default to 'info'
+
+  // Product store
+  const { currentProduct, fetchProduct, updateProduct, loading: loadingProduct } = useProductStore();
+  const { parentCategories, fetchSimpleCategories } = useCategoryStore();
 
   const {
     variants,
     attributes,
     mappings,
     variantImages,
+    attributeValues,
     loading,
     loadingAttributes,
     loadingImages,
@@ -44,7 +61,8 @@ const AdminProductDetail = () => {
     updateVariantMappings,
     fetchVariantImages,
     uploadVariantImages,
-    deleteImage
+    deleteImage,
+    fetchAttributeValuesByProduct
   } = useVariantStore();
 
   const [savingVariant, setSavingVariant] = useState(false);
@@ -52,16 +70,27 @@ const AdminProductDetail = () => {
     sku: '', 
     variant_name: '',
     price: '', 
-    compare_at_price: '',
-    cost_price: '',
     stock: 0, 
-    weight: '',
-    dimensions: '',
     is_active: true,
-    is_default: false
+    is_default: false,
+    attribute_value_ids: []
   });
   const [editingVariantId, setEditingVariantId] = useState(null);
   const [isVariantDialogOpen, setIsVariantDialogOpen] = useState(false);
+
+  // Grouped attribute values for UI
+  const groupedAttributeValues = groupByAttribute(attributeValues || []);
+
+  // Product info form state
+  const [isEditingInfo, setIsEditingInfo] = useState(false);
+  const [infoForm, setInfoForm] = useState({
+    product_name: '',
+    category_id: '',
+    base_price: '',
+    description: '',
+    is_active: true,
+    is_featured: false
+  });
 
   // Mapping state
   const [selectedVariantForMap, setSelectedVariantForMap] = useState(null);
@@ -105,24 +134,42 @@ const AdminProductDetail = () => {
   };
 
   useEffect(() => {
-    if (tab === 'variants') loadVariants();
+    if (tab === 'info') {
+      fetchProduct(productId).catch(err => console.error('Error loading product:', err));
+      fetchSimpleCategories().catch(err => console.error('Error loading categories:', err));
+    }
+    if (tab === 'variants') {
+      loadVariants();
+      fetchAttributeValuesByProduct(productId).catch(err => console.error('Error loading attribute values:', err));
+    }
     if (tab === 'mapping') { loadVariants(); loadAttributes(); loadMappings(); }
     if (tab === 'images') { loadVariants(); }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab, productId]);
 
+  // Populate form when product loads
+  useEffect(() => {
+    if (currentProduct) {
+      setInfoForm({
+        product_name: currentProduct.product_name || '',
+        category_id: currentProduct.category_id || '',
+        base_price: currentProduct.base_price || '',
+        description: currentProduct.description || '',
+        is_active: currentProduct.is_active ?? true,
+        is_featured: currentProduct.is_featured ?? false
+      });
+    }
+  }, [currentProduct]);
+
   const resetVariantForm = () => {
     setVariantForm({ 
       sku: '', 
       variant_name: '',
-      price: '', 
-      compare_at_price: '',
-      cost_price: '',
-      stock: 0, 
-      weight: '',
-      dimensions: '',
+      price: '',
+      stock: 0,
       is_active: true,
-      is_default: false
+      is_default: false,
+      attribute_value_ids: []
     });
     setEditingVariantId(null);
     setIsVariantDialogOpen(false);
@@ -145,13 +192,10 @@ const AdminProductDetail = () => {
         sku: variantForm.sku || null,
         variant_name: variantForm.variant_name || null,
         price: Number(variantForm.price),
-        compare_at_price: variantForm.compare_at_price ? Number(variantForm.compare_at_price) : null,
-        cost_price: variantForm.cost_price ? Number(variantForm.cost_price) : null,
         stock: parseInt(variantForm.stock || 0),
-        weight: variantForm.weight ? Number(variantForm.weight) : null,
-        dimensions: variantForm.dimensions || null,
         is_active: !!variantForm.is_active,
         is_default: !!variantForm.is_default,
+        attribute_value_ids: variantForm.attribute_value_ids || []
       };
       if (editingVariantId) {
         await updateVariant(editingVariantId, variantData);
@@ -179,13 +223,10 @@ const AdminProductDetail = () => {
       sku: v.sku || '',
       variant_name: v.variant_name || '',
       price: v.price || '',
-      compare_at_price: v.compare_at_price || '',
-      cost_price: v.cost_price || '',
       stock: v.stock ?? 0,
-      weight: v.weight || '',
-      dimensions: v.dimensions || '',
       is_active: !!v.is_active,
       is_default: !!v.is_default,
+      attribute_value_ids: (v.attributes || []).map(a => a.attribute_value_id || a.attributeValueId).filter(Boolean)
     });
     setIsVariantDialogOpen(true);
   };
@@ -203,6 +244,79 @@ const AdminProductDetail = () => {
     } catch (error) {
       console.error('Error deleting variant:', error);
       // Error đã được xử lý trong store với toast notification
+    }
+  };
+
+  const handleCloneVariant = (v) => {
+    setEditingVariantId(null);
+    setVariantForm({
+      sku: `${v.sku || v.variant_name || 'VAR'}-copy`,
+      variant_name: v.variant_name || '',
+      price: v.price || '',
+      stock: v.stock ?? 0,
+      is_active: !!v.is_active,
+      is_default: false,
+      attribute_value_ids: (v.attributes || []).map(a => a.attribute_value_id || a.attributeValueId).filter(Boolean)
+    });
+    setIsVariantDialogOpen(true);
+  };
+
+  const handleCreateAllCombinations = async () => {
+    if (!groupedAttributeValues || groupedAttributeValues.length === 0) {
+      toast.error('Không có thuộc tính để tạo tổ hợp');
+      return;
+    }
+    const lists = groupedAttributeValues.map(g => g.values.map(v => ({ attribute_id: g.attribute_id, attribute_name: g.attribute_name, value: v.value_name, valueId: v.attribute_value_id })));
+    const cartesian = (arr) => arr.reduce((a, b) => a.flatMap(d => b.map(e => [...d, e])), [[]]);
+    const combos = cartesian(lists);
+    if (!window.confirm(`Tạo ${combos.length} biến thể mới?`)) return;
+    
+    for (const combo of combos) {
+      const skuHint = `PROD-${productId}-${combo.map(c => (c.value || '').toString().replace(/\s+/g, '-').toLowerCase()).join('-')}`;
+      const payload = {
+        sku: skuHint,
+        variant_name: combo.map(c => c.value).join(' '),
+        price: 0,
+        stock: 0,
+        attribute_value_ids: combo.map(c => c.valueId)
+      };
+      try {
+        await createVariantForProduct(productId, payload);
+      } catch (err) {
+        console.error('Create combo failed', err);
+      }
+    }
+    await loadVariants();
+    toast.success(`Đã tạo ${combos.length} biến thể mới`);
+  };
+
+  const toggleAttributeValue = (valueId, attributeId) => {
+    setVariantForm(prev => {
+      const exists = prev.attribute_value_ids.includes(valueId);
+      let next = exists ? prev.attribute_value_ids.filter(v => v !== valueId) : [...prev.attribute_value_ids, valueId];
+      // Ensure only one value per attribute (single select per attribute)
+      const otherIdsForAttribute = (groupedAttributeValues.find(g => g.attribute_id === attributeId)?.values || []).map(v => v.attribute_value_id);
+      next = next.filter(id => !otherIdsForAttribute.includes(id) || id === valueId);
+      return { ...prev, attribute_value_ids: next };
+    });
+  };
+
+  // Info form handlers
+  const handleInfoChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setInfoForm(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
+  };
+
+  const handleUpdateInfo = async (e) => {
+    e.preventDefault();
+    try {
+      await updateProduct(productId, infoForm);
+      setIsEditingInfo(false);
+      toast.success('Cập nhật thông tin sản phẩm thành công');
+      fetchProduct(productId); // Reload
+    } catch (error) {
+      console.error('Error updating product:', error);
+      // Error toast already shown in store
     }
   };
 
@@ -253,72 +367,269 @@ const AdminProductDetail = () => {
     <section>
       <div className="mb-4 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">Chi tiết sản phẩm #{productId}</h1>
-          <div className="text-gray-500 text-sm">Quản lý Variants · Mapping · Images</div>
+          <h1 className="text-2xl font-bold text-gray-800">
+            {currentProduct?.product_name || `Sản phẩm #${productId}`}
+          </h1>
+          <div className="text-gray-500 text-sm">
+            {currentProduct?.category_name || 'Đang tải...'}
+          </div>
         </div>
         <Link to="/admin/products" className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm">← Quay lại danh sách</Link>
       </div>
 
       <div className="flex gap-2 mb-6">
-        <TabButton active={tab==='variants'} onClick={()=>setTab('variants')}>Variants</TabButton>
-        <TabButton active={tab==='mapping'} onClick={()=>setTab('mapping')}>Variant Mapping</TabButton>
-        <TabButton active={tab==='images'} onClick={()=>setTab('images')}>Variant Images</TabButton>
+        <TabButton active={tab==='info'} onClick={()=>setTab('info')}>
+          Thông tin chung
+        </TabButton>
+        <TabButton active={tab==='variants'} onClick={()=>setTab('variants')}>
+          Biến thể {variants?.length > 0 && `(${variants.length})`}
+        </TabButton>
+        <TabButton active={tab==='attributes'} onClick={()=>setTab('attributes')}>
+          Thuộc tính {currentProduct?.applicable_attributes?.length > 0 && `(${currentProduct.applicable_attributes.length})`}
+        </TabButton>
+        <TabButton active={tab==='images'} onClick={()=>setTab('images')}>
+          Ảnh
+        </TabButton>
       </div>
 
+      {/* Tab 1: Thông tin chung */}
+      {tab === 'info' && (
+        <div className="p-6 bg-white rounded-lg shadow">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="font-semibold text-gray-800 text-lg">Thông tin sản phẩm</h3>
+            {!isEditingInfo ? (
+              <Button variant="outline" size="sm" onClick={() => setIsEditingInfo(true)}>
+                Chỉnh sửa
+              </Button>
+            ) : null}
+          </div>
+
+          {isEditingInfo ? (
+            <form onSubmit={handleUpdateInfo} className="space-y-4 max-w-2xl">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Tên sản phẩm *</label>
+                <input
+                  type="text"
+                  name="product_name"
+                  value={infoForm.product_name}
+                  onChange={handleInfoChange}
+                  className="w-full px-3 py-2 border rounded-lg"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Danh mục *</label>
+                <select
+                  name="category_id"
+                  value={infoForm.category_id}
+                  onChange={handleInfoChange}
+                  className="w-full px-3 py-2 border rounded-lg"
+                  required
+                >
+                  <option value="">Chọn danh mục</option>
+                  {parentCategories.map(cat => (
+                    <option key={cat.category_id} value={cat.category_id}>{cat.category_name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Thương hiệu</label>
+                  <input
+                    type="text"
+                    name="brand"
+                    value={infoForm.brand}
+                    onChange={handleInfoChange}
+                    className="w-full px-3 py-2 border rounded-lg"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Model</label>
+                  <input
+                    type="text"
+                    name="model"
+                    value={infoForm.model}
+                    onChange={handleInfoChange}
+                    className="w-full px-3 py-2 border rounded-lg"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Giá cơ bản (₫) *</label>
+                <input
+                  type="number"
+                  name="base_price"
+                  value={infoForm.base_price}
+                  onChange={handleInfoChange}
+                  className="w-full px-3 py-2 border rounded-lg"
+                  min="0"
+                  step="1000"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Mô tả</label>
+                <textarea
+                  name="description"
+                  value={infoForm.description}
+                  onChange={handleInfoChange}
+                  className="w-full px-3 py-2 border rounded-lg"
+                  rows="4"
+                />
+              </div>
+
+              <div className="flex gap-4">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    name="is_active"
+                    checked={infoForm.is_active}
+                    onChange={handleInfoChange}
+                    className="rounded"
+                  />
+                  <span className="text-sm font-medium text-gray-700">Kích hoạt</span>
+                </label>
+
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    name="is_featured"
+                    checked={infoForm.is_featured}
+                    onChange={handleInfoChange}
+                    className="rounded"
+                  />
+                  <span className="text-sm font-medium text-gray-700">Nổi bật</span>
+                </label>
+              </div>
+
+              <div className="flex gap-2">
+                <Button type="submit" disabled={loadingProduct}>
+                  💾 Lưu thay đổi
+                </Button>
+                <Button type="button" variant="outline" onClick={() => setIsEditingInfo(false)}>
+                  Hủy
+                </Button>
+              </div>
+            </form>
+          ) : (
+            <div className="space-y-4 max-w-2xl">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-500 mb-1">Danh mục</label>
+                  <p className="text-gray-900">{currentProduct?.category_name || '-'}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-500 mb-1">Giá cơ bản</label>
+                  <p className="text-gray-900">{currentProduct?.base_price ? `${Number(currentProduct.base_price).toLocaleString()} ₫` : '-'}</p>
+                </div>
+                
+              </div>
+              {currentProduct?.description && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-500 mb-1">Mô tả</label>
+                  <p className="text-gray-900 whitespace-pre-wrap">{currentProduct.description}</p>
+                </div>
+              )}
+              <div>
+                <label className="block text-sm font-medium text-gray-500 mb-1">Trạng thái</label>
+                <div className="flex gap-2">
+                  {currentProduct?.is_active ? (
+                    <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-sm">🟢 Kích hoạt</span>
+                  ) : (
+                    <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-sm">⚫ Không kích hoạt</span>
+                  )}
+                  {currentProduct?.is_featured && (
+                    <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-sm">⭐ Nổi bật</span>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Tab 2: Biến thể */}
       {tab === 'variants' && (
         <div className="p-6 bg-white rounded-lg shadow">
             <div className="flex items-center justify-between mb-4">
             <h3 className="font-semibold text-gray-800 text-lg">Danh sách biến thể</h3>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={loadVariants} disabled={loading}>Tải lại</Button>
+              {/* <Button variant="outline" size="sm" onClick={loadVariants} disabled={loading}>Tải lại</Button>
+              <Button variant="outline" size="sm" onClick={handleCreateAllCombinations}>
+                Tạo tổ hợp
+              </Button> */}
               <Button onClick={handleAddVariantClick} className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:opacity-90">
                 + Thêm biến thể
               </Button>
             </div>
           </div>
             <div className="overflow-x-auto">
-              <table className="min-w-[1200px] w-full text-left">
+              <table className="min-w-full w-full text-left">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-3 py-2 text-gray-600">ID</th>
                     <th className="px-3 py-2 text-gray-600">SKU</th>
                     <th className="px-3 py-2 text-gray-600">Tên biến thể</th>
                     <th className="px-3 py-2 text-gray-600">Giá</th>
-                    <th className="px-3 py-2 text-gray-600">Giá so sánh</th>
-                    <th className="px-3 py-2 text-gray-600">Giá vốn</th>
                     <th className="px-3 py-2 text-gray-600">Tồn kho</th>
-                    <th className="px-3 py-2 text-gray-600">Trọng lượng</th>
-                    <th className="px-3 py-2 text-gray-600">Kích thước</th>
-                    <th className="px-3 py-2 text-gray-600">Mặc định</th>
-                    <th className="px-3 py-2 text-gray-600">Kích hoạt</th>
+                    {/* Dynamic attribute columns */}
+                    {groupedAttributeValues.map(group => (
+                      <th key={group.attribute_id} className="px-3 py-2 text-gray-600 bg-indigo-50">
+                        {group.attribute_name}
+                      </th>
+                    ))}
+                    <th className="px-3 py-2 text-gray-600 text-center">Kích hoạt</th>
                     <th className="px-3 py-2 text-gray-600">Hành động</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
                   {loading ? (
-                    <tr><td className="px-3 py-4 text-gray-500 text-center" colSpan={12}>Đang tải...</td></tr>
+                    <tr><td className="px-3 py-4 text-gray-500 text-center" colSpan={6 + groupedAttributeValues.length}>Đang tải...</td></tr>
                   ) : !variants.length ? (
-                    <tr><td className="px-3 py-4 text-gray-500 text-center" colSpan={12}>Chưa có biến thể</td></tr>
+                    <tr><td className="px-3 py-4 text-gray-500 text-center" colSpan={6 + groupedAttributeValues.length}>Chưa có biến thể</td></tr>
                   ) : (
-                    variants.map(v => (
-                      <tr key={v.variant_id} className="hover:bg-blue-50">
-                        <td className="px-3 py-2 font-medium">{v.variant_id}</td>
-                        <td className="px-3 py-2">{v.sku || '-'}</td>
-                        <td className="px-3 py-2">{v.variant_name || '-'}</td>
-                        <td className="px-3 py-2 text-blue-700 font-semibold">{Number(v.price || 0).toLocaleString()} ₫</td>
-                        <td className="px-3 py-2 text-gray-600">{v.compare_at_price ? Number(v.compare_at_price).toLocaleString() + ' ₫' : '-'}</td>
-                        <td className="px-3 py-2 text-gray-600">{v.cost_price ? Number(v.cost_price).toLocaleString() + ' ₫' : '-'}</td>
-                        <td className="px-3 py-2">{v.stock || 0}</td>
-                        <td className="px-3 py-2">{v.weight ? v.weight + ' kg' : '-'}</td>
-                        <td className="px-3 py-2">{v.dimensions || '-'}</td>
-                        <td className="px-3 py-2 text-center">{v.is_default ? '⭐' : '-'}</td>
-                        <td className="px-3 py-2 text-center">{v.is_active ? <span className="text-green-600">✔</span> : <span className="text-gray-400">✖</span>}</td>
-                        <td className="px-3 py-2 flex gap-2">
-                          <Button size="sm" variant="outline" onClick={() => startEditVariant(v)}>Sửa</Button>
-                          <Button size="sm" variant="destructive" onClick={() => handleDeleteVariant(v)}>Xóa</Button>
-                        </td>
-                      </tr>
-                    ))
+                    variants.map(v => {
+                      // Create a map of attribute values for this variant
+                      const variantAttrMap = {};
+                      if (v.attributes && Array.isArray(v.attributes)) {
+                        v.attributes.forEach(attr => {
+                          const attrId = attr.attribute_id || attr.attributeId;
+                          const valueName = attr.value_name || attr.value || attr.valueName;
+                          if (attrId) {
+                            variantAttrMap[attrId] = valueName;
+                          }
+                        });
+                      }
+                      
+                      return (
+                        <tr key={v.variant_id} className="hover:bg-blue-50">
+                          <td className="px-3 py-2">{v.sku || '-'}</td>
+                          <td className="px-3 py-2">{v.variant_name || '-'}</td>
+                          <td className="px-3 py-2 text-blue-700 font-semibold">{Number(v.price || 0).toLocaleString()} ₫</td>
+                          <td className="px-3 py-2">{v.stock || 0}</td>
+                          {/* Dynamic attribute value columns */}
+                          {groupedAttributeValues.map(group => (
+                            <td key={group.attribute_id} className="px-3 py-2 bg-indigo-50/30">
+                              <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-indigo-100 text-indigo-800">
+                                {variantAttrMap[group.attribute_id] || '-'}
+                              </span>
+                            </td>
+                          ))}
+                          <td className="px-3 py-2 text-center">{v.is_active ? <span className="text-green-600">✔</span> : <span className="text-gray-400">✖</span>}</td>
+                          <td className="px-3 py-2">
+                            <div className="flex gap-1">
+                              {/* <Button size="sm" variant="outline" onClick={() => handleCloneVariant(v)}>Clone</Button> */}
+                              <Button size="sm" variant="outline" onClick={() => startEditVariant(v)}>Sửa</Button>
+                              <Button size="sm" variant="destructive" onClick={() => handleDeleteVariant(v)}>Xóa</Button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
                   )}
                 </tbody>
               </table>
@@ -326,7 +637,40 @@ const AdminProductDetail = () => {
         </div>
       )}
 
+      {/* Tab 3: Thuộc tính */}
+      {tab === 'attributes' && (
+        <div className="p-6 bg-white rounded-lg shadow">
+          <div className="flex items-center gap-2 mb-6">
+            <Tag className="w-5 h-5 text-indigo-600" />
+            <h3 className="font-semibold text-gray-800 text-lg">Thuộc tính áp dụng</h3>
+          </div>
 
+          {currentProduct?.applicable_attributes && currentProduct.applicable_attributes.length > 0 ? (
+            <>
+              <p className="text-sm text-gray-500 mb-4">
+                Các thuộc tính này được áp dụng tự động dựa trên danh mục của sản phẩm. Quản lý thuộc tính trong phần Quản lý Danh mục.
+              </p>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                {currentProduct.applicable_attributes.map((attr) => (
+                  <div
+                    key={attr.attribute_id}
+                    className="flex items-center gap-2 px-3 py-2 bg-indigo-50 text-indigo-700 rounded-lg border border-indigo-200"
+                  >
+                    <Tag className="w-4 h-4" />
+                    <span className="font-medium text-sm">{attr.attribute_name}</span>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <div className="text-center py-12 text-gray-400">
+              <Tag className="w-12 h-12 mx-auto mb-3 opacity-30" />
+              <p>Danh mục này chưa có thuộc tính nào</p>
+              <p className="text-sm mt-1">Thêm thuộc tính trong phần Quản lý Danh mục</p>
+            </div>
+          )}
+        </div>
+      )}
 
       {tab === 'mapping' && (
         <div className="grid md:grid-cols-2 gap-6">
@@ -534,35 +878,9 @@ const AdminProductDetail = () => {
                   required
                 />
               </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Giá so sánh (₫)</label>
-                <input
-                  type="number"
-                  name="compare_at_price"
-                  value={variantForm.compare_at_price}
-                  onChange={handleVariantChange}
-                  min="0"
-                  step="1000"
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                  placeholder="0"
-                />
-              </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Giá vốn (₫)</label>
-              <input
-                type="number"
-                name="cost_price"
-                value={variantForm.cost_price}
-                onChange={handleVariantChange}
-                min="0"
-                step="1000"
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                placeholder="0"
-              />
-            </div>
+            
 
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -577,33 +895,44 @@ const AdminProductDetail = () => {
                   className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
                 />
               </div>
+            </div>
 
+            
+
+            {/* Attribute Values Selection */}
+            {groupedAttributeValues && groupedAttributeValues.length > 0 && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Trọng lượng (kg)</label>
-                <input
-                  type="number"
-                  name="weight"
-                  value={variantForm.weight}
-                  onChange={handleVariantChange}
-                  min="0"
-                  step="0.1"
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                  placeholder="0"
-                />
+                <label className="block text-sm font-medium text-gray-700 mb-2">Thuộc tính sản phẩm</label>
+                <div className="space-y-3 max-h-64 overflow-y-auto border border-gray-200 rounded-lg p-3">
+                  {groupedAttributeValues.map(group => (
+                    <div key={group.attribute_id} className="p-2 border border-gray-100 rounded">
+                      <div className="font-medium text-sm text-gray-800 mb-2">{group.attribute_name}</div>
+                      <div className="flex flex-wrap gap-2">
+                        {group.values.map(val => (
+                          <label 
+                            key={val.attribute_value_id} 
+                            className={`inline-flex items-center px-3 py-1.5 border rounded cursor-pointer text-sm transition ${
+                              variantForm.attribute_value_ids.includes(val.attribute_value_id) 
+                                ? 'bg-blue-50 border-blue-400 text-blue-700' 
+                                : 'bg-white border-gray-300 hover:bg-gray-50'
+                            }`}
+                          >
+                            <input 
+                              type="checkbox" 
+                              checked={variantForm.attribute_value_ids.includes(val.attribute_value_id)} 
+                              onChange={() => toggleAttributeValue(val.attribute_value_id, group.attribute_id)} 
+                              className="mr-2" 
+                            />
+                            <span>{val.value_name}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-gray-500 mt-1">Chọn một giá trị cho mỗi thuộc tính</p>
               </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Kích thước</label>
-              <input
-                type="text"
-                name="dimensions"
-                value={variantForm.dimensions}
-                onChange={handleVariantChange}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                placeholder="VD: 10x20x30 cm"
-              />
-            </div>
+            )}
 
             <div className="flex gap-4">
               <label className="flex items-center gap-2">

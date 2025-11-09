@@ -8,6 +8,7 @@ export const useVariantStore = create((set) => ({
     attributes: [],
     mappings: [],
     variantImages: [],
+    attributeValues: [], // Attribute values available for product
     loading: false,
     loadingAttributes: false,
     loadingImages: false,
@@ -285,6 +286,21 @@ export const useVariantStore = create((set) => ({
         }
     },
 
+    // Lấy attribute values theo product
+    fetchAttributeValuesByProduct: async (productId) => {
+        set({ loadingAttributes: true, error: null });
+        try {
+            const response = await variantService.getAttributeValuesByProduct(productId);
+            set({ attributeValues: response.data || response, loadingAttributes: false });
+            return response;
+        } catch (error) {
+            const message = error.response?.data?.message || 'Không tải được danh sách giá trị thuộc tính';
+            set({ error: message, loadingAttributes: false });
+            toast.error(message);
+            throw error;
+        }
+    },
+
     // Clear error
     clearError: () => set({ error: null }),
 
@@ -295,6 +311,7 @@ export const useVariantStore = create((set) => ({
         attributes: [],
         mappings: [],
         variantImages: [],
+        attributeValues: [],
         loading: false, 
         loadingAttributes: false,
         loadingImages: false,

@@ -49,5 +49,31 @@ export const attributeService = {
             withCredentials: true
         });
         return response.data;
+    },
+
+    // Lấy categories của attribute
+    getAttributeCategories: async (attributeId) => {
+        const response = await api.get(`/attributes/${attributeId}/categories`, {
+            withCredentials: true
+        });
+        return response.data;
+    },
+
+    // Cập nhật categories cho attribute
+    updateAttributeCategories: async (attributeId, categoryIds) => {
+        const response = await api.put(`/attributes/${attributeId}/categories`, {
+            category_ids: categoryIds
+        }, {
+            withCredentials: true
+        });
+        return response.data;
+    },
+
+    // Xóa một category khỏi attribute
+    removeAttributeCategory: async (attributeId, categoryId) => {
+        const response = await api.delete(`/attributes/${attributeId}/categories/${categoryId}`, {
+            withCredentials: true
+        });
+        return response.data;
     }
 };

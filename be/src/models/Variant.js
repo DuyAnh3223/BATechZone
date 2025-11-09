@@ -10,19 +10,15 @@ class Variant {
       // Insert variant
       const [variant] = await conn.query(
         `INSERT INTO product_variants (
-          product_id, sku, variant_name, price, compare_at_price, cost_price, 
-          stock_quantity, weight, dimensions, is_active, is_default
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          product_id, sku, variant_name, price, 
+          stock_quantity,  is_active, is_default
+        ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
         [
           variantData.productId,
           variantData.sku || null,
           variantData.variantName || null,
           variantData.price,
-          variantData.compareAtPrice || null,
-          variantData.costPrice || null,
           variantData.stockQuantity || 0,
-          variantData.weight || null,
-          variantData.dimensions || null,
           variantData.isActive ?? true,
           variantData.isDefault ?? false
         ]
@@ -31,10 +27,17 @@ class Variant {
 
       // Insert variant attributes
       if (variantData.attributes && variantData.attributes.length > 0) {
-        await conn.query(
-          'INSERT INTO variant_attributes (variant_id, attribute_value_id) VALUES ?',
-          [variantData.attributes.map(attr => [variantId, attr.attributeValueId])]
-        );
+        // Support both array of IDs and array of objects
+        const attributeValueIds = variantData.attributes.map(attr => 
+          typeof attr === 'object' ? attr.attributeValueId : attr
+        ).filter(id => id != null);
+        
+        if (attributeValueIds.length > 0) {
+          await conn.query(
+            'INSERT INTO variant_attributes (variant_id, attribute_value_id) VALUES ?',
+            [attributeValueIds.map(id => [variantId, id])]
+          );
+        }
       }
 
       // Insert variant images
@@ -163,10 +166,15 @@ class Variant {
           'DELETE FROM variant_attributes WHERE variant_id = ?',
           [variantId]
         );
-        if (variantData.attributes.length > 0) {
+        // Support both array of IDs and array of objects
+        const attributeValueIds = variantData.attributes.map(attr => 
+          typeof attr === 'object' ? attr.attributeValueId : attr
+        ).filter(id => id != null);
+        
+        if (attributeValueIds.length > 0) {
           await conn.query(
             'INSERT INTO variant_attributes (variant_id, attribute_value_id) VALUES ?',
-            [variantData.attributes.map(attr => [variantId, attr.attributeValueId])]
+            [attributeValueIds.map(id => [variantId, id])]
           );
         }
       }
@@ -341,12 +349,8 @@ class Variant {
           product_id,
           sku,
           variant_name,
-          price,
-          compare_at_price,
-          cost_price,
+          price, 
           stock_quantity as stock,
-          weight,
-          dimensions,
           is_active,
           is_default,
           created_at,
@@ -363,25 +367,46 @@ class Variant {
         return [];
       }
       
-      // Map variants to return format
-      return variants.map(v => ({
-        variant_id: v.variant_id,
-        product_id: v.product_id,
-        sku: v.sku || null,
-        variant_name: v.variant_name || null,
-        price: v.price ? parseFloat(v.price) : 0,
-        compare_at_price: v.compare_at_price ? parseFloat(v.compare_at_price) : null,
-        cost_price: v.cost_price ? parseFloat(v.cost_price) : null,
-        stock: v.stock ? parseInt(v.stock) : 0,
-        weight: v.weight ? parseFloat(v.weight) : null,
-        dimensions: v.dimensions || null,
-        is_active: v.is_active === 1 || v.is_active === true || v.is_active === '1',
-        is_default: v.is_default === 1 || v.is_default === true || v.is_default === '1',
-        created_at: v.created_at,
-        updated_at: v.updated_at,
-        attributes: [], // Will be loaded separately if needed
-        images: [] // Will be loaded separately if needed
-      }));
+      // For each variant, fetch its attributes
+      const variantsWithAttributes = await Promise.all(
+        variants.map(async (v) => {
+          // Fetch attributes for this variant
+          const [attributes] = await db.query(
+            `SELECT 
+              va.attribute_value_id,
+              av.value_name,
+              a.attribute_id,
+              a.attribute_name
+            FROM variant_attributes va
+            JOIN attribute_values av ON va.attribute_value_id = av.attribute_value_id
+            JOIN attributes a ON av.attribute_id = a.attribute_id
+            WHERE va.variant_id = ?`,
+            [v.variant_id]
+          );
+          
+          return {
+            variant_id: v.variant_id,
+            product_id: v.product_id,
+            sku: v.sku || null,
+            variant_name: v.variant_name || null,
+            price: v.price ? parseFloat(v.price) : 0,
+            stock: v.stock ? parseInt(v.stock) : 0,
+            is_active: v.is_active === 1 || v.is_active === true || v.is_active === '1',
+            is_default: v.is_default === 1 || v.is_default === true || v.is_default === '1',
+            created_at: v.created_at,
+            updated_at: v.updated_at,
+            attributes: attributes.map(attr => ({
+              attribute_value_id: attr.attribute_value_id,
+              value_name: attr.value_name,
+              attribute_id: attr.attribute_id,
+              attribute_name: attr.attribute_name
+            })),
+            images: [] // Will be loaded separately if needed
+          };
+        })
+      );
+      
+      return variantsWithAttributes;
     } catch (error) {
       console.error('Error in getByProductId:', error);
       console.error('Error stack:', error.stack);

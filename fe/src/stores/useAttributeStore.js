@@ -51,7 +51,8 @@ export const useAttributeStore = create((set, get) => ({
         set({ loading: true, error: null });
         try {
             const response = await attributeService.createAttribute(attributeData);
-            toast.success('Thêm thuộc tính thành công!');
+            const message = response.data?.message || response.message || 'Thêm thuộc tính thành công!';
+            toast.success(message);
             set({ loading: false });
             return response;
         } catch (error) {
@@ -76,6 +77,61 @@ export const useAttributeStore = create((set, get) => ({
             return response;
         } catch (error) {
             const message = error.response?.data?.message || 'Có lỗi xảy ra khi xóa thuộc tính';
+            set({ error: message, loading: false });
+            toast.error(message);
+            throw error;
+        }
+    },
+
+    // Lấy categories của attribute
+    fetchAttributeCategories: async (attributeId) => {
+        set({ loading: true, error: null });
+        try {
+            const response = await attributeService.getAttributeCategories(attributeId);
+            set({ loading: false });
+            return response;
+        } catch (error) {
+            const message = error.response?.data?.message || 'Không thể tải danh mục của thuộc tính';
+            set({ error: message, loading: false });
+            toast.error(message);
+            throw error;
+        }
+    },
+
+    // Cập nhật categories cho attribute
+    updateAttributeCategories: async (attributeId, categoryIds) => {
+        set({ loading: true, error: null });
+        try {
+            const response = await attributeService.updateAttributeCategories(attributeId, categoryIds);
+            toast.success('Cập nhật danh mục thành công!');
+            set({ loading: false });
+            // Refresh current attribute if it's the one being updated
+            if (get().currentAttribute?.attribute_id === attributeId) {
+                await get().fetchAttribute(attributeId);
+            }
+            return response;
+        } catch (error) {
+            const message = error.response?.data?.message || 'Có lỗi xảy ra khi cập nhật danh mục';
+            set({ error: message, loading: false });
+            toast.error(message);
+            throw error;
+        }
+    },
+
+    // Xóa category khỏi attribute
+    removeAttributeCategory: async (attributeId, categoryId) => {
+        set({ loading: true, error: null });
+        try {
+            const response = await attributeService.removeAttributeCategory(attributeId, categoryId);
+            toast.success('Xóa danh mục khỏi thuộc tính thành công!');
+            set({ loading: false });
+            // Refresh current attribute if it's the one being updated
+            if (get().currentAttribute?.attribute_id === attributeId) {
+                await get().fetchAttribute(attributeId);
+            }
+            return response;
+        } catch (error) {
+            const message = error.response?.data?.message || 'Có lỗi xảy ra khi xóa danh mục';
             set({ error: message, loading: false });
             toast.error(message);
             throw error;

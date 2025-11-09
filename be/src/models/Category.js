@@ -242,6 +242,12 @@ async delete(categoryId) {
       values
     );
 
+    // Get attributes for each category
+    for (let category of categories) {
+      const attributes = await this.getAttributes(category.category_id);
+      category.attributes = attributes;
+    }
+
     const countValues = values.slice(0, -2);
     const [count] = await db.query(
       `SELECT COUNT(*) as total
@@ -379,6 +385,52 @@ async delete(categoryId) {
       ORDER BY display_order ASC, category_name ASC`
     );
     return categories || [];
+  }
+
+  // Get attributes for a category
+  async getAttributes(categoryId) {
+    const [attributes] = await db.query(
+      `SELECT a.attribute_id, a.attribute_name
+      FROM attributes a
+      INNER JOIN attribute_categories ac ON a.attribute_id = ac.attribute_id
+      WHERE ac.category_id = ?`,
+      [categoryId]
+    );
+    return attributes;
+  }
+
+  // Assign attributes to category
+  async assignAttributes(categoryId, attributeIds) {
+    if (!attributeIds || attributeIds.length === 0) return;
+
+    const values = attributeIds.map(attributeId => [categoryId, attributeId]);
+    await db.query(
+      `INSERT IGNORE INTO attribute_categories (category_id, attribute_id) VALUES ?`,
+      [values]
+    );
+  }
+
+  // Remove an attribute from category
+  async removeAttribute(categoryId, attributeId) {
+    const [result] = await db.query(
+      `DELETE FROM attribute_categories WHERE category_id = ? AND attribute_id = ?`,
+      [categoryId, attributeId]
+    );
+    return result.affectedRows > 0;
+  }
+
+  // Update category attributes (replace all)
+  async updateAttributes(categoryId, attributeIds) {
+    // Delete existing relationships
+    await db.query(
+      `DELETE FROM attribute_categories WHERE category_id = ?`,
+      [categoryId]
+    );
+
+    // Add new relationships
+    if (attributeIds && attributeIds.length > 0) {
+      await this.assignAttributes(categoryId, attributeIds);
+    }
   }
 }
 
