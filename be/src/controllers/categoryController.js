@@ -1,4 +1,5 @@
 import Category from '../models/Category.js';
+import { getPublicUrlForCategory } from '../middleware/upload.js';
 
 export const createCategory = async (req, res) => {
   try {
@@ -251,5 +252,37 @@ export const removeCategoryAttribute = async (req, res) => {
   } catch (error) {
     console.error('Error removing category attribute:', error);
     res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+// Upload category image
+export const uploadCategoryImage = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ 
+        success: false,
+        message: 'No file uploaded' 
+      });
+    }
+
+    const imageUrl = getPublicUrlForCategory(req.file.filename);
+
+    res.status(200).json({
+      success: true,
+      message: 'Image uploaded successfully',
+      data: {
+        imageUrl,
+        filename: req.file.filename,
+        size: req.file.size,
+        mimetype: req.file.mimetype
+      }
+    });
+  } catch (error) {
+    console.error('Error uploading category image:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Internal server error',
+      error: error.message 
+    });
   }
 };

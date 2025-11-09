@@ -111,11 +111,11 @@ const Home = () => {
                 className="group relative overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-shadow"
               >
                 <img
-                  src={category.image_url || 'https://via.placeholder.com/200'}
+                  src={category.image_url ? `http://localhost:5001${category.image_url}` : 'https://via.placeholder.com/200?text=No+Image'}
                   alt={category.category_name}
                   className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
                   onError={(e) => {
-                    e.target.src = 'https://via.placeholder.com/200';
+                    e.target.src = 'https://via.placeholder.com/200?text=No+Image';
                   }}
                 />
                 <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">

@@ -200,6 +200,22 @@ export const useCategoryStore = create((set, get) => ({
         }
     },
 
+    // Upload ảnh category
+    uploadCategoryImage: async (file) => {
+        set({ loading: true, error: null });
+        try {
+            const response = await categoryService.uploadCategoryImage(file);
+            toast.success('Upload ảnh thành công!');
+            set({ loading: false });
+            return response;
+        } catch (error) {
+            const message = error.response?.data?.message || 'Có lỗi xảy ra khi upload ảnh';
+            set({ error: message, loading: false });
+            toast.error(message);
+            throw error;
+        }
+    },
+
     // Clear error
     clearError: () => set({ error: null }),
 

@@ -10,7 +10,9 @@ const ensureDir = (dirPath) => {
 
 const uploadsRoot = path.resolve(process.cwd(), 'uploads');
 const variantsRoot = path.join(uploadsRoot, 'variants');
+const categoriesRoot = path.join(uploadsRoot, 'categories');
 ensureDir(variantsRoot);
+ensureDir(categoriesRoot);
 
 const sanitize = (s) => String(s || '').replace(/[^a-zA-Z0-9-_]/g, '');
 
@@ -37,8 +39,32 @@ const fileFilter = (req, file, cb) => {
 
 export const uploadVariantImage = multer({ storage: storageDynamic, fileFilter, limits: { fileSize: 5 * 1024 * 1024 } });
 
+// Storage for category images
+const storageCategoryImage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        ensureDir(categoriesRoot);
+        cb(null, categoriesRoot);
+    },
+    filename: function (req, file, cb) {
+        const ext = path.extname(file.originalname).toLowerCase();
+        const base = path.basename(file.originalname, ext).replace(/[^a-zA-Z0-9-_]/g, '') || 'category';
+        const unique = Date.now() + '-' + Math.round(Math.random() * 1e9);
+        cb(null, `${base}-${unique}${ext}`);
+    }
+});
+
+export const uploadCategoryImage = multer({ 
+    storage: storageCategoryImage, 
+    fileFilter, 
+    limits: { fileSize: 5 * 1024 * 1024 } 
+});
+
 export const getPublicUrlForVariant = (variantId, filename) => {
     return `/uploads/variants/${sanitize(variantId)}/${filename}`;
+};
+
+export const getPublicUrlForCategory = (filename) => {
+    return `/uploads/categories/${filename}`;
 };
 
 export const mapPublicUrlToDiskPath = (publicUrl) => {

@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { FolderTree, Search, Plus, Edit2, Trash2, X, Check, Tag } from 'lucide-react';
+import { FolderTree, Search, Plus, Edit2, Trash2, X, Check, Tag, Upload, Image as ImageIcon } from 'lucide-react';
 import { useCategoryStore } from '@/stores/useCategoryStore';
 import { useAttributeStore } from '@/stores/useAttributeStore';
 
@@ -24,7 +24,8 @@ const AdminCategory = () => {
     createCategory,
     updateCategory,
     deleteCategory,
-    updateCategoryAttributes
+    updateCategoryAttributes,
+    uploadCategoryImage
   } = useCategoryStore();
 
   const {
@@ -56,6 +57,11 @@ const AdminCategory = () => {
   const [selectedAttributeIds, setSelectedAttributeIds] = useState([]);
   const [showEditForm, setShowEditForm] = useState(false);
   const [editFormData, setEditFormData] = useState({});
+
+  // Image upload refs
+  const addImageInputRef = useRef(null);
+  const editImageInputRef = useRef(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   // Load data on mount
   useEffect(() => {
@@ -230,6 +236,48 @@ const AdminCategory = () => {
     return parent ? parent.category_name : '';
   };
 
+  // Handle image upload for add form
+  const handleAddImageUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setUploadingImage(true);
+      const response = await uploadCategoryImage(file);
+      console.log('Upload response:', response);
+      console.log('Image URL:', response.data.imageUrl);
+      setFormData(prev => ({
+        ...prev,
+        image_url: response.data.imageUrl
+      }));
+    } catch (error) {
+      console.error('Error uploading image:', error);
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  // Handle image upload for edit form
+  const handleEditImageUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setUploadingImage(true);
+      const response = await uploadCategoryImage(file);
+      console.log('Edit upload response:', response);
+      console.log('Edit image URL:', response.data.imageUrl);
+      setEditFormData(prev => ({
+        ...prev,
+        image_url: response.data.imageUrl
+      }));
+    } catch (error) {
+      console.error('Error uploading image:', error);
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
   return (
     <section className="h-full flex flex-col">
       {/* Header */}
@@ -332,6 +380,57 @@ const AdminCategory = () => {
                     </option>
                   ))}
                 </select>
+                
+                {/* Image Upload */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">Ảnh đại diện</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="file"
+                      ref={addImageInputRef}
+                      accept="image/*"
+                      onChange={handleAddImageUpload}
+                      className="hidden"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => addImageInputRef.current?.click()}
+                      disabled={uploadingImage}
+                      className="flex-1"
+                    >
+                      <Upload className="h-4 w-4 mr-2" />
+                      {uploadingImage ? 'Đang tải...' : 'Chọn ảnh'}
+                    </Button>
+                  </div>
+                  {formData.image_url && (
+                    <div className="space-y-2">
+                      <p className="text-xs text-gray-500">URL: {formData.image_url}</p>
+                      <div className="relative w-full h-32 border border-gray-300 rounded-lg overflow-hidden">
+                        <img
+                          src={`http://localhost:5001${formData.image_url}`}
+                          alt="Preview"
+                          className="w-full h-full object-cover"
+                          onLoad={() => console.log('Image loaded successfully:', formData.image_url)}
+                          onError={(e) => {
+                            console.error('Failed to load image:', formData.image_url);
+                            console.error('Full URL:', `http://localhost:5001${formData.image_url}`);
+                          }}
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setFormData(prev => ({ ...prev, image_url: '' }))}
+                          className="absolute top-1 right-1 bg-white/80 hover:bg-white"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="checkbox"
@@ -391,56 +490,75 @@ const AdminCategory = () => {
                   }`}
                 >
                   <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-medium text-gray-800">{cat.category_name}</h3>
-                        {cat.is_active ? (
-                          <span className="px-2 py-0.5 text-xs bg-green-100 text-green-800 rounded">
-                            Hoạt động
-                          </span>
-                        ) : (
-                          <span className="px-2 py-0.5 text-xs bg-gray-100 text-gray-600 rounded">
-                            Tắt
-                          </span>
-                        )}
-                      </div>
-                      
-                      {cat.parent_category_id && (
-                        <p className="text-xs text-gray-500 mt-1">
-                          Danh mục cha: {getParentName(cat.parent_category_id)}
-                        </p>
+                    <div className="flex-1 flex gap-3">
+                      {/* Category Image */}
+                      {cat.image_url ? (
+                        <img
+                          src={`http://localhost:5001${cat.image_url}`}
+                          alt={cat.category_name}
+                          className="w-16 h-16 rounded-lg object-cover shrink-0"
+                          onError={(e) => {
+                            console.error('Failed to load category image:', cat.image_url);
+                            e.target.style.display = 'none';
+                          }}
+                        />
+                      ) : (
+                        <div className="w-16 h-16 rounded-lg bg-gray-100 flex items-center justify-center shrink-0">
+                          <ImageIcon className="h-8 w-8 text-gray-400" />
+                        </div>
                       )}
 
-                      <div className="flex gap-2 mt-2">
-                        {cat.product_count !== undefined && (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
-                            {cat.product_count} sản phẩm
-                          </span>
-                        )}
-                        {cat.attributes && cat.attributes.length > 0 && (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
-                            {cat.attributes.length} thuộc tính
-                          </span>
-                        )}
-                      </div>
-
-                      {cat.attributes && cat.attributes.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mt-2">
-                          {cat.attributes.slice(0, 3).map(attr => (
-                            <span
-                              key={attr.attribute_id}
-                              className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-gray-100 text-gray-700"
-                            >
-                              {attr.attribute_name}
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-medium text-gray-800">{cat.category_name}</h3>
+                          {cat.is_active ? (
+                            <span className="px-2 py-0.5 text-xs bg-green-100 text-green-800 rounded">
+                              Hoạt động
                             </span>
-                          ))}
-                          {cat.attributes.length > 3 && (
-                            <span className="text-xs text-gray-400">
-                              +{cat.attributes.length - 3} khác
+                          ) : (
+                            <span className="px-2 py-0.5 text-xs bg-gray-100 text-gray-600 rounded">
+                              Tắt
                             </span>
                           )}
                         </div>
-                      )}
+                        
+                        {cat.parent_category_id && (
+                          <p className="text-xs text-gray-500 mt-1">
+                            Danh mục cha: {getParentName(cat.parent_category_id)}
+                          </p>
+                        )}
+
+                        <div className="flex gap-2 mt-2">
+                          {cat.product_count !== undefined && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
+                              {cat.product_count} sản phẩm
+                            </span>
+                          )}
+                          {cat.attributes && cat.attributes.length > 0 && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                              {cat.attributes.length} thuộc tính
+                            </span>
+                          )}
+                        </div>
+
+                        {cat.attributes && cat.attributes.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-2">
+                            {cat.attributes.slice(0, 3).map(attr => (
+                              <span
+                                key={attr.attribute_id}
+                                className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-gray-100 text-gray-700"
+                              >
+                                {attr.attribute_name}
+                              </span>
+                            ))}
+                            {cat.attributes.length > 3 && (
+                              <span className="text-xs text-gray-400">
+                                +{cat.attributes.length - 3} khác
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
                     <Button
                       variant="ghost"
@@ -598,14 +716,53 @@ const AdminCategory = () => {
                           </option>
                         ))}
                     </select>
-                    <input
-                      type="text"
-                      name="image_url"
-                      placeholder="URL ảnh"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      value={editFormData.image_url}
-                      onChange={handleEditInputChange}
-                    />
+                    
+                    {/* Image Upload */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700">Ảnh đại diện</label>
+                      <div className="flex gap-2">
+                        <input
+                          type="file"
+                          ref={editImageInputRef}
+                          accept="image/*"
+                          onChange={handleEditImageUpload}
+                          className="hidden"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => editImageInputRef.current?.click()}
+                          disabled={uploadingImage}
+                          className="flex-1"
+                        >
+                          <Upload className="h-4 w-4 mr-2" />
+                          {uploadingImage ? 'Đang tải...' : 'Chọn ảnh'}
+                        </Button>
+                      </div>
+                      {editFormData.image_url && (
+                        <div className="relative w-full h-32 border border-gray-300 rounded-lg overflow-hidden">
+                          <img
+                            src={`http://localhost:5001${editFormData.image_url}`}
+                            alt="Preview"
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              console.error('Failed to load edit image:', editFormData.image_url);
+                              e.target.style.display = 'none';
+                            }}
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setEditFormData(prev => ({ ...prev, image_url: '' }))}
+                            className="absolute top-1 right-1 bg-white/80 hover:bg-white"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+
                     <label className="flex items-center gap-2 cursor-pointer">
                       <input
                         type="checkbox"
@@ -761,7 +918,7 @@ const AdminCategory = () => {
                   <div>
                     <h3 className="text-sm font-semibold text-gray-700 mb-2">Hình ảnh</h3>
                     <img
-                      src={selectedCategory.image_url}
+                      src={`http://localhost:5001${selectedCategory.image_url}`}
                       alt={selectedCategory.category_name}
                       className="w-full h-48 object-cover rounded-lg"
                       onError={(e) => {

@@ -85,5 +85,19 @@ export const categoryService = {
             withCredentials: true
         });
         return response.data;
+    },
+
+    // Upload ảnh category
+    uploadCategoryImage: async (file) => {
+        const formData = new FormData();
+        formData.append('image', file);
+        
+        const response = await api.post('/categories/upload-image', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            },
+            withCredentials: true
+        });
+        return response.data;
     }
 };
