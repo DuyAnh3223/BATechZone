@@ -80,9 +80,6 @@ const AdminLogin = () => {
 									</button>
 								</div>
 							</div>
-							{/* <button disabled={isSubmitting} type="submit" className="w-full rounded-lg bg-gray-900 text-white py-2.5 font-medium hover:bg-black transition disabled:opacity-60">
-                                {isSubmitting ? 'Đang đăng nhập...' : 'Đăng nhập'}
-                            </button> */}
 							<button
 								disabled={isSubmitting}
 								type="submit"

@@ -229,13 +229,12 @@ const AdminUser = () => {
             <th className="px-4 py-3 font-semibold text-gray-600">Kích hoạt</th>
             <th className="px-4 py-3 font-semibold text-gray-600">Ngày tạo</th>
             <th className="px-4 py-3 font-semibold text-gray-600">Ngày sửa</th>
-            <th className="px-4 py-3 font-semibold text-gray-600">Lần đăng nhập cuối</th>
             <th className="px-4 py-3 font-semibold text-gray-600">Hành động</th>
           </tr>
         </thead>
         <tbody className="divide-y">
           {loading ? (
-            <tr><td className="px-4 py-6 text-gray-500" colSpan={11}>Đang tải...</td></tr>
+            <tr><td className="px-4 py-6 text-gray-500" colSpan={10}>Đang tải...</td></tr>
           ) : (
             users.map((user) => (
               <tr key={user.user_id} className="hover:bg-blue-50 transition">
@@ -246,11 +245,10 @@ const AdminUser = () => {
                 <td className="px-4 py-3">{user.phone || '-'}</td>
                 <td className="px-4 py-3"><span className={`px-3 py-0.5 rounded-full text-xs font-semibold ${roleClass(user.role)}`}>{user.role === 0 ? 'Khách hàng' : user.role === 1 ? 'Người giao hàng' : 'Quản trị viên'}</span></td>
                 <td className="px-4 py-3 text-center">
-                  {user.is_active ? <span className="text-green-600 font-bold">●</span> : <span className="text-gray-400 font-bold">●</span>}
+                  {user.is_active ? <span className="text-green-600 font-bold">Kích hoạt</span> : <span className="text-gray-400 font-bold">Vô hiệu</span>}
                 </td>
                 <td className="px-4 py-3">{formatDate(user.created_at)}</td>
                 <td className="px-4 py-3">{formatDate(user.updated_at)}</td>
-                <td className="px-4 py-3">{user.last_login ? formatDate(user.last_login) : '-'}</td>
                 <td className="px-4 py-3 flex gap-2">
                   <button 
                     onClick={() => handleEditClick(user)}

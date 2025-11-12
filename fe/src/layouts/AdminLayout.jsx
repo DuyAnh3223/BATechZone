@@ -4,20 +4,19 @@ import { User2, Home, Box, ShoppingCart, ListOrdered, Percent, Bell, Search, Use
 import adminAvatar from "../assets/react.svg"; // dùng tạm hình có sẵn
 
 const menu = [
-  { icon: <Home size={18} />, label: "Dashboard", to: "/admin/dashboard" },
-  { icon: <Users size={18} />, label: "Users", to: "/admin/users" },
-  { icon: <Box size={18} />, label: "Products", to: "/admin/products" },
-  { icon: <Tags size={18} />, label: "Categories", to: "/admin/categories" },
-  { icon: <Palette size={18} />, label: "Attributes", to: "/admin/attributes" },
-  { icon: <Book size={18} />, label: "Posts", to: "/admin/posts" },
-  { icon: <Wrench size={18} />, label: "Builds", to: "/admin/builds" },
-  { icon: <ListOrdered size={18} />, label: "Orders", to: "/admin/orders" },
-  { icon: <CreditCard size={18} />, label: "Payments", to: "/admin/payments" },
-  { icon: <Bell size={18} />, label: "Notifications", to: "/admin/notifications" },
-  { icon: <Eye size={18} />, label: "Recent Views", to: "/admin/recent-views" },
-  { icon: <LifeBuoy size={18} />, label: "Service Center", to: "/admin/service-center" },
-  { icon: <TriangleAlert size={18} />, label: "Moderation", to: "/admin/moderation" },
-  { icon: <Percent size={18} />, label: "Coupons", to: "/admin/coupons" },
+  { icon: <Home size={18} />, label: "Bảng điều khiển", to: "/admin/dashboard" },
+  { icon: <Users size={18} />, label: "Người dùng", to: "/admin/users" },
+  { icon: <Box size={18} />, label: "Sản phẩm", to: "/admin/products" },
+  { icon: <Palette size={18} />, label: "Thuộc tính", to: "/admin/attributes", indent: true },
+  { icon: <TriangleAlert size={18} />, label: "Kiểm duyệt", to: "/admin/moderation", indent: true },
+  { icon: <Tags size={18} />, label: "Danh mục", to: "/admin/categories" },
+  { icon: <ListOrdered size={18} />, label: "Đơn hàng", to: "/admin/orders" },
+  { icon: <CreditCard size={18} />, label: "Thanh toán", to: "/admin/payments" },
+  { icon: <Percent size={18} />, label: "Mã giảm giá", to: "/admin/coupons" },
+  { icon: <Bell size={18} />, label: "Thông báo", to: "/admin/notifications" },
+  { icon: <Book size={18} />, label: "Bài viết", to: "/admin/posts" },
+  { icon: <Wrench size={18} />, label: "Cấu hình PC", to: "/admin/builds" },
+  { icon: <LifeBuoy size={18} />, label: "Trung tâm dịch vụ", to: "/admin/service-center" },
 ];
 
 const AdminLayout = () => {
@@ -33,7 +32,7 @@ const AdminLayout = () => {
               key={idx}
               to={item.to}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-4 py-2 rounded-lg font-medium text-sm transition ${isActive ? "bg-blue-100 text-blue-700" : "text-gray-700 hover:bg-gray-100"}`
+                `flex items-center gap-3 ${item.indent ? 'pl-8' : 'px-4'} py-2 rounded-lg font-medium text-sm transition ${isActive ? "bg-blue-100 text-blue-700" : "text-gray-700 hover:bg-gray-100"}`
               }
             >
               {item.icon}
@@ -49,7 +48,7 @@ const AdminLayout = () => {
           <div className="flex items-center gap-3 flex-1">
             <button className="block md:hidden p-2"><span className="sr-only">Menu</span></button>
             <div className="relative w-80 max-w-full">
-              <input type="text" placeholder="Search..." className="w-full border rounded-lg pl-10 pr-3 py-2 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-300" />
+              <input type="text" placeholder="Tìm kiếm..." className="w-full border rounded-lg pl-10 pr-3 py-2 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-300" />
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
             </div>
           </div>

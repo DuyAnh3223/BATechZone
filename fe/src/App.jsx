@@ -34,7 +34,6 @@ import AdminPost from './pages/admin/AdminPost';
 import AdminPostDetail from './pages/admin/AdminPostDetail';
 import AdminWishlist from './pages/admin/AdminWishlist';
 import AdminPayment from './pages/admin/AdminPayment';
-import AdminRecentView from './pages/admin/AdminRecentView';
 import AdminModeration from './pages/admin/AdminModeration';
 import AdminServiceCenter from './pages/admin/AdminServiceCenter';
 
@@ -81,7 +80,6 @@ function App() {
             <Route path="posts" element={<AdminPost />} />
             <Route path="posts/:postId" element={<AdminPostDetail />} />
             <Route path="payments" element={<AdminPayment />} />
-            <Route path="recent-views" element={<AdminRecentView />} />
             <Route path="moderation" element={<AdminModeration />} />
             <Route path="service-center" element={<AdminServiceCenter />} />
           </Route>

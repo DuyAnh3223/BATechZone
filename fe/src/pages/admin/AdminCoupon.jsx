@@ -282,7 +282,7 @@ const AdminCoupon = () => {
                 <td className="px-4 py-3">{Number(c.min_order_amount).toLocaleString()} ₫</td>
                 <td className="px-4 py-3 text-center">{c.usage_limit || '-'}</td>
                 <td className="px-4 py-3 text-center">{c.used_count || 0}</td>
-                <td className="px-4 py-3 text-center">{c.is_active ? <span className="text-green-600 font-bold">●</span> : <span className="text-gray-400 font-bold">●</span>}</td>
+                <td className="px-4 py-3 text-center">{c.is_active ? <span className="text-green-600 font-bold">Kích hoạt</span> : <span className="text-gray-400 font-bold">Vô hiệu</span>}</td>
                 <td className="px-4 py-3">{formatDate(c.valid_from)}</td>
                 <td className="px-4 py-3">{formatDate(c.valid_until)}</td>
                 <td className="px-4 py-3">{formatDate(c.created_at)}</td>
