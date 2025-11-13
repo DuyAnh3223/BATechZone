@@ -60,7 +60,9 @@ export const useUserStore = create((set, get) => ({
         try {
             const response = await userService.createUser(userData);
             if (response?.success) {
-                toast.success(response.message || 'Tạo user thành công');
+                toast.success('Tạo người dùng thành công', {
+                    description: response.message || `Đã tạo tài khoản ${userData.username} thành công`
+                });
                 set({ loading: false });
                 return response.data;
             } else {
@@ -69,8 +71,10 @@ export const useUserStore = create((set, get) => ({
             }
         } catch (error) {
             set({ loading: false });
-            const message = error.response?.data?.message || 'Tạo user thất bại';
-            toast.error(message);
+            const message = error.response?.data?.message || error.message || 'Không thể tạo người dùng mới';
+            toast.error('Tạo người dùng thất bại', {
+                description: message
+            });
             throw new Error(message);
         }
     },
@@ -81,7 +85,9 @@ export const useUserStore = create((set, get) => ({
         try {
             const response = await userService.updateUser(userId, userData);
             if (response?.success) {
-                toast.success(response.message || 'Cập nhật user thành công');
+                toast.success('Cập nhật người dùng thành công', {
+                    description: `Đã cập nhật thông tin người dùng ${userData.username} thành công`
+                });
                 // Cập nhật user trong danh sách nếu có
                 const users = get().users;
                 const updatedUsers = users.map(user =>
@@ -95,8 +101,48 @@ export const useUserStore = create((set, get) => ({
             }
         } catch (error) {
             set({ loading: false });
-            const message = error.response?.data?.message || 'Cập nhật user thất bại';
-            toast.error(message);
+            const message = error.response?.data?.message || error.message || 'Không thể cập nhật thông tin người dùng';
+            toast.error('Cập nhật người dùng thất bại', {
+                description: message
+            });
+            throw new Error(message);
+        }
+    },
+
+    // Xóa user
+    deleteUser: async (userId) => {
+        set({ loading: true });
+        try {
+            // Lấy thông tin user trước khi xóa để hiển thị username trong thông báo
+            const state = get();
+            const userToDelete = state.users.find(u => u.user_id === parseInt(userId));
+            const username = userToDelete?.username || 'người dùng';
+            
+            const response = await userService.deleteUser(userId);
+            if (response?.success) {
+                // Cập nhật danh sách users
+                set((state) => ({
+                    users: state.users.filter(u => u.user_id !== parseInt(userId)),
+                    pagination: {
+                        ...state.pagination,
+                        total: Math.max(0, state.pagination.total - 1)
+                    },
+                    loading: false
+                }));
+                toast.success('Xóa người dùng thành công', {
+                    description: `Đã xóa người dùng ${username} thành công`
+                });
+                return response;
+            } else {
+                set({ loading: false });
+                throw new Error(response?.message || 'Xóa user thất bại');
+            }
+        } catch (error) {
+            set({ loading: false });
+            const message = error.response?.data?.message || error.message || 'Không thể xóa người dùng';
+            toast.error('Xóa người dùng thất bại', {
+                description: message
+            });
             throw new Error(message);
         }
     },

@@ -52,8 +52,10 @@ const AdminCoupon = () => {
   const [pageSize, setPageSize] = useState(10);
   const [isAddCouponOpen, setIsAddCouponOpen] = useState(false);
   const [isEditCouponOpen, setIsEditCouponOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingCouponId, setEditingCouponId] = useState(null);
+  const [couponToDelete, setCouponToDelete] = useState(null);
 
   const [formData, setFormData] = useState({
     coupon_code: '',
@@ -78,6 +80,9 @@ const AdminCoupon = () => {
         pageSize
       });
     } catch (error) {
+      toast.error('Không thể tải danh sách coupon', {
+        description: error.message || 'Vui lòng thử lại sau'
+      });
       console.error('Error loading coupons:', error);
     }
   };
@@ -118,7 +123,9 @@ const AdminCoupon = () => {
   const handleAddCoupon = async (e) => {
     e.preventDefault();
     if (!formData.coupon_code || !formData.discount_type || !formData.discount_value) {
-      toast.error('Vui lòng điền đầy đủ mã coupon, loại giảm giá và giá trị');
+      toast.error('Thông tin không đầy đủ', {
+        description: 'Vui lòng điền đầy đủ các trường bắt buộc: Mã coupon, Loại giảm giá và Giá trị giảm giá'
+      });
       return;
     }
     try {
@@ -139,6 +146,7 @@ const AdminCoupon = () => {
       resetForm();
       loadCoupons();
     } catch (error) {
+      // Error is already handled in store
       console.error('Error adding coupon:', error);
     } finally {
       setIsSubmitting(false);
@@ -165,6 +173,9 @@ const AdminCoupon = () => {
       setEditingCouponId(coupon.coupon_id);
       setIsEditCouponOpen(true);
     } catch (error) {
+      toast.error('Không thể tải thông tin coupon', {
+        description: error.message || 'Vui lòng thử lại sau'
+      });
       console.error('Error loading coupon:', error);
     } finally {
       setIsSubmitting(false);
@@ -174,7 +185,9 @@ const AdminCoupon = () => {
   const handleUpdateCoupon = async (e) => {
     e.preventDefault();
     if (!formData.coupon_code || !formData.discount_type || !formData.discount_value) {
-      toast.error('Vui lòng điền đầy đủ mã coupon, loại giảm giá và giá trị');
+      toast.error('Thông tin không đầy đủ', {
+        description: 'Vui lòng điền đầy đủ các trường bắt buộc: Mã coupon, Loại giảm giá và Giá trị giảm giá'
+      });
       return;
     }
     try {
@@ -196,20 +209,30 @@ const AdminCoupon = () => {
       resetForm();
       loadCoupons();
     } catch (error) {
+      // Error is already handled in store
       console.error('Error updating coupon:', error);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleDeleteCoupon = async (couponId) => {
-    if (!confirm('Bạn có chắc chắn muốn xóa coupon này?')) return;
+  const handleDeleteClick = (coupon) => {
+    setCouponToDelete(coupon);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!couponToDelete) return;
     try {
-      await deleteCoupon(couponId);
-      // Store đã tự động cập nhật local state (remove coupon khỏi danh sách)
-      // Không cần reload loadCoupons() vì store đã update local state rồi
+      setIsSubmitting(true);
+      await deleteCoupon(couponToDelete.coupon_id);
+      setIsDeleteDialogOpen(false);
+      setCouponToDelete(null);
     } catch (error) {
+      // Error is already handled in store
       console.error('Error deleting coupon:', error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -294,7 +317,7 @@ const AdminCoupon = () => {
                     Sửa
                   </button>
                   <button 
-                    onClick={() => handleDeleteCoupon(c.coupon_id)}
+                    onClick={() => handleDeleteClick(c)}
                     className="px-3 py-1 bg-pink-100 hover:bg-pink-200 text-pink-600 rounded text-xs font-medium"
                   >
                     Xóa
@@ -761,6 +784,44 @@ const AdminCoupon = () => {
             </Button>
           </DialogFooter>
         </form>
+      </DialogContent>
+    </Dialog>
+
+    {/* Delete Confirmation Dialog */}
+    <Dialog open={isDeleteDialogOpen} onOpenChange={(open) => {
+      setIsDeleteDialogOpen(open);
+      if (!open) {
+        setCouponToDelete(null);
+      }
+    }}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Xác nhận xóa coupon</DialogTitle>
+          <DialogDescription>
+            Bạn có chắc chắn muốn xóa coupon <span className="font-semibold text-red-600">{couponToDelete?.coupon_code}</span>? Hành động này không thể hoàn tác.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => {
+              setIsDeleteDialogOpen(false);
+              setCouponToDelete(null);
+            }}
+            disabled={isSubmitting}
+          >
+            Đóng
+          </Button>
+          <Button
+            type="button"
+            onClick={handleConfirmDelete}
+            disabled={isSubmitting}
+            className="bg-red-600 hover:bg-red-700 text-white"
+          >
+            {isSubmitting ? 'Đang xóa...' : 'Xóa'}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   </section>

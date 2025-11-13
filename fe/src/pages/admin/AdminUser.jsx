@@ -28,7 +28,7 @@ const formatDate = (value) => {
 
 const AdminUser = () => {
   // Get store methods and state
-  const { users, loading, pagination, listUsers, createUser, updateUser, getUserById } = useUserStore();
+  const { users, loading, pagination, listUsers, createUser, updateUser, getUserById, deleteUser } = useUserStore();
   
   const [search, setSearch] = useState("");
   const [role, setRole] = useState("");
@@ -37,8 +37,10 @@ const AdminUser = () => {
   const [pageSize, setPageSize] = useState(10);
   const [isAddUserOpen, setIsAddUserOpen] = useState(false);
   const [isEditUserOpen, setIsEditUserOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingUserId, setEditingUserId] = useState(null);
+  const [userToDelete, setUserToDelete] = useState(null);
 
   // Form states
   const [formData, setFormData] = useState({
@@ -62,7 +64,9 @@ const AdminUser = () => {
         pageSize 
       });
     } catch (error) {
-      // Error is already handled in store
+      toast.error('Không thể tải danh sách người dùng', {
+        description: error.message || 'Vui lòng thử lại sau'
+      });
       console.error('Error loading users:', error);
     }
   };
@@ -89,11 +93,15 @@ const AdminUser = () => {
   const handleAddUser = async (e) => {
     e.preventDefault();
     if (!formData.username || !formData.email || !formData.password) {
-      toast.error('Vui lòng điền đầy đủ thông tin bắt buộc (username, email, password)');
+      toast.error('Thông tin không đầy đủ', {
+        description: 'Vui lòng điền đầy đủ các trường bắt buộc: Tên đăng nhập, Email và Mật khẩu'
+      });
       return;
     }
     if (formData.password.length < 6) {
-      toast.error('Mật khẩu phải có ít nhất 6 ký tự');
+      toast.error('Mật khẩu không hợp lệ', {
+        description: 'Mật khẩu phải có ít nhất 6 ký tự'
+      });
       return;
     }
     try {
@@ -146,7 +154,9 @@ const AdminUser = () => {
       setEditingUserId(user.user_id);
       setIsEditUserOpen(true);
     } catch (error) {
-      // Error is already handled in store
+      toast.error('Không thể tải thông tin người dùng', {
+        description: error.message || 'Vui lòng thử lại sau'
+      });
       console.error('Error loading user:', error);
     } finally {
       setIsSubmitting(false);
@@ -156,7 +166,9 @@ const AdminUser = () => {
   const handleUpdateUser = async (e) => {
     e.preventDefault();
     if (!formData.username || !formData.email) {
-      toast.error('Vui lòng điền đầy đủ thông tin bắt buộc (username, email)');
+      toast.error('Thông tin không đầy đủ', {
+        description: 'Vui lòng điền đầy đủ các trường bắt buộc: Tên đăng nhập và Email'
+      });
       return;
     }
     try {
@@ -176,6 +188,27 @@ const AdminUser = () => {
     } catch (error) {
       // Error is already handled in store
       console.error('Error updating user:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteClick = (user) => {
+    setUserToDelete(user);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!userToDelete) return;
+    try {
+      setIsSubmitting(true);
+      await deleteUser(userToDelete.user_id);
+      setIsDeleteDialogOpen(false);
+      setUserToDelete(null);
+      loadUsers();
+    } catch (error) {
+      // Error is already handled in store
+      console.error('Error deleting user:', error);
     } finally {
       setIsSubmitting(false);
     }
@@ -256,7 +289,12 @@ const AdminUser = () => {
                   >
                     Sửa
                   </button>
-                  <button className="px-3 py-1 bg-pink-100 hover:bg-pink-200 text-pink-600 rounded text-xs font-medium">Xóa</button>
+                  <button 
+                    onClick={() => handleDeleteClick(user)}
+                    className="px-3 py-1 bg-pink-100 hover:bg-pink-200 text-pink-600 rounded text-xs font-medium"
+                  >
+                    Xóa
+                  </button>
                 </td>
               </tr>
             ))
@@ -582,6 +620,44 @@ const AdminUser = () => {
             </Button>
           </DialogFooter>
         </form>
+      </DialogContent>
+    </Dialog>
+
+    {/* Delete Confirmation Dialog */}
+    <Dialog open={isDeleteDialogOpen} onOpenChange={(open) => {
+      setIsDeleteDialogOpen(open);
+      if (!open) {
+        setUserToDelete(null);
+      }
+    }}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Xác nhận xóa người dùng</DialogTitle>
+          <DialogDescription>
+            Bạn có chắc chắn muốn xóa người dùng <span className="font-semibold text-red-600">{userToDelete?.username}</span>? Hành động này không thể hoàn tác.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => {
+              setIsDeleteDialogOpen(false);
+              setUserToDelete(null);
+            }}
+            disabled={isSubmitting}
+          >
+            Đóng
+          </Button>
+          <Button
+            type="button"
+            onClick={handleConfirmDelete}
+            disabled={isSubmitting}
+            className="bg-red-600 hover:bg-red-700 text-white"
+          >
+            {isSubmitting ? 'Đang xóa...' : 'Xóa'}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   </section>

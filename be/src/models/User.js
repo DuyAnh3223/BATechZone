@@ -186,6 +186,16 @@ class User {
         );
         return { users: rows.map(r => new User(r)), total };
     }
+
+    static async delete(userId) {
+        try {
+            const sql = 'DELETE FROM users WHERE user_id = ?';
+            const result = await query(sql, [userId]);
+            return result.affectedRows > 0;
+        } catch (error) {
+            throw new Error(`Error deleting user: ${error.message}`);
+        }
+    }
 }
 
 export default User;

@@ -1,3 +1,4 @@
+import bcrypt from 'bcrypt';
 import User from '../models/User.js';
 
 export const listUsers = async (req, res) => {
@@ -237,6 +238,51 @@ export const getUserById = async (req, res) => {
         return res.status(500).json({
             success: false,
             message: "Đã có lỗi xảy ra khi lấy thông tin user"
+        });
+    }
+};
+
+// Admin xóa user
+export const deleteUser = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        
+        // Tìm user trước khi xóa
+        const user = await User.findById(parseInt(userId));
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "Không tìm thấy user"
+            });
+        }
+
+        // Không cho phép xóa chính mình
+        if (req.user && req.user.user_id === parseInt(userId)) {
+            return res.status(400).json({
+                success: false,
+                message: "Không thể xóa chính tài khoản của bạn"
+            });
+        }
+
+        // Xóa user
+        const deleted = await User.delete(parseInt(userId));
+        if (!deleted) {
+            return res.status(400).json({
+                success: false,
+                message: "Không thể xóa user"
+            });
+        }
+
+        return res.json({
+            success: true,
+            message: "Xóa user thành công"
+        });
+
+    } catch (error) {
+        console.error('Error deleting user:', error);
+        return res.status(500).json({
+            success: false,
+            message: "Đã có lỗi xảy ra khi xóa user"
         });
     }
 };

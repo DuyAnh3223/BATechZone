@@ -27,5 +27,11 @@ export const userService = {
         const response = await api.put(`/users/${userId}`, userData);
         return response.data;
     },
+
+    // Xóa user
+    deleteUser: async (userId) => {
+        const response = await api.delete(`/users/${userId}`);
+        return response.data;
+    },
 };
 
