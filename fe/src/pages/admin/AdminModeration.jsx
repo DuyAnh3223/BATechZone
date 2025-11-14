@@ -18,11 +18,11 @@ const AdminModeration = () => {
   return (
     <section>
       <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-800">Moderation</h1>
+        <h1 className="text-2xl font-bold text-gray-800">Kiểm duyệt</h1>
       </div>
       <div className="flex gap-2 mb-6">
-        <Tab active={tab==='reviews'} onClick={()=>setTab('reviews')}>Reviews</Tab>
-        <Tab active={tab==='reports'} onClick={()=>setTab('reports')}>Reports</Tab>
+        <Tab active={tab==='reviews'} onClick={()=>setTab('reviews')}>Đánh giá</Tab>
+        <Tab active={tab==='reports'} onClick={()=>setTab('reports')}>Báo cáo</Tab>
       </div>
 
       {tab==='reviews' && (

@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { FolderTree, Search, Plus, Edit2, Trash2, X, Check, Tag, Upload, Image as ImageIcon } from 'lucide-react';
+import { FolderTree, Search, Plus, Edit2, Trash2, X, Check, Tag, Upload, Image as ImageIcon, ChevronDown, ChevronRight } from 'lucide-react';
 import { useCategoryStore } from '@/stores/useCategoryStore';
 import { useAttributeStore } from '@/stores/useAttributeStore';
 
@@ -57,6 +57,11 @@ const AdminCategory = () => {
   const [selectedAttributeIds, setSelectedAttributeIds] = useState([]);
   const [showEditForm, setShowEditForm] = useState(false);
   const [editFormData, setEditFormData] = useState({});
+
+  // Private attributes and subcategories
+  const [expandedSubcategories, setExpandedSubcategories] = useState({});
+  const [privateAttributes, setPrivateAttributes] = useState([]); // Attributes only for this category
+  const [showPrivateAttributeForm, setShowPrivateAttributeForm] = useState(false);
 
   // Image upload refs
   const addImageInputRef = useRef(null);
@@ -234,6 +239,19 @@ const AdminCategory = () => {
   const getParentName = (parentId) => {
     const parent = parentCategories.find(p => p.category_id === parentId);
     return parent ? parent.category_name : '';
+  };
+
+  // Toggle subcategories expansion
+  const toggleSubcategoriesExpanded = (categoryId) => {
+    setExpandedSubcategories(prev => ({
+      ...prev,
+      [categoryId]: !prev[categoryId]
+    }));
+  };
+
+  // Get subcategories for a category
+  const getSubcategories = (categoryId) => {
+    return categories.filter(cat => cat.parent_category_id === categoryId);
   };
 
   // Handle image upload for add form
@@ -793,65 +811,67 @@ const AdminCategory = () => {
                   </form>
                 )}
 
-                {/* Attribute Management */}
+                {/* Attribute Management - Chia 2 phần */}
                 {!showEditForm && (
-                  <div className="p-3 bg-gray-50 rounded-lg">
-                    <div className="flex justify-between items-center mb-2">
-                      <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                        <Tag className="h-4 w-4" />
-                        Thuộc tính áp dụng
-                      </h3>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={handleEditAttributes}
-                      >
-                        <Edit2 className="h-3 w-3 mr-1" />
-                        Chỉnh sửa
-                      </Button>
-                    </div>
+                  <div className="space-y-4">
+                    {/* Thuộc tính chung */}
+                    <div className="p-3 bg-gray-50 rounded-lg">
+                      <div className="flex justify-between items-center mb-3">
+                        <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                          <Tag className="h-4 w-4" />
+                          Thuộc tính dùng chung
+                        </h3>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={handleEditAttributes}
+                        >
+                          <Edit2 className="h-3 w-3 mr-1" />
+                          Chỉnh sửa
+                        </Button>
+                      </div>
 
-                    {showAttributeForm ? (
-                      <div className="space-y-3">
-                        <div className="border border-gray-200 rounded-lg p-3 max-h-64 overflow-y-auto bg-white">
-                          <div className="space-y-2">
-                            {attributes.map(attribute => (
-                              <label key={attribute.attribute_id} className="flex items-center gap-2 cursor-pointer">
-                                <input
-                                  type="checkbox"
-                                  checked={selectedAttributeIds.includes(attribute.attribute_id)}
-                                  onChange={() => handleToggleAttribute(attribute.attribute_id)}
-                                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                                />
-                                <span className="text-sm font-normal">
-                                  {attribute.attribute_name}
-                                </span>
-                              </label>
-                            ))}
+                      {showAttributeForm ? (
+                        <div className="space-y-3">
+                          <div className="border border-gray-200 rounded-lg p-3 max-h-64 overflow-y-auto bg-white">
+                            <div className="space-y-2">
+                              {attributes.map(attribute => (
+                                <label key={attribute.attribute_id} className="flex items-center gap-2 cursor-pointer">
+                                  <input
+                                    type="checkbox"
+                                    checked={selectedAttributeIds.includes(attribute.attribute_id)}
+                                    onChange={() => handleToggleAttribute(attribute.attribute_id)}
+                                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                  />
+                                  <span className="text-sm font-normal">
+                                    {attribute.attribute_name}
+                                  </span>
+                                </label>
+                              ))}
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              onClick={handleUpdateAttributes}
+                              disabled={isSubmitting}
+                              className="flex-1"
+                            >
+                              <Check className="h-3 w-3 mr-1" />
+                              Lưu
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setShowAttributeForm(false)}
+                              disabled={isSubmitting}
+                            >
+                              <X className="h-3 w-3 mr-1" />
+                              Hủy
+                            </Button>
                           </div>
                         </div>
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            onClick={handleUpdateAttributes}
-                            disabled={isSubmitting}
-                            className="flex-1"
-                          >
-                            <Check className="h-3 w-3 mr-1" />
-                            Lưu
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => setShowAttributeForm(false)}
-                            disabled={isSubmitting}
-                          >
-                            <X className="h-3 w-3 mr-1" />
-                            Hủy
-                          </Button>
-                        </div>
-                      </div>
-                    ) : (
+                      ) : (
                       <div className="flex flex-wrap gap-1">
                         {selectedCategory.attributes && selectedCategory.attributes.length > 0 ? (
                           selectedCategory.attributes.map(attr => (
@@ -867,6 +887,86 @@ const AdminCategory = () => {
                         )}
                       </div>
                     )}
+                    </div>
+
+                    {/* Thuộc tính riêng */}
+                    <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                      <div className="flex justify-between items-center mb-3">
+                        <h3 className="text-sm font-semibold text-blue-900 flex items-center gap-2">
+                          <Tag className="h-4 w-4" />
+                          Thuộc tính riêng cho danh mục
+                        </h3>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setShowPrivateAttributeForm(!showPrivateAttributeForm)}
+                        >
+                          <Plus className="h-3 w-3 mr-1" />
+                          Thêm
+                        </Button>
+                      </div>
+
+                      {showPrivateAttributeForm && (
+                        <div className="mb-3 p-3 bg-white rounded border border-blue-300">
+                          <p className="text-xs text-gray-600 mb-2">
+                            * Thuộc tính riêng chỉ áp dụng cho danh mục này
+                          </p>
+                          <input
+                            type="text"
+                            placeholder="Tên thuộc tính riêng"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm mb-2"
+                          />
+                          <select
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm mb-2"
+                          >
+                            <option value="">Chọn kiểu dữ liệu</option>
+                            <option value="text">Văn bản</option>
+                            <option value="number">Số</option>
+                            <option value="select">Lựa chọn</option>
+                            <option value="multiselect">Lựa chọn nhiều</option>
+                          </select>
+                          <div className="flex gap-2">
+                            <Button size="sm" className="flex-1">
+                              <Check className="h-3 w-3 mr-1" />
+                              Tạo
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setShowPrivateAttributeForm(false)}
+                            >
+                              <X className="h-3 w-3 mr-1" />
+                              Hủy
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+
+                      <div>
+                        {privateAttributes && privateAttributes.length > 0 ? (
+                          <div className="space-y-2">
+                            {privateAttributes.map(attr => (
+                              <div key={attr.id} className="p-2 bg-white rounded border border-blue-200 flex justify-between items-center">
+                                <div className="text-sm">
+                                  <span className="font-medium text-gray-700">{attr.name}</span>
+                                  <span className="text-xs text-gray-500 ml-2">({attr.type})</span>
+                                </div>
+                                <div className="flex gap-1">
+                                  <Button size="sm" variant="ghost">
+                                    <Edit2 className="h-3 w-3" />
+                                  </Button>
+                                  <Button size="sm" variant="ghost" className="text-red-500">
+                                    <Trash2 className="h-3 w-3" />
+                                  </Button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-xs text-gray-500 text-center py-3">Chưa có thuộc tính riêng nào</p>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
@@ -930,11 +1030,22 @@ const AdminCategory = () => {
 
                 {selectedCategory.children && JSON.parse(selectedCategory.children).length > 0 && (
                   <div>
-                    <h3 className="text-sm font-semibold text-gray-700 mb-2">Danh mục con</h3>
-                    <div className="space-y-1">
+                    <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                      <FolderTree className="h-4 w-4" />
+                      Danh mục con ({JSON.parse(selectedCategory.children).length})
+                    </h3>
+                    <div className="space-y-2">
                       {JSON.parse(selectedCategory.children).map(child => (
-                        <div key={child.categoryId} className="p-2 bg-gray-50 rounded text-sm">
-                          {child.categoryName}
+                        <div key={child.categoryId} className="p-3 bg-gradient-to-r from-blue-50 to-transparent rounded border border-blue-200 flex justify-between items-start group hover:shadow-md transition-shadow">
+                          <div className="flex-1">
+                            <p className="font-medium text-gray-800 text-sm">{child.categoryName}</p>
+                            <p className="text-xs text-gray-500 mt-1">ID: {child.categoryId}</p>
+                          </div>
+                          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Button size="sm" variant="ghost">
+                              <Edit2 className="h-3 w-3" />
+                            </Button>
+                          </div>
                         </div>
                       ))}
                     </div>

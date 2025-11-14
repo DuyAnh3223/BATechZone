@@ -19,7 +19,7 @@ import SignIn from './pages/auth/SignIn';
 import SignUp from './pages/auth/SignUp';
 import AdminLogin from './pages/admin/AdminLogin';
 import AdminDashboard from './pages/admin/AdminDashboard';
-import AdminProduct from './pages/admin/AdminProduct';
+import AdminProductPage from './pages/admin/ProductPage/AdminProductPage';
 import AdminProductDetail from './pages/admin/AdminProductDetail';
 import AdminUser from './pages/admin/AdminUser';
 import AdminUserDetail from './pages/admin/AdminUserDetail';
@@ -28,7 +28,7 @@ import AdminAddress from './pages/admin/AdminAddress';
 import AdminOrder from './pages/admin/AdminOrder';
 import AdminNotification from './pages/admin/AdminNotification';
 import AdminBuild from './pages/admin/AdminBuild';
-import AdminCategory from './pages/admin/AdminCategory';
+import AdminCategoryPage from './pages/admin/CategoryPage/AdminCategoryPage';
 import AdminAttribute from './pages/admin/AdminAttribute';
 import AdminPost from './pages/admin/AdminPost';
 import AdminPostDetail from './pages/admin/AdminPostDetail';
@@ -67,7 +67,7 @@ function App() {
           <Route path="/admin/*" element={<AdminLayout />}>
             <Route index element={<Navigate to="/admin/login" replace />} />
             <Route path="dashboard" element={<AdminDashboard />} />
-            <Route path="products" element={<AdminProduct />} />
+            <Route path="products" element={<AdminProductPage />} />
             <Route path="products/:productId" element={<AdminProductDetail />} />
             <Route path="users" element={<AdminUser />} />
             <Route path="users/:userId" element={<AdminUserDetail />} />
@@ -75,7 +75,7 @@ function App() {
             <Route path="orders" element={<AdminOrder />} />
             <Route path="notifications" element={<AdminNotification />} />
             <Route path="builds" element={<AdminBuild />} />
-            <Route path="categories" element={<AdminCategory />} />
+            <Route path="categories" element={<AdminCategoryPage />} />
             <Route path="attributes" element={<AdminAttribute />} />
             <Route path="posts" element={<AdminPost />} />
             <Route path="posts/:postId" element={<AdminPostDetail />} />
