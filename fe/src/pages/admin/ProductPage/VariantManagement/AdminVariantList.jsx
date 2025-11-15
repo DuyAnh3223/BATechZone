@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import AdminVariantItem from './AdminVariantItem';
 import AdminVariantForm from './AdminVariantForm';
+import AdminVariantEditForm from './AdminVariantEditForm';
 import { useVariantStore } from '@/stores/useVariantStore';
 
 const AdminVariantList = ({ variants: initial = [], product, onUpdate, onDelete }) => {
@@ -17,7 +18,7 @@ const AdminVariantList = ({ variants: initial = [], product, onUpdate, onDelete 
 
   function handleEdit(variant) {
     setEditing(variant);
-    setShowForm(true);
+    // Don't show add form, we'll show edit form instead
   }
 
   async function handleDelete(variant) {
@@ -52,17 +53,6 @@ const AdminVariantList = ({ variants: initial = [], product, onUpdate, onDelete 
     }
   }
 
-  function handleSubmit(updated) {
-    const updatedId = updated.variant_id || updated.id;
-    setVariants((prev) => prev.map((v) => {
-      const vId = v.variant_id || v.id;
-      return vId === updatedId ? { ...v, ...updated } : v;
-    }));
-    setShowForm(false);
-    setEditing(null);
-    onUpdate && onUpdate(updated);
-  }
-
   function handleAddNew() {
     setShowForm(true);
     setEditing(null);
@@ -79,6 +69,18 @@ const AdminVariantList = ({ variants: initial = [], product, onUpdate, onDelete 
 
   function handleFormCancel() {
     setShowForm(false);
+    setEditing(null);
+  }
+
+  function handleEditSuccess() {
+    setEditing(null);
+    // Refresh variants
+    if (onUpdate) {
+      onUpdate();
+    }
+  }
+
+  function handleEditCancel() {
     setEditing(null);
   }
 
@@ -104,7 +106,17 @@ const AdminVariantList = ({ variants: initial = [], product, onUpdate, onDelete 
         </div>
       )}
 
-      {!showForm && (
+      {editing && (
+        <div className="mb-4">
+          <AdminVariantEditForm
+            variant={editing}
+            onCancel={handleEditCancel}
+            onSuccess={handleEditSuccess}
+          />
+        </div>
+      )}
+
+      {!showForm && !editing && (
         <div className="grid gap-2">
           {variants.length === 0 && <div className="text-sm text-gray-500">Chưa có biến thể nào.</div>}
           {variants.map((v, index) => (

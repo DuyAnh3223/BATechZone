@@ -288,7 +288,7 @@ const AdminVariantForm = ({ product, existingVariants = [], onCancel, onSuccess 
       </div>
 
       <div className="border-t pt-4">
-        <h4 className="font-medium mb-2">Chọn thuộc tính (để sinh biến thể)</h4>
+        <h4 className="font-medium mb-2">Chọn thuộc tính </h4>
         {loadingAttributes && (
           <div className="text-sm text-gray-500 py-2">Đang tải thuộc tính...</div>
         )}
@@ -313,7 +313,7 @@ const AdminVariantForm = ({ product, existingVariants = [], onCancel, onSuccess 
 
               {variantAttributes.includes(attr.attribute_id) && (
                 <div className="mt-3">
-                  <div className="text-sm text-gray-600 mb-2">Chọn giá trị:</div>
+                  {/* <div className="text-sm text-gray-600 mb-2">Chọn giá trị:</div> */}
                   <div className="flex flex-wrap">
                     {(attr.values || []).map((v) => {
                       const valueId = Number(v.attribute_value_id);

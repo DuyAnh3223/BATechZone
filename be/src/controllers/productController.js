@@ -56,7 +56,7 @@ export const getProduct = async (req, res) => {
 // Tạo mới sản phẩm
 export const createProduct = async (req, res) => {
   try {
-    const { category_id, product_name, slug, description, base_price, is_active, is_featured, variants } = req.body;
+    const { category_id, product_name, slug, description, base_price, stock, is_active, is_featured, variants } = req.body;
 
     // Validate required fields
     if (!product_name || !product_name.trim()) {
@@ -101,7 +101,7 @@ export const createProduct = async (req, res) => {
       is_featured: is_featured !== undefined ? (is_featured ? 1 : 0) : 0
     });
 
-    // Create variants if provided
+    // Create variants if provided, otherwise create a default variant
     if (variants && Array.isArray(variants) && variants.length > 0) {
       for (let i = 0; i < variants.length; i++) {
         const variant = variants[i];
@@ -120,6 +120,25 @@ export const createProduct = async (req, res) => {
           console.error(`Error creating variant ${i + 1}:`, variantError);
           // Continue with other variants even if one fails
         }
+      }
+    } else {
+      // Tự động tạo 1 biến thể mặc định cho sản phẩm
+      try {
+        await Variant.create({
+          productId: productId,
+          sku: `${finalSlug}-default`,
+          variantName: product_name.trim(),
+          price: parseFloat(base_price),
+          stockQuantity: stock ? parseInt(stock) : 0, // Sử dụng stock từ request hoặc mặc định 0
+          isActive: 1,
+          isDefault: 1,
+          attributes: [] // Không có thuộc tính biến thể
+        });
+      } catch (variantError) {
+        console.error('Error creating default variant:', variantError);
+        // Nếu không tạo được variant mặc định, rollback product
+        await Product.delete(productId);
+        throw new Error('Không thể tạo biến thể mặc định cho sản phẩm');
       }
     }
 

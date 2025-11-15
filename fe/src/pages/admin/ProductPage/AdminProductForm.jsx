@@ -37,6 +37,7 @@ const AdminProductForm = ({ initialData = null, onSubmit, onCancel }) => {
   const [name, setName] = useState(initialData?.product_name || '');
   const [slug, setSlug] = useState(initialData?.slug || '');
   const [price, setPrice] = useState(initialData?.base_price ?? initialData?.price ?? 0);
+  const [stock, setStock] = useState(0); // Tồn kho cho biến thể mặc định
   const [description, setDescription] = useState(initialData?.description || '');
   const [isActive, setIsActive] = useState(initialData?.is_active !== undefined ? initialData.is_active : true);
   const [isFeatured, setIsFeatured] = useState(initialData?.is_featured !== undefined ? initialData.is_featured : false);
@@ -245,6 +246,7 @@ const AdminProductForm = ({ initialData = null, onSubmit, onCancel }) => {
       product_name: name.trim(),
       slug: finalSlug,
       base_price: price,
+      stock: stock, // Tồn kho cho biến thể mặc định
       description: description.trim() || null,
       category_id: categoryId,
       is_active: isActive,
@@ -298,17 +300,32 @@ const AdminProductForm = ({ initialData = null, onSubmit, onCancel }) => {
         </select>
       </div>
 
-      <div>
-        <label className="block text-sm font-medium mb-1">Giá cơ bản (₫) <span className="text-red-500">*</span></label>
-        <input 
-          type="number" 
-          className="w-full px-3 py-2 border rounded-md" 
-          value={price} 
-          onChange={(e) => setPrice(Number(e.target.value))}
-          min=""
-          step="1000"
-          required
-        />
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium mb-1">Giá cơ bản (₫) <span className="text-red-500">*</span></label>
+          <input 
+            type="number" 
+            className="w-full px-3 py-2 border rounded-md" 
+            value={price} 
+            onChange={(e) => setPrice(Number(e.target.value))}
+            min="0"
+            step="1000"
+            required
+          />
+        </div>
+        {!initialData && (
+          <div>
+            <label className="block text-sm font-medium mb-1">Tồn kho ban đầu</label>
+            <input 
+              type="number" 
+              className="w-full px-3 py-2 border rounded-md" 
+              value={stock} 
+              onChange={(e) => setStock(Number(e.target.value))}
+              min="0"
+              placeholder="Nhập số lượng tồn kho"
+            />
+          </div>
+        )}
       </div>
 
       <div>
@@ -342,10 +359,17 @@ const AdminProductForm = ({ initialData = null, onSubmit, onCancel }) => {
         </label>
       </div>
 
+      {!initialData && (
+        <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
+          <p className="text-sm text-blue-800">
+            <span className="font-medium">ℹ️ Lưu ý:</span> Khi tạo sản phẩm mới, hệ thống sẽ tự động tạo 1 biến thể mặc định với giá và tồn kho bạn nhập. Bạn có thể quản lý biến thể và cập nhật tồn kho sau.
+          </p>
+        </div>
+      )}
 
       <div className="flex items-center gap-3">
-        <button type="submit" className="px-4 py-2 rounded-md bg-indigo-600 text-black">Lưu sản phẩm</button>
-        <button type="button" onClick={onCancel} className="px-4 py-2 rounded-md border">Hủy</button>
+        <button type="submit" className="px-4 py-2 rounded-md bg-indigo-600 text-white hover:bg-indigo-700">Lưu sản phẩm</button>
+        <button type="button" onClick={onCancel} className="px-4 py-2 rounded-md border hover:bg-gray-50">Hủy</button>
       </div>
     </form>
   );

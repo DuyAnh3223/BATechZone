@@ -128,9 +128,6 @@ class CartItem {
         ci.*,
         pv.variant_name,
         pv.sku,
-        pv.current_price,
-        pv.original_price,
-        pv.image_url,
         pv.stock_quantity,
         pv.is_active,
         p.product_id,
@@ -151,14 +148,12 @@ class CartItem {
         ci.*,
         pv.variant_name,
         pv.sku,
-        pv.current_price,
-        pv.original_price,
-        pv.image_url,
+        pv.price,
         pv.stock_quantity,
         pv.is_active,
         p.product_id,
         p.product_name,
-        (ci.quantity * pv.current_price) as subtotal
+        (ci.quantity * pv.price) as subtotal
       FROM cart_items ci
       JOIN product_variants pv ON ci.variant_id = pv.variant_id
       JOIN products p ON pv.product_id = p.product_id
