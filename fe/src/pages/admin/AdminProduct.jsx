@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Package, Search, Plus, Edit2, Trash2, ExternalLink } from 'lucide-react';
@@ -62,13 +62,8 @@ const AdminProduct = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Load products
-  useEffect(() => {
-    loadProducts();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search, categoryFilter, statusFilter, page, pageSize]);
-
-  const loadProducts = async () => {
+  // Function to load products (memoized with useCallback)
+  const loadProducts = useCallback(async () => {
     try {
       await fetchProducts({
         search: search.trim() || undefined,
@@ -80,7 +75,25 @@ const AdminProduct = () => {
     } catch (error) {
       console.error('Error loading products:', error);
     }
-  };
+  }, [fetchProducts, search, categoryFilter, statusFilter, page, pageSize]);
+
+  // Load products when filters change
+  useEffect(() => {
+    loadProducts();
+  }, [loadProducts]);
+
+  // Refresh products when window regains focus (user switches back to tab)
+  useEffect(() => {
+    const handleFocus = () => {
+      // Refresh products when user switches back to the tab
+      loadProducts();
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [loadProducts]);
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const currentPage = Math.min(page, totalPages);

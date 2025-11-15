@@ -11,11 +11,21 @@ const AdminVariantItem = ({ variant, onEdit, onDelete }) => {
       </div>
 
       <div className="flex items-center gap-4">
-        <div className="text-sm">Giá: <span className="font-medium">{variant.price ?? 0}</span></div>
-        <div className="text-sm">Tồn: <span className="font-medium">{variant.stock ?? 0}</span></div>
+        <div className="text-sm">Giá: <span className="font-medium">{variant.price ? `${variant.price.toLocaleString('vi-VN')} ₫` : '0 ₫'}</span></div>
+        <div className="text-sm">Tồn: <span className="font-medium">{variant.stock_quantity ?? variant.stock ?? 0}</span></div>
         <div className="flex items-center gap-2">
-          <button onClick={() => onEdit && onEdit(variant)} className="px-2 py-1 rounded-md bg-yellow-100 text-yellow-800 text-sm">Sửa</button>
-          <button onClick={() => onDelete && onDelete(variant)} className="px-2 py-1 rounded-md bg-red-100 text-red-800 text-sm">Xóa</button>
+          <button 
+            onClick={() => onEdit && onEdit(variant)} 
+            className="px-3 py-1.5 rounded-md bg-yellow-500 text-white text-sm font-medium hover:bg-yellow-600 transition-colors"
+          >
+            Sửa
+          </button>
+          <button 
+            onClick={() => onDelete && onDelete(variant)} 
+            className="px-3 py-1.5 rounded-md bg-red-500 text-white text-sm font-medium hover:bg-red-600 transition-colors"
+          >
+            Xóa
+          </button>
         </div>
       </div>
     </div>

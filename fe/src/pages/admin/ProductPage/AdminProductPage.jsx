@@ -1,19 +1,87 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import AdminProductList from './AdminProductList';
 import AdminProductItem from './AdminProductItem';
 import AdminProductForm from './AdminProductForm';
 import AdminVariantList from './VariantManagement/AdminVariantList';
-import { products as mockProducts, productVariants as mockProductVariants, variantAttributes as mockVariantAttributes, attributeValues } from '../mockData';
+import { useProductStore } from '@/stores/useProductStore';
+import { useCategoryStore } from '@/stores/useCategoryStore';
+import { useVariantStore } from '@/stores/useVariantStore';
 
 const AdminProductPage = () => {
-	const [products, setProducts] = useState(() => mockProducts.slice());
-	const [productVariants, setProductVariants] = useState(() => mockProductVariants.slice());
-	const [variantAttrs, setVariantAttrs] = useState(() => mockVariantAttributes.slice());
+	const { products, loading, fetchProducts, createProduct, updateProduct, deleteProduct } = useProductStore();
+	const { parentCategories, fetchSimpleCategories } = useCategoryStore();
+	const { fetchVariantsByProductId } = useVariantStore();
 
 	const [showForm, setShowForm] = useState(false);
 	const [editing, setEditing] = useState(null);
+	const [expandedVariants, setExpandedVariants] = useState(new Set()); // Track which products have variants expanded
+	const [variantsByProduct, setVariantsByProduct] = useState({}); // Store variants by product_id
+	const [loadingVariantsByProduct, setLoadingVariantsByProduct] = useState({}); // Track loading state per product
+	const loadedProductsRef = useRef(new Set()); // Track which products have been loaded
 
-	const [manageVariantsFor, setManageVariantsFor] = useState(null);
+	// Function to load products (memoized with useCallback)
+	const loadProducts = useCallback(async () => {
+		try {
+			await fetchProducts({
+				page: 1,
+				limit: 100 // Load all products for admin
+			});
+		} catch (error) {
+			console.error('Error loading products:', error);
+		}
+	}, [fetchProducts]);
+
+	// Load data on mount
+	useEffect(() => {
+		fetchSimpleCategories();
+		loadProducts();
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, []);
+
+	// Refresh products when window regains focus
+	useEffect(() => {
+		const handleFocus = () => {
+			loadProducts();
+		};
+
+		window.addEventListener('focus', handleFocus);
+		return () => {
+			window.removeEventListener('focus', handleFocus);
+		};
+	}, [loadProducts]);
+
+	// Load variants when a product's variant panel is expanded
+	const loadVariantsForProduct = useCallback(async (productId) => {
+		if (!productId || loadedProductsRef.current.has(productId)) return; // Already loaded
+		
+		loadedProductsRef.current.add(productId);
+		setLoadingVariantsByProduct(prev => ({ ...prev, [productId]: true }));
+		try {
+			const response = await fetchVariantsByProductId(productId);
+			// Response can be { success: true, data: [...] } or directly an array
+			const variantsData = Array.isArray(response) 
+				? response 
+				: (response?.data || []);
+			setVariantsByProduct(prev => ({ ...prev, [productId]: variantsData }));
+		} catch (error) {
+			console.error('Error loading variants:', error);
+			setVariantsByProduct(prev => ({ ...prev, [productId]: [] }));
+			loadedProductsRef.current.delete(productId); // Remove on error to allow retry
+		} finally {
+			setLoadingVariantsByProduct(prev => ({ ...prev, [productId]: false }));
+		}
+	}, [fetchVariantsByProductId]);
+
+	// Load variants when a product is expanded
+	useEffect(() => {
+		const expandedArray = Array.from(expandedVariants);
+		expandedArray.forEach(productId => {
+			// Only load if not already loaded
+			if (!loadedProductsRef.current.has(productId)) {
+				loadVariantsForProduct(productId);
+			}
+		});
+	}, [expandedVariants, loadVariantsForProduct]);
 
 	function handleAdd() {
 		setEditing(null);
@@ -25,51 +93,69 @@ const AdminProductPage = () => {
 		setShowForm(true);
 	}
 
-	function handleDelete(productId) {
+	async function handleDelete(productId) {
 		if (!confirm('Xác nhận xóa sản phẩm?')) return;
-		setProducts((prev) => prev.filter((p) => p.product_id !== productId));
-		// remove related variants
-		setProductVariants((prev) => prev.filter((v) => v.product_id !== productId));
-	}
-
-	function handleSubmit(productPayload) {
-		if (productPayload.product_id) {
-			setProducts((prev) => prev.map((p) => (p.product_id === productPayload.product_id ? { ...p, ...productPayload } : p)));
-		} else {
-			const nextId = Math.max(0, ...products.map((p) => p.product_id || 0)) + 1;
-			setProducts((prev) => [{ ...productPayload, product_id: nextId }, ...prev]);
+		try {
+			await deleteProduct(productId);
+			await loadProducts();
+		} catch (error) {
+			console.error('Error deleting product:', error);
 		}
-		setShowForm(false);
-		setEditing(null);
 	}
 
-	function getVariantsForProduct(product) {
-		const variants = productVariants.filter((v) => v.product_id === product.product_id).map((v) => {
-			const attrValues = variantAttrs.filter((va) => va.variant_id === v.variant_id).map((va) => {
-				const val = attributeValues.find((x) => x.attribute_value_id === va.attribute_value_id);
-				return { attribute_value_id: va.attribute_value_id, value_name: val?.value_name || String(va.attribute_value_id) };
-			});
-			return { ...v, attribute_values: attrValues };
+	async function handleSubmit(productPayload) {
+		try {
+			if (productPayload.product_id) {
+				// Update existing product - only send fields that backend expects
+				const { product_id, variant_attributes, variants, ...updateData } = productPayload;
+				await updateProduct(product_id, updateData);
+			} else {
+				// Create new product
+				await createProduct(productPayload);
+			}
+			setShowForm(false);
+			setEditing(null);
+			await loadProducts();
+		} catch (error) {
+			console.error('Error submitting product:', error);
+			alert(error.response?.data?.message || 'Có lỗi xảy ra khi lưu sản phẩm');
+		}
+	}
+
+	function toggleManageVariants(product) {
+		const productId = product.product_id;
+		setExpandedVariants(prev => {
+			const newSet = new Set(prev);
+			if (newSet.has(productId)) {
+				newSet.delete(productId);
+			} else {
+				newSet.add(productId);
+			}
+			return newSet;
 		});
-		return variants;
 	}
 
-	function openManageVariants(product) {
-		setManageVariantsFor(product);
+	// Handlers from AdminVariantList - refresh variants after update/delete
+	function handleVariantUpdate(productId) {
+		// Refresh variants for this product
+		loadedProductsRef.current.delete(productId); // Clear cache to force reload
+		setVariantsByProduct(prev => {
+			const updated = { ...prev };
+			delete updated[productId];
+			return updated;
+		});
+		loadVariantsForProduct(productId);
 	}
 
-	function closeManageVariants() {
-		setManageVariantsFor(null);
-	}
-
-	// handlers from AdminVariantList
-	function handleVariantUpdate(updated) {
-		setProductVariants((prev) => prev.map((v) => (v.variant_id === updated.variant_id ? { ...v, ...updated } : v)));
-	}
-
-	function handleVariantDelete(variant) {
-		setProductVariants((prev) => prev.filter((v) => v.variant_id !== variant.variant_id));
-		setVariantAttrs((prev) => prev.filter((va) => va.variant_id !== variant.variant_id));
+	function handleVariantDelete(productId) {
+		// Refresh variants for this product
+		loadedProductsRef.current.delete(productId); // Clear cache to force reload
+		setVariantsByProduct(prev => {
+			const updated = { ...prev };
+			delete updated[productId];
+			return updated;
+		});
+		loadVariantsForProduct(productId);
 	}
 
 	return (
@@ -77,31 +163,43 @@ const AdminProductPage = () => {
 			<div className="flex items-center justify-between mb-6">
 				<h2 className="text-2xl font-semibold">Quản lý Sản phẩm</h2>
 				<div>
-					<button onClick={handleAdd} className="px-3 py-2 rounded-md bg-indigo-600 text-black">Thêm sản phẩm</button>
+					<button onClick={handleAdd} className="px-3 py-2 rounded-md bg-indigo-600 text-white hover:bg-indigo-700">
+						Thêm sản phẩm
+					</button>
 				</div>
 			</div>
 
-			{showForm && (
-				<div className="mb-6 p-4 border rounded-md bg-white">
-					<AdminProductForm initialData={editing} onCancel={() => { setShowForm(false); setEditing(null); }} onSubmit={handleSubmit} />
-				</div>
-			)}
+		{showForm && (
+			<div className="mb-6 p-4 border rounded-md bg-white">
+				<AdminProductForm 
+					initialData={editing} 
+					onCancel={() => { 
+						setShowForm(false); 
+						setEditing(null); 
+					}} 
+					onSubmit={handleSubmit} 
+				/>
+			</div>
+		)}
 
-			<AdminProductList products={products} onEdit={handleEdit} onDelete={handleDelete} onManageVariants={openManageVariants} />
-
-			{manageVariantsFor && (
-				<div className="mt-6 p-4 border rounded-md bg-white">
-					<div className="flex items-center justify-between mb-4">
-						<h3 className="text-lg font-medium">Quản lý biến thể: {manageVariantsFor.product_name}</h3>
-						<button onClick={closeManageVariants} className="px-2 py-1 rounded-md border">Đóng</button>
-					</div>
-					<AdminVariantList
-						variants={getVariantsForProduct(manageVariantsFor)}
-						onUpdate={(v) => handleVariantUpdate(v)}
-						onDelete={(v) => handleVariantDelete(v)}
-					/>
-				</div>
-			)}
+		{loading ? (
+			<div className="text-center py-8 text-gray-500">
+				<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto"></div>
+				<p className="mt-2">Đang tải sản phẩm...</p>
+			</div>
+		) : (
+			<AdminProductList 
+				products={products} 
+				onEdit={handleEdit} 
+				onDelete={handleDelete} 
+				onManageVariants={toggleManageVariants}
+				expandedVariants={expandedVariants}
+				variantsByProduct={variantsByProduct}
+				loadingVariantsByProduct={loadingVariantsByProduct}
+				onVariantUpdate={handleVariantUpdate}
+				onVariantDelete={handleVariantDelete}
+			/>
+		)}
 		</div>
 	);
 };

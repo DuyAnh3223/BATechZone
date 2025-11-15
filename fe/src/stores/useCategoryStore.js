@@ -67,7 +67,7 @@ export const useCategoryStore = create((set, get) => ({
             const response = await categoryService.getCategoryTree();
             // Handle different response formats
             const tree = Array.isArray(response) ? response : (response?.data || response || []);
-            console.log('Category tree fetched:', tree);
+            // Category tree fetched successfully
             set({ categoryTree: tree });
             return tree;
         } catch (error) {

@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { getCategories, getAttributesForCategory, attributeValues as allAttributeValues } from '../mockData';
+import { useCategoryStore } from '@/stores/useCategoryStore';
+import { attributeService } from '@/services/attributeService';
 
 // Helper: cartesian product of arrays
 function cartesianProduct(arrays) {
@@ -16,10 +17,12 @@ function cartesianProduct(arrays) {
 }
 
 const AdminProductForm = ({ initialData = null, onSubmit, onCancel }) => {
-  const [categories] = useState(() => getCategories());
-  const [categoryId, setCategoryId] = useState(initialData?.category_id ?? categories[0]?.category_id ?? null);
+  const { parentCategories, fetchSimpleCategories } = useCategoryStore();
+  const [categoryId, setCategoryId] = useState(initialData?.category_id ?? parentCategories[0]?.category_id ?? null);
 
   const [attributes, setAttributes] = useState([]);
+  const [attributeValues, setAttributeValues] = useState([]);
+  const [loadingAttributes, setLoadingAttributes] = useState(false);
 
   // which attributes are selected to generate variants
   const [variantAttributes, setVariantAttributes] = useState(() => (initialData?.variant_attribute_ids || []));
@@ -32,38 +35,124 @@ const AdminProductForm = ({ initialData = null, onSubmit, onCancel }) => {
 
   // product basic fields
   const [name, setName] = useState(initialData?.product_name || '');
-  const [sku, setSku] = useState(initialData?.sku || '');
-  const [price, setPrice] = useState(initialData?.price ?? 0);
+  const [slug, setSlug] = useState(initialData?.slug || '');
+  const [price, setPrice] = useState(initialData?.base_price ?? initialData?.price ?? 0);
   const [description, setDescription] = useState(initialData?.description || '');
+  const [isActive, setIsActive] = useState(initialData?.is_active !== undefined ? initialData.is_active : true);
+  const [isFeatured, setIsFeatured] = useState(initialData?.is_featured !== undefined ? initialData.is_featured : false);
 
+  // Load categories on mount
+  useEffect(() => {
+    fetchSimpleCategories();
+  }, [fetchSimpleCategories]);
+
+  // Load attributes when category changes
   useEffect(() => {
     if (categoryId) {
-      const attrs = getAttributesForCategory(categoryId);
-      setAttributes(attrs);
-      // reset selected values for attributes not in this category
-      setSelectedValues((prev) => {
-        const next = {};
-        attrs.forEach((a) => {
-          next[a.attribute_id] = new Set(prev[a.attribute_id] ? Array.from(prev[a.attribute_id]) : []);
+      setLoadingAttributes(true);
+      attributeService.getAttributesByCategory(categoryId)
+        .then((response) => {
+          const attrs = response.data || response || [];
+          // Transform attributes to include values
+          const attrsWithValues = attrs.map(attr => {
+            // Parse attributeValues if it's a JSON string
+            let values = [];
+            if (attr.attributeValues) {
+              try {
+                values = typeof attr.attributeValues === 'string' 
+                  ? JSON.parse(attr.attributeValues) 
+                  : attr.attributeValues;
+              } catch (e) {
+                values = [];
+              }
+            }
+            return {
+              ...attr,
+              values: values.map(v => ({
+                attribute_value_id: v.valueId || v.attribute_value_id,
+                value_name: v.value || v.value_name
+              }))
+            };
+          });
+          setAttributes(attrsWithValues);
+          
+          // Collect all attribute values
+          const allValues = attrsWithValues.flatMap(attr => attr.values || []);
+          setAttributeValues(allValues);
+          
+          // reset selected values for attributes not in this category
+          setSelectedValues((prev) => {
+            const next = {};
+            attrsWithValues.forEach((a) => {
+              next[a.attribute_id] = new Set(prev[a.attribute_id] ? Array.from(prev[a.attribute_id]) : []);
+            });
+            return next;
+          });
+          setVariantAttributes([]);
+          setVariants([]);
+        })
+        .catch((error) => {
+          console.error('Error loading attributes:', error);
+          setAttributes([]);
+          setAttributeValues([]);
+        })
+        .finally(() => {
+          setLoadingAttributes(false);
         });
-        return next;
-      });
-      setVariantAttributes([]);
-      setVariants([]);
+    } else {
+      setAttributes([]);
+      setAttributeValues([]);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [categoryId]);
 
   function toggleVariantAttribute(attribute_id) {
-    setVariantAttributes((prev) => (prev.includes(attribute_id) ? prev.filter((x) => x !== attribute_id) : [...prev, attribute_id]));
+    setVariantAttributes((prev) => {
+      const isSelected = prev.includes(attribute_id);
+      if (isSelected) {
+        // Remove attribute - also clear its selected values
+        setSelectedValues((prevValues) => {
+          const copy = { ...prevValues };
+          delete copy[attribute_id];
+          return copy;
+        });
+        return prev.filter((x) => x !== attribute_id);
+      } else {
+        // Add attribute - initialize empty Set for its values
+        setSelectedValues((prevValues) => {
+          const copy = { ...prevValues };
+          if (!copy[attribute_id]) {
+            copy[attribute_id] = new Set();
+          }
+          return copy;
+        });
+        return [...prev, attribute_id];
+      }
+    });
   }
 
   function toggleValue(attribute_id, attribute_value_id) {
     setSelectedValues((prev) => {
       const copy = { ...prev };
-      if (!copy[attribute_id]) copy[attribute_id] = new Set();
-      if (copy[attribute_id].has(attribute_value_id)) copy[attribute_id].delete(attribute_value_id);
-      else copy[attribute_id].add(attribute_value_id);
+      // Ensure Set exists for this attribute
+      if (!copy[attribute_id]) {
+        copy[attribute_id] = new Set();
+      }
+      const currentSet = copy[attribute_id];
+      
+      // Normalize IDs to numbers for consistent comparison
+      const normalizedValueId = Number(attribute_value_id);
+      const normalizedSet = new Set(Array.from(currentSet).map(id => Number(id)));
+      
+      if (normalizedSet.has(normalizedValueId)) {
+        // Remove value
+        normalizedSet.delete(normalizedValueId);
+        copy[attribute_id] = normalizedSet;
+      } else {
+        // Add value
+        normalizedSet.add(normalizedValueId);
+        copy[attribute_id] = normalizedSet;
+      }
       return { ...copy };
     });
   }
@@ -73,12 +162,12 @@ const AdminProductForm = ({ initialData = null, onSubmit, onCancel }) => {
     return variantAttributes.map((attrId) => {
       const attr = attributes.find((a) => a.attribute_id === attrId);
       const selected = Array.from((selectedValues[attrId] && selectedValues[attrId].size) ? selectedValues[attrId] : []).map((valId) => {
-        const v = (attr?.values || []).find((x) => x.attribute_value_id === valId) || allAttributeValues.find((x) => x.attribute_value_id === valId);
+        const v = (attr?.values || []).find((x) => x.attribute_value_id === valId) || attributeValues.find((x) => x.attribute_value_id === valId);
         return { attribute_id: attrId, attribute_name: attr?.attribute_name, attribute_value_id: valId, value_name: v?.value_name ?? String(valId) };
       });
     return selected;
     });
-  }, [variantAttributes, selectedValues, attributes]);
+  }, [variantAttributes, selectedValues, attributes, attributeValues]);
 
   function generateVariants() {
     if (variantAttributes.length === 0) return alert('Chọn ít nhất 1 thuộc tính để sinh biến thể');
@@ -89,17 +178,36 @@ const AdminProductForm = ({ initialData = null, onSubmit, onCancel }) => {
 
     const arrays = selectedArrays;
     const combos = cartesianProduct(arrays);
-    const next = combos.map((combo, idx) => {
+    
+    // Generate new variants with unique IDs
+    const existingMaxId = variants.length > 0 
+      ? Math.max(...variants.map(v => v.id || 0))
+      : 0;
+    
+    const newVariants = combos.map((combo, idx) => {
       const skuParts = combo.map((c) => (c.value_name || c.attribute_value_id)).join('-');
       return {
-        id: idx + 1,
+        id: existingMaxId + idx + 1,
         sku: `${skuParts}`,
         price: 0,
         stock: 0,
         attribute_values: combo,
       };
     });
-    setVariants(next);
+    
+    // Add new variants to existing list instead of replacing
+    setVariants((prev) => [...prev, ...newVariants]);
+    
+    // Reset selected values for the attributes that were used
+    setSelectedValues((prev) => {
+      const copy = { ...prev };
+      variantAttributes.forEach(attrId => {
+        if (copy[attrId]) {
+          copy[attrId] = new Set();
+        }
+      });
+      return copy;
+    });
   }
 
   function updateVariant(idx, patch) {
@@ -112,117 +220,128 @@ const AdminProductForm = ({ initialData = null, onSubmit, onCancel }) => {
 
   function handleSubmit(e) {
     e.preventDefault();
+    if (!name.trim()) {
+      alert('Tên sản phẩm là bắt buộc');
+      return;
+    }
+    if (!categoryId) {
+      alert('Vui lòng chọn danh mục');
+      return;
+    }
+    
+    // Auto-generate slug if not provided
+    let finalSlug = slug.trim();
+    if (!finalSlug) {
+      finalSlug = name
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '') // Remove diacritics
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+    }
+
     // build payload
     const payload = {
-      product: {
-        product_name: name,
-        sku,
-        price,
-        description,
-        category_id: categoryId,
-      },
-      variant_attributes: variantAttributes,
-      variants: variants.map((v) => ({ sku: v.sku, price: v.price, stock: v.stock, attribute_values: v.attribute_values })),
+      product_name: name.trim(),
+      slug: finalSlug,
+      base_price: price,
+      description: description.trim() || null,
+      category_id: categoryId,
+      is_active: isActive,
+      is_featured: isFeatured,
+      variants: [], // Biến thể sẽ được tạo trong quản lý biến thể
     };
+    
+    // Include product_id only for parent component to know which product to update
+    if (initialData?.product_id) {
+      payload.product_id = initialData.product_id;
+    }
+    
     if (onSubmit) onSubmit(payload);
     else console.log('Submit payload', payload);
   }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6 p-4 bg-white rounded-md">
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium mb-1">Tên sản phẩm</label>
-          <input className="w-full px-3 py-2 border rounded-md" value={name} onChange={(e) => setName(e.target.value)} />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">SKU</label>
-          <input className="w-full px-3 py-2 border rounded-md" value={sku} onChange={(e) => setSku(e.target.value)} />
-        </div>
+      <div>
+        <label className="block text-sm font-medium mb-1">Tên sản phẩm <span className="text-red-500">*</span></label>
+        <input 
+          className="w-full px-3 py-2 border rounded-md" 
+          value={name} 
+          onChange={(e) => setName(e.target.value)} 
+          required
+        />
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
-        <div>
-          <label className="block text-sm font-medium mb-1">Danh mục</label>
-          <select className="w-full px-3 py-2 border rounded-md" value={categoryId ?? ''} onChange={(e) => setCategoryId(Number(e.target.value) || null)}>
-            <option value="">-- Chọn danh mục --</option>
-            {categories.map((c) => (
-              <option key={c.category_id} value={c.category_id}>{c.category_name}</option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-1">Giá cơ bản</label>
-          <input type="number" className="w-full px-3 py-2 border rounded-md" value={price} onChange={(e) => setPrice(Number(e.target.value))} />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-1">Mô tả</label>
-          <input className="w-full px-3 py-2 border rounded-md" value={description} onChange={(e) => setDescription(e.target.value)} />
-        </div>
+      <div>
+        <label className="block text-sm font-medium mb-1">Slug</label>
+        <input 
+          className="w-full px-3 py-2 border rounded-md" 
+          value={slug} 
+          onChange={(e) => setSlug(e.target.value)}
+          placeholder="Tự động tạo từ tên sản phẩm"
+        />
       </div>
 
-      <div className="border-t pt-4">
-        <h4 className="font-medium mb-2">Chọn thuộc tính (để sinh biến thể)</h4>
-        <div className="space-y-3">
-          {attributes.map((attr) => (
-            <div key={attr.attribute_id} className="p-3 border rounded-md bg-white">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <label className="flex items-center gap-2">
-                    <input type="checkbox" checked={variantAttributes.includes(attr.attribute_id)} onChange={() => toggleVariantAttribute(attr.attribute_id)} />
-                    <span className="font-medium">{attr.attribute_name}</span>
-                  </label>
-                  <span className="text-xs text-gray-500 px-2 py-0.5 border rounded">{attr.attribute_type}</span>
-                </div>
-              </div>
-
-              {variantAttributes.includes(attr.attribute_id) && (
-                <div className="mt-3">
-                  <div className="text-sm text-gray-600 mb-2">Chọn giá trị:</div>
-                  <div className="flex flex-wrap">
-                    {(attr.values || []).map((v) => (
-                      <label key={v.attribute_value_id} className="inline-flex items-center mr-3 mb-2">
-                        <input type="checkbox" className="mr-2" checked={!!(selectedValues[attr.attribute_id] && selectedValues[attr.attribute_id].has(v.attribute_value_id))} onChange={() => toggleValue(attr.attribute_id, v.attribute_value_id)} />
-                        <span className="text-sm">{v.value_name}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
+      <div>
+        <label className="block text-sm font-medium mb-1">Danh mục <span className="text-red-500">*</span></label>
+        <select 
+          className="w-full px-3 py-2 border rounded-md" 
+          value={categoryId ?? ''} 
+          onChange={(e) => setCategoryId(Number(e.target.value) || null)}
+          required
+        >
+          <option value="">-- Chọn danh mục --</option>
+          {parentCategories.map((c) => (
+            <option key={c.category_id} value={c.category_id}>{c.category_name}</option>
           ))}
-        </div>
-
-        <div className="mt-4">
-          <button type="button" onClick={generateVariants} className="px-4 py-2 rounded-md bg-green-600 text-black">Tạo biến thể</button>
-          <span className="ml-3 text-sm text-gray-600">{variants.length} biến thể</span>
-        </div>
+        </select>
       </div>
 
-      <div className="border-t pt-4">
-        <h4 className="font-medium mb-2">Biến thể</h4>
-        <div className="space-y-3">
-          {variants.length === 0 && <div className="text-sm text-gray-500">Chưa có biến thể nào.</div>}
-          {variants.map((v, idx) => (
-            <div key={v.id} className="p-3 border rounded-md bg-white">
-              <div className="flex items-center justify-between mb-2">
-                <div className="text-sm font-medium">#{v.id} — {v.attribute_values.map((av) => av.value_name).join(' / ')}</div>
-                <div className="flex items-center gap-2">
-                  <button type="button" onClick={() => removeVariant(idx)} className="px-2 py-1 rounded-md bg-red-100 text-red-800 text-sm">Xóa</button>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-3">
-                <input className="px-3 py-2 border rounded-md" value={v.sku} onChange={(e) => updateVariant(idx, { sku: e.target.value })} />
-                <input type="number" className="px-3 py-2 border rounded-md" value={v.price} onChange={(e) => updateVariant(idx, { price: Number(e.target.value) })} />
-                <input type="number" className="px-3 py-2 border rounded-md" value={v.stock} onChange={(e) => updateVariant(idx, { stock: Number(e.target.value) })} />
-              </div>
-            </div>
-          ))}
-        </div>
+      <div>
+        <label className="block text-sm font-medium mb-1">Giá cơ bản (₫) <span className="text-red-500">*</span></label>
+        <input 
+          type="number" 
+          className="w-full px-3 py-2 border rounded-md" 
+          value={price} 
+          onChange={(e) => setPrice(Number(e.target.value))}
+          min=""
+          step="1000"
+          required
+        />
       </div>
+
+      <div>
+        <label className="block text-sm font-medium mb-1">Mô tả</label>
+        <textarea 
+          className="w-full px-3 py-2 border rounded-md" 
+          value={description} 
+          onChange={(e) => setDescription(e.target.value)}
+          rows={3}
+        />
+      </div>
+
+      <div className="flex items-center gap-6">
+        <label className="flex items-center gap-2">
+          <input 
+            type="checkbox" 
+            checked={isActive} 
+            onChange={(e) => setIsActive(e.target.checked)}
+            className="w-4 h-4"
+          />
+          <span className="text-sm font-medium">Đang hoạt động</span>
+        </label>
+        <label className="flex items-center gap-2">
+          <input 
+            type="checkbox" 
+            checked={isFeatured} 
+            onChange={(e) => setIsFeatured(e.target.checked)}
+            className="w-4 h-4"
+          />
+          <span className="text-sm font-medium">Sản phẩm nổi bật</span>
+        </label>
+      </div>
+
 
       <div className="flex items-center gap-3">
         <button type="submit" className="px-4 py-2 rounded-md bg-indigo-600 text-black">Lưu sản phẩm</button>

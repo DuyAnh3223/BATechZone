@@ -1,4 +1,5 @@
 import Product from '../models/Product.js';
+import Variant from '../models/Variant.js';
 import { db } from '../libs/db.js';
 
 // Lấy danh sách sản phẩm
@@ -55,7 +56,7 @@ export const getProduct = async (req, res) => {
 // Tạo mới sản phẩm
 export const createProduct = async (req, res) => {
   try {
-    const { category_id, product_name, slug, description, base_price, is_active, is_featured } = req.body;
+    const { category_id, product_name, slug, description, base_price, is_active, is_featured, variants } = req.body;
 
     // Validate required fields
     if (!product_name || !product_name.trim()) {
@@ -99,6 +100,28 @@ export const createProduct = async (req, res) => {
       is_active: is_active !== undefined ? (is_active ? 1 : 0) : 1,
       is_featured: is_featured !== undefined ? (is_featured ? 1 : 0) : 0
     });
+
+    // Create variants if provided
+    if (variants && Array.isArray(variants) && variants.length > 0) {
+      for (let i = 0; i < variants.length; i++) {
+        const variant = variants[i];
+        try {
+          await Variant.create({
+            productId: productId,
+            sku: variant.sku || null,
+            variantName: variant.variant_name || variant.sku || null,
+            price: parseFloat(variant.price || base_price),
+            stockQuantity: parseInt(variant.stock_quantity || variant.stock || 0),
+            isActive: variant.is_active !== undefined ? (variant.is_active ? 1 : 0) : 1,
+            isDefault: i === 0 ? 1 : (variant.is_default ? 1 : 0), // First variant is default
+            attributes: variant.attribute_value_ids || []
+          });
+        } catch (variantError) {
+          console.error(`Error creating variant ${i + 1}:`, variantError);
+          // Continue with other variants even if one fails
+        }
+      }
+    }
 
     // Lấy lại product với category_name
     const product = await Product.getById(productId);

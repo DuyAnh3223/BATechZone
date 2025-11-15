@@ -113,19 +113,17 @@ class Product {
 
   // Cập nhật sản phẩm
   async update(id, data) {
-    const { category_id, product_name, slug, description, brand, model, base_price, is_featured, is_active } = data;
+    const { category_id, product_name, slug, description, base_price, is_featured, is_active } = data;
     await db.query(
       `UPDATE products 
        SET category_id = ?, product_name = ?, slug = ?, description = ?, 
-           brand = ?, model = ?, base_price = ?, is_featured = ?, is_active = ?, updated_at = NOW()
+           base_price = ?, is_featured = ?, is_active = ?, updated_at = NOW()
        WHERE product_id = ?`,
       [
         category_id, 
         product_name, 
         slug || null, 
         description || null, 
-        brand || null,
-        model || null,
         base_price, 
         is_featured ?? 0, 
         is_active ?? 1, 

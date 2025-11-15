@@ -1,6 +1,6 @@
 import { Outlet, useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { ShoppingCart, User, Menu, X, Search, LogIn, LogOut, ChevronRight, Bell } from "lucide-react";
 import { useAuth } from '@/context/AuthContext';
 import { Button } from "@/components/ui/button";
@@ -34,39 +34,54 @@ const UserLayout = () => {
   // Calculate total cart items count (sum of quantities)
   const cartItemsCount = cartItems.reduce((total, item) => total + (item.quantity || 1), 0);
 
+  // Function to load categories (memoized with useCallback)
+  const loadCategories = useCallback(async () => {
+    try {
+      // Try to fetch tree first
+      const tree = await fetchCategoryTree();
+      // If tree is empty, try to fetch parent categories as fallback
+      if (!tree || tree.length === 0) {
+        console.log('Tree is empty, fetching parent categories as fallback...');
+        await fetchCategories({
+          is_active: true,
+          parentId: null,
+          limit: 100,
+          page: 1
+        });
+      }
+    } catch (error) {
+      console.error('Failed to load categories:', error);
+      // Fallback: try to fetch parent categories
+      try {
+        await fetchCategories({
+          is_active: true,
+          parentId: null,
+          limit: 100,
+          page: 1
+        });
+      } catch (fallbackError) {
+        console.error('Fallback also failed:', fallbackError);
+      }
+    }
+  }, [fetchCategoryTree, fetchCategories]);
+
   // Fetch category tree on mount
   useEffect(() => {
-    const loadCategories = async () => {
-      try {
-        // Try to fetch tree first
-        const tree = await fetchCategoryTree();
-        // If tree is empty, try to fetch parent categories as fallback
-        if (!tree || tree.length === 0) {
-          console.log('Tree is empty, fetching parent categories as fallback...');
-          await fetchCategories({
-            is_active: true,
-            parentId: null,
-            limit: 100,
-            page: 1
-          });
-        }
-      } catch (error) {
-        console.error('Failed to load categories:', error);
-        // Fallback: try to fetch parent categories
-        try {
-          await fetchCategories({
-            is_active: true,
-            parentId: null,
-            limit: 100,
-            page: 1
-          });
-        } catch (fallbackError) {
-          console.error('Fallback also failed:', fallbackError);
-        }
-      }
-    };
     loadCategories();
-  }, [fetchCategoryTree, fetchCategories]);
+  }, [loadCategories]);
+
+  // Refresh categories when window regains focus (user switches back to tab)
+  useEffect(() => {
+    const handleFocus = () => {
+      // Refresh categories when user switches back to the tab
+      loadCategories();
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [loadCategories]);
 
   // Cleanup timeout on unmount
   useEffect(() => {

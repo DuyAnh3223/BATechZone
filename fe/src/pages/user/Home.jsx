@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useProductStore } from '@/stores/useProductStore';
 import { useCategoryStore } from '@/stores/useCategoryStore';
@@ -37,23 +37,37 @@ const Home = () => {
     loadFeaturedProducts();
   }, [fetchProducts]);
 
+  // Function to load featured categories (memoized with useCallback)
+  const loadFeaturedCategories = useCallback(async () => {
+    try {
+      await fetchCategories({
+        is_active: true,
+        parentId: null, // Chỉ lấy parent categories (null = không có parent)
+        limit: 8,
+        page: 1
+      });
+    } catch (error) {
+      console.error('Error loading categories:', error);
+    }
+  }, [fetchCategories]);
+
   // Fetch featured categories (active categories, chỉ lấy parent categories)
   useEffect(() => {
-    const loadFeaturedCategories = async () => {
-      try {
-        await fetchCategories({
-          is_active: true,
-          parentId: null, // Chỉ lấy parent categories (null = không có parent)
-          limit: 8,
-          page: 1
-        });
-      } catch (error) {
-        console.error('Error loading categories:', error);
-      }
+    loadFeaturedCategories();
+  }, [loadFeaturedCategories]);
+
+  // Refresh categories when window regains focus (user switches back to tab)
+  useEffect(() => {
+    const handleFocus = () => {
+      // Refresh categories when user switches back to the tab
+      loadFeaturedCategories();
     };
 
-    loadFeaturedCategories();
-  }, [fetchCategories]);
+    window.addEventListener('focus', handleFocus);
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [loadFeaturedCategories]);
 
   const nextSlide = () => {
     setCurrentSlide((prev) => (prev + 1) % banners.length);
