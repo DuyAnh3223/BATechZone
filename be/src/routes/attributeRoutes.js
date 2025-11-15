@@ -7,13 +7,15 @@ import {
   getAttributesByType,
   updateAttributeCategories,
   getAttributeCategories,
-  removeAttributeCategory
+  removeAttributeCategory,
+  updateAttribute
 } from '../controllers/attributeController.js';
 const router = express.Router();
 
 router.get('/', listAttributes);
 router.get('/:id', getAttribute);
 router.post('/', createAttribute);
+router.put('/:id', updateAttribute);
 router.delete('/:id', deleteAttribute);
 
 // Category management routes

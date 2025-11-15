@@ -147,6 +147,29 @@ class Attribute {
     return rows[0] || null;
   }
 
+  // Update attribute (e.g., name)
+  async update(attributeId, data) {
+    const updateFields = [];
+    const updateValues = [];
+
+    if (data.attributeName !== undefined) {
+      updateFields.push('attribute_name = ?');
+      updateValues.push(data.attributeName);
+    }
+
+    if (updateFields.length === 0) {
+      return false;
+    }
+
+    updateValues.push(attributeId);
+
+    const [result] = await db.query(
+      `UPDATE attributes SET ${updateFields.join(', ')} WHERE attribute_id = ?`,
+      updateValues
+    );
+    return result.affectedRows > 0;
+  }
+
   // Get categories for an attribute
   async getCategories(attributeId) {
     const [categories] = await db.query(

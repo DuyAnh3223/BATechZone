@@ -1,9 +1,10 @@
 import Attribute from '../models/Attribute.js';
+import AttributeValue from '../models/AttributeValue.js';
 
 
 export const createAttribute = async (req, res) => {
   try {
-    const { attribute_name, category_ids } = req.body; // nhận từ client
+    const { attribute_name, category_ids, values } = req.body; // nhận từ client
     
     // Check if attribute already exists
     let existingAttribute = await Attribute.getByName(attribute_name);
@@ -26,6 +27,19 @@ export const createAttribute = async (req, res) => {
           await Attribute.assignCategories(attributeId, newCategoryIds);
         }
       }
+
+      // If values were provided, create them for existing attribute
+      if (values && Array.isArray(values) && values.length > 0) {
+        for (const v of values) {
+          // v can be { value_name, color_code, image_url }
+          await AttributeValue.create({
+            attributeId,
+            valueName: v.value_name || v.value || null,
+            colorCode: v.color_code || v.colorCode || null,
+            imageUrl: v.image_url || v.imageUrl || null
+          });
+        }
+      }
     } else {
       // Create new attribute
       attributeId = await Attribute.create({
@@ -35,6 +49,18 @@ export const createAttribute = async (req, res) => {
       // Assign categories if provided
       if (category_ids && Array.isArray(category_ids) && category_ids.length > 0) {
         await Attribute.assignCategories(attributeId, category_ids);
+      }
+
+      // If values provided when creating attribute, create them
+      if (values && Array.isArray(values) && values.length > 0) {
+        for (const v of values) {
+          await AttributeValue.create({
+            attributeId,
+            valueName: v.value_name || v.value || null,
+            colorCode: v.color_code || v.colorCode || null,
+            imageUrl: v.image_url || v.imageUrl || null
+          });
+        }
       }
     }
 
@@ -103,6 +129,44 @@ export const getAttributesByType = async (req, res) => {
     res.json(attributes);
   } catch (error) {
     console.error('Error getting attributes by type:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+// Update attribute (name, optionally create values)
+export const updateAttribute = async (req, res) => {
+  try {
+    const attributeId = req.params.id;
+    const { attribute_name, values } = req.body;
+
+    // Update attribute basic fields
+    const updated = await Attribute.update(attributeId, { attributeName: attribute_name });
+    if (!updated) {
+      // If nothing updated, still attempt to create values if provided
+      // but return 404 if attribute not exist
+      const existing = await Attribute.getById(attributeId);
+      if (!existing) return res.status(404).json({ message: 'Attribute not found' });
+    }
+
+    // If values provided, create them
+    if (values && Array.isArray(values) && values.length > 0) {
+      // Use AttributeValue model to create values
+      const AttributeValue = (await import('../models/AttributeValue.js')).default;
+      for (const v of values) {
+        await AttributeValue.create({
+          attributeId,
+          valueName: v.value_name || v.value || null,
+          colorCode: v.color_code || v.colorCode || null,
+          imageUrl: v.image_url || v.imageUrl || null
+        });
+      }
+    }
+
+    const attribute = await Attribute.getById(attributeId);
+    const categories = await Attribute.getCategories(attributeId);
+    res.json({ ...attribute, categories });
+  } catch (error) {
+    console.error('Error updating attribute:', error);
     res.status(500).json({ message: 'Internal server error' });
   }
 };

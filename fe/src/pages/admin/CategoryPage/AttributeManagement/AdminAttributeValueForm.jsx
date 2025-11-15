@@ -28,6 +28,7 @@ const AdminAttributeValueForm = ({ initialValue = null, onSubmit, onCancel }) =>
       image_url: imageUrl || null,
     };
 
+    // Forward payload to parent; parent knows attributeId and will call API
     onSubmit && onSubmit(payload);
   }
 

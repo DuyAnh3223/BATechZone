@@ -1,12 +1,21 @@
-import React, { useState } from 'react';
-import { getAttributesForCategory } from '../../mockData';
+import React, { useEffect, useState } from 'react';
 import AttributeItem from './AdminAttributeItem';
 import AttributeForm from './AdminAttributeForm';
+import { useAttributeStore } from '@/stores/useAttributeStore';
 
 const AttributeList = ({ categoryId = 1 }) => {
-  const [attributes, setAttributes] = useState(() => getAttributesForCategory(categoryId));
+  const attributes = useAttributeStore((s) => s.attributes);
+  const fetchAttributes = useAttributeStore((s) => s.fetchAttributes);
+  const deleteAttribute = useAttributeStore((s) => s.deleteAttribute);
+  const createAttribute = useAttributeStore((s) => s.createAttribute);
+  const updateAttribute = useAttributeStore((s) => s.updateAttribute);
+
   const [editing, setEditing] = useState(null);
   const [showForm, setShowForm] = useState(false);
+
+  useEffect(() => {
+    fetchAttributes({ category_id: categoryId }).catch(() => {});
+  }, [categoryId, fetchAttributes]);
 
   function handleAdd() {
     setEditing(null);
@@ -18,19 +27,31 @@ const AttributeList = ({ categoryId = 1 }) => {
     setShowForm(true);
   }
 
-  function handleDelete(attrId) {
-    setAttributes((prev) => prev.filter((a) => a.attribute_id !== attrId));
+  async function handleDelete(attrId) {
+    if (!confirm('Xác nhận xóa thuộc tính?')) return;
+    try {
+      await deleteAttribute(attrId);
+      await fetchAttributes({ category_id: categoryId }).catch(() => {});
+    } catch (err) {
+      console.error('Delete attribute failed', err);
+    }
   }
 
-  function handleSubmit(payload) {
-    if (editing) {
-      setAttributes((prev) => prev.map((a) => (a.attribute_id === payload.attribute_id ? payload : a)));
-    } else {
-      const newId = Math.max(0, ...attributes.map((a) => a.attribute_id)) + 1;
-      setAttributes((prev) => [{ ...payload, attribute_id: newId }, ...prev]);
+  async function handleSubmit(payload) {
+    try {
+      if (editing?.attribute_id) {
+        // include values when updating so new values can be created together
+        await updateAttribute(editing.attribute_id, { attribute_name: payload.attribute_name, values: payload.values || [] });
+      } else {
+        // create attribute; include values and category assignment
+        await createAttribute({ attribute_name: payload.attribute_name, values: payload.values || [], category_ids: [categoryId] });
+      }
+      setShowForm(false);
+      setEditing(null);
+      await fetchAttributes({ category_id: categoryId }).catch(() => {});
+    } catch (err) {
+      console.error('Error saving attribute', err);
     }
-    setShowForm(false);
-    setEditing(null);
   }
 
   return (
@@ -52,8 +73,8 @@ const AttributeList = ({ categoryId = 1 }) => {
       )}
 
       <div className="grid gap-3">
-        {attributes.length === 0 && <div className="text-sm text-muted-foreground">Không có thuộc tính nào.</div>}
-        {attributes.map((attr) => (
+        {(!attributes || attributes.length === 0) && <div className="text-sm text-muted-foreground">Không có thuộc tính nào.</div>}
+        {(attributes || []).map((attr) => (
           <AttributeItem key={attr.attribute_id} attribute={attr} onEdit={handleEdit} onDelete={handleDelete} />
         ))}
       </div>

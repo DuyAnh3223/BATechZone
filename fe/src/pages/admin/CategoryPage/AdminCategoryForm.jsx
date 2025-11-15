@@ -1,11 +1,22 @@
 import React, { useEffect, useState } from 'react';
+import { useCategoryStore } from '@/stores/useCategoryStore';
 
-const AdminCategoryForm = ({ initialData = null, categories = [], onSubmit, onCancel }) => {
+const AdminCategoryForm = ({ initialData = null, onSubmit, onCancel }) => {
 	const [name, setName] = useState('');
 	const [slug, setSlug] = useState('');
 	const [description, setDescription] = useState('');
 	const [parentId, setParentId] = useState(null);
 	const [imageUrl, setImageUrl] = useState('');
+
+	const parentCategories = useCategoryStore((s) => s.parentCategories);
+	const fetchSimpleCategories = useCategoryStore((s) => s.fetchSimpleCategories);
+	const createCategory = useCategoryStore((s) => s.createCategory);
+	const updateCategory = useCategoryStore((s) => s.updateCategory);
+
+	useEffect(() => {
+		// load parent categories for dropdown
+		fetchSimpleCategories().catch(() => {});
+	}, [fetchSimpleCategories]);
 
 	useEffect(() => {
 		if (initialData) {
@@ -38,12 +49,11 @@ const AdminCategoryForm = ({ initialData = null, categories = [], onSubmit, onCa
 		if (!initialData) setSlug(autoSlug(v));
 	}
 
-	function handleSubmit(e) {
+	async function handleSubmit(e) {
 		e.preventDefault();
 		if (!name.trim()) return alert('Tên danh mục là bắt buộc');
 
 		const payload = {
-			category_id: initialData?.category_id,
 			category_name: name.trim(),
 			slug: slug || autoSlug(name),
 			description: description || null,
@@ -51,7 +61,20 @@ const AdminCategoryForm = ({ initialData = null, categories = [], onSubmit, onCa
 			image_url: imageUrl || null,
 		};
 
-		onSubmit && onSubmit(payload);
+		try {
+			let response;
+			if (initialData?.category_id) {
+				response = await updateCategory(initialData.category_id, payload);
+			} else {
+				response = await createCategory(payload);
+			}
+
+			// forward response to parent if provided
+			onSubmit && onSubmit(response);
+		} catch (error) {
+			// errors are handled/toasted in the store; no-op here
+			console.error('Error submitting category form', error);
+		}
 	}
 
 	return (
@@ -76,7 +99,7 @@ const AdminCategoryForm = ({ initialData = null, categories = [], onSubmit, onCa
 					<label className="block text-sm font-medium mb-1">Danh mục cha</label>
 					<select value={parentId ?? ''} onChange={(e) => setParentId(e.target.value ? Number(e.target.value) : null)} className="w-full px-3 py-2 border rounded-md">
 						<option value="">-- Không --</option>
-						{categories
+						{parentCategories
 							.filter((c) => c.category_id !== initialData?.category_id)
 							.map((c) => (
 								<option key={c.category_id} value={c.category_id}>{c.category_name}</option>

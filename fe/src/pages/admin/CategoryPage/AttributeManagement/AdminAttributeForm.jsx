@@ -38,13 +38,17 @@ const AttributeForm = ({ initialData = null, onSubmit, onCancel }) => {
     if (!name.trim()) return alert('Tên thuộc tính là bắt buộc');
 
     const payload = {
-      attribute_id: initialData?.attribute_id,
       attribute_name: name.trim(),
       attribute_type: type,
       values: values.filter((v) => v && v.trim()).map((v, i) => ({ attribute_value_id: undefined, value_name: v.trim() })),
     };
 
-    onSubmit && onSubmit(payload);
+    try {
+      // Forward payload to parent. Parent will call API (create/update) and handle category assignment.
+      onSubmit && onSubmit(payload);
+    } catch (err) {
+      console.error('Error saving attribute', err);
+    }
   }
 
   return (

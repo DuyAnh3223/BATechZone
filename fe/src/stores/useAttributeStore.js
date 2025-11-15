@@ -83,6 +83,28 @@ export const useAttributeStore = create((set, get) => ({
         }
     },
 
+    // Cập nhật attribute
+    updateAttribute: async (attributeId, attributeData) => {
+        set({ loading: true, error: null });
+        try {
+            const response = await attributeService.updateAttribute(attributeId, attributeData);
+            const message = response.data?.message || response.message || 'Cập nhật thuộc tính thành công!';
+            toast.success(message);
+            // refresh list or current attribute
+            await get().fetchAttributes().catch(() => {});
+            if (get().currentAttribute?.attribute_id === attributeId) {
+                await get().fetchAttribute(attributeId).catch(() => {});
+            }
+            set({ loading: false });
+            return response;
+        } catch (error) {
+            const message = error.response?.data?.message || 'Có lỗi xảy ra khi cập nhật thuộc tính';
+            set({ error: message, loading: false });
+            toast.error(message);
+            throw error;
+        }
+    },
+
     // Lấy categories của attribute
     fetchAttributeCategories: async (attributeId) => {
         set({ loading: true, error: null });

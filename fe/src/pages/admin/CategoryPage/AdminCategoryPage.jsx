@@ -1,16 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import AdminCategoryList from './AdminCategoryList';
 import AdminCategoryForm from './AdminCategoryForm';
-import { getCategories } from '../mockData';
+import { useCategoryStore } from '@/stores/useCategoryStore';
 
 const AdminCategoryPage = () => {
-	const [categories, setCategories] = useState([]);
 	const [showForm, setShowForm] = useState(false);
 	const [editing, setEditing] = useState(null);
 
+	const categories = useCategoryStore((s) => s.categories);
+	const fetchCategories = useCategoryStore((s) => s.fetchCategories);
+	const deleteCategory = useCategoryStore((s) => s.deleteCategory);
+
 	useEffect(() => {
-		setCategories(getCategories());
-	}, []);
+		fetchCategories().catch(() => {});
+	}, [fetchCategories]);
 
 	function handleAdd() {
 		setEditing(null);
@@ -22,20 +25,24 @@ const AdminCategoryPage = () => {
 		setShowForm(true);
 	}
 
-	function handleDelete(categoryId) {
+	async function handleDelete(categoryId) {
 		if (!confirm('Xác nhận xóa danh mục này?')) return;
-		setCategories((prev) => prev.filter((c) => c.category_id !== categoryId));
+		try {
+			await deleteCategory(categoryId);
+			await fetchCategories().catch(() => {});
+		} catch (err) {
+			console.error('Delete category failed', err);
+		}
 	}
 
-	function handleSubmit(payload) {
-		if (payload.category_id) {
-			setCategories((prev) => prev.map((c) => (c.category_id === payload.category_id ? { ...c, ...payload } : c)));
-		} else {
-			const nextId = Math.max(0, ...categories.map((c) => c.category_id || 0)) + 1;
-			setCategories((prev) => [{ ...payload, category_id: nextId }, ...prev]);
-		}
+	async function handleSubmit(response) {
 		setShowForm(false);
 		setEditing(null);
+		try {
+			await fetchCategories();
+		} catch (err) {
+			console.error('Error refreshing categories', err);
+		}
 	}
 
 	return (
@@ -49,7 +56,7 @@ const AdminCategoryPage = () => {
 
 			{showForm && (
 				<div className="mb-6 p-4 border rounded-md bg-white">
-					<AdminCategoryForm initialData={editing} categories={categories} onCancel={() => setShowForm(false)} onSubmit={handleSubmit} />
+					<AdminCategoryForm initialData={editing} onCancel={() => setShowForm(false)} onSubmit={handleSubmit} />
 				</div>
 			)}
 

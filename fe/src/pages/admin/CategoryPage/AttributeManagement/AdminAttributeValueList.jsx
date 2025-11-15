@@ -1,14 +1,24 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import AdminAttributeValueItem from './AdminAttributeValueItem';
 import AdminAttributeValueForm from './AdminAttributeValueForm';
-import { attributeValues as allValues } from '../../mockData';
+import { useAttributeValueStore } from '@/stores/useAttributeValueStore';
 
 const AdminAttributeValueList = ({ attribute = null }) => {
-  // attribute is expected to be { attribute_id, attribute_name, values: [...] }
-  const initialValues = attribute?.values ?? allValues.filter((v) => v.attribute_id === (attribute?.attribute_id ?? 31));
-  const [values, setValues] = useState(initialValues || []);
+  const attributeId = attribute?.attribute_id;
+  const currentValues = useAttributeValueStore((s) => s.currentValues);
+  const fetchAttributeValuesByAttributeId = useAttributeValueStore((s) => s.fetchAttributeValuesByAttributeId);
+  const createAttributeValue = useAttributeValueStore((s) => s.createAttributeValue);
+  const updateAttributeValue = useAttributeValueStore((s) => s.updateAttributeValue);
+  const deleteAttributeValue = useAttributeValueStore((s) => s.deleteAttributeValue);
+
   const [editing, setEditing] = useState(null);
   const [showForm, setShowForm] = useState(false);
+
+  useEffect(() => {
+    if (attributeId) {
+      fetchAttributeValuesByAttributeId(attributeId).catch(() => {});
+    }
+  }, [attributeId, fetchAttributeValuesByAttributeId]);
 
   function handleAdd() {
     setEditing(null);
@@ -20,22 +30,42 @@ const AdminAttributeValueList = ({ attribute = null }) => {
     setShowForm(true);
   }
 
-  function handleDelete(valueId) {
+  async function handleDelete(valueId) {
     if (!confirm('Xóa giá trị này?')) return;
-    setValues((prev) => prev.filter((v) => v.attribute_value_id !== valueId));
+    try {
+      await deleteAttributeValue(valueId);
+      if (attributeId) await fetchAttributeValuesByAttributeId(attributeId).catch(() => {});
+    } catch (err) {
+      console.error('Delete attribute value failed', err);
+    }
   }
 
-  function handleSubmit(payload) {
-    if (payload.attribute_value_id) {
-      // update
-      setValues((prev) => prev.map((v) => (v.attribute_value_id === payload.attribute_value_id ? { ...v, ...payload } : v)));
-    } else {
-      const nextId = Math.max(0, ...values.map((v) => v.attribute_value_id || 0)) + 1;
-      setValues((prev) => [{ ...payload, attribute_value_id: nextId, attribute_id: attribute?.attribute_id ?? payload.attribute_id ?? 31 }, ...prev]);
+  async function handleSubmit(payload) {
+    try {
+      if (payload.attribute_value_id) {
+        await updateAttributeValue(payload.attribute_value_id, {
+          value_name: payload.value_name,
+          color_code: payload.color_code,
+          image_url: payload.image_url
+        });
+      } else {
+        // create
+        await createAttributeValue({
+          attribute_id: attributeId,
+          value_name: payload.value_name,
+          color_code: payload.color_code,
+          image_url: payload.image_url
+        });
+      }
+      setShowForm(false);
+      setEditing(null);
+      if (attributeId) await fetchAttributeValuesByAttributeId(attributeId).catch(() => {});
+    } catch (err) {
+      console.error('Error saving attribute value', err);
     }
-    setShowForm(false);
-    setEditing(null);
   }
+
+  const values = currentValues || [];
 
   return (
     <div className="space-y-4">
