@@ -14,6 +14,21 @@ export const useCartItemStore = create((set) => ({
         set({ loading: true, error: null });
         try {
             const response = await cartItemService.addToCart(data);
+            // Tự động refresh cart items sau khi thêm thành công
+            if (data.cartId) {
+                try {
+                    const itemsResponse = await cartItemService.getCartItems(data.cartId);
+                    set({ 
+                        cartItems: itemsResponse.data || itemsResponse, 
+                        loading: false 
+                    });
+                } catch (fetchError) {
+                    console.error('Error fetching cart items after add:', fetchError);
+                    set({ loading: false });
+                }
+            } else {
+                set({ loading: false });
+            }
             return response;
         } catch (error) {
             set({ error: error.message, loading: false });
@@ -26,7 +41,21 @@ export const useCartItemStore = create((set) => ({
         set({ loading: true, error: null });
         try {
             const response = await cartItemService.bulkAddToCart(data);
-            set({ loading: false });
+            // Tự động refresh cart items sau khi thêm thành công
+            if (data.cartId) {
+                try {
+                    const itemsResponse = await cartItemService.getCartItems(data.cartId);
+                    set({ 
+                        cartItems: itemsResponse.data || itemsResponse, 
+                        loading: false 
+                    });
+                } catch (fetchError) {
+                    console.error('Error fetching cart items after bulk add:', fetchError);
+                    set({ loading: false });
+                }
+            } else {
+                set({ loading: false });
+            }
             return response;
         } catch (error) {
             set({ error: error.message, loading: false });

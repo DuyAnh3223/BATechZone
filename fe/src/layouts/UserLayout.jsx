@@ -1,7 +1,7 @@
 import { Outlet, useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import { useState, useEffect, useCallback } from 'react';
-import { ShoppingCart, User, Menu, X, Search, LogIn, LogOut, ChevronRight, Bell } from "lucide-react";
+import { ShoppingCart, User, Menu, X, Search, LogIn, LogOut, ChevronRight, Bell, Tag, Copy, Check } from "lucide-react";
 import { useAuth } from '@/context/AuthContext';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,16 @@ import { Badge } from "@/components/ui/badge";
 import { useCategoryStore } from '@/stores/useCategoryStore';
 import { useNotificationStore } from '@/stores/useNotificationStore';
 import { useCartItemStore } from '@/stores/useCartItemStore';
+import { useCouponStore } from '@/stores/useCouponStore';
+import { couponService } from '@/services/couponService';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { toast } from "sonner";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,9 +40,56 @@ const UserLayout = () => {
   const { categoryTree, fetchCategoryTree, categories, fetchCategories, loading: categoriesLoading } = useCategoryStore();
   const { notifications, unreadCount, loading: notificationsLoading, fetchNotifications, markAsRead, markAllAsRead } = useNotificationStore();
   const { cartItems } = useCartItemStore();
+  const { coupons, fetchCoupons, loading: couponsLoading } = useCouponStore();
   
   // Calculate total cart items count (sum of quantities)
   const cartItemsCount = cartItems.reduce((total, item) => total + (item.quantity || 1), 0);
+  
+  // Coupon dialog state
+  const [isCouponDialogOpen, setIsCouponDialogOpen] = useState(false);
+  const [copiedCouponCode, setCopiedCouponCode] = useState(null);
+
+  // Load active coupons when dialog opens
+  useEffect(() => {
+    if (isCouponDialogOpen) {
+      fetchCoupons({ is_active: 'true', pageSize: 50 });
+    }
+  }, [isCouponDialogOpen, fetchCoupons]);
+
+  // Filter valid coupons (active, within valid period, not expired usage limit)
+  const getValidCoupons = () => {
+    if (!coupons || coupons.length === 0) return [];
+    
+    const now = new Date();
+    return coupons.filter((coupon) => {
+      // Kiểm tra is_active
+      if (!coupon.is_active) return false;
+      
+      // Kiểm tra thời gian hiệu lực
+      if (coupon.valid_from && new Date(coupon.valid_from) > now) return false;
+      if (coupon.valid_until && new Date(coupon.valid_until) < now) return false;
+      
+      // Kiểm tra số lần sử dụng
+      if (coupon.usage_limit && (coupon.used_count || 0) >= coupon.usage_limit) return false;
+      
+      return true;
+    });
+  };
+
+  const validCoupons = getValidCoupons();
+
+  // Function to copy coupon code
+  const handleCopyCoupon = async (couponCode) => {
+    try {
+      await navigator.clipboard.writeText(couponCode);
+      setCopiedCouponCode(couponCode);
+      toast.success(`Đã copy mã giảm giá: ${couponCode}`);
+      setTimeout(() => setCopiedCouponCode(null), 2000);
+    } catch (error) {
+      toast.error('Không thể copy mã giảm giá');
+    }
+  };
+
 
   // Function to load categories (memoized with useCallback)
   const loadCategories = useCallback(async () => {
@@ -219,6 +276,41 @@ const UserLayout = () => {
                   </Badge>
                 )}
               </Link>
+
+              {/* Coupon Icon - Circular with green background */}
+              <Button
+                variant="ghost"
+                size="icon-lg"
+                className="relative transition-all duration-300 ease-in-out"
+                onClick={() => setIsCouponDialogOpen(true)}
+                style={{
+                  position: 'relative',
+                  backgroundColor: '#10b981', // green-500
+                  color: '#ffffff',
+                  borderRadius: '50%',
+                  width: '48px',
+                  height: '48px',
+                  padding: '0',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transform: 'scale(1)',
+                  transition: 'all 0.3s ease-in-out',
+                  border: 'none'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#059669'; // green-600 (darker on hover)
+                  e.currentTarget.style.transform = 'scale(1.1)';
+                  e.currentTarget.style.transition = 'all 0.3s ease-in-out';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#10b981'; // green-500
+                  e.currentTarget.style.transform = 'scale(1)';
+                  e.currentTarget.style.transition = 'all 0.3s ease-in-out';
+                }}
+              >
+                <Tag className="size-6" style={{ color: '#ffffff' }} />
+              </Button>
 
               {/* Notification Bell - Only show if user is logged in */}
               {user && (
@@ -611,6 +703,18 @@ const UserLayout = () => {
                 )}
               </Link>
             </Button>
+            <Button 
+              variant="ghost" 
+              size="lg" 
+              className="w-full justify-start"
+              onClick={() => {
+                setIsCouponDialogOpen(true);
+                setIsMenuOpen(false);
+              }}
+            >
+              <Tag className="size-9 mr-2 text-green-600" />
+              Mã giảm giá
+            </Button>
             {user && (
               <Button variant="ghost" size="lg" className="w-full justify-start relative" asChild>
                 <Link to="/profile?tab=notifications" className="flex items-center">
@@ -821,6 +925,113 @@ const UserLayout = () => {
           </div>
         </div>
       </footer>
+
+      {/* Coupon Dialog */}
+      <Dialog open={isCouponDialogOpen} onOpenChange={setIsCouponDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold flex items-center gap-2">
+              <Tag className="h-6 w-6 text-green-600" />
+              Mã giảm giá
+            </DialogTitle>
+            <DialogDescription>
+              Chọn mã giảm giá để copy hoặc áp dụng trực tiếp
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="mt-4">
+            {couponsLoading ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto mb-2"></div>
+                <p className="text-sm text-gray-500">Đang tải mã giảm giá...</p>
+              </div>
+            ) : validCoupons.length > 0 ? (
+              <div className="grid gap-4">
+                {validCoupons.map((coupon) => {
+                  const isCopied = copiedCouponCode === coupon.coupon_code;
+                  const formatPrice = (price) => {
+                    return new Intl.NumberFormat("vi-VN", {
+                      style: "currency",
+                      currency: "VND",
+                    }).format(price);
+                  };
+
+                  const discountText = coupon.discount_type === 'percentage' 
+                    ? `${coupon.discount_value}%` 
+                    : formatPrice(coupon.discount_value);
+
+                  return (
+                    <div
+                      key={coupon.coupon_id}
+                      className="border rounded-lg p-4 hover:shadow-md transition-shadow"
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="font-bold text-lg text-green-600">
+                              {coupon.coupon_code}
+                            </span>
+                            <Badge className="bg-green-100 text-green-800">
+                              Giảm {discountText}
+                            </Badge>
+                          </div>
+                          {coupon.description && (
+                            <p className="text-sm text-gray-600 mb-2">
+                              {coupon.description}
+                            </p>
+                          )}
+                          <div className="flex flex-wrap gap-4 text-xs text-gray-500">
+                            {coupon.min_order_amount > 0 && (
+                              <span>
+                                Đơn tối thiểu: {formatPrice(coupon.min_order_amount)}
+                              </span>
+                            )}
+                            {coupon.max_discount_amount && (
+                              <span>
+                                Giảm tối đa: {formatPrice(coupon.max_discount_amount)}
+                              </span>
+                            )}
+                            {coupon.valid_until && (
+                              <span>
+                                HSD: {new Date(coupon.valid_until).toLocaleDateString('vi-VN')}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleCopyCoupon(coupon.coupon_code)}
+                            className="flex items-center gap-2"
+                          >
+                            {isCopied ? (
+                              <>
+                                <Check className="h-4 w-4 text-green-600" />
+                                <span className="text-green-600">Đã copy</span>
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="h-4 w-4" />
+                                <span>Copy</span>
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                <Tag className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                <p>Hiện tại không có mã giảm giá nào</p>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

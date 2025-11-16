@@ -14,7 +14,7 @@ export const createOrder = async (req, res) => {
       });
     }
 
-    // Validate shipping address for guest
+    // Validate shipping address
     if (!orderData.userId && !shippingAddress) {
       return res.status(400).json({
         success: false,
@@ -22,10 +22,10 @@ export const createOrder = async (req, res) => {
       });
     }
 
-    // Nếu là guest, tạo address với user_id = null
+    // Tạo address nếu chưa có addressId
     let addressId = orderData.addressId;
-    if (!orderData.userId && shippingAddress) {
-      console.log('Creating address for guest:', shippingAddress);
+    if (!addressId && shippingAddress) {
+      console.log('Creating address:', shippingAddress);
       const [result] = await db.query(
         `INSERT INTO addresses (
           user_id, recipient_name, phone, 
@@ -34,7 +34,7 @@ export const createOrder = async (req, res) => {
           is_default, address_type
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
-          null, // user_id = null for guest
+          orderData.userId || null, // user_id = null for guest, userId for registered user
           shippingAddress.fullName,
           shippingAddress.phone,
           shippingAddress.address,
@@ -52,8 +52,8 @@ export const createOrder = async (req, res) => {
       console.log('Address created with ID:', addressId);
     }
 
-    // Validate address for registered user
-    if (orderData.userId && !addressId) {
+    // Validate address for registered user (nếu không có shippingAddress để tạo mới)
+    if (orderData.userId && !addressId && !shippingAddress) {
       return res.status(400).json({
         success: false,
         message: 'Thiếu thông tin địa chỉ giao hàng'
@@ -325,6 +325,60 @@ export const refundOrder = async (req, res) => {
     });
   } catch (error) {
     console.error('Error refunding order:', error);
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+// Cập nhật trạng thái đơn hàng (tổng quát)
+export const updateOrderStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    if (!status) {
+      return res.status(400).json({
+        success: false,
+        message: 'Vui lòng cung cấp trạng thái đơn hàng'
+      });
+    }
+
+    const orderData = await Order.getById(id);
+
+    if (!orderData) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy đơn hàng'
+      });
+    }
+
+    // Đảm bảo order_id được set đúng
+    if (!orderData.order_id && !orderData.orderId) {
+      orderData.order_id = id;
+    }
+
+    // Tạo instance Order từ dữ liệu
+    const order = new Order(orderData);
+    
+    // Đảm bảo orderId được set
+    if (!order.orderId) {
+      order.orderId = parseInt(id);
+    }
+    
+    await order.updateStatus(status);
+
+    // Refresh order data
+    const updatedOrder = await Order.getById(id);
+
+    res.json({
+      success: true,
+      message: 'Cập nhật trạng thái đơn hàng thành công',
+      data: updatedOrder
+    });
+  } catch (error) {
+    console.error('Error updating order status:', error);
     res.status(400).json({
       success: false,
       message: error.message
