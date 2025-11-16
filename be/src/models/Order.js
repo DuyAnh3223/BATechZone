@@ -22,6 +22,25 @@ class Order {
     this.shippedAt = data.shipped_at || null;
     this.deliveredAt = data.delivered_at || null;
     this.cancelledAt = data.cancelled_at || null;
+    
+    // User information from JOIN
+    this.username = data.username || null;
+    this.email = data.email || null;
+    this.user_phone = data.user_phone || null;
+    
+    // Address information from JOIN
+    this.recipient_name = data.recipient_name || null;
+    this.recipient_phone = data.recipient_phone || null;
+    this.address_line1 = data.address_line1 || null;
+    this.address_line2 = data.address_line2 || null;
+    this.city = data.city || null;
+    this.district = data.district || null;
+    this.ward = data.ward || null;
+    
+    // Coupon information from JOIN
+    this.coupon_code = data.coupon_code || null;
+    this.discount_type = data.discount_type || null;
+    this.discount_value = data.discount_value || null;
   }
 
   // ==================== STATIC METHODS (Factory & Queries) ====================
@@ -48,7 +67,7 @@ class Order {
           notes
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
-          orderData.userId,
+          orderData.userId || null,
           orderNumber,
           orderData.addressId,
           orderData.couponId || null,
@@ -143,6 +162,18 @@ class Order {
     
     const order = orders[0];
     
+    // Debug log
+    console.log('Raw order data from DB:', {
+      address_id: order.address_id,
+      recipient_name: order.recipient_name,
+      recipient_phone: order.recipient_phone,
+      address_line1: order.address_line1,
+      address_line2: order.address_line2,
+      city: order.city,
+      district: order.district,
+      ward: order.ward
+    });
+    
     // Lấy order items riêng
     const [items] = await db.query(
       `SELECT 
@@ -173,10 +204,22 @@ class Order {
       [orderId]
     );
     
+    // Trả về object thô với tất cả dữ liệu (không qua constructor để giữ nguyên JOIN fields)
     order.items = items;
     order.payments = payments;
     
-    return new Order(order);
+    console.log('Final order object with all fields:', {
+      recipient_name: order.recipient_name,
+      recipient_phone: order.recipient_phone,
+      address_line1: order.address_line1,
+      city: order.city,
+      district: order.district,
+      ward: order.ward,
+      items_count: items?.length,
+      payments_count: payments?.length
+    });
+    
+    return order;
   }
 
   // Lấy danh sách đơn hàng với filter

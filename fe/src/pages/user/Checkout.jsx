@@ -29,26 +29,28 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
-// Mock data for cart items
-const mockCartItems = [
-  {
-    id: 1,
-    name: "AMD Ryzen 7 5800X",
-    price: 8990000,
-    quantity: 1,
-    image: "https://via.placeholder.com/100",
-  },
-  {
-    id: 2,
-    name: "NVIDIA RTX 4070",
-    price: 15990000,
-    quantity: 1,
-    image: "https://via.placeholder.com/100",
-  },
-];
+import { Link, useNavigate } from "react-router";
+import { useCartStore } from "@/stores/useCartStore";
+import { useCartItemStore } from "@/stores/useCartItemStore";
+import { useAuthStore } from "@/stores/useAuthStore";
+import { useOrderStore } from "@/stores/useOrderStore";
+import { toast } from "sonner";
+import { useEffect } from "react";
 
 const Checkout = () => {
+  const navigate = useNavigate();
+  const { user } = useAuthStore();
+  const { getOrCreateCart, cart, clearCart } = useCartStore();
+  const { 
+    cartItems, 
+    fetchCartItems, 
+    loading 
+  } = useCartItemStore();
+  const { createOrder, loading: orderLoading } = useOrderStore();
+  const [isLoadingCart, setIsLoadingCart] = useState(true);
   const [step, setStep] = useState(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
   const form = useForm({
     defaultValues: {
       fullName: "",
@@ -62,6 +64,45 @@ const Checkout = () => {
     },
   });
 
+  // Load cart data khi component mount
+  useEffect(() => {
+    const loadCart = async () => {
+      try {
+        setIsLoadingCart(true);
+        
+        // 1. Lấy hoặc tạo cart
+        let cartData = {};
+        if (user) {
+          cartData.userId = user.user_id;
+        } else {
+          let sessionId = localStorage.getItem('guest_session_id');
+          if (!sessionId) {
+            sessionId = `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            localStorage.setItem('guest_session_id', sessionId);
+          }
+          cartData.sessionId = sessionId;
+        }
+
+        const cartResponse = await getOrCreateCart(cartData);
+        const currentCart = cartResponse?.data || cartResponse;
+        
+        const cartId = currentCart?.cart_id || currentCart?.cartId;
+        
+        if (cartId) {
+          // 2. Lấy cart items
+          await fetchCartItems(cartId);
+        }
+      } catch (error) {
+        console.error('Error loading cart:', error);
+        toast.error('Không thể tải giỏ hàng');
+      } finally {
+        setIsLoadingCart(false);
+      }
+    };
+
+    loadCart();
+  }, [user, getOrCreateCart, fetchCartItems]);
+
   const formatPrice = (price) => {
     return new Intl.NumberFormat("vi-VN", {
       style: "currency",
@@ -70,23 +111,104 @@ const Checkout = () => {
   };
 
   const calculateSubtotal = () => {
-    return mockCartItems.reduce((total, item) => total + item.price * item.quantity, 0);
+    if (!cartItems || cartItems.length === 0) return 0;
+    return cartItems.reduce((total, item) => {
+      const itemPrice = item.price || item.current_price || item.currentPrice || 0;
+      const itemQuantity = item.quantity || 0;
+      return total + (itemPrice * itemQuantity);
+    }, 0);
   };
 
   const calculateShipping = () => {
-    return 50000; // Mock shipping cost
+    return 50000; // Phí ship cố định
   };
 
   const calculateTotal = () => {
     return calculateSubtotal() + calculateShipping();
   };
 
-  const onSubmit = (data) => {
+  const onSubmit = async (data) => {
     if (step === 1) {
+      // Validate có sản phẩm trong giỏ
+      if (!cartItems || cartItems.length === 0) {
+        toast.error('Giỏ hàng trống. Vui lòng thêm sản phẩm trước khi đặt hàng.');
+        return;
+      }
       setStep(2);
     } else {
-      // Handle final submission
-      console.log("Form submitted:", data);
+      // Step 2: Đặt hàng
+      await handlePlaceOrder(data);
+    }
+  };
+
+  const handlePlaceOrder = async (formData) => {
+    try {
+      setIsSubmitting(true);
+
+      // Chuẩn bị dữ liệu đơn hàng
+      const orderData = {
+        userId: user?.user_id || null,
+        addressId: null, // Sẽ được tạo trong backend cho guest
+        subtotal: calculateSubtotal(),
+        shippingFee: calculateShipping(),
+        taxAmount: 0,
+        discountAmount: 0,
+        totalAmount: calculateTotal(),
+        notes: formData.note || null,
+        paymentMethod: formData.paymentMethod
+      };
+
+      // Chuẩn bị thông tin giao hàng cho guest
+      const shippingAddress = !user ? {
+        fullName: formData.fullName,
+        phone: formData.phone,
+        email: formData.email,
+        province: formData.province,
+        district: formData.district,
+        address: formData.address,
+        note: formData.note
+      } : null;
+      
+     
+
+      // Chuẩn bị items
+      const items = cartItems.map(item => ({
+        variantId: item.variant_id,
+        productName: item.product_name || item.productName,
+        variantName: item.variant_name || item.variantName || null,
+        sku: item.sku || null,
+        quantity: item.quantity,
+        unitPrice: item.price || item.current_price || item.currentPrice,
+        discountAmount: 0
+      }));
+
+      // Gọi API tạo đơn hàng
+      const response = await createOrder({
+        orderData,
+        shippingAddress,
+        items
+      });
+
+      // Xóa giỏ hàng sau khi đặt hàng thành công
+      const cartId = cart?.cart_id || cart?.cartId;
+      if (cartId) {
+        await clearCart(cartId);
+      }
+
+      toast.success('Đặt hàng thành công!');
+      
+      // Chuyển đến trang chi tiết đơn hàng hoặc trang thành công
+      const orderId = response?.data?.orderId;
+      if (orderId) {
+        navigate(`/order-success/${orderId}`);
+      } else {
+        navigate('/');
+      }
+    } catch (error) {
+      console.error('Error placing order:', error);
+      toast.error(error.response?.data?.message || 'Đặt hàng thất bại. Vui lòng thử lại.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -248,7 +370,11 @@ const Checkout = () => {
                       )}
                     />
 
-                    <Button type="submit" className="w-full">
+                    <Button 
+                      type="submit" 
+                      className="w-full"
+                      disabled={isLoadingCart || !cartItems || cartItems.length === 0}
+                    >
                       Tiếp tục
                     </Button>
                   </form>
@@ -328,17 +454,29 @@ const Checkout = () => {
                       )}
                     />
 
-                    <div className="flex gap-4">
+                    <div className="flex flex-col gap-4">
                       <Button
                         type="button"
                         variant="outline"
                         onClick={() => setStep(1)}
                         className="w-full"
+                        disabled={isSubmitting}
                       >
                         Quay lại
                       </Button>
-                      <Button type="submit" className="w-full">
-                        Đặt hàng
+                      <Button 
+                        type="submit" 
+                        className="w-full"
+                        disabled={isSubmitting || isLoadingCart}
+                      >
+                        {isSubmitting ? (
+                          <>
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                            Đang xử lý...
+                          </>
+                        ) : (
+                          'Đặt hàng'
+                        )}
                       </Button>
                     </div>
                   </form>
@@ -354,50 +492,86 @@ const Checkout = () => {
             <CardHeader>
               <CardTitle>Đơn hàng của bạn</CardTitle>
               <CardDescription>
-                {mockCartItems.length} sản phẩm trong giỏ hàng
+                {cartItems?.length || 0} sản phẩm trong giỏ hàng
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <ScrollArea className="h-[300px] pr-4">
-                {mockCartItems.map((item) => (
-                  <div key={item.id} className="flex gap-4 py-4">
-                    <img
-                      src={item.image}
-                      alt={item.name}
-                      className="w-20 h-20 object-cover rounded"
-                    />
-                    <div className="flex-1">
-                      <h4 className="font-medium line-clamp-2">{item.name}</h4>
-                      <div className="text-sm text-gray-500">
-                        Số lượng: {item.quantity}
-                      </div>
-                      <div className="font-medium text-red-600">
-                        {formatPrice(item.price)}
-                      </div>
+              {isLoadingCart ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                  <p className="text-sm text-gray-500">Đang tải...</p>
+                </div>
+              ) : cartItems && cartItems.length > 0 ? (
+                <>
+                  <ScrollArea className="h-[300px] pr-4">
+                    {cartItems.map((item) => {
+                      const imageUrl = item.image_url || item.imageUrl || 'https://via.placeholder.com/100';
+                      const productName = item.product_name || item.productName || item.name || 'Sản phẩm';
+                      const variantName = item.variant_name || item.variantName || '';
+                      const displayName = variantName ? `${productName} - ${variantName}` : productName;
+                      const itemPrice = item.price || item.current_price || item.currentPrice || 0;
+                      
+                      return (
+                        <div key={item.cart_item_id} className="flex gap-4 py-4 border-b last:border-0">
+                          <img
+                            src={imageUrl}
+                            alt={displayName}
+                            className="w-20 h-20 object-cover rounded"
+                            onError={(e) => {
+                              e.target.src = 'https://via.placeholder.com/100';
+                            }}
+                          />
+                          <div className="flex-1">
+                            <h4 className="font-medium line-clamp-2">{displayName}</h4>
+                            {item.sku && (
+                              <div className="text-xs text-gray-400">SKU: {item.sku}</div>
+                            )}
+                            <div className="text-sm text-gray-500 mt-1">
+                              Số lượng: {item.quantity}
+                            </div>
+                            <div className="font-medium text-red-600 mt-1">
+                              {formatPrice(itemPrice)}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </ScrollArea>
+                </>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <p>Giỏ hàng trống</p>
+                  <Link to="/products">
+                    <Button variant="outline" className="mt-4">
+                      Tiếp tục mua sắm
+                    </Button>
+                  </Link>
+                </div>
+              )}
+
+              {!isLoadingCart && cartItems && cartItems.length > 0 && (
+                <>
+                  <Separator className="my-4" />
+
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Tạm tính:</span>
+                      <span>{formatPrice(calculateSubtotal())}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Phí vận chuyển:</span>
+                      <span>{formatPrice(calculateShipping())}</span>
+                    </div>
+                    <Separator className="my-2" />
+                    <div className="flex justify-between font-medium">
+                      <span>Tổng cộng:</span>
+                      <span className="text-lg text-red-600">
+                        {formatPrice(calculateTotal())}
+                      </span>
                     </div>
                   </div>
-                ))}
-              </ScrollArea>
-
-              <Separator className="my-4" />
-
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Tạm tính:</span>
-                  <span>{formatPrice(calculateSubtotal())}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Phí vận chuyển:</span>
-                  <span>{formatPrice(calculateShipping())}</span>
-                </div>
-                <Separator className="my-2" />
-                <div className="flex justify-between font-medium">
-                  <span>Tổng cộng:</span>
-                  <span className="text-lg text-red-600">
-                    {formatPrice(calculateTotal())}
-                  </span>
-                </div>
-              </div>
+                </>
+              )}
             </CardContent>
           </Card>
         </div>

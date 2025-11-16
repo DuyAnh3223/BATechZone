@@ -2,10 +2,10 @@
 -- version 5.2.1
 -- https://www.phpmyadmin.net/
 --
--- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th10 15, 2025 lúc 02:43 PM
--- Phiên bản máy phục vụ: 10.4.32-MariaDB
--- Phiên bản PHP: 8.2.12
+-- Host: 127.0.0.1
+-- Generation Time: Nov 16, 2025 at 03:27 AM
+-- Server version: 10.4.32-MariaDB
+-- PHP Version: 8.2.12
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -18,13 +18,13 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8mb4 */;
 
 --
--- Cơ sở dữ liệu: `batechzone`
+-- Database: `batechzone`
 --
 
 -- --------------------------------------------------------
 
 --
--- Cấu trúc bảng cho bảng `addresses`
+-- Table structure for table `addresses`
 --
 
 CREATE TABLE `addresses` (
@@ -46,7 +46,7 @@ CREATE TABLE `addresses` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Đang đổ dữ liệu cho bảng `addresses`
+-- Dumping data for table `addresses`
 --
 
 INSERT INTO `addresses` (`address_id`, `user_id`, `recipient_name`, `phone`, `address_line1`, `address_line2`, `city`, `district`, `ward`, `postal_code`, `country`, `is_default`, `address_type`, `created_at`, `updated_at`) VALUES
@@ -57,7 +57,7 @@ INSERT INTO `addresses` (`address_id`, `user_id`, `recipient_name`, `phone`, `ad
 -- --------------------------------------------------------
 
 --
--- Cấu trúc bảng cho bảng `articles`
+-- Table structure for table `articles`
 --
 
 CREATE TABLE `articles` (
@@ -74,7 +74,7 @@ CREATE TABLE `articles` (
 -- --------------------------------------------------------
 
 --
--- Cấu trúc bảng cho bảng `attributes`
+-- Table structure for table `attributes`
 --
 
 CREATE TABLE `attributes` (
@@ -87,7 +87,7 @@ CREATE TABLE `attributes` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Đang đổ dữ liệu cho bảng `attributes`
+-- Dumping data for table `attributes`
 --
 
 INSERT INTO `attributes` (`attribute_id`, `attribute_name`, `attribute_type`, `display_order`, `is_active`, `created_at`) VALUES
@@ -129,7 +129,7 @@ INSERT INTO `attributes` (`attribute_id`, `attribute_name`, `attribute_type`, `d
 -- --------------------------------------------------------
 
 --
--- Cấu trúc bảng cho bảng `attribute_categories`
+-- Table structure for table `attribute_categories`
 --
 
 CREATE TABLE `attribute_categories` (
@@ -139,7 +139,7 @@ CREATE TABLE `attribute_categories` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Đang đổ dữ liệu cho bảng `attribute_categories`
+-- Dumping data for table `attribute_categories`
 --
 
 INSERT INTO `attribute_categories` (`attribute_category_id`, `attribute_id`, `category_id`) VALUES
@@ -181,7 +181,7 @@ INSERT INTO `attribute_categories` (`attribute_category_id`, `attribute_id`, `ca
 -- --------------------------------------------------------
 
 --
--- Cấu trúc bảng cho bảng `attribute_values`
+-- Table structure for table `attribute_values`
 --
 
 CREATE TABLE `attribute_values` (
@@ -196,7 +196,7 @@ CREATE TABLE `attribute_values` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Đang đổ dữ liệu cho bảng `attribute_values`
+-- Dumping data for table `attribute_values`
 --
 
 INSERT INTO `attribute_values` (`attribute_value_id`, `attribute_id`, `value_name`, `color_code`, `image_url`, `display_order`, `is_active`, `created_at`) VALUES
@@ -328,7 +328,7 @@ INSERT INTO `attribute_values` (`attribute_value_id`, `attribute_id`, `value_nam
 -- --------------------------------------------------------
 
 --
--- Cấu trúc bảng cho bảng `builds`
+-- Table structure for table `builds`
 --
 
 CREATE TABLE `builds` (
@@ -348,7 +348,7 @@ CREATE TABLE `builds` (
 -- --------------------------------------------------------
 
 --
--- Cấu trúc bảng cho bảng `build_items`
+-- Table structure for table `build_items`
 --
 
 CREATE TABLE `build_items` (
@@ -365,22 +365,29 @@ CREATE TABLE `build_items` (
 -- --------------------------------------------------------
 
 --
--- Cấu trúc bảng cho bảng `carts`
+-- Table structure for table `carts`
 --
 
 CREATE TABLE `carts` (
   `cart_id` int(11) NOT NULL,
-  `user_id` int(11) NOT NULL,
+  `user_id` int(11) DEFAULT NULL,
   `session_id` varchar(255) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `expires_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+--
+-- Dumping data for table `carts`
+--
+
+INSERT INTO `carts` (`cart_id`, `user_id`, `session_id`, `created_at`, `updated_at`, `expires_at`) VALUES
+(1, NULL, 'guest_1763223671171_m9llpews6', '2025-11-15 16:30:52', '2025-11-15 16:30:52', '2025-12-15 16:30:52');
+
 -- --------------------------------------------------------
 
 --
--- Cấu trúc bảng cho bảng `cart_items`
+-- Table structure for table `cart_items`
 --
 
 CREATE TABLE `cart_items` (
@@ -392,10 +399,17 @@ CREATE TABLE `cart_items` (
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Dumping data for table `cart_items`
+--
+
+INSERT INTO `cart_items` (`cart_item_id`, `cart_id`, `variant_id`, `quantity`, `added_at`, `updated_at`) VALUES
+(1, 1, 336, 3, '2025-11-15 16:35:50', '2025-11-16 01:57:40');
+
 -- --------------------------------------------------------
 
 --
--- Cấu trúc bảng cho bảng `categories`
+-- Table structure for table `categories`
 --
 
 CREATE TABLE `categories` (
@@ -413,7 +427,7 @@ CREATE TABLE `categories` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Đang đổ dữ liệu cho bảng `categories`
+-- Dumping data for table `categories`
 --
 
 INSERT INTO `categories` (`category_id`, `category_name`, `slug`, `description`, `parent_category_id`, `image_url`, `icon`, `is_active`, `display_order`, `created_at`, `updated_at`) VALUES
@@ -430,7 +444,7 @@ INSERT INTO `categories` (`category_id`, `category_name`, `slug`, `description`,
 -- --------------------------------------------------------
 
 --
--- Cấu trúc bảng cho bảng `coupons`
+-- Table structure for table `coupons`
 --
 
 CREATE TABLE `coupons` (
@@ -450,7 +464,7 @@ CREATE TABLE `coupons` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Đang đổ dữ liệu cho bảng `coupons`
+-- Dumping data for table `coupons`
 --
 
 INSERT INTO `coupons` (`coupon_id`, `coupon_code`, `description`, `discount_type`, `discount_value`, `max_discount_amount`, `min_order_amount`, `usage_limit`, `used_count`, `is_active`, `valid_from`, `valid_until`, `created_at`) VALUES
@@ -467,7 +481,7 @@ INSERT INTO `coupons` (`coupon_id`, `coupon_code`, `description`, `discount_type
 -- --------------------------------------------------------
 
 --
--- Cấu trúc bảng cho bảng `notifications`
+-- Table structure for table `notifications`
 --
 
 CREATE TABLE `notifications` (
@@ -485,7 +499,7 @@ CREATE TABLE `notifications` (
 -- --------------------------------------------------------
 
 --
--- Cấu trúc bảng cho bảng `orders`
+-- Table structure for table `orders`
 --
 
 CREATE TABLE `orders` (
@@ -514,7 +528,7 @@ CREATE TABLE `orders` (
 -- --------------------------------------------------------
 
 --
--- Cấu trúc bảng cho bảng `order_items`
+-- Table structure for table `order_items`
 --
 
 CREATE TABLE `order_items` (
@@ -534,7 +548,7 @@ CREATE TABLE `order_items` (
 -- --------------------------------------------------------
 
 --
--- Cấu trúc bảng cho bảng `payments`
+-- Table structure for table `payments`
 --
 
 CREATE TABLE `payments` (
@@ -554,7 +568,7 @@ CREATE TABLE `payments` (
 -- --------------------------------------------------------
 
 --
--- Cấu trúc bảng cho bảng `posts`
+-- Table structure for table `posts`
 --
 
 CREATE TABLE `posts` (
@@ -578,7 +592,7 @@ CREATE TABLE `posts` (
 -- --------------------------------------------------------
 
 --
--- Cấu trúc bảng cho bảng `products`
+-- Table structure for table `products`
 --
 
 CREATE TABLE `products` (
@@ -599,65 +613,18 @@ CREATE TABLE `products` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Đang đổ dữ liệu cho bảng `products`
+-- Dumping data for table `products`
 --
 
 INSERT INTO `products` (`product_id`, `category_id`, `product_name`, `slug`, `description`, `base_price`, `is_active`, `is_featured`, `view_count`, `rating_average`, `review_count`, `created_at`, `updated_at`, `img_path`) VALUES
-(40, 2, 'NVIDIA GeForce RTX 4060 8GB', 'nvidia-geforce-rtx-4060-8gb', 'Card đồ họa NVIDIA RTX 4060, 8GB GDDR6, 128-bit, DLSS 3, Ray Tracing, Phù hợp gaming 1080p/1440p', 8500000.00, 1, 1, 0, 0.00, 0, '2025-11-15 03:40:54', '2025-11-15 03:40:54', '/uploads/products/vga/rtx-4060.jpg'),
-(41, 2, 'NVIDIA GeForce RTX 4070 12GB', 'nvidia-geforce-rtx-4070-12gb', 'Card đồ họa NVIDIA RTX 4070, 12GB GDDR6X, 192-bit, DLSS 3, Ray Tracing, Gaming 1440p/4K', 18000000.00, 1, 1, 0, 0.00, 0, '2025-11-15 03:40:54', '2025-11-15 03:40:54', '/uploads/products/vga/rtx-4070.jpg'),
-(42, 2, 'NVIDIA GeForce RTX 4080 16GB', 'nvidia-geforce-rtx-4080-16gb', 'Card đồ họa NVIDIA RTX 4080, 16GB GDDR6X, 256-bit, DLSS 3, Ray Tracing, Gaming 4K cao cấp', 28000000.00, 1, 1, 0, 0.00, 0, '2025-11-15 03:40:54', '2025-11-15 03:40:54', '/uploads/products/vga/rtx-4080.jpg'),
-(43, 2, 'AMD Radeon RX 7600 8GB', 'amd-radeon-rx-7600-8gb', 'Card đồ họa AMD RX 7600, 8GB GDDR6, 128-bit, FSR 3, Gaming 1080p/1440p', 7500000.00, 1, 0, 0, 0.00, 0, '2025-11-15 03:40:54', '2025-11-15 03:40:54', '/uploads/products/vga/rx-7600.jpg'),
-(44, 2, 'AMD Radeon RX 7800 XT 16GB', 'amd-radeon-rx-7800-xt-16gb', 'Card đồ họa AMD RX 7800 XT, 16GB GDDR6, 256-bit, FSR 3, Gaming 1440p/4K', 15000000.00, 1, 1, 0, 0.00, 0, '2025-11-15 03:40:54', '2025-11-15 03:40:54', '/uploads/products/vga/rx-7800-xt.jpg'),
-(45, 3, 'Corsair Vengeance RGB DDR5 32GB (2x16GB) 6000MHz', 'corsair-vengeance-rgb-ddr5-32gb-6000mhz', 'Bộ nhớ RAM DDR5 Corsair Vengeance RGB, 32GB (2x16GB), 6000MHz, CL30, RGB LED, Phù hợp Intel/AMD', 3500000.00, 1, 1, 14, 0.00, 0, '2025-11-15 03:40:54', '2025-11-15 13:01:23', '/uploads/products/ram/corsair-vengeance-ddr5.jpg'),
-(46, 3, 'G.Skill Trident Z5 RGB DDR5 32GB (2x16GB) 6400MHz', 'gskill-trident-z5-rgb-ddr5-32gb-6400mhz', 'Bộ nhớ RAM DDR5 G.Skill Trident Z5 RGB, 32GB (2x16GB), 6400MHz, CL32, RGB LED, Hiệu năng cao', 4200000.00, 1, 1, 0, 0.00, 0, '2025-11-15 03:40:54', '2025-11-15 03:40:54', '/uploads/products/ram/gskill-trident-z5.jpg'),
-(47, 3, 'Kingston Fury Beast DDR5 16GB (2x8GB) 5600MHz', 'kingston-fury-beast-ddr5-16gb-5600mhz', 'Bộ nhớ RAM DDR5 Kingston Fury Beast, 16GB (2x8GB), 5600MHz, CL36, Không RGB, Giá tốt', 1800000.00, 1, 0, 2, 0.00, 0, '2025-11-15 03:40:54', '2025-11-15 12:23:15', '/uploads/products/ram/kingston-fury-beast.jpg'),
-(48, 3, 'Corsair Vengeance LPX DDR4 32GB (2x16GB) 3600MHz', 'corsair-vengeance-lpx-ddr4-32gb-3600mhz', 'Bộ nhớ RAM DDR4 Corsair Vengeance LPX, 32GB (2x16GB), 3600MHz, CL18, Low Profile, Tương thích tốt', 2500000.00, 1, 0, 10, 0.00, 0, '2025-11-15 03:40:54', '2025-11-15 12:55:22', '/uploads/products/ram/corsair-vengeance-lpx.jpg'),
-(49, 3, 'G.Skill Ripjaws V DDR4 16GB (2x8GB) 3200MHz', 'gskill-ripjaws-v-ddr4-16gb-3200mhz', 'Bộ nhớ RAM DDR4 G.Skill Ripjaws V, 16GB (2x8GB), 3200MHz, CL16, Giá rẻ, Ổn định', 1200000.00, 1, 0, 2, 0.00, 0, '2025-11-15 03:40:54', '2025-11-15 12:48:28', '/uploads/products/ram/gskill-ripjaws-v.jpg'),
-(50, 4, 'Samsung 980 PRO 1TB NVMe M.2', 'samsung-980-pro-1tb-nvme-m2', 'SSD Samsung 980 PRO NVMe M.2, 1TB, PCIe 4.0, Đọc 7000MB/s, Ghi 5000MB/s, Bền bỉ', 3500000.00, 1, 1, 2, 0.00, 0, '2025-11-15 03:40:54', '2025-11-15 03:52:46', '/uploads/products/ssd/samsung-980-pro.jpg'),
-(51, 4, 'Samsung 990 PRO 2TB NVMe M.2', 'samsung-990-pro-2tb-nvme-m2', 'SSD Samsung 990 PRO NVMe M.2, 2TB, PCIe 4.0, Đọc 7450MB/s, Ghi 6900MB/s, Flagship', 6500000.00, 1, 1, 0, 0.00, 0, '2025-11-15 03:40:54', '2025-11-15 03:40:54', '/uploads/products/ssd/samsung-990-pro.jpg'),
-(52, 4, 'WD Black SN850X 1TB NVMe M.2', 'wd-black-sn850x-1tb-nvme-m2', 'SSD WD Black SN850X NVMe M.2, 1TB, PCIe 4.0, Đọc 7300MB/s, Ghi 6300MB/s, Gaming', 3200000.00, 1, 1, 0, 0.00, 0, '2025-11-15 03:40:54', '2025-11-15 03:40:54', '/uploads/products/ssd/wd-black-sn850x.jpg'),
-(53, 4, 'Crucial P5 Plus 1TB NVMe M.2', 'crucial-p5-plus-1tb-nvme-m2', 'SSD Crucial P5 Plus NVMe M.2, 1TB, PCIe 4.0, Đọc 6600MB/s, Ghi 5000MB/s, Giá tốt', 2800000.00, 1, 0, 0, 0.00, 0, '2025-11-15 03:40:54', '2025-11-15 03:40:54', '/uploads/products/ssd/crucial-p5-plus.jpg'),
-(54, 4, 'Kingston NV2 1TB NVMe M.2', 'kingston-nv2-1tb-nvme-m2', 'SSD Kingston NV2 NVMe M.2, 1TB, PCIe 4.0, Đọc 3500MB/s, Ghi 2100MB/s, Budget', 1500000.00, 1, 0, 0, 0.00, 0, '2025-11-15 03:40:54', '2025-11-15 03:40:54', '/uploads/products/ssd/kingston-nv2.jpg'),
-(55, 5, 'ASUS ROG Strix B650E-F Gaming WiFi', 'asus-rog-strix-b650e-f-gaming-wifi', 'Mainboard ASUS ROG Strix B650E-F, Socket AM5, ATX, WiFi 6E, PCIe 5.0, RGB, Phù hợp AMD Ryzen 7000', 5500000.00, 1, 1, 0, 0.00, 0, '2025-11-15 03:40:54', '2025-11-15 03:40:54', '/uploads/products/mainboard/asus-rog-strix-b650e.jpg'),
-(56, 5, 'MSI MAG B650 Tomahawk WiFi', 'msi-mag-b650-tomahawk-wifi', 'Mainboard MSI MAG B650 Tomahawk, Socket AM5, ATX, WiFi 6E, PCIe 4.0, Giá tốt, Ổn định', 4500000.00, 1, 1, 0, 0.00, 0, '2025-11-15 03:40:54', '2025-11-15 03:40:54', '/uploads/products/mainboard/msi-b650-tomahawk.jpg'),
-(57, 5, 'Gigabyte Z790 AORUS Elite AX', 'gigabyte-z790-aorus-elite-ax', 'Mainboard Gigabyte Z790 AORUS Elite AX, Socket LGA1700, ATX, WiFi 6E, PCIe 5.0, RGB, Intel 12th/13th/14th Gen', 6500000.00, 1, 1, 0, 0.00, 0, '2025-11-15 03:40:54', '2025-11-15 03:40:54', '/uploads/products/mainboard/gigabyte-z790-aorus.jpg'),
-(58, 5, 'ASUS TUF Gaming B760M-Plus WiFi', 'asus-tuf-gaming-b760m-plus-wifi', 'Mainboard ASUS TUF Gaming B760M-Plus, Socket LGA1700, mATX, WiFi 6, PCIe 4.0, Bền bỉ', 3800000.00, 1, 0, 0, 0.00, 0, '2025-11-15 03:40:54', '2025-11-15 03:40:54', '/uploads/products/mainboard/asus-tuf-b760m.jpg'),
-(59, 5, 'MSI PRO B650M-A WiFi', 'msi-pro-b650m-a-wifi', 'Mainboard MSI PRO B650M-A, Socket AM5, mATX, WiFi 6, PCIe 4.0, Giá rẻ, Phù hợp build budget', 3200000.00, 1, 0, 0, 0.00, 0, '2025-11-15 03:40:54', '2025-11-15 03:40:54', '/uploads/products/mainboard/msi-pro-b650m.jpg'),
-(60, 6, 'Corsair RM850e 850W 80 Plus Gold', 'corsair-rm850e-850w-80-plus-gold', 'Nguồn máy tính Corsair RM850e, 850W, 80 Plus Gold, Modular, PCIe 5.0, Bền bỉ, Yên tĩnh', 3200000.00, 1, 1, 0, 0.00, 0, '2025-11-15 03:40:54', '2025-11-15 03:40:54', '/uploads/products/psu/corsair-rm850e.jpg'),
-(61, 6, 'Seasonic Focus GX-750 750W 80 Plus Gold', 'seasonic-focus-gx-750-750w-80-plus-gold', 'Nguồn máy tính Seasonic Focus GX-750, 750W, 80 Plus Gold, Modular, Chất lượng cao', 2800000.00, 1, 1, 0, 0.00, 0, '2025-11-15 03:40:54', '2025-11-15 03:40:54', '/uploads/products/psu/seasonic-focus-gx-750.jpg'),
-(62, 6, 'Cooler Master MWE Gold 650W 80 Plus Gold', 'cooler-master-mwe-gold-650w-80-plus-gold', 'Nguồn máy tính Cooler Master MWE Gold 650, 650W, 80 Plus Gold, Modular, Giá tốt', 2200000.00, 1, 0, 0, 0.00, 0, '2025-11-15 03:40:54', '2025-11-15 03:40:54', '/uploads/products/psu/cooler-master-mwe-650.jpg'),
-(63, 6, 'Corsair RM1000e 1000W 80 Plus Gold', 'corsair-rm1000e-1000w-80-plus-gold', 'Nguồn máy tính Corsair RM1000e, 1000W, 80 Plus Gold, Modular, PCIe 5.0, High-end build', 4500000.00, 1, 1, 0, 0.00, 0, '2025-11-15 03:40:54', '2025-11-15 03:40:54', '/uploads/products/psu/corsair-rm1000e.jpg'),
-(64, 6, 'Thermaltake Smart BM2 550W 80 Plus Bronze', 'thermaltake-smart-bm2-550w-80-plus-bronze', 'Nguồn máy tính Thermaltake Smart BM2, 550W, 80 Plus Bronze, Non-modular, Budget', 1200000.00, 1, 0, 0, 0.00, 0, '2025-11-15 03:40:54', '2025-11-15 03:40:54', '/uploads/products/psu/thermaltake-smart-bm2.jpg'),
-(65, 7, 'Corsair 4000D Airflow Tempered Glass', 'corsair-4000d-airflow-tempered-glass', 'Vỏ máy tính Corsair 4000D Airflow, ATX, Kính cường lực, Tản nhiệt tốt, 2 quạt 120mm, Thiết kế đẹp', 2500000.00, 1, 1, 0, 0.00, 0, '2025-11-15 03:40:54', '2025-11-15 03:40:54', '/uploads/products/case/corsair-4000d.jpg'),
-(66, 7, 'Fractal Design Pop Air RGB', 'fractal-design-pop-air-rgb', 'Vỏ máy tính Fractal Design Pop Air RGB, ATX, Kính cường lực, RGB, 3 quạt RGB, Tản nhiệt tốt', 3200000.00, 1, 1, 0, 0.00, 0, '2025-11-15 03:40:54', '2025-11-15 03:40:54', '/uploads/products/case/fractal-pop-air.jpg'),
-(67, 7, 'NZXT H5 Flow RGB', 'nzxt-h5-flow-rgb', 'Vỏ máy tính NZXT H5 Flow, ATX, Kính cường lực, RGB, Tản nhiệt Flow, Thiết kế hiện đại', 2800000.00, 1, 1, 0, 0.00, 0, '2025-11-15 03:40:54', '2025-11-15 03:40:54', '/uploads/products/case/nzxt-h5-flow.jpg'),
-(68, 7, 'Cooler Master MasterBox TD500 Mesh', 'cooler-master-masterbox-td500-mesh', 'Vỏ máy tính Cooler Master MasterBox TD500 Mesh, ATX, Kính cường lực, RGB, Mesh front, Tản nhiệt tốt', 2400000.00, 1, 0, 0, 0.00, 0, '2025-11-15 03:40:54', '2025-11-15 03:40:54', '/uploads/products/case/cm-td500-mesh.jpg'),
-(69, 7, 'Phanteks Eclipse P300A Mesh', 'phanteks-eclipse-p300a-mesh', 'Vỏ máy tính Phanteks Eclipse P300A Mesh, mATX, Kính cường lực, Mesh front, Compact, Giá tốt', 1500000.00, 1, 0, 0, 0.00, 0, '2025-11-15 03:40:54', '2025-11-15 03:40:54', '/uploads/products/case/phanteks-p300a.jpg'),
-(70, 8, 'Corsair iCUE H150i Elite Capellix XT 360mm', 'corsair-icue-h150i-elite-capellix-xt-360mm', 'Tản nhiệt nước AIO Corsair H150i Elite Capellix XT, 360mm, RGB, 3 quạt RGB, Hiệu năng cao', 4500000.00, 1, 1, 0, 0.00, 0, '2025-11-15 03:40:54', '2025-11-15 03:40:54', '/uploads/products/cooling/corsair-h150i.jpg'),
-(71, 8, 'Noctua NH-D15 Chromax Black', 'noctua-nh-d15-chromax-black', 'Tản nhiệt CPU Noctua NH-D15 Chromax Black, Dual Tower, 2 quạt, Yên tĩnh, Hiệu năng đỉnh', 3200000.00, 1, 1, 0, 0.00, 0, '2025-11-15 03:40:54', '2025-11-15 03:40:54', '/uploads/products/cooling/noctua-nh-d15.jpg'),
-(72, 8, 'Deepcool AK620 Zero Dark', 'deepcool-ak620-zero-dark', 'Tản nhiệt CPU Deepcool AK620 Zero Dark, Dual Tower, 2 quạt, Giá tốt, Hiệu năng cao', 1800000.00, 1, 1, 0, 0.00, 0, '2025-11-15 03:40:54', '2025-11-15 03:40:54', '/uploads/products/cooling/deepcool-ak620.jpg'),
-(73, 8, 'Arctic Liquid Freezer II 240mm', 'arctic-liquid-freezer-ii-240mm', 'Tản nhiệt nước AIO Arctic Liquid Freezer II, 240mm, Không RGB, Giá tốt, Hiệu năng cao', 2500000.00, 1, 0, 0, 0.00, 0, '2025-11-15 03:40:54', '2025-11-15 03:40:54', '/uploads/products/cooling/arctic-liquid-freezer-240.jpg'),
-(74, 8, 'Cooler Master Hyper 212 RGB Black Edition', 'cooler-master-hyper-212-rgb-black-edition', 'Tản nhiệt CPU Cooler Master Hyper 212 RGB, Single Tower, RGB, Giá rẻ, Phù hợp CPU tầm trung', 800000.00, 1, 0, 0, 0.00, 0, '2025-11-15 03:40:54', '2025-11-15 03:40:54', '/uploads/products/cooling/cm-hyper-212.jpg'),
-(75, 13, 'Seagate BarraCuda 2TB 7200RPM', 'seagate-barracuda-2tb-7200rpm', 'Ổ cứng HDD Seagate BarraCuda, 2TB, 7200RPM, SATA 6Gb/s, 256MB Cache, Lưu trữ dữ liệu', 1200000.00, 1, 1, 6, 0.00, 0, '2025-11-15 03:40:54', '2025-11-15 13:01:35', '/uploads/products/hdd/seagate-barracuda-2tb.jpg'),
-(76, 13, 'Western Digital Blue 4TB 5400RPM', 'western-digital-blue-4tb-5400rpm', 'Ổ cứng HDD WD Blue, 4TB, 5400RPM, SATA 6Gb/s, 256MB Cache, Lưu trữ dung lượng lớn', 2200000.00, 1, 1, 8, 0.00, 0, '2025-11-15 03:40:54', '2025-11-15 13:01:54', '/uploads/products/hdd/wd-blue-4tb.jpg'),
-(77, 13, 'Seagate IronWolf 8TB 7200RPM NAS', 'seagate-ironwolf-8tb-7200rpm-nas', 'Ổ cứng HDD Seagate IronWolf, 8TB, 7200RPM, SATA 6Gb/s, 256MB Cache, Dành cho NAS, Bền bỉ', 5500000.00, 1, 1, 2, 0.00, 0, '2025-11-15 03:40:54', '2025-11-15 12:19:48', '/uploads/products/hdd/seagate-ironwolf-8tb.jpg'),
-(78, 13, 'Western Digital Black 1TB 7200RPM', 'western-digital-black-1tb-7200rpm', 'Ổ cứng HDD WD Black, 1TB, 7200RPM, SATA 6Gb/s, 64MB Cache, Hiệu năng cao, Gaming', 1500000.00, 1, 0, 4, 0.00, 0, '2025-11-15 03:40:54', '2025-11-15 13:02:15', '/uploads/products/hdd/wd-black-1tb.jpg'),
-(79, 13, 'Toshiba P300 3TB 7200RPM', 'toshiba-p300-3tb-7200rpm', 'Ổ cứng HDD Toshiba P300, 3TB, 7200RPM, SATA 6Gb/s, 128MB Cache, Giá tốt', 1800000.00, 1, 0, 2, 0.00, 0, '2025-11-15 03:40:54', '2025-11-15 12:20:09', '/uploads/products/hdd/toshiba-p300-3tb.jpg'),
-(181, 1, 'Intel Core i7-14700K', 'intel-core-i7-14700k', 'CPU Intel Core i7 thế hệ 14, 20 nhân (8P + 12E), 28 luồng, Base 3.4GHz, Boost 5.6GHz, Socket LGA1700, Có GPU tích hợp Intel UHD Graphics 770', 8500000.00, 1, 1, 12, 0.00, 0, '2025-11-15 03:55:48', '2025-11-15 10:44:25', '/uploads/products/cpu/intel-i7-14700k.jpg'),
-(182, 1, 'AMD Ryzen 5 7600X', 'amd-ryzen-5-7600x', 'CPU AMD Ryzen 5 thế hệ 7000, 6 nhân 12 luồng, Base 4.7GHz, Boost 5.3GHz, Socket AM5, Không có GPU tích hợp', 5500000.00, 1, 1, 8, 0.00, 0, '2025-11-15 03:55:48', '2025-11-15 12:48:21', '/uploads/products/cpu/amd-ryzen-5-7600x.jpg'),
-(183, 1, 'AMD Ryzen 7 7800X3D', 'amd-ryzen-7-7800x3d', 'CPU AMD Ryzen 7 thế hệ 7000 với công nghệ 3D V-Cache, 8 nhân 16 luồng, Base 4.2GHz, Boost 5.0GHz, Socket AM5, Hiệu năng gaming vượt trội', 12000000.00, 1, 1, 0, 0.00, 0, '2025-11-15 03:55:48', '2025-11-15 03:55:48', '/uploads/products/cpu/amd-ryzen-7-7800x3d.jpg'),
-(184, 1, 'Intel Core i9-14900K', 'intel-core-i9-14900k', 'CPU Intel Core i9 thế hệ 14 flagship, 24 nhân (8P + 16E), 32 luồng, Base 3.2GHz, Boost 6.0GHz, Socket LGA1700, Hiệu năng đỉnh cao', 15000000.00, 1, 1, 2, 0.00, 0, '2025-11-15 03:55:48', '2025-11-15 04:08:42', '/uploads/products/cpu/intel-i9-14900k.jpg'),
-(230, 1, 'Intel Core i5-14600KF', 'intel-core-i5-14600kf', 'CPU Intel Core i5 thế hệ 14, 14 nhân (6P + 8E), 20 luồng, Base 3.5GHz, Boost 5.3GHz, Socket LGA1700, Không có GPU tích hợp', 4500000.00, 1, 1, 41, 0.00, 0, '2025-11-15 04:08:05', '2025-11-15 12:43:49', '/uploads/products/cpu/intel-i5-14600kf.jpg'),
-(232, 3, 'ABC', 'abc', 'abc', 5000.00, 1, 0, 0, 0.00, 0, '2025-11-15 08:00:52', '2025-11-15 10:01:28', ''),
-(233, 3, 'DDD', 'ddd', 'DDD', 500000.00, 0, 0, 0, 0.00, 0, '2025-11-15 10:29:13', '2025-11-15 11:28:54', ''),
-(234, 4, 'EEE', 'eee', 'eee', 100000.00, 1, 0, 0, 0.00, 0, '2025-11-15 10:47:01', '2025-11-15 11:51:35', ''),
-(235, 13, 'GGG', 'ggg', 'GGG', 60.00, 1, 0, 10, 0.00, 0, '2025-11-15 12:00:27', '2025-11-15 13:01:27', ''),
-(237, 13, 'HHH', 'hhh', 'fwqfwqfwfwq', 20.00, 1, 0, 9, 0.00, 0, '2025-11-15 12:06:33', '2025-11-15 13:09:33', '');
+(239, 1, 'Intel Core i5 14600kf', 'intel-core-i5-14600kf', NULL, 450000.00, 1, 1, 4, 0.00, 0, '2025-11-15 15:03:12', '2025-11-15 16:10:22', ''),
+(240, 2, 'Asus RTX 5060Ti', 'asus-rtx-5060ti', NULL, 8000000.00, 1, 1, 4, 0.00, 0, '2025-11-15 15:10:15', '2025-11-15 16:21:09', ''),
+(241, 5, 'Asus B760M-E Tuf', 'asus-b760m-e-tuf', NULL, 5000000.00, 1, 0, 0, 0.00, 0, '2025-11-16 02:14:13', '2025-11-16 02:14:13', '');
 
 -- --------------------------------------------------------
 
 --
--- Cấu trúc bảng cho bảng `product_variants`
+-- Table structure for table `product_variants`
 --
 
 CREATE TABLE `product_variants` (
@@ -674,86 +641,18 @@ CREATE TABLE `product_variants` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Đang đổ dữ liệu cho bảng `product_variants`
+-- Dumping data for table `product_variants`
 --
 
 INSERT INTO `product_variants` (`variant_id`, `product_id`, `sku`, `variant_name`, `price`, `stock_quantity`, `is_active`, `is_default`, `created_at`, `updated_at`) VALUES
-(262, 40, 'RTX-4060-ASUS-DUAL-8GB', 'ASUS Dual RTX 4060 8GB', 8500000.00, 10, 1, 1, '2025-11-15 04:45:01', '2025-11-15 04:45:01'),
-(263, 40, 'RTX-4060-MSI-VENTUS-8GB', 'MSI Ventus RTX 4060 8GB', 8300000.00, 8, 1, 0, '2025-11-15 04:45:01', '2025-11-15 04:45:01'),
-(264, 40, 'RTX-4060-GIGABYTE-GAMING-8GB', 'Gigabyte Gaming RTX 4060 8GB', 8700000.00, 12, 1, 0, '2025-11-15 04:45:01', '2025-11-15 04:45:01'),
-(265, 41, 'RTX-4070-ASUS-TUF-12GB', 'ASUS TUF RTX 4070 12GB', 18000000.00, 6, 1, 1, '2025-11-15 04:45:01', '2025-11-15 04:45:01'),
-(266, 41, 'RTX-4070-MSI-GAMING-X-12GB', 'MSI Gaming X RTX 4070 12GB', 18500000.00, 5, 1, 0, '2025-11-15 04:45:01', '2025-11-15 04:45:01'),
-(267, 41, 'RTX-4070-GIGABYTE-AORUS-12GB', 'Gigabyte AORUS RTX 4070 12GB', 18200000.00, 4, 1, 0, '2025-11-15 04:45:01', '2025-11-15 04:45:01'),
-(268, 42, 'RTX-4080-ASUS-ROG-16GB', 'ASUS ROG Strix RTX 4080 16GB', 30000000.00, 3, 1, 1, '2025-11-15 04:45:01', '2025-11-15 04:45:01'),
-(269, 42, 'RTX-4080-MSI-SUPREM-X-16GB', 'MSI Suprim X RTX 4080 16GB', 29500000.00, 2, 1, 0, '2025-11-15 04:45:01', '2025-11-15 04:45:01'),
-(270, 42, 'RTX-4080-GIGABYTE-AORUS-16GB', 'Gigabyte AORUS RTX 4080 16GB', 29800000.00, 2, 1, 0, '2025-11-15 04:45:01', '2025-11-15 04:45:01'),
-(271, 43, 'RX-7600-SAPPHIRE-PULSE-8GB', 'Sapphire Pulse RX 7600 8GB', 7500000.00, 10, 1, 1, '2025-11-15 04:45:01', '2025-11-15 04:45:01'),
-(272, 43, 'RX-7600-XFX-SPEEDSTER-8GB', 'XFX Speedster RX 7600 8GB', 7300000.00, 8, 1, 0, '2025-11-15 04:45:01', '2025-11-15 04:45:01'),
-(273, 43, 'RX-7600-ASROCK-CHALLENGER-8GB', 'ASRock Challenger RX 7600 8GB', 7400000.00, 9, 1, 0, '2025-11-15 04:45:01', '2025-11-15 04:45:01'),
-(274, 44, 'RX-7800XT-SAPPHIRE-NITRO-16GB', 'Sapphire Nitro+ RX 7800 XT 16GB', 15500000.00, 4, 1, 1, '2025-11-15 04:45:01', '2025-11-15 04:45:01'),
-(275, 44, 'RX-7800XT-XFX-MERC-16GB', 'XFX Merc RX 7800 XT 16GB', 15000000.00, 5, 1, 0, '2025-11-15 04:45:01', '2025-11-15 04:45:01'),
-(276, 44, 'RX-7800XT-POWERCOLOR-HELLHOUND-16GB', 'PowerColor Hellhound RX 7800 XT 16GB', 15200000.00, 3, 1, 0, '2025-11-15 04:45:01', '2025-11-15 04:45:01'),
-(277, 45, 'CORSAIR-VENGEANCE-DDR5-32GB-6000-BLACK', 'Đen (2x16GB)', 3500000.00, 20, 1, 1, '2025-11-15 04:45:01', '2025-11-15 04:45:01'),
-(278, 45, 'CORSAIR-VENGEANCE-DDR5-32GB-6000-WHITE', 'Trắng (2x16GB)', 3600000.00, 15, 1, 0, '2025-11-15 04:45:01', '2025-11-15 04:45:01'),
-(279, 46, 'GSKILL-TRIDENT-Z5-DDR5-32GB-6400-BLACK', 'Đen (2x16GB)', 4200000.00, 18, 1, 1, '2025-11-15 04:45:01', '2025-11-15 04:45:01'),
-(280, 46, 'GSKILL-TRIDENT-Z5-DDR5-32GB-6400-SILVER', 'Bạc (2x16GB)', 4200000.00, 12, 1, 0, '2025-11-15 04:45:01', '2025-11-15 04:45:01'),
-(281, 47, 'KINGSTON-FURY-BEAST-DDR5-16GB-5600-BLACK', 'Đen (2x8GB)', 1800000.00, 30, 1, 1, '2025-11-15 04:45:01', '2025-11-15 04:45:01'),
-(282, 48, 'CORSAIR-VENGEANCE-LPX-DDR4-32GB-3600-BLACK', 'Đen (2x16GB)', 2500000.00, 25, 1, 1, '2025-11-15 04:45:01', '2025-11-15 04:45:01'),
-(283, 48, 'CORSAIR-VENGEANCE-LPX-DDR4-32GB-3600-WHITE', 'Trắng (2x16GB)', 2550000.00, 20, 1, 0, '2025-11-15 04:45:01', '2025-11-15 04:45:01'),
-(284, 49, 'GSKILL-RIPJAWS-V-DDR4-16GB-3200-BLACK', 'Đen (2x8GB)', 1200000.00, 35, 1, 1, '2025-11-15 04:45:01', '2025-11-15 04:45:01'),
-(285, 50, 'SAMSUNG-980-PRO-1TB', '1TB NVMe M.2', 3500000.00, 25, 1, 1, '2025-11-15 04:45:01', '2025-11-15 04:45:01'),
-(286, 51, 'SAMSUNG-990-PRO-2TB', '2TB NVMe M.2', 6500000.00, 15, 1, 1, '2025-11-15 04:45:01', '2025-11-15 04:45:01'),
-(287, 52, 'WD-BLACK-SN850X-1TB', '1TB NVMe M.2', 3200000.00, 20, 1, 1, '2025-11-15 04:45:01', '2025-11-15 04:45:01'),
-(288, 53, 'CRUCIAL-P5-PLUS-1TB', '1TB NVMe M.2', 2800000.00, 30, 1, 1, '2025-11-15 04:45:01', '2025-11-15 04:45:01'),
-(289, 54, 'KINGSTON-NV2-1TB', '1TB NVMe M.2', 1500000.00, 40, 1, 1, '2025-11-15 04:45:01', '2025-11-15 04:45:01'),
-(290, 55, 'ASUS-ROG-STRIX-B650E-F-WIFI', 'WiFi 6E', 5500000.00, 10, 1, 1, '2025-11-15 04:45:01', '2025-11-15 04:45:01'),
-(291, 56, 'MSI-MAG-B650-TOMAHAWK-WIFI', 'WiFi 6E', 4500000.00, 12, 1, 1, '2025-11-15 04:45:01', '2025-11-15 04:45:01'),
-(292, 57, 'GIGABYTE-Z790-AORUS-ELITE-AX', 'WiFi 6E', 6500000.00, 8, 1, 1, '2025-11-15 04:45:01', '2025-11-15 04:45:01'),
-(293, 58, 'ASUS-TUF-B760M-PLUS-WIFI', 'WiFi 6', 3800000.00, 15, 1, 1, '2025-11-15 04:45:01', '2025-11-15 04:45:01'),
-(294, 59, 'MSI-PRO-B650M-A-WIFI', 'WiFi 6', 3200000.00, 18, 1, 1, '2025-11-15 04:45:01', '2025-11-15 04:45:01'),
-(295, 60, 'CORSAIR-RM850E-850W', '850W 80 Plus Gold', 3200000.00, 15, 1, 1, '2025-11-15 04:45:01', '2025-11-15 04:45:01'),
-(296, 61, 'SEASONIC-FOCUS-GX-750-750W', '750W 80 Plus Gold', 2800000.00, 12, 1, 1, '2025-11-15 04:45:01', '2025-11-15 04:45:01'),
-(297, 62, 'CM-MWE-GOLD-650W', '650W 80 Plus Gold', 2200000.00, 20, 1, 1, '2025-11-15 04:45:01', '2025-11-15 04:45:01'),
-(298, 63, 'CORSAIR-RM1000E-1000W', '1000W 80 Plus Gold', 4500000.00, 8, 1, 1, '2025-11-15 04:45:01', '2025-11-15 04:45:01'),
-(299, 64, 'TT-SMART-BM2-550W', '550W 80 Plus Bronze', 1200000.00, 25, 1, 1, '2025-11-15 04:45:01', '2025-11-15 04:45:01'),
-(300, 65, 'CORSAIR-4000D-AIRFLOW-BLACK', 'Đen', 2500000.00, 20, 1, 1, '2025-11-15 04:45:01', '2025-11-15 04:45:01'),
-(301, 65, 'CORSAIR-4000D-AIRFLOW-WHITE', 'Trắng', 2600000.00, 15, 1, 0, '2025-11-15 04:45:01', '2025-11-15 04:45:01'),
-(302, 66, 'FRACTAL-POP-AIR-RGB-BLACK', 'Đen RGB', 3200000.00, 12, 1, 1, '2025-11-15 04:45:01', '2025-11-15 04:45:01'),
-(303, 66, 'FRACTAL-POP-AIR-RGB-WHITE', 'Trắng RGB', 3300000.00, 10, 1, 0, '2025-11-15 04:45:01', '2025-11-15 04:45:01'),
-(304, 67, 'NZXT-H5-FLOW-RGB-BLACK', 'Đen RGB', 2800000.00, 15, 1, 1, '2025-11-15 04:45:01', '2025-11-15 04:45:01'),
-(305, 67, 'NZXT-H5-FLOW-RGB-WHITE', 'Trắng RGB', 2900000.00, 12, 1, 0, '2025-11-15 04:45:01', '2025-11-15 04:45:01'),
-(306, 68, 'CM-TD500-MESH-BLACK', 'Đen', 2400000.00, 18, 1, 1, '2025-11-15 04:45:01', '2025-11-15 04:45:01'),
-(307, 69, 'PHANTEKS-P300A-MESH-BLACK', 'Đen', 1500000.00, 25, 1, 1, '2025-11-15 04:45:01', '2025-11-15 04:45:01'),
-(308, 70, 'CORSAIR-H150I-ELITE-360-BLACK', 'Đen RGB', 4500000.00, 8, 1, 1, '2025-11-15 04:45:01', '2025-11-15 04:45:01'),
-(309, 70, 'CORSAIR-H150I-ELITE-360-WHITE', 'Trắng RGB', 4600000.00, 6, 1, 0, '2025-11-15 04:45:01', '2025-11-15 04:45:01'),
-(310, 71, 'NOCTUA-NH-D15-CHROMAX', 'Đen', 3200000.00, 10, 1, 1, '2025-11-15 04:45:01', '2025-11-15 04:45:01'),
-(311, 72, 'DEEPCOOL-AK620-ZERO-DARK', 'Đen', 1800000.00, 15, 1, 1, '2025-11-15 04:45:01', '2025-11-15 04:45:01'),
-(312, 73, 'ARCTIC-LIQUID-FREEZER-240', '240mm AIO', 2500000.00, 12, 1, 1, '2025-11-15 04:45:01', '2025-11-15 04:45:01'),
-(313, 74, 'CM-HYPER-212-RGB-BLACK', 'Đen RGB', 800000.00, 30, 1, 1, '2025-11-15 04:45:01', '2025-11-15 04:45:01'),
-(314, 75, 'SEAGATE-BARRACUDA-2TB-7200', '2TB 7200RPM', 1200000.00, 25, 1, 1, '2025-11-15 04:45:01', '2025-11-15 04:45:01'),
-(315, 76, 'WD-BLUE-4TB-5400', '4TB 5400RPM', 2200000.00, 20, 1, 1, '2025-11-15 04:45:01', '2025-11-15 04:45:01'),
-(316, 77, 'SEAGATE-IRONWOLF-8TB-7200', '8TB 7200RPM NAS', 5500000.00, 8, 1, 1, '2025-11-15 04:45:01', '2025-11-15 04:45:01'),
-(317, 78, 'WD-BLACK-1TB-7200', '1TB 7200RPM', 1500000.00, 18, 1, 1, '2025-11-15 04:45:01', '2025-11-15 04:45:01'),
-(318, 79, 'TOSHIBA-P300-3TB-7200', '3TB 7200RPM', 1800000.00, 15, 1, 1, '2025-11-15 04:45:01', '2025-11-15 04:45:01'),
-(319, 181, 'INTEL-I7-14700K-BOX', 'Boxed (Có tản nhiệt)', 8500000.00, 12, 1, 1, '2025-11-15 04:45:01', '2025-11-15 04:45:01'),
-(320, 181, 'INTEL-I7-14700K-TRAY', 'Tray (Không tản nhiệt)', 8200000.00, 8, 1, 0, '2025-11-15 04:45:01', '2025-11-15 04:45:01'),
-(321, 182, 'AMD-R5-7600X-BOX', 'Boxed (Có tản nhiệt Wraith)', 5500000.00, 20, 1, 1, '2025-11-15 04:45:01', '2025-11-15 04:45:01'),
-(322, 183, 'AMD-R7-7800X3D-BOX', 'Boxed (Có tản nhiệt Wraith)', 12000000.00, 8, 1, 1, '2025-11-15 04:45:01', '2025-11-15 04:45:01'),
-(323, 184, 'INTEL-I9-14900K-BOX', 'Boxed (Có tản nhiệt)', 15000000.00, 5, 1, 1, '2025-11-15 04:45:01', '2025-11-15 04:45:01'),
-(324, 230, 'INTEL-I5-14600KF-BOX', 'Boxed (Có tản nhiệt)', 4500000.00, 15, 1, 1, '2025-11-15 04:45:01', '2025-11-15 04:45:01'),
-(325, 230, 'INTEL-I5-14600KF-TRAY', 'Tray (Không tản nhiệt)', 4200000.00, 10, 1, 0, '2025-11-15 04:45:01', '2025-11-15 04:45:01'),
-(326, 233, 'ADATA-DDR5-3600MHz-16GB (2x8GB)', 'ADATA-DDR5-3600MHz-16GB (2x8GB)', 600000.00, 50, 1, 1, '2025-11-15 10:29:13', '2025-11-15 10:29:13'),
-(328, 234, 'WD', 'WD', 100000.00, 0, 1, 0, '2025-11-15 10:47:01', '2025-11-15 10:47:01'),
-(331, 234, 'Seagate-NVMe M.2-256GB', NULL, 30000.00, 10, 1, 0, '2025-11-15 11:10:52', '2025-11-15 11:10:52'),
-(332, 234, 'WD-SATA 2.5\"-2TB', NULL, 400000.00, 90, 1, 0, '2025-11-15 11:35:55', '2025-11-15 11:35:55'),
-(333, 235, 'Western Digital-2TB-5400RPM', NULL, 50000.00, 70, 1, 0, '2025-11-15 12:59:40', '2025-11-15 12:59:40'),
-(334, 237, 'Western Digital-1TB-5400RPM', NULL, 50000.00, 10, 1, 0, '2025-11-15 13:04:39', '2025-11-15 13:04:39'),
-(335, 237, 'Western Digital-3TB-7200RPM', NULL, 200000.00, 70, 1, 0, '2025-11-15 13:04:58', '2025-11-15 13:04:58');
+(336, 239, 'intel-core-i5-14600kf-default', 'Intel Core i5 14600kf', 450000.00, 100, 1, 1, '2025-11-15 15:03:12', '2025-11-15 15:18:53'),
+(337, 240, 'asus-rtx-5060ti-default', 'Asus RTX 5060Ti', 8000000.00, 600, 1, 1, '2025-11-15 15:10:15', '2025-11-15 15:13:54'),
+(338, 241, 'asus-b760m-e-tuf-default', 'Asus B760M-E Tuf', 5000000.00, 0, 1, 1, '2025-11-16 02:14:13', '2025-11-16 02:14:13');
 
 -- --------------------------------------------------------
 
 --
--- Cấu trúc bảng cho bảng `recent_views`
+-- Table structure for table `recent_views`
 --
 
 CREATE TABLE `recent_views` (
@@ -766,7 +665,7 @@ CREATE TABLE `recent_views` (
 -- --------------------------------------------------------
 
 --
--- Cấu trúc bảng cho bảng `reports`
+-- Table structure for table `reports`
 --
 
 CREATE TABLE `reports` (
@@ -785,7 +684,7 @@ CREATE TABLE `reports` (
 -- --------------------------------------------------------
 
 --
--- Cấu trúc bảng cho bảng `reviews`
+-- Table structure for table `reviews`
 --
 
 CREATE TABLE `reviews` (
@@ -806,7 +705,7 @@ CREATE TABLE `reviews` (
 -- --------------------------------------------------------
 
 --
--- Cấu trúc bảng cho bảng `service_requests`
+-- Table structure for table `service_requests`
 --
 
 CREATE TABLE `service_requests` (
@@ -827,7 +726,7 @@ CREATE TABLE `service_requests` (
 -- --------------------------------------------------------
 
 --
--- Cấu trúc bảng cho bảng `users`
+-- Table structure for table `users`
 --
 
 CREATE TABLE `users` (
@@ -846,7 +745,7 @@ CREATE TABLE `users` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Đang đổ dữ liệu cho bảng `users`
+-- Dumping data for table `users`
 --
 
 INSERT INTO `users` (`user_id`, `username`, `email`, `password_hash`, `full_name`, `phone`, `role`, `is_active`, `created_at`, `updated_at`, `last_login`, `session_token`) VALUES
@@ -855,7 +754,7 @@ INSERT INTO `users` (`user_id`, `username`, `email`, `password_hash`, `full_name
 (3, 'abcdef', 'abc@gmail.com', '$2b$10$M8uNkONltbbKsY8y9DdqUeF3IFn1CeH9B0S6SBQzNB5QyVinKZ37.', NULL, NULL, 0, 1, '2025-11-01 10:27:03', '2025-11-01 10:27:03', NULL, NULL),
 (4, 'bao', 'bao@gmail.com', '$2b$10$zPJUT/20Y4wiZUXjELb0QuDSWVxSkubIKLIpNIfYkVQuJY7E92J.e', 'bao', '0965656565', 0, 1, '2025-11-03 15:09:28', '2025-11-07 03:26:14', NULL, NULL),
 (5, 'admin1', 'admin1@gmail.com', '$2b$10$b9lCzWVznD4ZMQ1Y6/bOc.Jn6efXZS1Us.ZjYVv2PFgHkqKr1PD1.', 'aaa', '0123456789', 2, 0, '2025-11-05 09:18:39', '2025-11-05 10:08:50', NULL, '39c81725075b25e0e973c080d442c787a6e9fdc55a1f613fab08e3fc7facbb7c'),
-(6, 'admin', 'admin@gmail.com', '$2b$10$84e9xqnTc50CPaf5pOldT.Ob9zW9/RVK.G3Whr.TdAncfRdE.UivG', 'admin', '0123456788', 2, 1, '2025-11-05 09:33:52', '2025-11-15 02:51:00', NULL, '812b650bc602f1826592a50b9bffb4bd350613ffbadd3dae6be7d2f89987929a'),
+(6, 'admin', 'admin@gmail.com', '$2b$10$84e9xqnTc50CPaf5pOldT.Ob9zW9/RVK.G3Whr.TdAncfRdE.UivG', 'admin', '0123456788', 2, 1, '2025-11-05 09:33:52', '2025-11-16 02:04:41', NULL, '5e895b319cb13718b39d99afcdac49c927a7d18ab7715394157348007a17dbf8'),
 (7, 'bao1', 'bao1@gmail.com', '$2b$10$sVY/zhJ2cKlwydAjQ090e.bMn1eFJKudObM.yOZiR06XPanyUgaFW', 'bao1', '0975846352', 0, 0, '2025-11-05 10:09:19', '2025-11-05 10:09:38', NULL, NULL),
 (8, 'bb', 'bb@gmail.com', '$2b$10$i/dzC6SfHsM.5cHiYaS89ed4rg4SAoLtZz1/O2mA6eagocIogJoL6', NULL, NULL, 0, 1, '2025-11-07 03:26:38', '2025-11-07 08:05:59', NULL, NULL),
 (9, 'ccc', 'cc@gmail.com', '$2b$10$zdMHGgXEqVXcvRmaoymJceZdwLmNnViMKR.Gss2KmhtlJzm9k8pp.', 'bao', '0987676765', 0, 1, '2025-11-07 08:06:49', '2025-11-07 08:23:41', NULL, '25df20a38db4f2d83703655c8fa0289a37154f1beeceb3ab72ad43f1bb4f13e3'),
@@ -864,7 +763,7 @@ INSERT INTO `users` (`user_id`, `username`, `email`, `password_hash`, `full_name
 -- --------------------------------------------------------
 
 --
--- Cấu trúc bảng cho bảng `variant_attributes`
+-- Table structure for table `variant_attributes`
 --
 
 CREATE TABLE `variant_attributes` (
@@ -872,36 +771,10 @@ CREATE TABLE `variant_attributes` (
   `attribute_value_id` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
---
--- Đang đổ dữ liệu cho bảng `variant_attributes`
---
-
-INSERT INTO `variant_attributes` (`variant_id`, `attribute_value_id`) VALUES
-(326, 35),
-(326, 37),
-(326, 38),
-(326, 42),
-(328, 50),
-(331, 53),
-(331, 54),
-(331, 57),
-(332, 50),
-(332, 56),
-(332, 60),
-(333, 116),
-(333, 119),
-(333, 123),
-(334, 116),
-(334, 118),
-(334, 123),
-(335, 116),
-(335, 120),
-(335, 124);
-
 -- --------------------------------------------------------
 
 --
--- Cấu trúc bảng cho bảng `variant_images`
+-- Table structure for table `variant_images`
 --
 
 CREATE TABLE `variant_images` (
@@ -917,7 +790,7 @@ CREATE TABLE `variant_images` (
 -- --------------------------------------------------------
 
 --
--- Cấu trúc bảng cho bảng `warranty`
+-- Table structure for table `warranty`
 --
 
 CREATE TABLE `warranty` (
@@ -937,7 +810,7 @@ CREATE TABLE `warranty` (
 -- --------------------------------------------------------
 
 --
--- Cấu trúc bảng cho bảng `wishlists`
+-- Table structure for table `wishlists`
 --
 
 CREATE TABLE `wishlists` (
@@ -953,7 +826,7 @@ CREATE TABLE `wishlists` (
 -- --------------------------------------------------------
 
 --
--- Cấu trúc bảng cho bảng `wishlist_items`
+-- Table structure for table `wishlist_items`
 --
 
 CREATE TABLE `wishlist_items` (
@@ -963,11 +836,11 @@ CREATE TABLE `wishlist_items` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Chỉ mục cho các bảng đã đổ
+-- Indexes for dumped tables
 --
 
 --
--- Chỉ mục cho bảng `addresses`
+-- Indexes for table `addresses`
 --
 ALTER TABLE `addresses`
   ADD PRIMARY KEY (`address_id`),
@@ -975,7 +848,7 @@ ALTER TABLE `addresses`
   ADD KEY `idx_is_default` (`is_default`);
 
 --
--- Chỉ mục cho bảng `articles`
+-- Indexes for table `articles`
 --
 ALTER TABLE `articles`
   ADD PRIMARY KEY (`article_id`),
@@ -984,20 +857,20 @@ ALTER TABLE `articles`
   ADD KEY `idx_category_id` (`category_id`);
 
 --
--- Chỉ mục cho bảng `attributes`
+-- Indexes for table `attributes`
 --
 ALTER TABLE `attributes`
   ADD PRIMARY KEY (`attribute_id`),
   ADD KEY `idx_attribute_type` (`attribute_type`);
 
 --
--- Chỉ mục cho bảng `attribute_categories`
+-- Indexes for table `attribute_categories`
 --
 ALTER TABLE `attribute_categories`
   ADD PRIMARY KEY (`attribute_category_id`);
 
 --
--- Chỉ mục cho bảng `attribute_values`
+-- Indexes for table `attribute_values`
 --
 ALTER TABLE `attribute_values`
   ADD PRIMARY KEY (`attribute_value_id`),
@@ -1005,7 +878,7 @@ ALTER TABLE `attribute_values`
   ADD KEY `idx_attribute_id` (`attribute_id`);
 
 --
--- Chỉ mục cho bảng `builds`
+-- Indexes for table `builds`
 --
 ALTER TABLE `builds`
   ADD PRIMARY KEY (`build_id`),
@@ -1014,7 +887,7 @@ ALTER TABLE `builds`
   ADD KEY `idx_created_at` (`created_at`);
 
 --
--- Chỉ mục cho bảng `build_items`
+-- Indexes for table `build_items`
 --
 ALTER TABLE `build_items`
   ADD PRIMARY KEY (`build_item_id`),
@@ -1022,7 +895,7 @@ ALTER TABLE `build_items`
   ADD KEY `idx_variant_id` (`variant_id`);
 
 --
--- Chỉ mục cho bảng `carts`
+-- Indexes for table `carts`
 --
 ALTER TABLE `carts`
   ADD PRIMARY KEY (`cart_id`),
@@ -1030,7 +903,7 @@ ALTER TABLE `carts`
   ADD KEY `idx_session_id` (`session_id`);
 
 --
--- Chỉ mục cho bảng `cart_items`
+-- Indexes for table `cart_items`
 --
 ALTER TABLE `cart_items`
   ADD PRIMARY KEY (`cart_item_id`),
@@ -1039,7 +912,7 @@ ALTER TABLE `cart_items`
   ADD KEY `idx_variant_id` (`variant_id`);
 
 --
--- Chỉ mục cho bảng `categories`
+-- Indexes for table `categories`
 --
 ALTER TABLE `categories`
   ADD PRIMARY KEY (`category_id`),
@@ -1049,7 +922,7 @@ ALTER TABLE `categories`
   ADD KEY `idx_is_active` (`is_active`);
 
 --
--- Chỉ mục cho bảng `coupons`
+-- Indexes for table `coupons`
 --
 ALTER TABLE `coupons`
   ADD PRIMARY KEY (`coupon_id`),
@@ -1059,7 +932,7 @@ ALTER TABLE `coupons`
   ADD KEY `idx_valid_dates` (`valid_from`,`valid_until`);
 
 --
--- Chỉ mục cho bảng `notifications`
+-- Indexes for table `notifications`
 --
 ALTER TABLE `notifications`
   ADD PRIMARY KEY (`notification_id`),
@@ -1068,7 +941,7 @@ ALTER TABLE `notifications`
   ADD KEY `idx_created_at` (`created_at`);
 
 --
--- Chỉ mục cho bảng `orders`
+-- Indexes for table `orders`
 --
 ALTER TABLE `orders`
   ADD PRIMARY KEY (`order_id`),
@@ -1082,7 +955,7 @@ ALTER TABLE `orders`
   ADD KEY `idx_created_at` (`created_at`);
 
 --
--- Chỉ mục cho bảng `order_items`
+-- Indexes for table `order_items`
 --
 ALTER TABLE `order_items`
   ADD PRIMARY KEY (`order_item_id`),
@@ -1090,7 +963,7 @@ ALTER TABLE `order_items`
   ADD KEY `idx_variant_id` (`variant_id`);
 
 --
--- Chỉ mục cho bảng `payments`
+-- Indexes for table `payments`
 --
 ALTER TABLE `payments`
   ADD PRIMARY KEY (`payment_id`),
@@ -1099,7 +972,7 @@ ALTER TABLE `payments`
   ADD KEY `idx_transaction_id` (`transaction_id`);
 
 --
--- Chỉ mục cho bảng `posts`
+-- Indexes for table `posts`
 --
 ALTER TABLE `posts`
   ADD PRIMARY KEY (`post_id`),
@@ -1111,7 +984,7 @@ ALTER TABLE `posts`
 ALTER TABLE `posts` ADD FULLTEXT KEY `idx_search` (`title`,`content`);
 
 --
--- Chỉ mục cho bảng `products`
+-- Indexes for table `products`
 --
 ALTER TABLE `products`
   ADD PRIMARY KEY (`product_id`),
@@ -1123,7 +996,7 @@ ALTER TABLE `products`
 ALTER TABLE `products` ADD FULLTEXT KEY `idx_search` (`product_name`,`description`);
 
 --
--- Chỉ mục cho bảng `product_variants`
+-- Indexes for table `product_variants`
 --
 ALTER TABLE `product_variants`
   ADD PRIMARY KEY (`variant_id`),
@@ -1133,7 +1006,7 @@ ALTER TABLE `product_variants`
   ADD KEY `idx_is_active` (`is_active`);
 
 --
--- Chỉ mục cho bảng `recent_views`
+-- Indexes for table `recent_views`
 --
 ALTER TABLE `recent_views`
   ADD PRIMARY KEY (`view_id`),
@@ -1142,7 +1015,7 @@ ALTER TABLE `recent_views`
   ADD KEY `idx_viewed_at` (`viewed_at`);
 
 --
--- Chỉ mục cho bảng `reports`
+-- Indexes for table `reports`
 --
 ALTER TABLE `reports`
   ADD PRIMARY KEY (`report_id`),
@@ -1151,7 +1024,7 @@ ALTER TABLE `reports`
   ADD KEY `idx_status` (`status`);
 
 --
--- Chỉ mục cho bảng `reviews`
+-- Indexes for table `reviews`
 --
 ALTER TABLE `reviews`
   ADD PRIMARY KEY (`review_id`),
@@ -1162,7 +1035,7 @@ ALTER TABLE `reviews`
   ADD KEY `idx_is_approved` (`is_approved`);
 
 --
--- Chỉ mục cho bảng `service_requests`
+-- Indexes for table `service_requests`
 --
 ALTER TABLE `service_requests`
   ADD PRIMARY KEY (`service_request_id`),
@@ -1173,7 +1046,7 @@ ALTER TABLE `service_requests`
   ADD KEY `idx_priority` (`priority`);
 
 --
--- Chỉ mục cho bảng `users`
+-- Indexes for table `users`
 --
 ALTER TABLE `users`
   ADD PRIMARY KEY (`user_id`),
@@ -1184,7 +1057,7 @@ ALTER TABLE `users`
   ADD KEY `idx_role` (`role`);
 
 --
--- Chỉ mục cho bảng `variant_attributes`
+-- Indexes for table `variant_attributes`
 --
 ALTER TABLE `variant_attributes`
   ADD PRIMARY KEY (`variant_id`,`attribute_value_id`),
@@ -1192,7 +1065,7 @@ ALTER TABLE `variant_attributes`
   ADD KEY `idx_attribute_value_id` (`attribute_value_id`);
 
 --
--- Chỉ mục cho bảng `variant_images`
+-- Indexes for table `variant_images`
 --
 ALTER TABLE `variant_images`
   ADD PRIMARY KEY (`image_id`),
@@ -1200,7 +1073,7 @@ ALTER TABLE `variant_images`
   ADD KEY `idx_is_primary` (`is_primary`);
 
 --
--- Chỉ mục cho bảng `warranty`
+-- Indexes for table `warranty`
 --
 ALTER TABLE `warranty`
   ADD PRIMARY KEY (`warranty_id`),
@@ -1210,14 +1083,14 @@ ALTER TABLE `warranty`
   ADD KEY `fk_warranty_service_request` (`service_request_id`);
 
 --
--- Chỉ mục cho bảng `wishlists`
+-- Indexes for table `wishlists`
 --
 ALTER TABLE `wishlists`
   ADD PRIMARY KEY (`wishlist_id`),
   ADD KEY `idx_user_id` (`user_id`);
 
 --
--- Chỉ mục cho bảng `wishlist_items`
+-- Indexes for table `wishlist_items`
 --
 ALTER TABLE `wishlist_items`
   ADD PRIMARY KEY (`wishlist_id`,`variant_id`),
@@ -1225,228 +1098,228 @@ ALTER TABLE `wishlist_items`
   ADD KEY `idx_variant_id` (`variant_id`);
 
 --
--- AUTO_INCREMENT cho các bảng đã đổ
+-- AUTO_INCREMENT for dumped tables
 --
 
 --
--- AUTO_INCREMENT cho bảng `addresses`
+-- AUTO_INCREMENT for table `addresses`
 --
 ALTER TABLE `addresses`
   MODIFY `address_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
--- AUTO_INCREMENT cho bảng `articles`
+-- AUTO_INCREMENT for table `articles`
 --
 ALTER TABLE `articles`
   MODIFY `article_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT cho bảng `attributes`
+-- AUTO_INCREMENT for table `attributes`
 --
 ALTER TABLE `attributes`
   MODIFY `attribute_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=35;
 
 --
--- AUTO_INCREMENT cho bảng `attribute_categories`
+-- AUTO_INCREMENT for table `attribute_categories`
 --
 ALTER TABLE `attribute_categories`
   MODIFY `attribute_category_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=35;
 
 --
--- AUTO_INCREMENT cho bảng `attribute_values`
+-- AUTO_INCREMENT for table `attribute_values`
 --
 ALTER TABLE `attribute_values`
   MODIFY `attribute_value_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=125;
 
 --
--- AUTO_INCREMENT cho bảng `builds`
+-- AUTO_INCREMENT for table `builds`
 --
 ALTER TABLE `builds`
   MODIFY `build_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT cho bảng `build_items`
+-- AUTO_INCREMENT for table `build_items`
 --
 ALTER TABLE `build_items`
   MODIFY `build_item_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT cho bảng `carts`
+-- AUTO_INCREMENT for table `carts`
 --
 ALTER TABLE `carts`
-  MODIFY `cart_id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `cart_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
--- AUTO_INCREMENT cho bảng `cart_items`
+-- AUTO_INCREMENT for table `cart_items`
 --
 ALTER TABLE `cart_items`
-  MODIFY `cart_item_id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `cart_item_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
--- AUTO_INCREMENT cho bảng `categories`
+-- AUTO_INCREMENT for table `categories`
 --
 ALTER TABLE `categories`
   MODIFY `category_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=32;
 
 --
--- AUTO_INCREMENT cho bảng `coupons`
+-- AUTO_INCREMENT for table `coupons`
 --
 ALTER TABLE `coupons`
   MODIFY `coupon_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
--- AUTO_INCREMENT cho bảng `notifications`
+-- AUTO_INCREMENT for table `notifications`
 --
 ALTER TABLE `notifications`
   MODIFY `notification_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT cho bảng `orders`
+-- AUTO_INCREMENT for table `orders`
 --
 ALTER TABLE `orders`
   MODIFY `order_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT cho bảng `order_items`
+-- AUTO_INCREMENT for table `order_items`
 --
 ALTER TABLE `order_items`
   MODIFY `order_item_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT cho bảng `payments`
+-- AUTO_INCREMENT for table `payments`
 --
 ALTER TABLE `payments`
   MODIFY `payment_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT cho bảng `posts`
+-- AUTO_INCREMENT for table `posts`
 --
 ALTER TABLE `posts`
   MODIFY `post_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT cho bảng `products`
+-- AUTO_INCREMENT for table `products`
 --
 ALTER TABLE `products`
-  MODIFY `product_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=238;
+  MODIFY `product_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=242;
 
 --
--- AUTO_INCREMENT cho bảng `product_variants`
+-- AUTO_INCREMENT for table `product_variants`
 --
 ALTER TABLE `product_variants`
-  MODIFY `variant_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=336;
+  MODIFY `variant_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=339;
 
 --
--- AUTO_INCREMENT cho bảng `recent_views`
+-- AUTO_INCREMENT for table `recent_views`
 --
 ALTER TABLE `recent_views`
   MODIFY `view_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT cho bảng `reports`
+-- AUTO_INCREMENT for table `reports`
 --
 ALTER TABLE `reports`
   MODIFY `report_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT cho bảng `reviews`
+-- AUTO_INCREMENT for table `reviews`
 --
 ALTER TABLE `reviews`
   MODIFY `review_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT cho bảng `service_requests`
+-- AUTO_INCREMENT for table `service_requests`
 --
 ALTER TABLE `service_requests`
   MODIFY `service_request_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT cho bảng `users`
+-- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
   MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
--- AUTO_INCREMENT cho bảng `variant_images`
+-- AUTO_INCREMENT for table `variant_images`
 --
 ALTER TABLE `variant_images`
   MODIFY `image_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT cho bảng `warranty`
+-- AUTO_INCREMENT for table `warranty`
 --
 ALTER TABLE `warranty`
   MODIFY `warranty_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT cho bảng `wishlists`
+-- AUTO_INCREMENT for table `wishlists`
 --
 ALTER TABLE `wishlists`
   MODIFY `wishlist_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- Các ràng buộc cho các bảng đã đổ
+-- Constraints for dumped tables
 --
 
 --
--- Các ràng buộc cho bảng `addresses`
+-- Constraints for table `addresses`
 --
 ALTER TABLE `addresses`
   ADD CONSTRAINT `addresses_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE;
 
 --
--- Các ràng buộc cho bảng `articles`
+-- Constraints for table `articles`
 --
 ALTER TABLE `articles`
   ADD CONSTRAINT `articles_ibfk_1` FOREIGN KEY (`post_id`) REFERENCES `posts` (`post_id`) ON DELETE CASCADE,
   ADD CONSTRAINT `articles_ibfk_2` FOREIGN KEY (`category_id`) REFERENCES `categories` (`category_id`) ON DELETE SET NULL;
 
 --
--- Các ràng buộc cho bảng `attribute_values`
+-- Constraints for table `attribute_values`
 --
 ALTER TABLE `attribute_values`
   ADD CONSTRAINT `attribute_values_ibfk_1` FOREIGN KEY (`attribute_id`) REFERENCES `attributes` (`attribute_id`) ON DELETE CASCADE;
 
 --
--- Các ràng buộc cho bảng `builds`
+-- Constraints for table `builds`
 --
 ALTER TABLE `builds`
   ADD CONSTRAINT `builds_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE;
 
 --
--- Các ràng buộc cho bảng `build_items`
+-- Constraints for table `build_items`
 --
 ALTER TABLE `build_items`
   ADD CONSTRAINT `build_items_ibfk_1` FOREIGN KEY (`build_id`) REFERENCES `builds` (`build_id`) ON DELETE CASCADE,
   ADD CONSTRAINT `build_items_ibfk_2` FOREIGN KEY (`variant_id`) REFERENCES `product_variants` (`variant_id`) ON DELETE CASCADE;
 
 --
--- Các ràng buộc cho bảng `carts`
+-- Constraints for table `carts`
 --
 ALTER TABLE `carts`
   ADD CONSTRAINT `carts_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE;
 
 --
--- Các ràng buộc cho bảng `cart_items`
+-- Constraints for table `cart_items`
 --
 ALTER TABLE `cart_items`
   ADD CONSTRAINT `cart_items_ibfk_1` FOREIGN KEY (`cart_id`) REFERENCES `carts` (`cart_id`) ON DELETE CASCADE,
   ADD CONSTRAINT `cart_items_ibfk_2` FOREIGN KEY (`variant_id`) REFERENCES `product_variants` (`variant_id`) ON DELETE CASCADE;
 
 --
--- Các ràng buộc cho bảng `categories`
+-- Constraints for table `categories`
 --
 ALTER TABLE `categories`
   ADD CONSTRAINT `categories_ibfk_1` FOREIGN KEY (`parent_category_id`) REFERENCES `categories` (`category_id`) ON DELETE SET NULL;
 
 --
--- Các ràng buộc cho bảng `notifications`
+-- Constraints for table `notifications`
 --
 ALTER TABLE `notifications`
   ADD CONSTRAINT `notifications_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE;
 
 --
--- Các ràng buộc cho bảng `orders`
+-- Constraints for table `orders`
 --
 ALTER TABLE `orders`
   ADD CONSTRAINT `orders_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`),
@@ -1454,52 +1327,52 @@ ALTER TABLE `orders`
   ADD CONSTRAINT `orders_ibfk_3` FOREIGN KEY (`coupon_id`) REFERENCES `coupons` (`coupon_id`) ON DELETE SET NULL;
 
 --
--- Các ràng buộc cho bảng `order_items`
+-- Constraints for table `order_items`
 --
 ALTER TABLE `order_items`
   ADD CONSTRAINT `order_items_ibfk_1` FOREIGN KEY (`order_id`) REFERENCES `orders` (`order_id`) ON DELETE CASCADE,
   ADD CONSTRAINT `order_items_ibfk_2` FOREIGN KEY (`variant_id`) REFERENCES `product_variants` (`variant_id`);
 
 --
--- Các ràng buộc cho bảng `payments`
+-- Constraints for table `payments`
 --
 ALTER TABLE `payments`
   ADD CONSTRAINT `payments_ibfk_1` FOREIGN KEY (`order_id`) REFERENCES `orders` (`order_id`) ON DELETE CASCADE;
 
 --
--- Các ràng buộc cho bảng `posts`
+-- Constraints for table `posts`
 --
 ALTER TABLE `posts`
   ADD CONSTRAINT `posts_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`);
 
 --
--- Các ràng buộc cho bảng `products`
+-- Constraints for table `products`
 --
 ALTER TABLE `products`
   ADD CONSTRAINT `products_ibfk_1` FOREIGN KEY (`category_id`) REFERENCES `categories` (`category_id`);
 
 --
--- Các ràng buộc cho bảng `product_variants`
+-- Constraints for table `product_variants`
 --
 ALTER TABLE `product_variants`
   ADD CONSTRAINT `product_variants_ibfk_1` FOREIGN KEY (`product_id`) REFERENCES `products` (`product_id`) ON DELETE CASCADE;
 
 --
--- Các ràng buộc cho bảng `recent_views`
+-- Constraints for table `recent_views`
 --
 ALTER TABLE `recent_views`
   ADD CONSTRAINT `recent_views_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE,
   ADD CONSTRAINT `recent_views_ibfk_2` FOREIGN KEY (`variant_id`) REFERENCES `product_variants` (`variant_id`) ON DELETE CASCADE;
 
 --
--- Các ràng buộc cho bảng `reports`
+-- Constraints for table `reports`
 --
 ALTER TABLE `reports`
   ADD CONSTRAINT `reports_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE,
   ADD CONSTRAINT `reports_ibfk_2` FOREIGN KEY (`variant_id`) REFERENCES `product_variants` (`variant_id`) ON DELETE CASCADE;
 
 --
--- Các ràng buộc cho bảng `reviews`
+-- Constraints for table `reviews`
 --
 ALTER TABLE `reviews`
   ADD CONSTRAINT `reviews_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE,
@@ -1507,40 +1380,40 @@ ALTER TABLE `reviews`
   ADD CONSTRAINT `reviews_ibfk_3` FOREIGN KEY (`order_id`) REFERENCES `orders` (`order_id`) ON DELETE SET NULL;
 
 --
--- Các ràng buộc cho bảng `service_requests`
+-- Constraints for table `service_requests`
 --
 ALTER TABLE `service_requests`
   ADD CONSTRAINT `service_requests_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE,
   ADD CONSTRAINT `service_requests_ibfk_2` FOREIGN KEY (`assigned_to`) REFERENCES `users` (`user_id`) ON DELETE SET NULL;
 
 --
--- Các ràng buộc cho bảng `variant_attributes`
+-- Constraints for table `variant_attributes`
 --
 ALTER TABLE `variant_attributes`
   ADD CONSTRAINT `variant_attributes_ibfk_1` FOREIGN KEY (`variant_id`) REFERENCES `product_variants` (`variant_id`) ON DELETE CASCADE,
   ADD CONSTRAINT `variant_attributes_ibfk_2` FOREIGN KEY (`attribute_value_id`) REFERENCES `attribute_values` (`attribute_value_id`) ON DELETE CASCADE;
 
 --
--- Các ràng buộc cho bảng `variant_images`
+-- Constraints for table `variant_images`
 --
 ALTER TABLE `variant_images`
   ADD CONSTRAINT `variant_images_ibfk_1` FOREIGN KEY (`variant_id`) REFERENCES `product_variants` (`variant_id`) ON DELETE CASCADE;
 
 --
--- Các ràng buộc cho bảng `warranty`
+-- Constraints for table `warranty`
 --
 ALTER TABLE `warranty`
   ADD CONSTRAINT `fk_warranty_service_request` FOREIGN KEY (`service_request_id`) REFERENCES `service_requests` (`service_request_id`) ON DELETE SET NULL,
   ADD CONSTRAINT `warranty_ibfk_1` FOREIGN KEY (`order_item_id`) REFERENCES `order_items` (`order_item_id`) ON DELETE CASCADE;
 
 --
--- Các ràng buộc cho bảng `wishlists`
+-- Constraints for table `wishlists`
 --
 ALTER TABLE `wishlists`
   ADD CONSTRAINT `wishlists_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE;
 
 --
--- Các ràng buộc cho bảng `wishlist_items`
+-- Constraints for table `wishlist_items`
 --
 ALTER TABLE `wishlist_items`
   ADD CONSTRAINT `wishlist_items_ibfk_1` FOREIGN KEY (`wishlist_id`) REFERENCES `wishlists` (`wishlist_id`) ON DELETE CASCADE,

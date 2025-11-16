@@ -1,23 +1,73 @@
 import Order from '../models/Order.js';
+import { db } from '../libs/db.js';
 
 // Tạo đơn hàng mới
 export const createOrder = async (req, res) => {
   try {
-    const { orderData, items } = req.body;
+    const { orderData, items, shippingAddress } = req.body;
 
     // Validate
-    if (!orderData.userId || !orderData.addressId || !items || items.length === 0) {
+    if (!items || items.length === 0) {
       return res.status(400).json({
         success: false,
-        message: 'Thiếu thông tin đơn hàng hoặc sản phẩm'
+        message: 'Giỏ hàng trống'
       });
     }
 
-    const orderId = await Order.create(orderData, items);
+    // Validate shipping address for guest
+    if (!orderData.userId && !shippingAddress) {
+      return res.status(400).json({
+        success: false,
+        message: 'Thiếu thông tin giao hàng'
+      });
+    }
+
+    // Nếu là guest, tạo address với user_id = null
+    let addressId = orderData.addressId;
+    if (!orderData.userId && shippingAddress) {
+      console.log('Creating address for guest:', shippingAddress);
+      const [result] = await db.query(
+        `INSERT INTO addresses (
+          user_id, recipient_name, phone, 
+          address_line1, address_line2, 
+          city, district, ward, postal_code, country, 
+          is_default, address_type
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          null, // user_id = null for guest
+          shippingAddress.fullName,
+          shippingAddress.phone,
+          shippingAddress.address,
+          shippingAddress.note || null,
+          shippingAddress.province,
+          shippingAddress.district,
+          shippingAddress.ward || null, // ward
+          null, // postal_code
+          'Vietnam',
+          0,
+          'other'
+        ]
+      );
+      addressId = result.insertId;
+      console.log('Address created with ID:', addressId);
+    }
+
+    // Validate address for registered user
+    if (orderData.userId && !addressId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Thiếu thông tin địa chỉ giao hàng'
+      });
+    }
+
+    const orderId = await Order.create({
+      ...orderData,
+      addressId
+    }, items);
 
     res.status(201).json({
       success: true,
-      message: 'Tạo đơn hàng thành công',
+      message: 'Đặt hàng thành công',
       data: { orderId }
     });
   } catch (error) {
@@ -43,6 +93,8 @@ export const getOrderById = async (req, res) => {
         message: 'Không tìm thấy đơn hàng'
       });
     }
+
+  
 
     res.json({
       success: true,

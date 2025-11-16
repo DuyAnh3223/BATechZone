@@ -13,6 +13,7 @@ import ShipTracking from '../pages/user/ShipTracking';
 import WarrantyCheck from '../pages/user/WarrantyCheck';
 import WarrantyPolicy from '../pages/user/WarrantyPolicy';
 import Wishlist from '../pages/user/Wishlist';
+import OrderSuccess from '../pages/user/OrderSuccess';
 import SignIn from '../pages/auth/SignIn';
 import SignUp from '../pages/auth/SignUp';
 
@@ -25,6 +26,7 @@ const UserRoutes = () => {
         <Route path="blog" element={<Blog />} />
         <Route path="cart" element={<Cart />} />
         <Route path="checkout" element={<Checkout />} />
+        <Route path="order-success/:orderId" element={<OrderSuccess />} />
         <Route path="product/:productId" element={<ProductDetail />} />
         <Route path="category/:categoryId" element={<ProductList />} />
         <Route path="products" element={<ProductList />} />

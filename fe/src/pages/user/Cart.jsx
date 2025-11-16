@@ -258,7 +258,7 @@ const Cart = () => {
                   <ShoppingCart className="h-16 w-16 mx-auto mb-4 text-gray-300" />
                   <p className="text-lg font-medium mb-2">Giỏ hàng của bạn đang trống</p>
                   <p className="text-sm mb-4">Hãy thêm sản phẩm vào giỏ hàng để tiếp tục mua sắm</p>
-                  <Link to="/products">
+                  <Link to="/">
                     <Button className="mt-4">
                       Tiếp tục mua sắm
                     </Button>
