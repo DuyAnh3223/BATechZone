@@ -55,6 +55,12 @@ export const orderService = {
         return response.data;
     },
 
+    // Cập nhật trạng thái đơn hàng (tổng quát)
+    updateOrderStatus: async (orderId, status) => {
+        const response = await api.patch(`/orders/${orderId}/status`, { status });
+        return response.data;
+    },
+
     // Cập nhật trạng thái thanh toán
     updatePaymentStatus: async (orderId, status) => {
         const response = await api.patch(`/orders/${orderId}/payment-status`, { status });

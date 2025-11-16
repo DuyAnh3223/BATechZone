@@ -516,6 +516,29 @@ class Order {
     }
   }
 
+  // Cập nhật trạng thái đơn hàng (tổng quát)
+  async updateStatus(newStatus) {
+    const validStatuses = ['pending', 'confirmed', 'processing', 'shipping', 'delivered', 'cancelled', 'refunded'];
+    
+    if (!validStatuses.includes(newStatus)) {
+      throw new Error('Trạng thái không hợp lệ');
+    }
+
+    const [result] = await db.query(
+      `UPDATE orders 
+      SET order_status = ?,
+          updated_at = NOW()
+      WHERE order_id = ?`,
+      [newStatus, this.orderId]
+    );
+
+    if (result.affectedRows > 0) {
+      this.orderStatus = newStatus;
+      return true;
+    }
+    return false;
+  }
+
   // Cập nhật trạng thái thanh toán
   async updatePaymentStatus(status) {
     const validStatuses = ['unpaid', 'paid', 'partially_paid', 'refunded'];

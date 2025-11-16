@@ -9,8 +9,9 @@ import {
   deliverOrder,
   cancelOrder,
   refundOrder,
+  updateOrderStatus,
   updatePaymentStatus
-} from '../controllers/OrderController.js';
+} from '../controllers/orderController.js';
 
 const router = express.Router();
 
@@ -40,6 +41,9 @@ router.patch('/:id/cancel', cancelOrder);
 
 // Hoàn tiền
 router.patch('/:id/refund', refundOrder);
+
+// Cập nhật trạng thái đơn hàng (tổng quát)
+router.patch('/:id/status', updateOrderStatus);
 
 // Cập nhật trạng thái thanh toán
 router.patch('/:id/payment-status', updatePaymentStatus);

@@ -34,8 +34,10 @@ import { useCartStore } from "@/stores/useCartStore";
 import { useCartItemStore } from "@/stores/useCartItemStore";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useOrderStore } from "@/stores/useOrderStore";
+import { couponService } from "@/services/couponService";
 import { toast } from "sonner";
 import { useEffect } from "react";
+import { X, Tag } from "lucide-react";
 
 const Checkout = () => {
   const navigate = useNavigate();
@@ -50,6 +52,9 @@ const Checkout = () => {
   const [isLoadingCart, setIsLoadingCart] = useState(true);
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [discountAmount, setDiscountAmount] = useState(0);
+  const [isValidatingCoupon, setIsValidatingCoupon] = useState(false);
   
   const form = useForm({
     defaultValues: {
@@ -63,6 +68,64 @@ const Checkout = () => {
       paymentMethod: "cod",
     },
   });
+
+  // Load coupon từ localStorage sau khi cart items đã được load
+  useEffect(() => {
+    const validateSavedCoupon = async () => {
+      const savedCoupon = localStorage.getItem('applied_coupon');
+      const savedDiscount = localStorage.getItem('discount_amount');
+      
+      if (savedCoupon && savedDiscount && cartItems && cartItems.length > 0) {
+        try {
+          const coupon = JSON.parse(savedCoupon);
+          const subtotal = calculateSubtotal();
+          
+          if (subtotal > 0) {
+            try {
+              const response = await couponService.validateCoupon(coupon.coupon_code, subtotal);
+              if (response.success && response.data) {
+                setAppliedCoupon(response.data.coupon);
+                setDiscountAmount(response.data.discountAmount);
+                // Cập nhật lại localStorage với discount mới
+                localStorage.setItem('applied_coupon', JSON.stringify(response.data.coupon));
+                localStorage.setItem('discount_amount', response.data.discountAmount.toString());
+              } else {
+                // Coupon không còn hợp lệ, xóa khỏi localStorage
+                setAppliedCoupon(null);
+                setDiscountAmount(0);
+                localStorage.removeItem('applied_coupon');
+                localStorage.removeItem('discount_amount');
+              }
+            } catch (error) {
+              // Coupon không còn hợp lệ, xóa khỏi localStorage
+              setAppliedCoupon(null);
+              setDiscountAmount(0);
+              localStorage.removeItem('applied_coupon');
+              localStorage.removeItem('discount_amount');
+            }
+          }
+        } catch (error) {
+          console.error('Error loading coupon from localStorage:', error);
+          setAppliedCoupon(null);
+          setDiscountAmount(0);
+          localStorage.removeItem('applied_coupon');
+          localStorage.removeItem('discount_amount');
+        }
+      } else if (savedCoupon && savedDiscount && (!cartItems || cartItems.length === 0)) {
+        // Tạm thời load coupon nếu chưa có cart items
+        try {
+          const coupon = JSON.parse(savedCoupon);
+          const discount = parseFloat(savedDiscount);
+          setAppliedCoupon(coupon);
+          setDiscountAmount(discount);
+        } catch (error) {
+          console.error('Error loading coupon from localStorage:', error);
+        }
+      }
+    };
+
+    validateSavedCoupon();
+  }, [cartItems]);
 
   // Load cart data khi component mount
   useEffect(() => {
@@ -124,7 +187,9 @@ const Checkout = () => {
   };
 
   const calculateTotal = () => {
-    return calculateSubtotal() + calculateShipping();
+    const subtotal = calculateSubtotal();
+    const shipping = calculateShipping();
+    return Math.max(0, subtotal + shipping - discountAmount);
   };
 
   const onSubmit = async (data) => {
@@ -152,14 +217,15 @@ const Checkout = () => {
         subtotal: calculateSubtotal(),
         shippingFee: calculateShipping(),
         taxAmount: 0,
-        discountAmount: 0,
+        discountAmount: discountAmount,
         totalAmount: calculateTotal(),
         notes: formData.note || null,
-        paymentMethod: formData.paymentMethod
+        paymentMethod: formData.paymentMethod,
+        couponId: appliedCoupon?.coupon_id || null
       };
 
-      // Chuẩn bị thông tin giao hàng cho guest
-      const shippingAddress = !user ? {
+      // Chuẩn bị thông tin giao hàng (cho cả guest và user đã đăng nhập nếu chưa có addressId)
+      const shippingAddress = !orderData.addressId ? {
         fullName: formData.fullName,
         phone: formData.phone,
         email: formData.email,
@@ -195,12 +261,16 @@ const Checkout = () => {
         await clearCart(cartId);
       }
 
+      // Xóa coupon khỏi localStorage sau khi đặt hàng thành công
+      localStorage.removeItem('applied_coupon');
+      localStorage.removeItem('discount_amount');
+
       toast.success('Đặt hàng thành công!');
       
-      // Chuyển đến trang chi tiết đơn hàng hoặc trang thành công
-      const orderId = response?.data?.orderId;
+      // Chuyển đến trang thanh toán
+      const orderId = response?.data?.orderId || response?.data?.order_id;
       if (orderId) {
-        navigate(`/order-success/${orderId}`);
+        navigate(`/payment/${orderId}`);
       } else {
         navigate('/');
       }
@@ -553,6 +623,42 @@ const Checkout = () => {
                 <>
                   <Separator className="my-4" />
 
+                  {/* Hiển thị coupon đã áp dụng */}
+                  {appliedCoupon && (
+                    <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-md">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Tag className="h-4 w-4 text-green-600" />
+                          <div>
+                            <p className="text-sm font-medium text-green-900">
+                              {appliedCoupon.coupon_code}
+                            </p>
+                            {appliedCoupon.description && (
+                              <p className="text-xs text-green-700">
+                                {appliedCoupon.description}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setAppliedCoupon(null);
+                            setDiscountAmount(0);
+                            localStorage.removeItem('applied_coupon');
+                            localStorage.removeItem('discount_amount');
+                            toast.success("Đã xóa mã giảm giá");
+                          }}
+                          className="h-8 w-8 p-0"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600">Tạm tính:</span>
@@ -562,6 +668,12 @@ const Checkout = () => {
                       <span className="text-gray-600">Phí vận chuyển:</span>
                       <span>{formatPrice(calculateShipping())}</span>
                     </div>
+                    {discountAmount > 0 && (
+                      <div className="flex justify-between text-sm text-green-600">
+                        <span>Giảm giá:</span>
+                        <span>-{formatPrice(discountAmount)}</span>
+                      </div>
+                    )}
                     <Separator className="my-2" />
                     <div className="flex justify-between font-medium">
                       <span>Tổng cộng:</span>

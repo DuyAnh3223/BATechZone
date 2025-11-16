@@ -38,5 +38,14 @@ export const couponService = {
             withCredentials: true 
         });
         return response.data;
+    },
+
+    // Validate coupon code và tính toán discount
+    validateCoupon: async (couponCode, subtotal = 0) => {
+        const response = await api.get('/coupons/validate', {
+            params: { couponCode, subtotal },
+            withCredentials: true
+        });
+        return response.data;
     }
 };

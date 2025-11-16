@@ -141,3 +141,73 @@ export const deleteCoupon = async (req, res) => {
     }
 };
 
+// Validate coupon code và tính toán discount
+export const validateCoupon = async (req, res) => {
+    try {
+        const { couponCode, subtotal } = req.query;
+        
+        if (!couponCode) {
+            return res.status(400).json({ success: false, message: 'Vui lòng nhập mã giảm giá' });
+        }
+
+        const coupon = await Coupon.findByCode(couponCode);
+        
+        if (!coupon) {
+            return res.status(404).json({ success: false, message: 'Mã giảm giá không tồn tại' });
+        }
+
+        // Kiểm tra coupon có active không
+        if (!coupon.is_active) {
+            return res.status(400).json({ success: false, message: 'Mã giảm giá không còn hiệu lực' });
+        }
+
+        // Kiểm tra thời gian hiệu lực
+        const now = new Date();
+        if (coupon.valid_from && new Date(coupon.valid_from) > now) {
+            return res.status(400).json({ success: false, message: 'Mã giảm giá chưa có hiệu lực' });
+        }
+        if (coupon.valid_until && new Date(coupon.valid_until) < now) {
+            return res.status(400).json({ success: false, message: 'Mã giảm giá đã hết hạn' });
+        }
+
+        // Kiểm tra số lần sử dụng
+        if (coupon.usage_limit && coupon.used_count >= coupon.usage_limit) {
+            return res.status(400).json({ success: false, message: 'Mã giảm giá đã hết lượt sử dụng' });
+        }
+
+        // Kiểm tra giá trị đơn hàng tối thiểu
+        const orderSubtotal = parseFloat(subtotal) || 0;
+        if (orderSubtotal < coupon.min_order_amount) {
+            return res.status(400).json({ 
+                success: false, 
+                message: `Đơn hàng tối thiểu ${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(coupon.min_order_amount)} để sử dụng mã này` 
+            });
+        }
+
+        // Tính toán discount amount
+        let discountAmount = 0;
+        if (coupon.discount_type === 'percentage') {
+            discountAmount = (orderSubtotal * coupon.discount_value) / 100;
+            if (coupon.max_discount_amount && discountAmount > coupon.max_discount_amount) {
+                discountAmount = coupon.max_discount_amount;
+            }
+        } else if (coupon.discount_type === 'fixed_amount') {
+            discountAmount = coupon.discount_value;
+            if (discountAmount > orderSubtotal) {
+                discountAmount = orderSubtotal;
+            }
+        }
+
+        return res.json({
+            success: true,
+            data: {
+                coupon: coupon.toJSON(),
+                discountAmount: Math.round(discountAmount)
+            }
+        });
+    } catch (error) {
+        console.error('Error validating coupon:', error);
+        return res.status(500).json({ success: false, message: 'Lỗi kiểm tra mã giảm giá' });
+    }
+};
+

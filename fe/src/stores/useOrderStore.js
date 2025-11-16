@@ -26,13 +26,17 @@ export const useOrderStore = create((set) => ({
         set({ loading: true, error: null });
         try {
             const response = await orderService.getOrders(params);
+            console.log('OrderService response:', response);
+            // Response structure: { success: true, data: [...], pagination: {...} }
+            const ordersData = Array.isArray(response.data) ? response.data : (Array.isArray(response) ? response : []);
             set({ 
-                orders: response.data || response, 
-                pagination: response.pagination,
+                orders: ordersData, 
+                pagination: response.pagination || null,
                 loading: false 
             });
             return response;
         } catch (error) {
+            console.error('Error in fetchOrders:', error);
             set({ error: error.message, loading: false });
             throw error;
         }
@@ -121,6 +125,19 @@ export const useOrderStore = create((set) => ({
         set({ loading: true, error: null });
         try {
             const response = await orderService.refundOrder(orderId, amount);
+            set({ loading: false });
+            return response;
+        } catch (error) {
+            set({ error: error.message, loading: false });
+            throw error;
+        }
+    },
+
+    // Cập nhật trạng thái đơn hàng (tổng quát)
+    updateOrderStatus: async (orderId, status) => {
+        set({ loading: true, error: null });
+        try {
+            const response = await orderService.updateOrderStatus(orderId, status);
             set({ loading: false });
             return response;
         } catch (error) {

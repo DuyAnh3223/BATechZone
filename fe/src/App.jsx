@@ -35,6 +35,9 @@ import AdminWishlist from './pages/admin/AdminWishlist';
 import AdminPayment from './pages/admin/AdminPayment';
 import AdminServiceCenter from './pages/admin/AdminServiceCenter';
 import OrderSuccess from './pages/user/OrderSuccess';
+import Payment from './pages/user/Payment';
+import Orders from './pages/user/Orders';
+import OrderDetail from './pages/user/OrderDetail';
 
 function App() {
   return (
@@ -49,7 +52,10 @@ function App() {
             <Route path="blog" element={<Blog />} />
             <Route path="cart" element={<Cart />} />
             <Route path="checkout" element={<Checkout />} />
+            <Route path="payment/:orderId" element={<Payment />} />
             <Route path="order-success/:orderId" element={<OrderSuccess />} />
+            <Route path="orders" element={<Orders />} />
+            <Route path="orders/:orderId" element={<OrderDetail />} />
             <Route path="product/:productId" element={<ProductDetail />} />
             <Route path="category/:categoryId" element={<ProductList />} />
             <Route path="profile" element={<Profile />} />
