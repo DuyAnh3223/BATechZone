@@ -508,7 +508,7 @@ const Checkout = () => {
                       const imageUrl = item.image_url || item.imageUrl || 'https://via.placeholder.com/100';
                       const productName = item.product_name || item.productName || item.name || 'Sản phẩm';
                       const variantName = item.variant_name || item.variantName || '';
-                      const displayName = variantName ? `${productName} - ${variantName}` : productName;
+                      const displayName = variantName ? `${productName}` : productName;
                       const itemPrice = item.price || item.current_price || item.currentPrice || 0;
                       
                       return (

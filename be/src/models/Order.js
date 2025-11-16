@@ -162,17 +162,7 @@ class Order {
     
     const order = orders[0];
     
-    // Debug log
-    console.log('Raw order data from DB:', {
-      address_id: order.address_id,
-      recipient_name: order.recipient_name,
-      recipient_phone: order.recipient_phone,
-      address_line1: order.address_line1,
-      address_line2: order.address_line2,
-      city: order.city,
-      district: order.district,
-      ward: order.ward
-    });
+   
     
     // Lấy order items riêng
     const [items] = await db.query(
@@ -207,18 +197,7 @@ class Order {
     // Trả về object thô với tất cả dữ liệu (không qua constructor để giữ nguyên JOIN fields)
     order.items = items;
     order.payments = payments;
-    
-    console.log('Final order object with all fields:', {
-      recipient_name: order.recipient_name,
-      recipient_phone: order.recipient_phone,
-      address_line1: order.address_line1,
-      city: order.city,
-      district: order.district,
-      ward: order.ward,
-      items_count: items?.length,
-      payments_count: payments?.length
-    });
-    
+   
     return order;
   }
 

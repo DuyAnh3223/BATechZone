@@ -170,7 +170,7 @@ const Cart = () => {
                         const imageUrl = item.image_url || item.imageUrl || 'https://via.placeholder.com/100';
                         const productName = item.product_name || item.productName || item.name || 'Sản phẩm';
                         const variantName = item.variant_name || item.variantName || '';
-                        const displayName = variantName ? `${productName} - ${variantName}` : productName;
+                        const displayName = variantName ? `${productName}` : productName;
                         
                         return (
                           <tr key={item.cart_item_id} className={index !== cartItems.length - 1 ? "border-b" : ""}>
