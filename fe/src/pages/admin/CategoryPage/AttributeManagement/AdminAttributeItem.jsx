@@ -27,22 +27,26 @@ const AttributeItem = ({ attribute, onEdit, onDelete }) => {
 
         <div className="flex items-center gap-2">
           <button
-            onClick={() => onEdit && onEdit(attribute)}
-            className="px-2 py-1 rounded-md text-sm bg-yellow-100 text-yellow-900 hover:bg-yellow-200"
-          >
-            Sửa
-          </button>
-          <button
-            onClick={() => onDelete && onDelete(attribute.attribute_id)}
-            className="px-2 py-1 rounded-md text-sm bg-red-100 text-red-800 hover:bg-red-200"
-          >
-            Xóa
-          </button>
-          <button
             onClick={() => setExpanded((v) => !v)}
-            className="px-2 py-1 rounded-md text-sm bg-indigo-50 text-indigo-700 hover:bg-indigo-100"
+            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+              expanded 
+                ? 'bg-gray-500 text-white hover:bg-gray-600' 
+                : 'bg-indigo-600 text-white hover:bg-indigo-700'
+            }`}
           >
             {expanded ? 'Đóng giá trị' : 'Quản lý giá trị'}
+          </button>
+          <button
+            onClick={() => onEdit && onEdit(attribute)}
+            className="px-3 py-1.5 rounded-md bg-yellow-500 text-white text-sm font-medium hover:bg-yellow-600 transition-colors"
+          >
+            Chỉnh sửa
+          </button>
+          <button
+            onClick={() => onDelete && onDelete(attribute)}
+            className="px-3 py-1.5 rounded-md bg-red-500 text-white text-sm font-medium hover:bg-red-600 transition-colors"
+          >
+            Xóa
           </button>
         </div>
       </div>

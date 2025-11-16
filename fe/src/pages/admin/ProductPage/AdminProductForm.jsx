@@ -36,7 +36,7 @@ const AdminProductForm = ({ initialData = null, onSubmit, onCancel }) => {
   // product basic fields
   const [name, setName] = useState(initialData?.product_name || '');
   const [slug, setSlug] = useState(initialData?.slug || '');
-  const [price, setPrice] = useState(initialData?.base_price ?? initialData?.price ?? 0);
+  const [price, setPrice] = useState(initialData?.base_price ?? initialData?.price ?? "");
   const [stock, setStock] = useState(0); // Tồn kho cho biến thể mặc định
   const [description, setDescription] = useState(initialData?.description || '');
   const [isActive, setIsActive] = useState(initialData?.is_active !== undefined ? initialData.is_active : true);
@@ -308,9 +308,9 @@ const AdminProductForm = ({ initialData = null, onSubmit, onCancel }) => {
             className="w-full px-3 py-2 border rounded-md" 
             value={price} 
             onChange={(e) => setPrice(Number(e.target.value))}
-            min="0"
-            step="1000"
-            required
+            // min="0"
+            // step="1000"
+            // required
           />
         </div>
         {!initialData && (

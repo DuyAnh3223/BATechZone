@@ -68,7 +68,6 @@ export const useVariantStore = create((set) => ({
                 variants: [...state.variants, response.data || response],
                 loading: false
             }));
-            toast.success('Thêm biến thể thành công!');
             return response;
         } catch (error) {
             const message = error.response?.data?.message || 'Có lỗi xảy ra khi thêm biến thể';
@@ -99,11 +98,9 @@ export const useVariantStore = create((set) => ({
                     variants: [...state.variants, newVariant],
                     loading: false
                 }));
-                toast.success('Đã thêm biến thể');
             } else {
                 // If no data in response, reload variants
                 await get().fetchVariantsByProductId(productId);
-                toast.success('Đã thêm biến thể');
             }
             return response;
         } catch (error) {
@@ -138,11 +135,9 @@ export const useVariantStore = create((set) => ({
                     ),
                     loading: false
                 }));
-                toast.success('Đã cập nhật biến thể');
             } else {
-                // If no data, just show success
+                // If no data, just set loading to false
                 set({ loading: false });
-                toast.success('Đã cập nhật biến thể');
             }
             return response;
         } catch (error) {
@@ -163,7 +158,6 @@ export const useVariantStore = create((set) => ({
                 variants: state.variants.filter(v => v.variant_id !== variantId),
                 loading: false
             }));
-            toast.success('Đã xóa biến thể');
         } catch (error) {
             const message = error.response?.data?.message || 'Xóa biến thể thất bại';
             set({ error: message, loading: false });

@@ -15,7 +15,13 @@ export const useCategoryStore = create((set, get) => ({
     fetchCategories: async (params = {}) => {
         set({ loading: true, error: null });
         try {
-            const response = await categoryService.listCategories(params);
+            // Mặc định chỉ lấy categories đang active (is_active = 1)
+            // Trừ khi có yêu cầu cụ thể khác
+            const fetchParams = {
+                ...params,
+                is_active: params.is_active !== undefined ? params.is_active : 'true'
+            };
+            const response = await categoryService.listCategories(fetchParams);
             set({ 
                 categories: response.data || [], 
                 total: response.pagination?.total || 0,
@@ -83,7 +89,6 @@ export const useCategoryStore = create((set, get) => ({
         set({ loading: true, error: null });
         try {
             const response = await categoryService.createCategory(data);
-            toast.success('Thêm danh mục thành công!');
             set({ loading: false });
             return response;
         } catch (error) {
@@ -99,7 +104,6 @@ export const useCategoryStore = create((set, get) => ({
         set({ loading: true, error: null });
         try {
             const response = await categoryService.updateCategory(categoryId, data);
-            toast.success('Cập nhật danh mục thành công!');
             // Cập nhật category trong danh sách nếu có
             set((state) => ({
                 categories: state.categories.map(cat =>
@@ -125,7 +129,6 @@ export const useCategoryStore = create((set, get) => ({
         try {
             const idToDelete = parseInt(categoryId);
             const response = await categoryService.deleteCategory(categoryId);
-            toast.success('Xóa danh mục thành công!');
             // Cập nhật local state - remove category khỏi danh sách
             set((state) => ({
                 categories: state.categories.filter(cat => {

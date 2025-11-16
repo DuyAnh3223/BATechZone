@@ -1,4 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { CheckCircle } from 'lucide-react';
 import AdminVariantItem from './AdminVariantItem';
 import AdminVariantForm from './AdminVariantForm';
 import AdminVariantEditForm from './AdminVariantEditForm';
@@ -10,10 +20,27 @@ const AdminVariantList = ({ variants: initial = [], product, onUpdate, onDelete 
   const [editing, setEditing] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [variantToDelete, setVariantToDelete] = useState(null);
+  const [isSuccessDialogOpen, setIsSuccessDialogOpen] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+  const shouldShowSuccessRef = useRef(false);
+  const pendingMessageRef = useRef('');
 
   // Update variants when initial prop changes
   useEffect(() => {
     setVariants(initial || []);
+    
+    // Nếu có pending success message, hiển thị dialog sau khi variants được cập nhật
+    if (shouldShowSuccessRef.current && pendingMessageRef.current) {
+      // Sử dụng setTimeout để đảm bảo state được cập nhật sau khi render
+      setTimeout(() => {
+        setSuccessMessage(pendingMessageRef.current);
+        setIsSuccessDialogOpen(true);
+        shouldShowSuccessRef.current = false;
+        pendingMessageRef.current = '';
+      }, 100);
+    }
   }, [initial]);
 
   function handleEdit(variant) {
@@ -21,12 +48,19 @@ const AdminVariantList = ({ variants: initial = [], product, onUpdate, onDelete 
     // Don't show add form, we'll show edit form instead
   }
 
-  async function handleDelete(variant) {
-    if (!confirm('Xóa biến thể này?')) return;
+  function handleDelete(variant) {
+    setVariantToDelete(variant);
+    setIsDeleteDialogOpen(true);
+  }
+
+  async function handleConfirmDelete() {
+    if (!variantToDelete) return;
     
-    const variantId = variant.variant_id || variant.id;
+    const variantId = variantToDelete.variant_id || variantToDelete.id;
     if (!variantId) {
       alert('Không tìm thấy ID biến thể');
+      setIsDeleteDialogOpen(false);
+      setVariantToDelete(null);
       return;
     }
 
@@ -41,10 +75,20 @@ const AdminVariantList = ({ variants: initial = [], product, onUpdate, onDelete 
         return vId !== variantId;
       }));
       
+      setIsDeleteDialogOpen(false);
+      setVariantToDelete(null);
+      
       // Notify parent to refresh variants
       if (onDelete) {
-        onDelete(variant);
+        onDelete(variantToDelete);
       }
+      
+      // Hiển thị success dialog
+      const variantLabel = (variantToDelete.attribute_values || []).length > 0
+        ? (variantToDelete.attribute_values || []).map(av => av.value_name || av.attribute_value_id).join(' / ')
+        : 'Biến thể mặc định';
+      setSuccessMessage(`Đã xóa biến thể ${variantLabel} thành công!`);
+      setIsSuccessDialogOpen(true);
     } catch (error) {
       console.error('Error deleting variant:', error);
       alert(error.response?.data?.message || error.message || 'Có lỗi xảy ra khi xóa biến thể');
@@ -58,10 +102,20 @@ const AdminVariantList = ({ variants: initial = [], product, onUpdate, onDelete 
     setEditing(null);
   }
 
-  function handleFormSuccess() {
+  function handleFormSuccess(variantsCount = 0) {
+    // Đóng form trước
     setShowForm(false);
     setEditing(null);
-    // Refresh variants by calling onUpdate
+    
+    // Lưu message vào ref để hiển thị sau khi component re-render
+    if (variantsCount > 0) {
+      pendingMessageRef.current = `Đã tạo ${variantsCount} biến thể thành công!`;
+    } else {
+      pendingMessageRef.current = 'Đã tạo biến thể thành công!';
+    }
+    shouldShowSuccessRef.current = true;
+    
+    // Refresh variants - component sẽ re-render và hiển thị dialog trong useEffect
     if (onUpdate) {
       onUpdate();
     }
@@ -72,9 +126,15 @@ const AdminVariantList = ({ variants: initial = [], product, onUpdate, onDelete 
     setEditing(null);
   }
 
-  function handleEditSuccess() {
+  function handleEditSuccess(variantLabel = '') {
+    // Đóng form trước
     setEditing(null);
-    // Refresh variants
+    
+    // Lưu message vào ref để hiển thị sau khi component re-render
+    pendingMessageRef.current = `Đã cập nhật biến thể ${variantLabel || 'thành công'}!`;
+    shouldShowSuccessRef.current = true;
+    
+    // Refresh variants - component sẽ re-render và hiển thị dialog trong useEffect
     if (onUpdate) {
       onUpdate();
     }
@@ -129,6 +189,86 @@ const AdminVariantList = ({ variants: initial = [], product, onUpdate, onDelete 
           ))}
         </div>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={(open) => {
+        setIsDeleteDialogOpen(open);
+        if (!open) {
+          setVariantToDelete(null);
+        }
+      }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Xác nhận xóa biến thể</DialogTitle>
+            <DialogDescription>
+              {variantToDelete && (
+                <>
+                  Bạn có chắc chắn muốn xóa biến thể{' '}
+                  <span className="font-semibold text-red-600">
+                    {(variantToDelete.attribute_values || []).length > 0
+                      ? (variantToDelete.attribute_values || []).map(av => av.value_name || av.attribute_value_id).join(' / ')
+                      : 'Biến thể mặc định'}
+                  </span>? Hành động này không thể hoàn tác.
+                </>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setIsDeleteDialogOpen(false);
+                setVariantToDelete(null);
+              }}
+            >
+              Đóng
+            </Button>
+            <Button
+              type="button"
+              onClick={handleConfirmDelete}
+              className="bg-red-600 hover:bg-red-700 text-white"
+              disabled={deleting}
+            >
+              {deleting ? 'Đang xóa...' : 'Xóa'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Success Dialog */}
+      <Dialog open={isSuccessDialogOpen} onOpenChange={(open) => {
+        setIsSuccessDialogOpen(open);
+        if (!open) {
+          setSuccessMessage('');
+        }
+      }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <div className="flex items-center justify-center mb-4">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                <CheckCircle className="w-10 h-10 text-green-600" />
+              </div>
+            </div>
+            <DialogTitle className="text-center text-xl">Thành công!</DialogTitle>
+            <DialogDescription className="text-center text-base mt-2">
+              {successMessage}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="sm:justify-center">
+            <Button
+              type="button"
+              onClick={() => {
+                setIsSuccessDialogOpen(false);
+                setSuccessMessage('');
+              }}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white"
+            >
+              Đóng
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

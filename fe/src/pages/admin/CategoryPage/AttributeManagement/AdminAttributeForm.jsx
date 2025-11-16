@@ -91,7 +91,7 @@ const AttributeForm = ({ initialData = null, onSubmit, onCancel }) => {
                 onChange={(e) => updateValue(idx, e.target.value)}
                 className="flex-1 px-3 py-2 border rounded-md"
               />
-              <button type="button" onClick={() => removeValue(idx)} className="px-3 py-2 rounded-md bg-red-100 text-red-800">
+              <button type="button" onClick={() => removeValue(idx)} className="px-3 py-2 rounded-md bg-red-500 text-white text-sm font-medium hover:bg-red-600 transition-colors">
                 Xóa
               </button>
             </div>
@@ -100,7 +100,7 @@ const AttributeForm = ({ initialData = null, onSubmit, onCancel }) => {
       </div>
 
       <div className="flex items-center gap-3">
-        <button type="submit" className="px-4 py-2 rounded-md bg-indigo-600 text-black">
+        <button type="submit" className="px-4 py-2 rounded-md bg-indigo-600 text-white hover:bg-indigo-700">
           Lưu
         </button>
         <button type="button" onClick={onCancel} className="px-4 py-2 rounded-md border text-black">

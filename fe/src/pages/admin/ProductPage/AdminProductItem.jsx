@@ -43,7 +43,7 @@ const AdminProductItem = ({ product, onEdit, onDelete, onManageVariants, isExpan
 					Chỉnh sửa
 				</button>
 				<button 
-					onClick={() => onDelete && onDelete(product.product_id)} 
+					onClick={() => onDelete && onDelete(product)} 
 					className="px-3 py-1.5 rounded-md bg-red-500 text-white text-sm font-medium hover:bg-red-600 transition-colors"
 				>
 					Xóa

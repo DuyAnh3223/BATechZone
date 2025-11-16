@@ -122,6 +122,7 @@ export const getOrders = async (req, res) => {
       search: req.query.search,
       fromDate: req.query.fromDate,
       toDate: req.query.toDate,
+      couponId: req.query.couponId,
       sortBy: req.query.sortBy || 'created_at',
       sortOrder: req.query.sortOrder || 'DESC'
     };

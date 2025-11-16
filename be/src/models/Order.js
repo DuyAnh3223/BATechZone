@@ -233,6 +233,7 @@ class Order {
       search,
       fromDate,
       toDate,
+      couponId,
       sortBy = 'created_at',
       sortOrder = 'DESC'
     } = params;
@@ -253,6 +254,11 @@ class Order {
     if (paymentStatus) {
       conditions.push('o.payment_status = ?');
       values.push(paymentStatus);
+    }
+
+    if (couponId) {
+      conditions.push('o.coupon_id = ?');
+      values.push(couponId);
     }
 
     if (search) {
