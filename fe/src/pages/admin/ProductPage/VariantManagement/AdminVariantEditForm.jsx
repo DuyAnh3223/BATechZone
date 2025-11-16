@@ -31,7 +31,7 @@ const AdminVariantEditForm = ({ variant, onCancel, onSuccess }) => {
       await updateVariant(variantId, payload);
       
       if (onSuccess) {
-        onSuccess();
+        onSuccess(variantLabel);
       }
     } catch (error) {
       console.error('Error updating variant:', error);
@@ -75,9 +75,9 @@ const AdminVariantEditForm = ({ variant, onCancel, onSuccess }) => {
             className="w-full px-3 py-2 border rounded-md"
             value={price}
             onChange={(e) => setPrice(Number(e.target.value))}
-            min="0"
-            step="1000"
-            required
+            // min="0"
+            // step="1000"
+            // required
           />
         </div>
 

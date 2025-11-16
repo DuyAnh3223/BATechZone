@@ -29,5 +29,14 @@ export const couponService = {
     deleteCoupon: async (couponId) => {
         const response = await api.delete(`/coupons/${couponId}`, { withCredentials: true });
         return response.data;
+    },
+
+    // Lấy danh sách đơn hàng đã sử dụng coupon
+    getCouponOrders: async (couponId, params = {}) => {
+        const response = await api.get('/orders', { 
+            params: { ...params, couponId },
+            withCredentials: true 
+        });
+        return response.data;
     }
 };

@@ -51,8 +51,6 @@ export const useAttributeStore = create((set, get) => ({
         set({ loading: true, error: null });
         try {
             const response = await attributeService.createAttribute(attributeData);
-            const message = response.data?.message || response.message || 'Thêm thuộc tính thành công!';
-            toast.success(message);
             set({ loading: false });
             return response;
         } catch (error) {
@@ -68,7 +66,6 @@ export const useAttributeStore = create((set, get) => ({
         set({ loading: true, error: null });
         try {
             const response = await attributeService.deleteAttribute(attributeId);
-            toast.success('Xóa thuộc tính thành công!');
             set((state) => ({
                 attributes: state.attributes.filter(attr => attr.attribute_id !== parseInt(attributeId)),
                 total: Math.max(0, (state.total || 0) - 1),
@@ -88,8 +85,6 @@ export const useAttributeStore = create((set, get) => ({
         set({ loading: true, error: null });
         try {
             const response = await attributeService.updateAttribute(attributeId, attributeData);
-            const message = response.data?.message || response.message || 'Cập nhật thuộc tính thành công!';
-            toast.success(message);
             // refresh list or current attribute
             await get().fetchAttributes().catch(() => {});
             if (get().currentAttribute?.attribute_id === attributeId) {

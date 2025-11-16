@@ -60,9 +60,6 @@ export const useUserStore = create((set, get) => ({
         try {
             const response = await userService.createUser(userData);
             if (response?.success) {
-                toast.success('Tạo người dùng thành công', {
-                    description: response.message || `Đã tạo tài khoản ${userData.username} thành công`
-                });
                 set({ loading: false });
                 return response.data;
             } else {
@@ -85,9 +82,6 @@ export const useUserStore = create((set, get) => ({
         try {
             const response = await userService.updateUser(userId, userData);
             if (response?.success) {
-                toast.success('Cập nhật người dùng thành công', {
-                    description: `Đã cập nhật thông tin người dùng ${userData.username} thành công`
-                });
                 // Cập nhật user trong danh sách nếu có
                 const users = get().users;
                 const updatedUsers = users.map(user =>
@@ -113,11 +107,6 @@ export const useUserStore = create((set, get) => ({
     deleteUser: async (userId) => {
         set({ loading: true });
         try {
-            // Lấy thông tin user trước khi xóa để hiển thị username trong thông báo
-            const state = get();
-            const userToDelete = state.users.find(u => u.user_id === parseInt(userId));
-            const username = userToDelete?.username || 'người dùng';
-            
             const response = await userService.deleteUser(userId);
             if (response?.success) {
                 // Cập nhật danh sách users
@@ -129,9 +118,6 @@ export const useUserStore = create((set, get) => ({
                     },
                     loading: false
                 }));
-                toast.success('Xóa người dùng thành công', {
-                    description: `Đã xóa người dùng ${username} thành công`
-                });
                 return response;
             } else {
                 set({ loading: false });

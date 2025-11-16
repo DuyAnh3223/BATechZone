@@ -65,9 +65,6 @@ export const useCouponStore = create((set, get) => ({
                 total: state.total + 1,
                 loading: false
             }));
-            toast.success('Tạo coupon thành công', {
-                description: `Đã tạo coupon ${data.coupon_code} thành công`
-            });
             return response;
         } catch (error) {
             const message = error.response?.data?.message || error.message || 'Không thể tạo coupon mới';
@@ -102,9 +99,6 @@ export const useCouponStore = create((set, get) => ({
                 ),
                 loading: false
             }));
-            toast.success('Cập nhật coupon thành công', {
-                description: `Đã cập nhật coupon ${data.coupon_code} thành công`
-            });
             return response;
         } catch (error) {
             const message = error.response?.data?.message || error.message || 'Không thể cập nhật thông tin coupon';
@@ -131,9 +125,6 @@ export const useCouponStore = create((set, get) => ({
                 total: Math.max(0, state.total - 1),
                 loading: false
             }));
-            toast.success('Xóa coupon thành công', {
-                description: `Đã xóa coupon ${couponCode} thành công`
-            });
         } catch (error) {
             const message = error.response?.data?.message || error.message || 'Không thể xóa coupon';
             set({ error: message, loading: false });

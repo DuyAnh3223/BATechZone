@@ -70,7 +70,7 @@ const AdminCategoryForm = ({ initialData = null, onSubmit, onCancel }) => {
 			}
 
 			// forward response to parent if provided
-			onSubmit && onSubmit(response);
+			onSubmit && onSubmit(response, !!initialData?.category_id);
 		} catch (error) {
 			// errors are handled/toasted in the store; no-op here
 			console.error('Error submitting category form', error);

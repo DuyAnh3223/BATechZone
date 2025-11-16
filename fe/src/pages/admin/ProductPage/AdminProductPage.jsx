@@ -1,4 +1,14 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { CheckCircle } from 'lucide-react';
 import AdminProductList from './AdminProductList';
 import AdminProductItem from './AdminProductItem';
 import AdminProductForm from './AdminProductForm';
@@ -18,6 +28,10 @@ const AdminProductPage = () => {
 	const [variantsByProduct, setVariantsByProduct] = useState({}); // Store variants by product_id
 	const [loadingVariantsByProduct, setLoadingVariantsByProduct] = useState({}); // Track loading state per product
 	const loadedProductsRef = useRef(new Set()); // Track which products have been loaded
+	const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+	const [productToDelete, setProductToDelete] = useState(null);
+	const [isSuccessDialogOpen, setIsSuccessDialogOpen] = useState(false);
+	const [successMessage, setSuccessMessage] = useState('');
 
 	// Function to load products (memoized with useCallback)
 	const loadProducts = useCallback(async () => {
@@ -93,11 +107,23 @@ const AdminProductPage = () => {
 		setShowForm(true);
 	}
 
-	async function handleDelete(productId) {
-		if (!confirm('Xác nhận xóa sản phẩm?')) return;
+	function handleDelete(product) {
+		setProductToDelete(product);
+		setIsDeleteDialogOpen(true);
+	}
+
+	async function handleConfirmDelete() {
+		if (!productToDelete) return;
 		try {
-			await deleteProduct(productId);
+			const productName = productToDelete.product_name || 'sản phẩm';
+			await deleteProduct(productToDelete.product_id);
+			setIsDeleteDialogOpen(false);
+			setProductToDelete(null);
 			await loadProducts();
+			
+			// Hiển thị success dialog
+			setSuccessMessage(`Đã xóa sản phẩm ${productName} thành công!`);
+			setIsSuccessDialogOpen(true);
 		} catch (error) {
 			console.error('Error deleting product:', error);
 		}
@@ -105,17 +131,28 @@ const AdminProductPage = () => {
 
 	async function handleSubmit(productPayload) {
 		try {
-			if (productPayload.product_id) {
+			let response;
+			const isUpdate = !!productPayload.product_id;
+			if (isUpdate) {
 				// Update existing product - only send fields that backend expects
 				const { product_id, variant_attributes, variants, ...updateData } = productPayload;
-				await updateProduct(product_id, updateData);
+				response = await updateProduct(product_id, updateData);
 			} else {
 				// Create new product
-				await createProduct(productPayload);
+				response = await createProduct(productPayload);
 			}
 			setShowForm(false);
 			setEditing(null);
 			await loadProducts();
+			
+			// Hiển thị success dialog
+			const productName = productPayload.product_name || editing?.product_name || '';
+			if (isUpdate) {
+				setSuccessMessage(`Đã cập nhật sản phẩm ${productName} thành công!`);
+			} else {
+				setSuccessMessage(`Đã tạo sản phẩm ${productName} thành công!`);
+			}
+			setIsSuccessDialogOpen(true);
 		} catch (error) {
 			console.error('Error submitting product:', error);
 			alert(error.response?.data?.message || 'Có lỗi xảy ra khi lưu sản phẩm');
@@ -200,6 +237,76 @@ const AdminProductPage = () => {
 				onVariantDelete={handleVariantDelete}
 			/>
 		)}
+
+		{/* Delete Confirmation Dialog */}
+		<Dialog open={isDeleteDialogOpen} onOpenChange={(open) => {
+			setIsDeleteDialogOpen(open);
+			if (!open) {
+				setProductToDelete(null);
+			}
+		}}>
+			<DialogContent className="max-w-md">
+				<DialogHeader>
+					<DialogTitle>Xác nhận xóa sản phẩm</DialogTitle>
+					<DialogDescription>
+						Bạn có chắc chắn muốn xóa sản phẩm <span className="font-semibold text-red-600">{productToDelete?.product_name}</span>? Hành động này không thể hoàn tác.
+					</DialogDescription>
+				</DialogHeader>
+				<DialogFooter>
+					<Button
+						type="button"
+						variant="outline"
+						onClick={() => {
+							setIsDeleteDialogOpen(false);
+							setProductToDelete(null);
+						}}
+					>
+						Đóng
+					</Button>
+					<Button
+						type="button"
+						onClick={handleConfirmDelete}
+						className="bg-red-600 hover:bg-red-700 text-white"
+					>
+						Xóa
+					</Button>
+				</DialogFooter>
+			</DialogContent>
+		</Dialog>
+
+		{/* Success Dialog */}
+		<Dialog open={isSuccessDialogOpen} onOpenChange={(open) => {
+			setIsSuccessDialogOpen(open);
+			if (!open) {
+				setSuccessMessage('');
+			}
+		}}>
+			<DialogContent className="max-w-md">
+				<DialogHeader>
+					<div className="flex items-center justify-center mb-4">
+						<div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+							<CheckCircle className="w-10 h-10 text-green-600" />
+						</div>
+					</div>
+					<DialogTitle className="text-center text-xl">Thành công!</DialogTitle>
+					<DialogDescription className="text-center text-base mt-2">
+						{successMessage}
+					</DialogDescription>
+				</DialogHeader>
+				<DialogFooter className="sm:justify-center">
+					<Button
+						type="button"
+						onClick={() => {
+							setIsSuccessDialogOpen(false);
+							setSuccessMessage('');
+						}}
+						className="bg-indigo-600 hover:bg-indigo-700 text-white"
+					>
+						Đóng
+					</Button>
+				</DialogFooter>
+			</DialogContent>
+		</Dialog>
 		</div>
 	);
 };

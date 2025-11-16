@@ -21,20 +21,18 @@ import AdminLogin from './pages/admin/AdminLogin';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminProductPage from './pages/admin/ProductPage/AdminProductPage';
 import AdminProductDetail from './pages/admin/AdminProductDetail';
-import AdminUser from './pages/admin/AdminUser';
+import AdminUserPage from './pages/admin/UserPage/AdminUserPage';
 import AdminUserDetail from './pages/admin/AdminUserDetail';
-import AdminCoupon from './pages/admin/AdminCoupon';
+import AdminCouponPage from './pages/admin/CouponPage/AdminCouponPage';
 import AdminAddress from './pages/admin/AdminAddress';
 import AdminOrder from './pages/admin/AdminOrder';
 import AdminNotification from './pages/admin/AdminNotification';
 import AdminBuild from './pages/admin/AdminBuild';
 import AdminCategoryPage from './pages/admin/CategoryPage/AdminCategoryPage';
-import AdminAttribute from './pages/admin/AdminAttribute';
 import AdminPost from './pages/admin/AdminPost';
 import AdminPostDetail from './pages/admin/AdminPostDetail';
 import AdminWishlist from './pages/admin/AdminWishlist';
 import AdminPayment from './pages/admin/AdminPayment';
-import AdminModeration from './pages/admin/AdminModeration';
 import AdminServiceCenter from './pages/admin/AdminServiceCenter';
 
 function App() {
@@ -69,18 +67,16 @@ function App() {
             <Route path="dashboard" element={<AdminDashboard />} />
             <Route path="products" element={<AdminProductPage />} />
             <Route path="products/:productId" element={<AdminProductDetail />} />
-            <Route path="users" element={<AdminUser />} />
+            <Route path="users" element={<AdminUserPage />} />
             <Route path="users/:userId" element={<AdminUserDetail />} />
-            <Route path="coupons" element={<AdminCoupon />} />
+            <Route path="coupons" element={<AdminCouponPage />} />
             <Route path="orders" element={<AdminOrder />} />
             <Route path="notifications" element={<AdminNotification />} />
             <Route path="builds" element={<AdminBuild />} />
             <Route path="categories" element={<AdminCategoryPage />} />
-            <Route path="attributes" element={<AdminAttribute />} />
             <Route path="posts" element={<AdminPost />} />
             <Route path="posts/:postId" element={<AdminPostDetail />} />
             <Route path="payments" element={<AdminPayment />} />
-            <Route path="moderation" element={<AdminModeration />} />
             <Route path="service-center" element={<AdminServiceCenter />} />
           </Route>
       </Routes>

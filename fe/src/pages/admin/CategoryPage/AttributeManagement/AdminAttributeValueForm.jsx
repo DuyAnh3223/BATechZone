@@ -66,7 +66,7 @@ const AdminAttributeValueForm = ({ initialValue = null, onSubmit, onCancel }) =>
       </div>
 
       <div className="flex items-center gap-3">
-        <button type="submit" className="px-4 py-2 rounded-md bg-green-600 text-black">Lưu</button>
+        <button type="submit" className="px-4 py-2 rounded-md bg-indigo-600 text-white hover:bg-indigo-700">Lưu</button>
         <button type="button" onClick={onCancel} className="px-4 py-2 rounded-md border text-black">Hủy</button>
       </div>
     </form>

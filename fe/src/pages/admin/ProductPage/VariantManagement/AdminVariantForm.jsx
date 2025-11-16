@@ -260,13 +260,15 @@ const AdminVariantForm = ({ product, existingVariants = [], onCancel, onSuccess 
         await createVariantForProduct(product.product_id, payload);
       }
       
+      const variantsCount = variants.length;
+      
       // Reset form
       setVariants([]);
       setVariantAttributes([]);
       setSelectedValues({});
       
       if (onSuccess) {
-        onSuccess();
+        onSuccess(variantsCount);
       }
     } catch (error) {
       console.error('Error saving variants:', error);
@@ -382,7 +384,7 @@ const AdminVariantForm = ({ product, existingVariants = [], onCancel, onSuccess 
                 </div>
                 <div>
                   <label className="block text-xs text-gray-600 mb-1">Giá (₫)</label>
-                  <input type="number" className="w-full px-3 py-2 border rounded-md text-sm" value={v.price} onChange={(e) => updateVariant(idx, { price: Number(e.target.value) })} min="0" step="1000" />
+                  <input type="number" className="w-full px-3 py-2 border rounded-md text-sm" value={v.price} onChange={(e) => updateVariant(idx, { price: Number(e.target.value) })} />
                 </div>
                 <div>
                   <label className="block text-xs text-gray-600 mb-1">Tồn kho</label>

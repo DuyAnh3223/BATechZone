@@ -51,7 +51,6 @@ export const useProductStore = create((set, get) => ({
         set({ loading: true, error: null });
         try {
             const response = await productService.createProduct(data);
-            toast.success('Thêm sản phẩm thành công!');
             set({ loading: false });
             return response;
         } catch (error) {
@@ -67,7 +66,6 @@ export const useProductStore = create((set, get) => ({
         set({ loading: true, error: null });
         try {
             const response = await productService.updateProduct(productId, data);
-            toast.success('Cập nhật sản phẩm thành công!');
             set((state) => ({
                 products: state.products.map(p => 
                     p.product_id === parseInt(productId) 
@@ -91,7 +89,6 @@ export const useProductStore = create((set, get) => ({
         set({ loading: true, error: null });
         try {
             const response = await productService.deleteProduct(productId);
-            toast.success('Xóa sản phẩm thành công!');
             set((state) => ({
                 products: state.products.filter(p => p.product_id !== parseInt(productId)),
                 total: Math.max(0, (state.total || 0) - 1),

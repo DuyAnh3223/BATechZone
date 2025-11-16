@@ -53,8 +53,17 @@ export const useAttributeValueStore = create((set, get) => ({
         set({ loading: true, error: null });
         try {
             const response = await attributeValueService.createAttributeValue(valueData);
-            toast.success('Thêm giá trị thành công!');
-            set({ loading: false });
+            const newValue = response.data || response;
+            // Tự động thêm vào currentValues nếu attribute_id khớp
+            if (newValue && valueData.attribute_id) {
+                set((state) => ({
+                    currentValues: [...(state.currentValues || []), newValue],
+                    valuesTotal: (state.valuesTotal || 0) + 1,
+                    loading: false
+                }));
+            } else {
+                set({ loading: false });
+            }
             return response;
         } catch (error) {
             const message = error.response?.data?.message || 'Có lỗi xảy ra khi thêm giá trị';
@@ -69,7 +78,6 @@ export const useAttributeValueStore = create((set, get) => ({
         set({ loading: true, error: null });
         try {
             const response = await attributeValueService.updateAttributeValue(valueId, valueData);
-            toast.success('Cập nhật giá trị thành công!');
             set((state) => ({
                 currentValues: state.currentValues.map(val => 
                     val.attribute_value_id === parseInt(valueId) 
@@ -92,7 +100,6 @@ export const useAttributeValueStore = create((set, get) => ({
         set({ loading: true, error: null });
         try {
             const response = await attributeValueService.deleteAttributeValue(valueId);
-            toast.success('Xóa giá trị thành công!');
             set((state) => ({
                 currentValues: state.currentValues.filter(val => 
                     val.attribute_value_id !== parseInt(valueId)

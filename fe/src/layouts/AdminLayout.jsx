@@ -1,14 +1,12 @@
 import React from "react";
 import { Outlet, NavLink } from "react-router-dom";
-import { User2, Home, Box, ShoppingCart, ListOrdered, Percent, Bell, Search, Users, Star, MapPin, Wrench, Tags, Book, Heart, CreditCard, TriangleAlert, LifeBuoy, Eye, Palette } from "lucide-react";
+import { User2, Home, Box, ShoppingCart, ListOrdered, Percent, Bell, Search, Users, Star, MapPin, Wrench, Tags, Book, Heart, CreditCard, LifeBuoy, Eye } from "lucide-react";
 import adminAvatar from "../assets/react.svg"; // dùng tạm hình có sẵn
 
 const menu = [
   { icon: <Home size={18} />, label: "Bảng điều khiển", to: "/admin/dashboard" },
   { icon: <Users size={18} />, label: "Người dùng", to: "/admin/users" },
   { icon: <Box size={18} />, label: "Sản phẩm", to: "/admin/products" },
-  { icon: <Palette size={18} />, label: "Thuộc tính", to: "/admin/attributes", indent: true },
-  { icon: <TriangleAlert size={18} />, label: "Kiểm duyệt", to: "/admin/moderation", indent: true },
   { icon: <Tags size={18} />, label: "Danh mục", to: "/admin/categories" },
   { icon: <ListOrdered size={18} />, label: "Đơn hàng", to: "/admin/orders" },
   { icon: <CreditCard size={18} />, label: "Thanh toán", to: "/admin/payments" },
