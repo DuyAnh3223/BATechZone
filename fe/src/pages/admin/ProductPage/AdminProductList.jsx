@@ -34,8 +34,10 @@ const AdminProductList = ({
 						{isExpanded && (
 							<div className="ml-4 p-4 border rounded-md bg-gray-50">
 								<div className="flex items-center justify-between mb-4">
-									<h4 className="font-medium text-gray-800">Biến thể của {p.product_name}</h4>
+									<h4 className="font-medium text-gray-800">Biến thể của {p.product_name} ({variants.length})</h4>
+									
 								</div>
+
 								{isLoading ? (
 									<div className="text-center py-4 text-gray-500">Đang tải biến thể...</div>
 								) : (

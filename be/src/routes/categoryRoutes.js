@@ -13,7 +13,7 @@ import {
   uploadCategoryImage,
   deleteCategoryImage
 } from '../controllers/categoryController.js';
-import { uploadCategoryImage as uploadMiddleware } from '../middleware/upload.js';
+import { uploadCategoryImage as uploadMiddleware } from '../middlewares/upload.js';
 
 const router = express.Router();
 

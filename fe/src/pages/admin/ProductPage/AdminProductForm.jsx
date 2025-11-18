@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useCategoryStore } from '@/stores/useCategoryStore';
 import { attributeService } from '@/services/attributeService';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { X } from 'lucide-react';
 
 // Helper: cartesian product of arrays
 function cartesianProduct(arrays) {
@@ -281,15 +283,7 @@ const AdminProductForm = ({ initialData = null, onSubmit, onCancel }) => {
         />
       </div>
 
-      <div>
-        <label className="block text-sm font-medium mb-1">Slug</label>
-        <input 
-          className="w-full px-3 py-2 border rounded-md" 
-          value={slug} 
-          onChange={(e) => setSlug(e.target.value)}
-          placeholder="Tự động tạo từ tên sản phẩm"
-        />
-      </div>
+      
 
       <div>
         <label className="block text-sm font-medium mb-1">Danh mục <span className="text-red-500">*</span></label>
@@ -304,6 +298,82 @@ const AdminProductForm = ({ initialData = null, onSubmit, onCancel }) => {
             <option key={c.category_id} value={c.category_id}>{c.category_name}</option>
           ))}
         </select>
+      </div>
+
+      <div>
+        
+        <div className="border-t pt-4">
+        <h4 className="font-medium mb-2">Chọn thuộc tính </h4>
+        {loadingAttributes && (
+          <div className="text-sm text-gray-500 py-2">Đang tải thuộc tính...</div>
+        )}
+        {!loadingAttributes && attributes.length === 0 && categoryId && (
+          <div className="text-sm text-gray-500 py-2">Danh mục này chưa có thuộc tính nào.</div>
+        )}
+        {!categoryId && (
+          <div className="text-sm text-gray-500 py-2">Sản phẩm chưa có danh mục.</div>
+        )}
+        <div className="space-y-4">
+          {attributes.map((attr) => (
+            <div key={attr.attribute_id} className="p-4 border rounded-lg bg-gray-50">
+              <div className="flex items-center gap-3 mb-3">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input 
+                    type="checkbox" 
+                    checked={variantAttributes.includes(attr.attribute_id)} 
+                    onChange={() => toggleVariantAttribute(attr.attribute_id)}
+                    className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                  />
+                  <span className="font-medium text-gray-900">{attr.attribute_name}</span>
+                </label>
+                <span className="text-xs text-gray-500 px-2 py-0.5 bg-white border border-gray-200 rounded">
+                  {attr.attribute_type}
+                </span>
+              </div>
+
+              {variantAttributes.includes(attr.attribute_id) && (
+                <div>
+                  <Select
+                    onValueChange={(value) => {
+                      if (value) {
+                        toggleValue(attr.attribute_id, value);
+                      }
+                    }}
+                  >
+                    <SelectTrigger className="w-full bg-white">
+                      <SelectValue placeholder="-- Chọn giá trị --" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(attr.values || []).map((v) => {
+                        const valueId = Number(v.attribute_value_id);
+                        const isSelected = selectedValues[attr.attribute_id] 
+                          ? Array.from(selectedValues[attr.attribute_id]).some(id => Number(id) === valueId)
+                          : false;
+                        
+                        return (
+                          <SelectItem 
+                            key={v.attribute_value_id} 
+                            value={String(v.attribute_value_id)}
+                            disabled={isSelected}
+                          >
+                            <div className="flex items-center justify-between w-full">
+                              <span>{v.value_name}</span>
+                              {isSelected && (
+                                <span className="ml-2 text-indigo-600 text-xs">✓ Đã chọn</span>
+                              )}
+                            </div>
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
@@ -331,7 +401,7 @@ const AdminProductForm = ({ initialData = null, onSubmit, onCancel }) => {
         </div>
         {!initialData && (
           <div>
-            <label className="block text-sm font-medium mb-1">Tồn kho ban đầu</label>
+            <label className="block text-sm font-medium mb-1">Tồn kho</label>
             <input 
               type="number" 
               className="w-full px-3 py-2 border rounded-md" 

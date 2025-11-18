@@ -13,6 +13,7 @@ import addressRoutes from './addressRoutes.js';
 import profileRoutes from './profileRoutes.js';
 import userRoutes from './userRoutes.js';
 import variantRoutes from './variantRoutes.js';
+import variantImageRoutes from './variantImageRoutes.js';
 
 
 
@@ -31,6 +32,7 @@ router.use('/addresses', addressRoutes);
 router.use('/user/profile', profileRoutes);
 router.use('/users', userRoutes);
 router.use('/variants', variantRoutes);
+router.use('/variant-images', variantImageRoutes);
 
 
 

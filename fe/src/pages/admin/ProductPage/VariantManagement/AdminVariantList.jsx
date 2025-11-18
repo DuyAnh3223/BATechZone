@@ -157,7 +157,6 @@ const AdminVariantList = ({ variants: initial = [], product, onUpdate, onDelete 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-medium">Biến thể ({variants.length})</h3>
         <div className="flex items-center gap-2">
           <button onClick={handleAddNew} className="px-3 py-1.5 rounded-md bg-indigo-600 text-white hover:bg-indigo-700">
             Thêm biến thể

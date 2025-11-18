@@ -1,5 +1,5 @@
 import Category from '../models/Category.js';
-import { getPublicUrlForCategory, mapPublicUrlToDiskPath } from '../middleware/upload.js';
+import { getPublicUrlForCategory, mapPublicUrlToDiskPath } from '../middlewares/upload.js';
 
 export const createCategory = async (req, res) => {
   try {
