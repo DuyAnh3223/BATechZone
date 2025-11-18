@@ -24,7 +24,8 @@ const ProductCard = ({ product }) => {
   // Map data từ API format
   const productName = product.product_name || product.name;
   const categoryName = product.category_name || product.category;
-  const price = product.base_price || product.price || 0;
+  // Lấy giá từ default variant hoặc variant đầu tiên (vì product không còn base_price)
+  const price = product.default_variant_price || product.min_variant_price || product.price || 0;
   const imageUrl = product.image_url || product.image || 'https://via.placeholder.com/300';
   const productId = product.product_id || product.id;
   const isActive = product.is_active !== undefined ? product.is_active : true;

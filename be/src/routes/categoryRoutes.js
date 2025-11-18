@@ -10,7 +10,8 @@ import {
   getCategoryAttributes,
   updateCategoryAttributes,
   removeCategoryAttribute,
-  uploadCategoryImage
+  uploadCategoryImage,
+  deleteCategoryImage
 } from '../controllers/categoryController.js';
 import { uploadCategoryImage as uploadMiddleware } from '../middleware/upload.js';
 
@@ -24,8 +25,9 @@ router.post('/', createCategory);
 router.put('/:id', updateCategory);
 router.delete('/:id', deleteCategory);
 
-// Image upload route
+// Image management routes
 router.post('/upload-image', uploadMiddleware.single('image'), uploadCategoryImage);
+router.post('/delete-image', deleteCategoryImage);
 
 // Attribute management routes
 router.get('/:id/attributes', getCategoryAttributes);

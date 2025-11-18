@@ -38,7 +38,7 @@ app.get('/api/test', (req, res) => {
 app.use('/api/auth', authRoute);
 
 // serve uploads statically
-app.use('/uploads', express.static(path.join(__dirname, '..', '..', 'uploads')));
+app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
 //private routes
 app.use('/api', routes);

@@ -219,6 +219,21 @@ export const useCategoryStore = create((set, get) => ({
         }
     },
 
+    deleteCategoryImage: async (imageUrl) => {
+        set({ loading: true, error: null });
+        try {
+            const response = await categoryService.deleteCategoryImage(imageUrl);
+            toast.success('Xóa ảnh thành công!');
+            set({ loading: false });
+            return response;
+        } catch (error) {
+            const message = error.response?.data?.message || 'Có lỗi xảy ra khi xóa ảnh';
+            set({ error: message, loading: false });
+            toast.error(message);
+            throw error;
+        }
+    },
+
     // Clear error
     clearError: () => set({ error: null }),
 

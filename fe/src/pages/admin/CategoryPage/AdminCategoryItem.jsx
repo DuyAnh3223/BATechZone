@@ -4,13 +4,37 @@ import AdminAttributeList from './AttributeManagement/AdminAttributeList';
 const AdminCategoryItem = ({ category, onEdit, onDelete }) => {
   const [expanded, setExpanded] = useState(false);
 
+  // Get full image URL
+  const getImageUrl = (imageUrl) => {
+    if (!imageUrl) return '';
+    if (imageUrl.startsWith('http')) return imageUrl;
+    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+    const fullUrl = `${baseUrl.replace(/\/$/, '')}/${imageUrl.replace(/^\//, '')}`;
+    console.log('🖼️ Image URL Debug:', {
+      original: imageUrl,
+      baseUrl,
+      fullUrl,
+      categoryId: category.category_id
+    });
+    return fullUrl;
+  };
+
   return (
     <div className="p-4 border rounded-md bg-white">
       <div className="flex items-start justify-between">
         <div className="flex items-start gap-4">
           <div className="w-16 h-16 bg-gray-100 rounded-md flex items-center justify-center overflow-hidden">
             {category.image_url ? (
-              <img src={category.image_url} alt={category.category_name} className="w-full h-full object-cover" />
+              <img 
+                src={getImageUrl(category.image_url)} 
+                alt={category.category_name} 
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  console.error('❌ Image load failed:', e.target.src);
+                  e.target.src = 'https://via.placeholder.com/64x64?text=No+Image';
+                }}
+                onLoad={() => console.log('✅ Image loaded successfully')}
+              />
             ) : (
               <div className="text-xs text-gray-400">No image</div>
             )}

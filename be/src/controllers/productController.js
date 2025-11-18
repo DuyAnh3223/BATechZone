@@ -56,7 +56,7 @@ export const getProduct = async (req, res) => {
 // Tạo mới sản phẩm
 export const createProduct = async (req, res) => {
   try {
-    const { category_id, product_name, slug, description, base_price, stock, is_active, is_featured, variants } = req.body;
+    const { category_id, product_name, slug, description, default_price, base_price, stock, is_active, is_featured, variants } = req.body;
 
     // Validate required fields
     if (!product_name || !product_name.trim()) {
@@ -73,10 +73,20 @@ export const createProduct = async (req, res) => {
       });
     }
 
-    if (!base_price || isNaN(base_price) || parseFloat(base_price) <= 0) {
+    // Use default_price for default variant, fallback to base_price for backward compatibility
+    const variantPrice = default_price || base_price;
+    if ((!variants || variants.length === 0) && (!variantPrice || isNaN(variantPrice) || parseFloat(variantPrice) <= 0)) {
       return res.status(400).json({
         success: false,
         message: 'Giá sản phẩm phải là số dương'
+      });
+    }
+
+    // Validate stock quantity for default variant
+    if (stock !== undefined && parseInt(stock) < 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Số lượng tồn kho không được âm'
       });
     }
 
@@ -96,7 +106,7 @@ export const createProduct = async (req, res) => {
       product_name: product_name.trim(),
       slug: finalSlug,
       description: description?.trim() || null,
-      base_price: parseFloat(base_price),
+      // Note: Product không còn lưu base_price, giá được lưu ở variant
       is_active: is_active !== undefined ? (is_active ? 1 : 0) : 1,
       is_featured: is_featured !== undefined ? (is_featured ? 1 : 0) : 0
     });
@@ -105,13 +115,23 @@ export const createProduct = async (req, res) => {
     if (variants && Array.isArray(variants) && variants.length > 0) {
       for (let i = 0; i < variants.length; i++) {
         const variant = variants[i];
+        const variantStock = parseInt(variant.stock_quantity || variant.stock || 0);
+        
+        // Validate stock for each variant
+        if (variantStock < 0) {
+          return res.status(400).json({
+            success: false,
+            message: `Số lượng tồn kho của biến thể ${i + 1} không được âm`
+          });
+        }
+
         try {
           await Variant.create({
             productId: productId,
             sku: variant.sku || null,
             variantName: variant.variant_name || variant.sku || null,
-            price: parseFloat(variant.price || base_price),
-            stockQuantity: parseInt(variant.stock_quantity || variant.stock || 0),
+            price: parseFloat(variant.price || variantPrice),
+            stockQuantity: variantStock,
             isActive: variant.is_active !== undefined ? (variant.is_active ? 1 : 0) : 1,
             isDefault: i === 0 ? 1 : (variant.is_default ? 1 : 0), // First variant is default
             attributes: variant.attribute_value_ids || []
@@ -128,7 +148,7 @@ export const createProduct = async (req, res) => {
           productId: productId,
           sku: `${finalSlug}-default`,
           variantName: product_name.trim(),
-          price: parseFloat(base_price),
+          price: parseFloat(variantPrice),
           stockQuantity: stock ? parseInt(stock) : 0, // Sử dụng stock từ request hoặc mặc định 0
           isActive: 1,
           isDefault: 1,

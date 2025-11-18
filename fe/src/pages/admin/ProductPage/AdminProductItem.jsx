@@ -13,9 +13,6 @@ const AdminProductItem = ({ product, onEdit, onDelete, onManageVariants, isExpan
 			<div className="flex-1">
 				<div className="font-medium text-lg">{product.product_name}</div>
 				<div className="text-sm text-gray-600">Danh mục: {product.category_name || `ID: ${product.category_id}`}</div>
-				<div className="text-sm text-gray-800">
-					Giá: <span className="font-medium">{formatPrice(product.base_price || product.price)}</span>
-				</div>
 				{product.is_active !== undefined && (
 					<div className="text-xs mt-1">
 						<span className={`px-2 py-0.5 rounded ${product.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>

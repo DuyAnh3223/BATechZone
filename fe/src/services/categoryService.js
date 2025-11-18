@@ -99,5 +99,15 @@ export const categoryService = {
             withCredentials: true
         });
         return response.data;
+    },
+
+    // Xóa ảnh category
+    deleteCategoryImage: async (imageUrl) => {
+        const response = await api.post('/categories/delete-image', {
+            imageUrl
+        }, {
+            withCredentials: true
+        });
+        return response.data;
     }
 };

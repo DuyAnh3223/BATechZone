@@ -1,5 +1,5 @@
 import Category from '../models/Category.js';
-import { getPublicUrlForCategory } from '../middleware/upload.js';
+import { getPublicUrlForCategory, mapPublicUrlToDiskPath } from '../middleware/upload.js';
 
 export const createCategory = async (req, res) => {
   try {
@@ -283,6 +283,56 @@ export const uploadCategoryImage = async (req, res) => {
       success: false,
       message: 'Internal server error',
       error: error.message 
+    });
+  }
+};
+
+export const deleteCategoryImage = async (req, res) => {
+  try {
+    const { imageUrl } = req.body;
+    
+    if (!imageUrl) {
+      return res.status(400).json({
+        success: false,
+        message: 'Image URL is required'
+      });
+    }
+
+    // Convert public URL to disk path
+    const diskPath = mapPublicUrlToDiskPath(imageUrl);
+    
+    if (!diskPath) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid image URL'
+      });
+    }
+
+    // Delete file from disk using fs.promises
+    const fs = await import('fs/promises');
+    try {
+      await fs.unlink(diskPath);
+      res.status(200).json({
+        success: true,
+        message: 'Image deleted successfully'
+      });
+    } catch (err) {
+      if (err.code === 'ENOENT') {
+        // File not found, but consider it success
+        res.status(200).json({
+          success: true,
+          message: 'Image already deleted or not found'
+        });
+      } else {
+        throw err;
+      }
+    }
+  } catch (error) {
+    console.error('Error deleting category image:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: error.message
     });
   }
 };

@@ -1,10 +1,10 @@
 import React from 'react';
 
-const AdminVariantItem = ({ variant, onEdit, onDelete }) => {
+const AdminVariantItem = ({ variant, index, onEdit, onDelete }) => {
   const attributes = variant.attribute_values || [];
   const label = attributes.length > 0 
     ? attributes.map((av) => av.value_name || av.attribute_value_id).join(' / ')
-    : 'Biến thể mặc định';
+    : `Biến thể #${index || 1}`;
 
   return (
     <div className="p-3 border rounded-md bg-white flex items-center justify-between">

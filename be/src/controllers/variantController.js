@@ -37,6 +37,14 @@ export const updateVariant = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Invalid variant ID' });
     }
 
+    // Validate stock quantity
+    if (req.body.stock !== undefined) {
+      const stock = parseInt(req.body.stock);
+      if (stock < 0) {
+        return res.status(400).json({ success: false, message: 'Số lượng tồn kho không được âm' });
+      }
+    }
+
     // Map request body from snake_case to camelCase
     const updateData = {
       sku: req.body.sku,

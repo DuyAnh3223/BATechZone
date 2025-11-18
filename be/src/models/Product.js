@@ -3,16 +3,15 @@ import { db } from '../libs/db.js';
 class Product {
   // Tạo sản phẩm mới
   async create(data) {
-    const { category_id, product_name, slug, description, base_price, is_active, is_featured } = data;
+    const { category_id, product_name, slug, description, is_active, is_featured } = data;
     const [result] = await db.query(
-      `INSERT INTO products (category_id, product_name, slug, description, base_price, is_active, is_featured)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO products (category_id, product_name, slug, description, is_active, is_featured)
+       VALUES (?, ?, ?, ?, ?, ?)`,
       [
         category_id, 
         product_name, 
         slug || null, 
         description || null, 
-        base_price, 
         is_active ?? 1, 
         is_featured ?? 0
       ]
@@ -48,18 +47,11 @@ class Product {
       values.push(category_id);
     }
 
-    if (minPrice) {
-      conditions.push('p.base_price >= ?');
-      values.push(minPrice);
-    }
-
-    if (maxPrice) {
-      conditions.push('p.base_price <= ?');
-      values.push(maxPrice);
-    }
+    // Note: Price filtering removed as prices are now stored at variant level
+    // If needed, implement via JOIN with product_variants table
 
     // Sanitize sortBy to prevent SQL injection
-    const allowedSortColumns = ['product_id', 'product_name', 'created_at', 'base_price', 'view_count', 'rating_average'];
+    const allowedSortColumns = ['product_id', 'product_name', 'created_at', 'view_count', 'rating_average'];
     const sanitizedSortBy = allowedSortColumns.includes(sortBy) ? sortBy : 'created_at';
     const sanitizedSortOrder = sortOrder.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
 
@@ -69,7 +61,10 @@ class Product {
     const [rows] = await db.query(
       `SELECT 
         p.*,
-        c.category_name
+        c.category_name,
+        (SELECT MIN(pv.price) FROM product_variants pv WHERE pv.product_id = p.product_id AND pv.is_active = 1) AS min_variant_price,
+        (SELECT MAX(pv.price) FROM product_variants pv WHERE pv.product_id = p.product_id AND pv.is_active = 1) AS max_variant_price,
+        (SELECT pv.price FROM product_variants pv WHERE pv.product_id = p.product_id AND pv.is_default = 1 LIMIT 1) AS default_variant_price
       FROM products p
       LEFT JOIN categories c ON p.category_id = c.category_id
       ${whereClause}
@@ -102,7 +97,10 @@ class Product {
     const [rows] = await db.query(
       `SELECT 
         p.*,
-        c.category_name
+        c.category_name,
+        (SELECT MIN(pv.price) FROM product_variants pv WHERE pv.product_id = p.product_id AND pv.is_active = 1) AS min_variant_price,
+        (SELECT MAX(pv.price) FROM product_variants pv WHERE pv.product_id = p.product_id AND pv.is_active = 1) AS max_variant_price,
+        (SELECT pv.price FROM product_variants pv WHERE pv.product_id = p.product_id AND pv.is_default = 1 LIMIT 1) AS default_variant_price
       FROM products p
       LEFT JOIN categories c ON p.category_id = c.category_id
       WHERE p.product_id = ?`,
@@ -113,18 +111,17 @@ class Product {
 
   // Cập nhật sản phẩm
   async update(id, data) {
-    const { category_id, product_name, slug, description, base_price, is_featured, is_active } = data;
+    const { category_id, product_name, slug, description, is_featured, is_active } = data;
     await db.query(
       `UPDATE products 
        SET category_id = ?, product_name = ?, slug = ?, description = ?, 
-           base_price = ?, is_featured = ?, is_active = ?, updated_at = NOW()
+           is_featured = ?, is_active = ?, updated_at = NOW()
        WHERE product_id = ?`,
       [
         category_id, 
         product_name, 
         slug || null, 
         description || null, 
-        base_price, 
         is_featured ?? 0, 
         is_active ?? 1, 
         id

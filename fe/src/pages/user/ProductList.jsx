@@ -83,12 +83,12 @@ const ProductList = () => {
         // Add sort
         switch (filters.sort) {
           case "price-asc":
-            params.sortBy = 'base_price';
-            params.sortOrder = 'ASC';
+            // Price sorting removed as products no longer have base_price
+            // Sorting by variant price would require JOIN
             break;
           case "price-desc":
-            params.sortBy = 'base_price';
-            params.sortOrder = 'DESC';
+            // Price sorting removed as products no longer have base_price
+            // Sorting by variant price would require JOIN
             break;
           case "newest":
           default:

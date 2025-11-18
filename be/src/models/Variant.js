@@ -357,7 +357,7 @@ class Variant {
           updated_at
         FROM product_variants
         WHERE product_id = ?
-        ORDER BY is_default DESC, created_at DESC`,
+        ORDER BY is_default DESC, created_at ASC`,
         [productIdInt]
       );
       

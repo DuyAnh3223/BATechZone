@@ -43,6 +43,18 @@ const AdminVariantList = ({ variants: initial = [], product, onUpdate, onDelete 
     }
   }, [initial]);
 
+  function getVariantLabel(variant) {
+    const attributes = variant.attribute_values || [];
+    if (attributes.length > 0) {
+      return attributes.map(av => av.value_name || av.attribute_value_id).join(' / ');
+    }
+    // Tìm index của variant trong mảng variants
+    const index = variants.findIndex(v => 
+      (v.variant_id || v.id) === (variant.variant_id || variant.id)
+    );
+    return `Biến thể #${index + 1}`;
+  }
+
   function handleEdit(variant) {
     setEditing(variant);
     // Don't show add form, we'll show edit form instead
@@ -84,9 +96,7 @@ const AdminVariantList = ({ variants: initial = [], product, onUpdate, onDelete 
       }
       
       // Hiển thị success dialog
-      const variantLabel = (variantToDelete.attribute_values || []).length > 0
-        ? (variantToDelete.attribute_values || []).map(av => av.value_name || av.attribute_value_id).join(' / ')
-        : 'Biến thể mặc định';
+      const variantLabel = getVariantLabel(variantToDelete);
       setSuccessMessage(`Đã xóa biến thể ${variantLabel} thành công!`);
       setIsSuccessDialogOpen(true);
     } catch (error) {
@@ -170,6 +180,7 @@ const AdminVariantList = ({ variants: initial = [], product, onUpdate, onDelete 
         <div className="mb-4">
           <AdminVariantEditForm
             variant={editing}
+            product={product}
             onCancel={handleEditCancel}
             onSuccess={handleEditSuccess}
           />
@@ -182,7 +193,8 @@ const AdminVariantList = ({ variants: initial = [], product, onUpdate, onDelete 
           {variants.map((v, index) => (
             <AdminVariantItem 
               key={v.variant_id || v.id || `variant-${index}`} 
-              variant={v} 
+              variant={v}
+              index={index + 1}
               onEdit={handleEdit} 
               onDelete={handleDelete} 
             />
@@ -205,9 +217,7 @@ const AdminVariantList = ({ variants: initial = [], product, onUpdate, onDelete 
                 <>
                   Bạn có chắc chắn muốn xóa biến thể{' '}
                   <span className="font-semibold text-red-600">
-                    {(variantToDelete.attribute_values || []).length > 0
-                      ? (variantToDelete.attribute_values || []).map(av => av.value_name || av.attribute_value_id).join(' / ')
-                      : 'Biến thể mặc định'}
+                    {getVariantLabel(variantToDelete)}
                   </span>? Hành động này không thể hoàn tác.
                 </>
               )}

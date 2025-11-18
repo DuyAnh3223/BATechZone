@@ -135,7 +135,7 @@ const ProductDetail = () => {
     if (selectedVariant) {
       return selectedVariant.price || 0;
     }
-    return currentProduct?.base_price || 0;
+    return currentProduct?.default_variant_price || currentProduct?.min_variant_price || 0;
   };
 
   // Get current stock
@@ -214,7 +214,9 @@ const ProductDetail = () => {
             <ProductInfo
               product={currentProduct}
               currentPrice={getCurrentPrice()}
-              basePrice={currentProduct.base_price}
+              basePrice={currentProduct.default_variant_price || currentProduct.min_variant_price}
+              minPrice={currentProduct.min_variant_price}
+              maxPrice={currentProduct.max_variant_price}
               selectedVariant={selectedVariant}
             />
 
