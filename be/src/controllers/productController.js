@@ -56,7 +56,17 @@ export const getProduct = async (req, res) => {
 // Tạo mới sản phẩm
 export const createProduct = async (req, res) => {
   try {
-    const { category_id, product_name, slug, description, default_price, base_price, stock, is_active, is_featured, variants } = req.body;
+    const { 
+      category_id, 
+      product_name, 
+      slug, 
+      description, 
+      base_price, 
+      is_active, 
+      is_featured, 
+      defaultVariant, 
+      additionalVariants 
+    } = req.body;
 
     // Validate required fields
     if (!product_name || !product_name.trim()) {
@@ -73,17 +83,22 @@ export const createProduct = async (req, res) => {
       });
     }
 
-    // Use default_price for default variant, fallback to base_price for backward compatibility
-    const variantPrice = default_price || base_price;
-    if ((!variants || variants.length === 0) && (!variantPrice || isNaN(variantPrice) || parseFloat(variantPrice) <= 0)) {
+    // Validate default variant (required)
+    if (!defaultVariant) {
+      return res.status(400).json({
+        success: false,
+        message: 'Thông tin biến thể mặc định là bắt buộc'
+      });
+    }
+
+    if (!defaultVariant.price || isNaN(defaultVariant.price) || parseFloat(defaultVariant.price) <= 0) {
       return res.status(400).json({
         success: false,
         message: 'Giá sản phẩm phải là số dương'
       });
     }
 
-    // Validate stock quantity for default variant
-    if (stock !== undefined && parseInt(stock) < 0) {
+    if (defaultVariant.stock !== undefined && parseInt(defaultVariant.stock) < 0) {
       return res.status(400).json({
         success: false,
         message: 'Số lượng tồn kho không được âm'
@@ -106,59 +121,70 @@ export const createProduct = async (req, res) => {
       product_name: product_name.trim(),
       slug: finalSlug,
       description: description?.trim() || null,
-      // Note: Product không còn lưu base_price, giá được lưu ở variant
+      base_price: base_price ? parseFloat(base_price) : null, // Optional reference price
       is_active: is_active !== undefined ? (is_active ? 1 : 0) : 1,
       is_featured: is_featured !== undefined ? (is_featured ? 1 : 0) : 0
     });
 
-    // Create variants if provided, otherwise create a default variant
-    if (variants && Array.isArray(variants) && variants.length > 0) {
-      for (let i = 0; i < variants.length; i++) {
-        const variant = variants[i];
-        const variantStock = parseInt(variant.stock_quantity || variant.stock || 0);
+    // Create default variant (always required)
+    try {
+      const defaultVariantId = await Variant.create({
+        productId: productId,
+        sku: `${finalSlug}-default`,
+        variantName: product_name.trim(),
+        price: parseFloat(defaultVariant.price),
+        stockQuantity: parseInt(defaultVariant.stock || 0),
+        isActive: 1,
+        isDefault: 1,
+        attributes: [] // Default variant has no attributes
+      });
+
+      // Handle default variant images if provided
+      if (defaultVariant.images && Array.isArray(defaultVariant.images) && defaultVariant.images.length > 0) {
+        // TODO: Upload images to variant_images table
+        // For now, just log them
+        console.log('Default variant images:', defaultVariant.images.length, 'files');
+      }
+    } catch (variantError) {
+      console.error('Error creating default variant:', variantError);
+      // Rollback product if default variant creation fails
+      await Product.delete(productId);
+      throw new Error('Không thể tạo biến thể mặc định cho sản phẩm');
+    }
+
+    // Create additional variants if provided
+    if (additionalVariants && Array.isArray(additionalVariants) && additionalVariants.length > 0) {
+      for (let i = 0; i < additionalVariants.length; i++) {
+        const variant = additionalVariants[i];
+        const variantStock = parseInt(variant.stock || 0);
         
         // Validate stock for each variant
         if (variantStock < 0) {
-          return res.status(400).json({
-            success: false,
-            message: `Số lượng tồn kho của biến thể ${i + 1} không được âm`
-          });
+          console.error(`Invalid stock for variant ${i + 1}: ${variantStock}`);
+          continue; // Skip invalid variants
         }
 
         try {
-          await Variant.create({
+          const variantId = await Variant.create({
             productId: productId,
-            sku: variant.sku || null,
-            variantName: variant.variant_name || variant.sku || null,
-            price: parseFloat(variant.price || variantPrice),
+            sku: variant.sku || `${finalSlug}-${i + 1}`,
+            variantName: variant.sku || null,
+            price: parseFloat(variant.price || defaultVariant.price),
             stockQuantity: variantStock,
-            isActive: variant.is_active !== undefined ? (variant.is_active ? 1 : 0) : 1,
-            isDefault: i === 0 ? 1 : (variant.is_default ? 1 : 0), // First variant is default
-            attributes: variant.attribute_value_ids || []
+            isActive: 1,
+            isDefault: 0,
+            attributes: variant.attribute_values?.map(av => av.attribute_value_id) || []
           });
+
+          // Handle variant images if provided
+          if (variant.images && Array.isArray(variant.images) && variant.images.length > 0) {
+            // TODO: Upload images to variant_images table
+            console.log(`Variant ${i + 1} images:`, variant.images.length, 'files');
+          }
         } catch (variantError) {
           console.error(`Error creating variant ${i + 1}:`, variantError);
           // Continue with other variants even if one fails
         }
-      }
-    } else {
-      // Tự động tạo 1 biến thể mặc định cho sản phẩm
-      try {
-        await Variant.create({
-          productId: productId,
-          sku: `${finalSlug}-default`,
-          variantName: product_name.trim(),
-          price: parseFloat(variantPrice),
-          stockQuantity: stock ? parseInt(stock) : 0, // Sử dụng stock từ request hoặc mặc định 0
-          isActive: 1,
-          isDefault: 1,
-          attributes: [] // Không có thuộc tính biến thể
-        });
-      } catch (variantError) {
-        console.error('Error creating default variant:', variantError);
-        // Nếu không tạo được variant mặc định, rollback product
-        await Product.delete(productId);
-        throw new Error('Không thể tạo biến thể mặc định cho sản phẩm');
       }
     }
 

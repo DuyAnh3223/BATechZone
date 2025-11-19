@@ -2,7 +2,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useCategoryStore } from '@/stores/useCategoryStore';
 import { attributeService } from '@/services/attributeService';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { X } from 'lucide-react';
+import { X, Image as ImageIcon, ChevronDown, ChevronUp } from 'lucide-react';
+import LocalVariantImageManager from './VariantImageManagement/LocalVariantImageManager';
 
 // Helper: cartesian product of arrays
 function cartesianProduct(arrays) {
@@ -34,15 +35,24 @@ const AdminProductForm = ({ initialData = null, onSubmit, onCancel }) => {
 
   // generated variants
   const [variants, setVariants] = useState(() => initialData?.variants || []);
+  
+  // Track images for each variant (by variant local ID)
+  const [variantImages, setVariantImages] = useState({}); // { variantId: [images] }
+  
+  // Track which variant's image section is expanded
+  const [expandedVariant, setExpandedVariant] = useState(null);
 
   // product basic fields
   const [name, setName] = useState(initialData?.product_name || '');
   const [slug, setSlug] = useState(initialData?.slug || '');
-  const [defaultPrice, setDefaultPrice] = useState(initialData?.base_price ?? initialData?.price ?? ""); // Giá cho default variant
-  const [stock, setStock] = useState(0); // Tồn kho cho biến thể mặc định
   const [description, setDescription] = useState(initialData?.description || '');
   const [isActive, setIsActive] = useState(initialData?.is_active !== undefined ? initialData.is_active : true);
   const [isFeatured, setIsFeatured] = useState(initialData?.is_featured !== undefined ? initialData.is_featured : false);
+  
+  // Default variant fields (always created)
+  const [defaultVariantPrice, setDefaultVariantPrice] = useState(initialData?.price ?? 0);
+  const [defaultVariantStock, setDefaultVariantStock] = useState(0);
+  const [defaultVariantImages, setDefaultVariantImages] = useState([]);
 
   // Load categories on mount
   useEffect(() => {
@@ -218,8 +228,25 @@ const AdminProductForm = ({ initialData = null, onSubmit, onCancel }) => {
   }
 
   function removeVariant(idx) {
+    const variantToRemove = variants[idx];
+    if (variantToRemove) {
+      // Remove images for this variant
+      setVariantImages(prev => {
+        const copy = { ...prev };
+        delete copy[variantToRemove.id];
+        return copy;
+      });
+    }
     setVariants((prev) => prev.filter((_, i) => i !== idx));
   }
+
+  // Handle variant image changes
+  const handleVariantImagesChange = (variantId, images) => {
+    setVariantImages(prev => ({
+      ...prev,
+      [variantId]: images
+    }));
+  };
 
   function handleSubmit(e) {
     e.preventDefault();
@@ -243,9 +270,13 @@ const AdminProductForm = ({ initialData = null, onSubmit, onCancel }) => {
         .replace(/^-+|-+$/g, '');
     }
 
-    // Validate price for default variant
-    if (variants.length === 0 && (!defaultPrice || parseFloat(defaultPrice) <= 0)) {
+    // Validate price and stock for default variant
+    if (!defaultVariantPrice || parseFloat(defaultVariantPrice) <= 0) {
       alert('Vui lòng nhập giá sản phẩm');
+      return;
+    }
+    if (defaultVariantStock < 0) {
+      alert('Tồn kho không được âm');
       return;
     }
 
@@ -253,13 +284,22 @@ const AdminProductForm = ({ initialData = null, onSubmit, onCancel }) => {
     const payload = {
       product_name: name.trim(),
       slug: finalSlug,
-      default_price: defaultPrice, // Giá cho default variant (không lưu vào product)
-      stock: stock, // Tồn kho cho biến thể mặc định
       description: description.trim() || null,
       category_id: categoryId,
       is_active: isActive,
       is_featured: isFeatured,
-      variants: [], // Biến thể sẽ được tạo trong quản lý biến thể
+      base_price: defaultVariantPrice, // base_price in products table
+      // Default variant data
+      defaultVariant: {
+        price: defaultVariantPrice,
+        stock: defaultVariantStock,
+        images: defaultVariantImages // Images for default variant
+      },
+      // Additional variants (if any)
+      additionalVariants: variants.map(v => ({
+        ...v,
+        images: variantImages[v.id] || []
+      }))
     };
     
     // Include product_id only for parent component to know which product to update
@@ -299,11 +339,12 @@ const AdminProductForm = ({ initialData = null, onSubmit, onCancel }) => {
           ))}
         </select>
       </div>
-
-      <div>
-        
+        <div>
         <div className="border-t pt-4">
-        <h4 className="font-medium mb-2">Chọn thuộc tính </h4>
+        <h4 className="font-medium mb-2">Thuộc tính biến thể (Tùy chọn)</h4>
+        <p className="text-sm text-gray-500 mb-3">
+          Nếu sản phẩm có nhiều biến thể (màu sắc, kích thước...), chọn thuộc tính bên dưới
+        </p>
         {loadingAttributes && (
           <div className="text-sm text-gray-500 py-2">Đang tải thuộc tính...</div>
         )}
@@ -372,59 +413,132 @@ const AdminProductForm = ({ initialData = null, onSubmit, onCancel }) => {
             </div>
           ))}
         </div>
-
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
+       
+      {/* Price and Stock for default variant */}
+      <div className=" pt-5 grid grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium mb-1">
-            Giá mặc định (₫) <span className="text-red-500">*</span>
-            <span className="text-xs text-gray-500 ml-2">(Giá cho biến thể đầu tiên)</span>
+            Giá sản phẩm (₫) <span className="text-red-500">*</span>
           </label>
           <input 
             type="number" 
             className="w-full px-3 py-2 border rounded-md" 
-            value={defaultPrice} 
-            onChange={(e) => setDefaultPrice(Number(e.target.value))}
+            value={defaultVariantPrice} 
+            onChange={(e) => setDefaultVariantPrice(Number(e.target.value))}
             min="0"
-            step="1000"
             required
-            disabled={variants.length > 0}
-            title={variants.length > 0 ? 'Đã có biến thể tùy chỉnh, giá được quản lý ở từng biến thể' : ''}
+            placeholder="Nhập giá sản phẩm"
           />
-          {variants.length > 0 && (
-            <p className="text-xs text-gray-500 mt-1">
-              💡 Giá đang được quản lý ở từng biến thể
-            </p>
-          )}
         </div>
-        {!initialData && (
-          <div>
-            <label className="block text-sm font-medium mb-1">Tồn kho</label>
-            <input 
-              type="number" 
-              className="w-full px-3 py-2 border rounded-md" 
-              value={stock} 
-              onChange={(e) => setStock(Number(e.target.value))}
-              min="0"
-              placeholder="Nhập số lượng tồn kho"
-            />
-          </div>
-        )}
+        <div>
+          <label className="block text-sm font-medium mb-1">
+            Tồn kho <span className="text-red-500">*</span>
+          </label>
+          <input 
+            type="number" 
+            className="w-full px-3 py-2 border rounded-md" 
+            value={defaultVariantStock} 
+            onChange={(e) => setDefaultVariantStock(Number(e.target.value))}
+            min="0"
+            required
+            placeholder="Nhập số lượng tồn kho"
+          />
+        </div>
       </div>
 
-      <div>
+      <div className="pt-5">
         <label className="block text-sm font-medium mb-1">Mô tả</label>
         <textarea 
           className="w-full px-3 py-2 border rounded-md" 
           value={description} 
           onChange={(e) => setDescription(e.target.value)}
           rows={3}
+          placeholder="Mô tả chi tiết về sản phẩm"
         />
       </div>
 
-      <div className="flex items-center gap-6">
+      
+
+      {/* Default variant images */}
+      <div className="border-t pt-4">
+        <h4 className="font-medium mb-3">Hình ảnh sản phẩm</h4>
+        <LocalVariantImageManager
+          initialImages={defaultVariantImages}
+          onChange={setDefaultVariantImages}
+        />
+      </div>
+
+      
+
+        {/* Variants list with images (only show if variants exist) */}
+        {variants.length > 0 && (
+          <div className="border-t pt-4 mt-4">
+            <h4 className="font-medium mb-3">Biến thể đã tạo ({variants.length})</h4>
+            <div className="space-y-3">
+              {variants.map((variant, idx) => (
+                <div key={variant.id} className="border rounded-lg bg-white">
+                  {/* Variant header */}
+                  <div className="p-3 flex items-center justify-between">
+                    <div className="flex items-center gap-3 flex-1">
+                      <span className="text-sm font-medium text-gray-900">
+                        {variant.attribute_values.map(av => av.value_name).join(' / ')}
+                      </span>
+                      <span className="text-xs text-gray-500 px-2 py-0.5 bg-gray-100 rounded">
+                        SKU: {variant.sku}
+                      </span>
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      {/* Image count badge */}
+                      {variantImages[variant.id]?.length > 0 && (
+                        <span className="flex items-center gap-1 text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                          <ImageIcon className="w-3 h-3" />
+                          {variantImages[variant.id].length}
+                        </span>
+                      )}
+                      
+                      <button
+                        type="button"
+                        onClick={() => setExpandedVariant(expandedVariant === variant.id ? null : variant.id)}
+                        className="p-1 hover:bg-gray-100 rounded"
+                      >
+                        {expandedVariant === variant.id ? (
+                          <ChevronUp className="w-4 h-4 text-gray-500" />
+                        ) : (
+                          <ChevronDown className="w-4 h-4 text-gray-500" />
+                        )}
+                      </button>
+                      
+                      <button
+                        type="button"
+                        onClick={() => removeVariant(idx)}
+                        className="p-1 hover:bg-red-50 rounded text-red-600"
+                        title="Xóa biến thể"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Expanded content - Images */}
+                  {expandedVariant === variant.id && (
+                    <div className="border-t p-4 bg-gray-50">
+                      <LocalVariantImageManager
+                        initialImages={variantImages[variant.id] || []}
+                        onChange={(images) => handleVariantImagesChange(variant.id, images)}
+                      />
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        </div>
+      </div>
+
+      <div className="flex items-center gap-6 border-t pt-4">
         <label className="flex items-center gap-2">
           <input 
             type="checkbox" 

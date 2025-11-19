@@ -16,6 +16,7 @@ import AdminVariantList from './VariantManagement/AdminVariantList';
 import { useProductStore } from '@/stores/useProductStore';
 import { useCategoryStore } from '@/stores/useCategoryStore';
 import { useVariantStore } from '@/stores/useVariantStore';
+import { variantImageService } from '@/services/variantImageService';
 
 const AdminProductPage = () => {
 	const { products, loading, fetchProducts, createProduct, updateProduct, deleteProduct } = useProductStore();
@@ -133,14 +134,88 @@ const AdminProductPage = () => {
 		try {
 			let response;
 			const isUpdate = !!productPayload.product_id;
+			
 			if (isUpdate) {
 				// Update existing product - only send fields that backend expects
-				const { product_id, variant_attributes, variants, ...updateData } = productPayload;
+				const { product_id, variant_attributes, variants, defaultVariant, additionalVariants, ...updateData } = productPayload;
 				response = await updateProduct(product_id, updateData);
 			} else {
 				// Create new product
-				response = await createProduct(productPayload);
+				// Extract images from payload before sending
+				const { defaultVariant, additionalVariants, ...productData } = productPayload;
+				
+				// Send product data without images
+				const createPayload = {
+					...productData,
+					defaultVariant: {
+						price: defaultVariant.price,
+						stock: defaultVariant.stock
+					},
+					additionalVariants: (additionalVariants || []).map(v => ({
+						...v,
+						images: undefined // Don't send images in initial creation
+					}))
+				};
+				
+				response = await createProduct(createPayload);
+				
+				// Upload images after product creation
+				if (response?.data?.product_id) {
+					const productId = response.data.product_id;
+					
+					// Get variants for the created product
+					const variantsResponse = await fetchVariantsByProductId(productId);
+					const variants = Array.isArray(variantsResponse) 
+						? variantsResponse 
+						: (variantsResponse?.data || []);
+					
+					// Find default variant
+					const defaultVariant_db = variants.find(v => v.is_default === 1);
+					
+					// Upload default variant images
+					if (defaultVariant_db && defaultVariant.images && defaultVariant.images.length > 0) {
+						try {
+							const formData = new FormData();
+							defaultVariant.images.forEach(img => {
+								formData.append('images', img.file);
+								if (img.isPrimary) {
+									formData.append('isPrimary', 'true');
+								}
+							});
+							
+							await variantImageService.bulkUploadImages(defaultVariant_db.variant_id, formData);
+						} catch (imgError) {
+							console.error('Error uploading default variant images:', imgError);
+						}
+					}
+					
+					// Upload additional variant images
+					if (additionalVariants && additionalVariants.length > 0) {
+						// Match additional variants by SKU
+						for (let i = 0; i < additionalVariants.length; i++) {
+							const additionalVariant = additionalVariants[i];
+							const variant_db = variants.find(v => v.sku === additionalVariant.sku);
+							
+							if (variant_db && additionalVariant.images && additionalVariant.images.length > 0) {
+								try {
+									const formData = new FormData();
+									additionalVariant.images.forEach(img => {
+										formData.append('images', img.file);
+										if (img.isPrimary) {
+											formData.append('isPrimary', 'true');
+										}
+									});
+									
+									await variantImageService.bulkUploadImages(variant_db.variant_id, formData);
+								} catch (imgError) {
+									console.error(`Error uploading images for variant ${i + 1}:`, imgError);
+								}
+							}
+						}
+					}
+				}
 			}
+			
 			setShowForm(false);
 			setEditing(null);
 			await loadProducts();
