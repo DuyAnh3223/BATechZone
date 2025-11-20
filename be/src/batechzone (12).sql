@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Nov 19, 2025 at 02:25 PM
+-- Generation Time: Nov 20, 2025 at 07:34 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -514,6 +514,14 @@ CREATE TABLE `installments` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Dumping data for table `installments`
+--
+
+INSERT INTO `installments` (`installment_id`, `order_id`, `user_id`, `total_amount`, `down_payment`, `num_terms`, `monthly_payment`, `interest_rate`, `start_date`, `end_date`, `status`, `created_at`) VALUES
+(1, 1, 11, 5200000.00, 2000000.00, 6, 533333.33, 1.50, '2025-11-20', '2026-05-20', 'active', '2025-11-20 06:17:00'),
+(2, 2, 12, 7700000.00, 3000000.00, 12, 391666.67, 0.00, '2025-11-20', '2026-11-20', 'active', '2025-11-20 06:17:00');
+
 -- --------------------------------------------------------
 
 --
@@ -530,6 +538,30 @@ CREATE TABLE `installment_payments` (
   `status` enum('pending','paid','late','failed') DEFAULT 'pending',
   `note` text DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `installment_payments`
+--
+
+INSERT INTO `installment_payments` (`payment_id`, `installment_id`, `payment_no`, `due_date`, `paid_date`, `amount`, `status`, `note`) VALUES
+(1, 1, 1, '2025-12-20', NULL, 533333.33, 'pending', NULL),
+(2, 1, 2, '2026-01-20', NULL, 533333.33, 'pending', NULL),
+(3, 1, 3, '2026-02-20', NULL, 533333.33, 'pending', NULL),
+(4, 1, 4, '2026-03-20', NULL, 533333.33, 'pending', NULL),
+(5, 1, 5, '2026-04-20', NULL, 533333.33, 'pending', NULL),
+(6, 1, 6, '2026-05-20', NULL, 533333.33, 'pending', NULL),
+(7, 2, 1, '2025-12-20', '2025-12-22', 391666.67, 'paid', 'Thanh toán trước hạn'),
+(8, 2, 2, '2026-01-20', NULL, 391666.67, 'pending', NULL),
+(9, 2, 3, '2026-02-20', NULL, 391666.67, 'pending', NULL),
+(10, 2, 4, '2026-03-20', NULL, 391666.67, 'pending', NULL),
+(11, 2, 5, '2026-04-20', NULL, 391666.67, 'pending', NULL),
+(12, 2, 6, '2026-05-20', NULL, 391666.67, 'pending', NULL),
+(13, 2, 7, '2026-06-20', NULL, 391666.67, 'pending', NULL),
+(14, 2, 8, '2026-07-20', NULL, 391666.67, 'pending', NULL),
+(15, 2, 9, '2026-08-20', NULL, 391666.67, 'pending', NULL),
+(16, 2, 10, '2026-09-20', NULL, 391666.67, 'pending', NULL),
+(17, 2, 11, '2026-10-20', NULL, 391666.67, 'pending', NULL),
+(18, 2, 12, '2026-11-20', NULL, 391666.67, 'pending', NULL);
 
 -- --------------------------------------------------------
 
@@ -583,6 +615,8 @@ CREATE TABLE `orders` (
 --
 
 INSERT INTO `orders` (`order_id`, `user_id`, `order_number`, `address_id`, `coupon_id`, `order_status`, `payment_status`, `subtotal`, `discount_amount`, `shipping_fee`, `tax_amount`, `total_amount`, `notes`, `cancelled_reason`, `created_at`, `updated_at`, `confirmed_at`, `shipped_at`, `delivered_at`, `cancelled_at`) VALUES
+(1, 11, 'ORD001', NULL, NULL, 'pending', 'unpaid', 5000000.00, 0.00, 0.00, 0.00, 5200000.00, NULL, NULL, '2025-11-19 02:30:00', '2025-11-20 06:17:00', NULL, NULL, NULL, NULL),
+(2, 12, 'ORD002', NULL, NULL, 'pending', 'unpaid', 7500000.00, 0.00, 0.00, 0.00, 7700000.00, NULL, NULL, '2025-11-19 08:10:00', '2025-11-20 06:17:00', NULL, NULL, NULL, NULL),
 (11, 10, 'ORD75082611921', 19, 5, 'pending', 'unpaid', 5900000.00, 100000.00, 50000.00, 0.00, 5850000.00, 'gừger', NULL, '2025-11-16 06:38:02', '2025-11-16 06:38:02', NULL, NULL, NULL, NULL),
 (12, 10, 'ORD77578948294', 20, NULL, 'pending', 'unpaid', 900000.00, 0.00, 50000.00, 0.00, 950000.00, 'fsafsa', NULL, '2025-11-16 07:19:38', '2025-11-16 07:19:38', NULL, NULL, NULL, NULL),
 (13, 10, 'ORD79331079801', 21, 5, 'shipping', 'unpaid', 1350000.00, 100000.00, 50000.00, 0.00, 1300000.00, 'brtetrbtrbrt', NULL, '2025-11-16 07:48:51', '2025-11-16 09:28:00', NULL, NULL, NULL, NULL),
@@ -851,7 +885,9 @@ INSERT INTO `users` (`user_id`, `username`, `email`, `password_hash`, `full_name
 (7, 'bao1', 'bao1@gmail.com', '$2b$10$sVY/zhJ2cKlwydAjQ090e.bMn1eFJKudObM.yOZiR06XPanyUgaFW', 'bao1', '0975846352', 0, 0, '2025-11-05 10:09:19', '2025-11-05 10:09:38', NULL, NULL),
 (8, 'bb', 'bb@gmail.com', '$2b$10$i/dzC6SfHsM.5cHiYaS89ed4rg4SAoLtZz1/O2mA6eagocIogJoL6', NULL, NULL, 0, 1, '2025-11-07 03:26:38', '2025-11-07 08:05:59', NULL, NULL),
 (9, 'ccc', 'cc@gmail.com', '$2b$10$zdMHGgXEqVXcvRmaoymJceZdwLmNnViMKR.Gss2KmhtlJzm9k8pp.', 'bao', '0987676765', 0, 1, '2025-11-07 08:06:49', '2025-11-07 08:23:41', NULL, '25df20a38db4f2d83703655c8fa0289a37154f1beeceb3ab72ad43f1bb4f13e3'),
-(10, 'dddd', 'dd@gmail.com', '$2b$10$VOQn9zNNzcmwyWhyaGBHt.XROz23EkcPmj2Gzo8GEr3I07ARid5gq', 'dd', '0123456788', 0, 1, '2025-11-07 08:24:07', '2025-11-16 09:24:32', NULL, '1149d0e5c8aa361b3b9d3edb9a7095467898ddc2d17f0f620a67049a0d672dc9');
+(10, 'dddd', 'dd@gmail.com', '$2b$10$VOQn9zNNzcmwyWhyaGBHt.XROz23EkcPmj2Gzo8GEr3I07ARid5gq', 'dd', '0123456788', 0, 1, '2025-11-07 08:24:07', '2025-11-16 09:24:32', NULL, '1149d0e5c8aa361b3b9d3edb9a7095467898ddc2d17f0f620a67049a0d672dc9'),
+(11, 'nguyenvana', 'nguyenvana@example.com', 'hashedpassword1', 'Nguyễn Văn A', '0912345678', 0, 1, '2025-11-20 06:17:00', '2025-11-20 06:17:00', NULL, NULL),
+(12, 'lethib', 'lethib@example.com', 'hashedpassword2', 'Lê Thị B', '0987654321', 0, 1, '2025-11-20 06:17:00', '2025-11-20 06:17:00', NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -1291,13 +1327,13 @@ ALTER TABLE `coupons`
 -- AUTO_INCREMENT for table `installments`
 --
 ALTER TABLE `installments`
-  MODIFY `installment_id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `installment_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `installment_payments`
 --
 ALTER TABLE `installment_payments`
-  MODIFY `payment_id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `payment_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
 
 --
 -- AUTO_INCREMENT for table `notifications`
@@ -1369,7 +1405,7 @@ ALTER TABLE `service_requests`
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
+  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
 
 --
 -- AUTO_INCREMENT for table `variant_images`
