@@ -18,6 +18,7 @@ import AdminWishlist from '../pages/admin/AdminWishlist';
 import AdminPayment from '../pages/admin/AdminPayment';
 import AdminRecentView from '../pages/admin/AdminRecentView';
 import AdminServiceCenter from '../pages/admin/AdminServiceCenter';
+import AdminInstallmentPage from '../pages/admin/InstallmentPage/AdminInstallmentPage';
 
 const AdminRoutes = () => (
   <>
@@ -39,6 +40,7 @@ const AdminRoutes = () => (
       <Route path="payments" element={<AdminPayment />} />
       <Route path="recent-views" element={<AdminRecentView />} />
       <Route path="service-center" element={<AdminServiceCenter />} />
+      <Route path="installments" element={<AdminInstallmentPage />} />
       {/* Các màn admin khác có thể thêm ở đây */}
     </Route>
   </>

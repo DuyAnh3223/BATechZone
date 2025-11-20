@@ -384,11 +384,11 @@ export const deleteInstallment = async (req, res) => {
 };
 
 /**
- * Lấy danh sách khoản trả góp của user hiện tại (từ JWT token)
+ * Lấy danh sách khoản trả góp của user hiện tại (từ session)
  */
 export const getMyInstallments = async (req, res) => {
     try {
-        // user_id từ JWT token đã được gán vào req.user bởi authMiddleware
+        // user_id từ session đã được gán vào req.user bởi authMiddleware
         const userId = req.user?.user_id;
 
         if (!userId) {
@@ -410,6 +410,73 @@ export const getMyInstallments = async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Lỗi khi lấy danh sách trả góp',
+            error: error.message
+        });
+    }
+};
+
+/**
+ * Lấy tất cả installments (Admin only)
+ */
+export const getAllInstallments = async (req, res) => {
+    try {
+        console.log('CONTROLLER: Fetching all installments...');
+        const installments = await InstallmentService.getAllInstallments();
+        console.log('CONTROLLER: Received installments:', installments.length);
+
+        res.json({
+            success: true,
+            count: installments.length,
+            data: installments
+        });
+    } catch (error) {
+        console.error('CONTROLLER Error getting all installments:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Lỗi khi lấy danh sách trả góp',
+            error: error.message
+        });
+    }
+};
+
+/**
+ * Lấy tất cả payments quá hạn (Admin only)
+ */
+export const getAllOverduePayments = async (req, res) => {
+    try {
+        const overduePayments = await InstallmentService.getAllOverduePayments();
+
+        res.json({
+            success: true,
+            count: overduePayments.length,
+            data: overduePayments
+        });
+    } catch (error) {
+        console.error('Error getting overdue payments:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Lỗi khi lấy danh sách quá hạn',
+            error: error.message
+        });
+    }
+};
+
+/**
+ * Lấy thống kê tổng quan (Admin only)
+ */
+export const getStatistics = async (req, res) => {
+    try {
+        const statistics = await InstallmentService.getStatistics();
+
+        res.json({
+            success: true,
+            data: statistics
+        });
+    } catch (error) {
+        console.error('Error getting statistics:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Lỗi khi lấy thống kê',
             error: error.message
         });
     }

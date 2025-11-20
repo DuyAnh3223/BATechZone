@@ -1,6 +1,6 @@
 import Installment from '../models/Installment.js';
 import InstallmentPayment from '../models/InstallmentPayment.js';
-
+import { query } from '../libs/db.js';
 class InstallmentService {
     /**
      * Tạo mới một khoản trả góp
@@ -344,6 +344,108 @@ class InstallmentService {
             return deleted;
         } catch (error) {
             throw new Error(`SERVICE Lỗi xóa trả góp: ${error.message}`);
+        }
+    }
+
+    /**
+     * Lấy tất cả installments (Admin only)
+     */
+    async getAllInstallments() {
+        try {
+            const installments = await query(`
+                SELECT 
+                    i.*,
+                    u.full_name as user_name,
+                    u.email as user_email,
+                    u.phone as user_phone
+                FROM installments i
+                LEFT JOIN orders o ON i.order_id = o.order_id
+                LEFT JOIN users u ON o.user_id = u.user_id
+                ORDER BY i.created_at DESC  
+            `);
+            console.log('SERVICE: Installments from DB:', installments);
+            
+            // query() đã trả về array rows trực tiếp
+            return Array.isArray(installments) ? installments : [];
+        } catch (error) {
+            throw new Error(`Lỗi lấy danh sách trả góp: ${error.message}`);
+        }
+    }
+
+    /**
+     * Lấy tất cả payments quá hạn (Admin only)
+     */
+    async getAllOverduePayments() {
+        try {
+            const overduePayments = await query(`
+                SELECT 
+                    ip.*,
+                    i.order_id,
+                    i.user_id,
+                    u.full_name as user_name,
+                    u.email as user_email,
+                    u.phone as user_phone,
+                    DATEDIFF(CURDATE(), ip.due_date) as days_overdue,
+                    CASE 
+                        WHEN DATEDIFF(CURDATE(), ip.due_date) <= 7 THEN 'low'
+                        WHEN DATEDIFF(CURDATE(), ip.due_date) <= 14 THEN 'medium'
+                        WHEN DATEDIFF(CURDATE(), ip.due_date) <= 30 THEN 'high'
+                        ELSE 'critical'
+                    END as severity,
+                    (SELECT SUM(amount) 
+                     FROM installment_payments 
+                     WHERE installment_id = ip.installment_id 
+                     AND status = 'overdue') as total_overdue_amount,
+                    (SELECT COUNT(*) 
+                     FROM installment_payments 
+                     WHERE installment_id = ip.installment_id 
+                     AND status = 'overdue') as overdue_count
+                FROM installment_payments ip
+                JOIN installments i ON ip.installment_id = i.installment_id
+                LEFT JOIN orders o ON i.order_id = o.order_id
+                LEFT JOIN users u ON o.user_id = u.user_id
+                WHERE ip.status = 'overdue'
+                ORDER BY days_overdue DESC, ip.amount DESC
+            `);
+            return Array.isArray(overduePayments) ? overduePayments : [];
+        } catch (error) {
+            throw new Error(`Lỗi lấy danh sách quá hạn: ${error.message}`);
+        }
+    }
+
+    /**
+     * Lấy thống kê tổng quan (Admin only)
+     */
+    async getStatistics() {
+        try {
+            const queryResult = await query(`
+                SELECT 
+                    COUNT(DISTINCT i.installment_id) as total_contracts,
+                    COUNT(DISTINCT CASE WHEN i.status = 'active' THEN i.installment_id END) as active_contracts,
+                    COUNT(DISTINCT CASE WHEN i.status = 'completed' THEN i.installment_id END) as completed_contracts,
+                    COUNT(DISTINCT CASE WHEN i.status = 'cancelled' THEN i.installment_id END) as cancelled_contracts,
+                    COALESCE(SUM(i.total_amount), 0) as total_debt,
+                    COALESCE(SUM(i.total_amount - i.remaining_amount), 0) as paid_amount,
+                    COALESCE(SUM(i.remaining_amount), 0) as remaining_amount,
+                    COALESCE(SUM(CASE WHEN ip.status = 'overdue' THEN ip.amount ELSE 0 END), 0) as overdue_amount,
+                    COUNT(DISTINCT CASE WHEN ip.status = 'overdue' THEN ip.payment_id END) as overdue_count
+                FROM installments i
+                LEFT JOIN installment_payments ip ON i.installment_id = ip.installment_id
+            `);
+
+            // query() trả về array, lấy phần tử đầu tiên (single row result)
+            const result = Array.isArray(queryResult) && queryResult.length > 0 ? queryResult[0] : {};
+            
+            result.collection_rate = result.total_debt > 0 
+                ? ((result.paid_amount / result.total_debt) * 100).toFixed(1) 
+                : 0;
+            result.overdue_rate = result.total_debt > 0 
+                ? ((result.overdue_amount / result.total_debt) * 100).toFixed(1) 
+                : 0;
+
+            return result;
+        } catch (error) {
+            throw new Error(`Lỗi lấy thống kê: ${error.message}`);
         }
     }
 }

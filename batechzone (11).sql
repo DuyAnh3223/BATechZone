@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Nov 18, 2025 at 12:22 PM
+-- Generation Time: Nov 19, 2025 at 02:25 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -496,6 +496,44 @@ INSERT INTO `coupons` (`coupon_id`, `coupon_code`, `description`, `discount_type
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `installments`
+--
+
+CREATE TABLE `installments` (
+  `installment_id` int(11) NOT NULL,
+  `order_id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `total_amount` decimal(12,2) NOT NULL,
+  `down_payment` decimal(12,2) DEFAULT 0.00,
+  `num_terms` int(11) NOT NULL,
+  `monthly_payment` decimal(12,2) NOT NULL,
+  `interest_rate` decimal(5,2) DEFAULT 0.00,
+  `start_date` date NOT NULL,
+  `end_date` date NOT NULL,
+  `status` enum('active','completed','overdue','cancelled') DEFAULT 'active',
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `installment_payments`
+--
+
+CREATE TABLE `installment_payments` (
+  `payment_id` int(11) NOT NULL,
+  `installment_id` int(11) NOT NULL,
+  `payment_no` int(11) NOT NULL,
+  `due_date` date NOT NULL,
+  `paid_date` date DEFAULT NULL,
+  `amount` decimal(12,2) NOT NULL,
+  `status` enum('pending','paid','late','failed') DEFAULT 'pending',
+  `note` text DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `notifications`
 --
 
@@ -665,7 +703,10 @@ INSERT INTO `products` (`product_id`, `category_id`, `product_name`, `slug`, `de
 (239, 1, 'Intel Core i5 14600kf', 'intel-core-i5-14600kf', NULL, 450000.00, 1, 1, 34, 0.00, 0, '2025-11-15 15:03:12', '2025-11-18 11:21:34', ''),
 (240, 2, 'Asus RTX 5060Ti', 'asus-rtx-5060ti', NULL, 8000000.00, 1, 1, 14, 0.00, 0, '2025-11-15 15:10:15', '2025-11-18 11:21:49', ''),
 (241, 5, 'Asus B760M-E Tuf', 'asus-b760m-e-tuf', NULL, 5000000.00, 1, 0, 12, 0.00, 0, '2025-11-16 02:14:13', '2025-11-16 13:31:32', ''),
-(242, 35, 'Gskill Trident Z', 'gskill-trident-z', NULL, 0.00, 1, 0, 8, 0.00, 0, '2025-11-16 13:14:54', '2025-11-16 13:37:29', '');
+(242, 35, 'Gskill Trident Z', 'gskill-trident-z', NULL, 0.00, 1, 0, 8, 0.00, 0, '2025-11-16 13:14:54', '2025-11-16 13:37:29', ''),
+(243, 2, 'Asus RTX 5070', 'asus-rtx-5070', NULL, 0.00, 1, 0, 2, 0.00, 0, '2025-11-18 12:53:53', '2025-11-18 13:08:05', ''),
+(245, 13, 'ABC', 'abc', NULL, 0.00, 1, 0, 0, 0.00, 0, '2025-11-19 09:34:07', '2025-11-19 09:34:07', ''),
+(246, 13, 'AB C', 'ab-c', NULL, 600.00, 1, 0, 0, 0.00, 0, '2025-11-19 10:51:01', '2025-11-19 10:51:01', '');
 
 -- --------------------------------------------------------
 
@@ -694,7 +735,12 @@ INSERT INTO `product_variants` (`variant_id`, `product_id`, `sku`, `variant_name
 (336, 239, 'intel-core-i5-14600kf-default', 'Intel Core i5 14600kf', 450000.00, 59, 1, 1, '2025-11-15 15:03:12', '2025-11-16 13:18:01'),
 (337, 240, 'asus-rtx-5060ti-default', 'Asus RTX 5060Ti', 8000000.00, 596, 1, 1, '2025-11-15 15:10:15', '2025-11-16 05:17:55'),
 (338, 241, 'asus-b760m-e-tuf-default', 'Asus B760M-E Tuf', 6999000.00, 998, 1, 1, '2025-11-16 02:14:13', '2025-11-16 13:31:06'),
-(347, 242, 'gskill-trident-z-default', 'Gskill Trident Z', 800000.00, 20, 1, 1, '2025-11-16 13:14:54', '2025-11-16 13:37:22');
+(347, 242, 'gskill-trident-z-default', 'Gskill Trident Z', 800000.00, 20, 1, 1, '2025-11-16 13:14:54', '2025-11-16 13:37:22'),
+(349, 243, 'asus-rtx-5070-default', 'Asus RTX 5070', 600000.00, 5, 1, 1, '2025-11-18 12:53:53', '2025-11-18 12:53:53'),
+(351, 243, 'NVIDIA-RTX 4060-8GB-ASUS', NULL, 7.00, 7, 1, 0, '2025-11-18 13:16:26', '2025-11-18 13:16:26'),
+(353, 245, 'abc-default', 'ABC', 5090000.00, 0, 1, 1, '2025-11-19 09:34:07', '2025-11-19 09:34:07'),
+(354, 246, 'ab-c-default', 'AB C', 600.00, 6, 1, 1, '2025-11-19 10:51:01', '2025-11-19 10:51:01'),
+(355, 246, 'Seagate-1TB-5400RPM', NULL, 600.00, 7, 1, 0, '2025-11-19 10:53:29', '2025-11-19 10:53:29');
 
 -- --------------------------------------------------------
 
@@ -801,7 +847,7 @@ INSERT INTO `users` (`user_id`, `username`, `email`, `password_hash`, `full_name
 (3, 'abcdef', 'abc@gmail.com', '$2b$10$M8uNkONltbbKsY8y9DdqUeF3IFn1CeH9B0S6SBQzNB5QyVinKZ37.', NULL, NULL, 0, 1, '2025-11-01 10:27:03', '2025-11-01 10:27:03', NULL, NULL),
 (4, 'bao', 'bao@gmail.com', '$2b$10$zPJUT/20Y4wiZUXjELb0QuDSWVxSkubIKLIpNIfYkVQuJY7E92J.e', 'bao', '0965656565', 0, 1, '2025-11-03 15:09:28', '2025-11-07 03:26:14', NULL, NULL),
 (5, 'admin1', 'admin1@gmail.com', '$2b$10$b9lCzWVznD4ZMQ1Y6/bOc.Jn6efXZS1Us.ZjYVv2PFgHkqKr1PD1.', 'aaa', '0123456789', 2, 0, '2025-11-05 09:18:39', '2025-11-05 10:08:50', NULL, '39c81725075b25e0e973c080d442c787a6e9fdc55a1f613fab08e3fc7facbb7c'),
-(6, 'admin', 'admin@gmail.com', '$2b$10$84e9xqnTc50CPaf5pOldT.Ob9zW9/RVK.G3Whr.TdAncfRdE.UivG', 'admin', '0123456788', 2, 1, '2025-11-05 09:33:52', '2025-11-18 08:18:42', NULL, '71d003663a2ad740492c7140c7096658f94050a5d2d53fb1babdff22117f3375'),
+(6, 'admin', 'admin@gmail.com', '$2b$10$84e9xqnTc50CPaf5pOldT.Ob9zW9/RVK.G3Whr.TdAncfRdE.UivG', 'admin', '0123456788', 2, 1, '2025-11-05 09:33:52', '2025-11-19 09:16:00', NULL, '94a8521a870dc8c5ef4e84117a5b5444164558b6dfa544d5cdcbfa10949722e2'),
 (7, 'bao1', 'bao1@gmail.com', '$2b$10$sVY/zhJ2cKlwydAjQ090e.bMn1eFJKudObM.yOZiR06XPanyUgaFW', 'bao1', '0975846352', 0, 0, '2025-11-05 10:09:19', '2025-11-05 10:09:38', NULL, NULL),
 (8, 'bb', 'bb@gmail.com', '$2b$10$i/dzC6SfHsM.5cHiYaS89ed4rg4SAoLtZz1/O2mA6eagocIogJoL6', NULL, NULL, 0, 1, '2025-11-07 03:26:38', '2025-11-07 08:05:59', NULL, NULL),
 (9, 'ccc', 'cc@gmail.com', '$2b$10$zdMHGgXEqVXcvRmaoymJceZdwLmNnViMKR.Gss2KmhtlJzm9k8pp.', 'bao', '0987676765', 0, 1, '2025-11-07 08:06:49', '2025-11-07 08:23:41', NULL, '25df20a38db4f2d83703655c8fa0289a37154f1beeceb3ab72ad43f1bb4f13e3'),
@@ -817,6 +863,19 @@ CREATE TABLE `variant_attributes` (
   `variant_id` int(11) NOT NULL,
   `attribute_value_id` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `variant_attributes`
+--
+
+INSERT INTO `variant_attributes` (`variant_id`, `attribute_value_id`) VALUES
+(351, 14),
+(351, 16),
+(351, 21),
+(351, 24),
+(355, 115),
+(355, 118),
+(355, 123);
 
 -- --------------------------------------------------------
 
@@ -977,6 +1036,20 @@ ALTER TABLE `coupons`
   ADD KEY `idx_coupon_code` (`coupon_code`),
   ADD KEY `idx_is_active` (`is_active`),
   ADD KEY `idx_valid_dates` (`valid_from`,`valid_until`);
+
+--
+-- Indexes for table `installments`
+--
+ALTER TABLE `installments`
+  ADD PRIMARY KEY (`installment_id`),
+  ADD KEY `fk_installment_order` (`order_id`);
+
+--
+-- Indexes for table `installment_payments`
+--
+ALTER TABLE `installment_payments`
+  ADD PRIMARY KEY (`payment_id`),
+  ADD KEY `fk_payment_installment` (`installment_id`);
 
 --
 -- Indexes for table `notifications`
@@ -1215,6 +1288,18 @@ ALTER TABLE `coupons`
   MODIFY `coupon_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
+-- AUTO_INCREMENT for table `installments`
+--
+ALTER TABLE `installments`
+  MODIFY `installment_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `installment_payments`
+--
+ALTER TABLE `installment_payments`
+  MODIFY `payment_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `notifications`
 --
 ALTER TABLE `notifications`
@@ -1248,13 +1333,13 @@ ALTER TABLE `posts`
 -- AUTO_INCREMENT for table `products`
 --
 ALTER TABLE `products`
-  MODIFY `product_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=243;
+  MODIFY `product_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=247;
 
 --
 -- AUTO_INCREMENT for table `product_variants`
 --
 ALTER TABLE `product_variants`
-  MODIFY `variant_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=348;
+  MODIFY `variant_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=356;
 
 --
 -- AUTO_INCREMENT for table `recent_views`
@@ -1358,6 +1443,18 @@ ALTER TABLE `cart_items`
 --
 ALTER TABLE `categories`
   ADD CONSTRAINT `categories_ibfk_1` FOREIGN KEY (`parent_category_id`) REFERENCES `categories` (`category_id`) ON DELETE SET NULL;
+
+--
+-- Constraints for table `installments`
+--
+ALTER TABLE `installments`
+  ADD CONSTRAINT `fk_installment_order` FOREIGN KEY (`order_id`) REFERENCES `orders` (`order_id`);
+
+--
+-- Constraints for table `installment_payments`
+--
+ALTER TABLE `installment_payments`
+  ADD CONSTRAINT `fk_payment_installment` FOREIGN KEY (`installment_id`) REFERENCES `installments` (`installment_id`);
 
 --
 -- Constraints for table `notifications`

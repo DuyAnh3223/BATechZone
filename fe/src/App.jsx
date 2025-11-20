@@ -38,6 +38,7 @@ import OrderSuccess from './pages/user/OrderSuccess';
 import Payment from './pages/user/Payment';
 import Orders from './pages/user/Orders';
 import OrderDetail from './pages/user/OrderDetail';
+import AdminInstallmentPage from './pages/admin/InstallmentPage/AdminInstallmentPage';
 
 function App() {
   return (
@@ -84,7 +85,7 @@ function App() {
             <Route path="categories" element={<AdminCategoryPage />} />
             <Route path="posts" element={<AdminPost />} />
             <Route path="posts/:postId" element={<AdminPostDetail />} />
-            <Route path="payments" element={<AdminPayment />} />
+            <Route path="installments" element={<AdminInstallmentPage />} />
             <Route path="service-center" element={<AdminServiceCenter />} />
           </Route>
       </Routes>
