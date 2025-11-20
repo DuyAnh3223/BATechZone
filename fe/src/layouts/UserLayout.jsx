@@ -1,7 +1,7 @@
 import { Outlet, useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import { useState, useEffect, useCallback } from 'react';
-import { ShoppingCart, User, Menu, X, Search, LogIn, LogOut, ChevronRight, Bell, Tag, Copy, Check } from "lucide-react";
+import { ShoppingCart, Cpu, User, Menu, X, Search, LogIn, LogOut, ChevronRight, Bell, Tag, Copy, Check } from "lucide-react";
 import { useAuth } from '@/context/AuthContext';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -275,6 +275,40 @@ const UserLayout = () => {
                     {cartItemsCount > 99 ? '99+' : cartItemsCount}
                   </Badge>
                 )}
+              </Link>
+
+              {/* Build PC Icon */}
+              <Link
+                to="/build-pc"
+                className="relative transition-all duration-300 ease-in-out inline-flex items-center justify-center"
+                style={{
+                  position: "relative",
+                  backgroundColor: "#f97316",
+                  color: "#ffffff",
+                  borderRadius: "50%",
+                  width: "48px",
+                  height: "48px",
+                  padding: "0",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  transform: "scale(1)",
+                  transition: "all 0.3s ease-in-out",
+                  border: "none",
+                  textDecoration: "none",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = "#ea580c";
+                  e.currentTarget.style.transform = "scale(1.1)";
+                  e.currentTarget.style.transition = "all 0.3s ease-in-out";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = "#f97316";
+                  e.currentTarget.style.transform = "scale(1)";
+                  e.currentTarget.style.transition = "all 0.3s ease-in-out";
+                }}
+              >
+                <Cpu className="size-6" style={{ color: "#ffffff" }} />
               </Link>
 
               {/* Coupon Icon - Circular with green background */}
@@ -701,6 +735,12 @@ const UserLayout = () => {
                     {cartItemsCount > 99 ? '99+' : cartItemsCount}
                   </Badge>
                 )}
+              </Link>
+            </Button>
+            <Button variant="ghost" size="lg" className="w-full justify-start relative" asChild>
+              <Link to="/build-pc" className="flex items-center">
+                <Cpu className="size-9 mr-2 text-orange-500" />
+                Build PC
               </Link>
             </Button>
             <Button 
