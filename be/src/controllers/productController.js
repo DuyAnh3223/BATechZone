@@ -65,7 +65,8 @@ export const createProduct = async (req, res) => {
       is_active, 
       is_featured, 
       defaultVariant, 
-      additionalVariants 
+      additionalVariants,
+      variant_attributes
     } = req.body;
 
     // Validate required fields
@@ -165,6 +166,12 @@ export const createProduct = async (req, res) => {
         }
 
         try {
+          // Extract attribute value IDs from variant.attribute_values
+          const attributeValueIds = variant.attribute_values?.map(av => {
+            // Handle both {attribute_value_id: X} and {attributeValueId: X} formats
+            return av.attribute_value_id || av.attributeValueId;
+          }).filter(id => id != null) || [];
+
           const variantId = await Variant.create({
             productId: productId,
             sku: variant.sku || `${finalSlug}-${i + 1}`,
@@ -173,7 +180,7 @@ export const createProduct = async (req, res) => {
             stockQuantity: variantStock,
             isActive: 1,
             isDefault: 0,
-            attributes: variant.attribute_values?.map(av => av.attribute_value_id) || []
+            attributes: attributeValueIds
           });
 
           // Handle variant images if provided
@@ -191,10 +198,16 @@ export const createProduct = async (req, res) => {
     // Lấy lại product với category_name
     const product = await Product.getById(productId);
 
+    // **FIX**: Load variants ngay sau khi tạo product để trả về đầy đủ variants
+    const variants = await Variant.getByProductId(productId);
+
     res.status(201).json({
       success: true,
       message: 'Product created successfully',
-      data: product
+      data: {
+        ...product,
+        variants: variants || [] // Include variants in response
+      }
     });
   } catch (error) {
     console.error('Error creating product:', error);

@@ -401,6 +401,13 @@ class Variant {
               attribute_id: attr.attribute_id,
               attribute_name: attr.attribute_name
             })),
+            // **FIX**: Also return attribute_values for frontend compatibility
+            attribute_values: attributes.map(attr => ({
+              attribute_value_id: attr.attribute_value_id,
+              value_name: attr.value_name,
+              attribute_id: attr.attribute_id,
+              attribute_name: attr.attribute_name
+            })),
             images: [] // Will be loaded separately if needed
           };
         })

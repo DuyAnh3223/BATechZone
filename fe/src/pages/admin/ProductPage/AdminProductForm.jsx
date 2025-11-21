@@ -280,6 +280,10 @@ const AdminProductForm = ({ initialData = null, onSubmit, onCancel }) => {
       return;
     }
 
+    // Chỉ sử dụng variants đã được sinh thủ công (bấm nút "Sinh biến thể")
+    // Không tự động sinh từ attributes nếu chưa click nút
+    let finalVariants = [...variants];
+
     // build payload
     const payload = {
       product_name: name.trim(),
@@ -288,15 +292,16 @@ const AdminProductForm = ({ initialData = null, onSubmit, onCancel }) => {
       category_id: categoryId,
       is_active: isActive,
       is_featured: isFeatured,
-      base_price: defaultVariantPrice, // base_price in products table
+      base_price: defaultVariantPrice,
+      variant_attributes: variantAttributes,
       // Default variant data
       defaultVariant: {
         price: defaultVariantPrice,
         stock: defaultVariantStock,
-        images: defaultVariantImages // Images for default variant
+        images: defaultVariantImages
       },
-      // Additional variants (if any)
-      additionalVariants: variants.map(v => ({
+      // Additional variants (chỉ nếu user click "Sinh biến thể")
+      additionalVariants: finalVariants.map(v => ({
         ...v,
         images: variantImages[v.id] || []
       }))
@@ -412,6 +417,28 @@ const AdminProductForm = ({ initialData = null, onSubmit, onCancel }) => {
               )}
             </div>
           ))}
+        </div>
+
+        <div className="mt-4 flex items-center gap-3">
+          <button type="button" onClick={generateVariants} className="px-4 py-2 rounded-md bg-green-600 text-white hover:bg-green-700">
+            Sinh biến thể
+          </button>
+          <span className="text-sm text-gray-600">Tổng: <span className="font-medium">{variants.length}</span> biến thể</span>
+          {variants.length > 0 && (
+            <button 
+              type="button" 
+              onClick={() => {
+                if (confirm('Xóa tất cả biến thể đã tạo?')) {
+                  setVariants([]);
+                  setVariantAttributes([]);
+                  setSelectedValues({});
+                }
+              }} 
+              className="px-3 py-1.5 rounded-md bg-red-100 text-red-800 text-sm hover:bg-red-200"
+            >
+              Xóa tất cả
+            </button>
+          )}
         </div>
        
       {/* Price and Stock for default variant */}
