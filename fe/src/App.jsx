@@ -39,6 +39,7 @@ import Payment from './pages/user/Payment';
 import Orders from './pages/user/Orders';
 import OrderDetail from './pages/user/OrderDetail';
 import AdminInstallmentPage from './pages/admin/InstallmentPage/AdminInstallmentPage';
+import Installment from './pages/user/Installment';
 
 function App() {
   return (
@@ -53,6 +54,7 @@ function App() {
             <Route path="blog" element={<Blog />} />
             <Route path="cart" element={<Cart />} />
             <Route path="checkout" element={<Checkout />} />
+            <Route path="installment" element={<Installment />} />
             <Route path="payment/:orderId" element={<Payment />} />
             <Route path="order-success/:orderId" element={<OrderSuccess />} />
             <Route path="orders" element={<Orders />} />

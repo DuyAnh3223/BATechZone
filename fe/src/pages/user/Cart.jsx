@@ -455,13 +455,15 @@ const Cart = () => {
                   Tiến hành đặt hàng
                 </Button>
               </Link>
-              <Button 
-                variant="outline" 
-                className="w-full border-blue-600 text-blue-600 hover:bg-blue-50 hover:text-blue-700" 
-                size="lg"
-              >
-                Mua trả góp
-              </Button>
+              <Link to="/installment" className="w-full">
+                <Button 
+                  variant="outline" 
+                  className="w-full border-blue-600 text-blue-600 hover:bg-blue-50 hover:text-blue-700" 
+                  size="lg"
+                >
+                  Mua trả góp
+                </Button>
+              </Link>
             </CardFooter>
           </Card>
         </div>
