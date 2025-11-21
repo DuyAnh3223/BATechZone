@@ -4,6 +4,7 @@ import { useCategoryStore } from '@/stores/useCategoryStore';
 import HeroBanner from '@/components/home/HeroBanner';
 import FeaturedCategories from '@/components/home/FeaturedCategories';
 import FeaturedProducts from '@/components/home/FeaturedProducts';
+import AllComponents from '@/components/home/AllComponents';
 import WhyChooseUs from '@/components/home/WhyChooseUs';
 import NewsletterSubscription from '@/components/home/NewsletterSubscription';
 
@@ -74,6 +75,7 @@ const Home = () => {
       <HeroBanner banners={banners} />
       <FeaturedCategories categories={categories} loading={categoriesLoading} />
       <FeaturedProducts products={products} loading={productsLoading} />
+      <AllComponents />
       <WhyChooseUs />
       <NewsletterSubscription />
     </div>

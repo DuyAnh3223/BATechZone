@@ -142,11 +142,12 @@ const AdminProductPage = () => {
 			} else {
 				// Create new product
 				// Extract images from payload before sending
-				const { defaultVariant, additionalVariants, ...productData } = productPayload;
+				const { defaultVariant, additionalVariants, variant_attributes, ...productData } = productPayload;
 				
 				// Send product data without images
 				const createPayload = {
 					...productData,
+					variant_attributes: variant_attributes || [], // **FIX**: Include variant_attributes
 					defaultVariant: {
 						price: defaultVariant.price,
 						stock: defaultVariant.stock
@@ -218,6 +219,11 @@ const AdminProductPage = () => {
 			
 			setShowForm(false);
 			setEditing(null);
+			
+			// Clear variant cache to force reload when panels are expanded
+			loadedProductsRef.current.clear();
+			setVariantsByProduct({});
+			
 			await loadProducts();
 			
 			// Hiển thị success dialog

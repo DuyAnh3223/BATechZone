@@ -55,22 +55,38 @@ const AdminVariantEditForm = ({ variant, product, onCancel, onSuccess }) => {
           
           const attrsWithValues = attrs.map(attr => {
             let values = [];
+            
+            // Try to get values from different possible sources
             if (attr.attributeValues) {
               try {
-                values = typeof attr.attributeValues === 'string' 
+                const parsed = typeof attr.attributeValues === 'string' 
                   ? JSON.parse(attr.attributeValues) 
                   : attr.attributeValues;
+                values = Array.isArray(parsed) ? parsed : [];
               } catch (e) {
-                console.error('Error parsing attributeValues:', e);
+                console.error(`Error parsing attributeValues for ${attr.attribute_name}:`, e, attr.attributeValues);
                 values = [];
               }
+            } else if (attr.values && Array.isArray(attr.values)) {
+              values = attr.values;
             }
+            
+            const mappedValues = values.map(v => ({
+              attribute_value_id: v.valueId || v.attribute_value_id || v.id,
+              value_name: v.value || v.value_name || v.name
+            })).filter(v => v.attribute_value_id && v.value_name);
+            
+            console.log(`Attribute '${attr.attribute_name}' values:`, {
+              hasAttributeValues: !!attr.attributeValues,
+              hasValues: !!attr.values,
+              rawValuesCount: values.length,
+              mappedValuesCount: mappedValues.length,
+              mappedValues: mappedValues
+            });
+            
             return {
               ...attr,
-              values: values.map(v => ({
-                attribute_value_id: v.valueId || v.attribute_value_id,
-                value_name: v.value || v.value_name
-              }))
+              values: mappedValues
             };
           });
           
@@ -272,37 +288,43 @@ const AdminVariantEditForm = ({ variant, product, onCancel, onSuccess }) => {
             </div>
           ) : (
             <>
-              {/* Display mode - Show selected values */}
+              {/* Display mode - Show selected values as read-only */}
               {!editingAttributes && (
                 <div className="space-y-2">
-                  {attributes.map((attr) => {
-                    // Find if this attribute has any selected values in this variant
-                    const selectedValuesForAttr = (attr.values || []).filter(v => 
-                      (editingAttributes ? tempSelectedAttributeValues : selectedAttributeValues).includes(v.attribute_value_id)
-                    );
-                    
-                    if (selectedValuesForAttr.length === 0) return null;
-                    
-                    return (
-                      <div key={attr.attribute_id} className="p-3 bg-gray-50 border rounded-md">
-                        <div className="text-xs font-medium text-gray-600 mb-1">{attr.attribute_name}</div>
-                        <div className="flex flex-wrap gap-2">
-                          {selectedValuesForAttr.map(v => (
-                            <span 
-                              key={v.attribute_value_id}
-                              className="inline-block px-3 py-1 bg-indigo-100 text-indigo-800 text-sm font-medium rounded-md"
-                            >
-                              {v.value_name}
-                            </span>
-                          ))}
+                  {selectedAttributeValues.length > 0 ? (
+                    attributes.map((attr) => {
+                      // Find if this attribute has any selected values in this variant
+                      const selectedValuesForAttr = (attr.values || []).filter(v => 
+                        selectedAttributeValues.includes(v.attribute_value_id)
+                      );
+                      
+                      if (selectedValuesForAttr.length === 0) return null;
+                      
+                      return (
+                        <div key={attr.attribute_id} className="p-3 bg-gray-50 border rounded-md">
+                          <div className="text-xs font-medium text-gray-600 mb-1">{attr.attribute_name}</div>
+                          <div className="flex flex-wrap gap-2">
+                            {selectedValuesForAttr.map(v => (
+                              <span 
+                                key={v.attribute_value_id}
+                                className="inline-block px-3 py-1 bg-indigo-100 text-indigo-800 text-sm font-medium rounded-md"
+                              >
+                                {v.value_name}
+                              </span>
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })
+                  ) : (
+                    <div className="p-3 bg-gray-50 border rounded-md">
+                      <p className="text-sm text-gray-500 italic">Không có thuộc tính được chọn</p>
+                    </div>
+                  )}
                 </div>
               )}
 
-              {/* Edit mode - Show attribute selection */}
+              {/* Edit mode - Show attribute selection checkboxes and values */}
               {editingAttributes && (
                 <div className="space-y-3">
                   {attributes.map((attr) => {
@@ -343,7 +365,7 @@ const AdminVariantEditForm = ({ variant, product, onCancel, onSuccess }) => {
                         {/* Show selection area only if checkbox is checked or has selected values */}
                         {hasSelectedValues && (
                           <div className="space-y-2">
-                            {/* Display selected values as tags */}
+                            {/* Display selected values as tags with remove button */}
                             {selectedValuesForAttr.length > 0 && (
                               <div className="flex flex-wrap gap-2">
                                 {selectedValuesForAttr.map(v => (
@@ -356,6 +378,7 @@ const AdminVariantEditForm = ({ variant, product, onCancel, onSuccess }) => {
                                       type="button"
                                       onClick={() => toggleAttributeValue(v.attribute_value_id)}
                                       className="hover:bg-indigo-200 rounded-full p-0.5"
+                                      title="Xoá"
                                     >
                                       <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                                         <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd"/>
@@ -369,33 +392,77 @@ const AdminVariantEditForm = ({ variant, product, onCancel, onSuccess }) => {
                             {/* Dropdown to add more values */}
                             <div>
                               <label className="block text-sm text-gray-600 mb-1">
-                                Chọn giá trị ({selectedValuesForAttr.length} đã chọn):
+                                Chọn thêm giá trị ({attr.values?.length || 0} sẵn có, {selectedValuesForAttr?.length || 0} đã chọn):
                               </label>
+                              {(!attr.values || attr.values.length <= selectedValuesForAttr.length) ? (
+                                <div className="p-2 text-sm text-gray-500 bg-gray-100 border rounded-md italic">
+                                  Đã chọn hết giá trị có sẵn ({attr.values?.length || 0} giá trị)
+                                </div>
+                              ) : (
+                                <select 
+                                  className="w-full px-3 py-2 border rounded-md text-sm bg-white"
+                                  onChange={(e) => {
+                                    if (e.target.value) {
+                                      const valueId = Number(e.target.value);
+                                      if (!tempSelectedAttributeValues.includes(valueId)) {
+                                        setTempSelectedAttributeValues(prev => [...prev, valueId]);
+                                      }
+                                      e.target.value = ''; // Reset selection
+                                    }
+                                  }}
+                                  value=""
+                                >
+                                  <option value="">-- Chọn giá trị --</option>
+                                  {(attr.values || []).map((v) => {
+                                    const isSelected = tempSelectedAttributeValues.includes(v.attribute_value_id);
+                                    return (
+                                      <option 
+                                        key={v.attribute_value_id} 
+                                        value={v.attribute_value_id}
+                                        disabled={isSelected}
+                                      >
+                                        {v.value_name} {isSelected ? '✓ Đã chọn' : ''}
+                                      </option>
+                                    );
+                                  })}
+                                </select>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Show values to select if attribute is checked but no values selected yet */}
+                        {!hasSelectedValues && (
+                          <div>
+                            <label className="block text-sm text-gray-600 mb-1">
+                              Chọn giá trị:
+                            </label>
+                            {(!attr.values || attr.values.length === 0) ? (
+                              <div className="p-2 text-sm text-gray-500 bg-gray-100 border rounded-md italic">
+                                Không có giá trị có sẵn cho thuộc tính này
+                              </div>
+                            ) : (
                               <select 
                                 className="w-full px-3 py-2 border rounded-md text-sm bg-white"
                                 onChange={(e) => {
                                   if (e.target.value) {
-                                    toggleAttributeValue(Number(e.target.value));
+                                    setTempSelectedAttributeValues(prev => [...prev, Number(e.target.value)]);
                                     e.target.value = ''; // Reset selection
                                   }
                                 }}
                                 value=""
                               >
                                 <option value="">-- Chọn giá trị --</option>
-                                {(attr.values || []).map((v) => {
-                                  const isSelected = tempSelectedAttributeValues.includes(v.attribute_value_id);
-                                  return (
-                                    <option 
-                                      key={v.attribute_value_id} 
-                                      value={v.attribute_value_id}
-                                      disabled={isSelected}
-                                    >
-                                      {v.value_name} {isSelected ? '✓ Đã chọn' : ''}
-                                    </option>
-                                  );
-                                })}
+                                {(attr.values || []).map((v) => (
+                                  <option 
+                                    key={v.attribute_value_id} 
+                                    value={v.attribute_value_id}
+                                  >
+                                    {v.value_name}
+                                  </option>
+                                ))}
                               </select>
-                            </div>
+                            )}
                           </div>
                         )}
                       </div>
