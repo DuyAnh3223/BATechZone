@@ -46,11 +46,13 @@ const Checkout = () => {
   const { 
     cartItems, 
     fetchCartItems, 
-    loading 
+    loading,
+    reset: resetCartItems
   } = useCartItemStore();
   const { createOrder, loading: orderLoading } = useOrderStore();
   const [isLoadingCart, setIsLoadingCart] = useState(true);
   const [step, setStep] = useState(1);
+  const [paymentMethod, setPaymentMethod] = useState("cod");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [discountAmount, setDiscountAmount] = useState(0);
@@ -199,6 +201,7 @@ const Checkout = () => {
         toast.error('Giỏ hàng trống. Vui lòng thêm sản phẩm trước khi đặt hàng.');
         return;
       }
+      setPaymentMethod(data.paymentMethod);
       setStep(2);
     } else {
       // Step 2: Đặt hàng
@@ -260,6 +263,9 @@ const Checkout = () => {
       if (cartId) {
         await clearCart(cartId);
       }
+      
+      // Reset cart items state
+      resetCartItems();
 
       // Xóa coupon khỏi localStorage sau khi đặt hàng thành công
       localStorage.removeItem('applied_coupon');
@@ -453,7 +459,7 @@ const Checkout = () => {
             </Card>
           )}
 
-          {/* Payment Method */}
+          {/* Step 2: Payment Method */}
           {step === 2 && (
             <Card>
               <CardHeader>

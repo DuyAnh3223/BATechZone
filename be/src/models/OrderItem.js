@@ -28,10 +28,11 @@ class OrderItem {
     const [items] = await db.query(
       `SELECT 
         oi.*,
-        pv.image_url as variant_image,
-        pv.stock_quantity
+        pv.stock_quantity,
+        vi.image_url as variant_image
       FROM order_items oi
       LEFT JOIN product_variants pv ON oi.variant_id = pv.variant_id
+      LEFT JOIN variant_images vi ON pv.variant_id = vi.variant_id AND vi.is_primary = 1
       WHERE oi.order_item_id = ?`,
       [orderItemId]
     );
@@ -43,12 +44,13 @@ class OrderItem {
     const [items] = await db.query(
       `SELECT 
         oi.*,
-        pv.image_url as variant_image,
         pv.stock_quantity,
-        p.product_id
+        p.product_id,
+        vi.image_url as variant_image
       FROM order_items oi
       LEFT JOIN product_variants pv ON oi.variant_id = pv.variant_id
       LEFT JOIN products p ON pv.product_id = p.product_id
+      LEFT JOIN variant_images vi ON pv.variant_id = vi.variant_id AND vi.is_primary = 1
       WHERE oi.order_id = ?
       ORDER BY oi.order_item_id ASC`,
       [orderId]
@@ -302,12 +304,13 @@ class OrderItem {
         oi.product_name,
         oi.variant_name,
         oi.sku,
-        pv.image_url,
-        pv.current_price,
+        pv.price,
+        vi.image_url,
         MAX(o.created_at) as last_purchased
       FROM order_items oi
       JOIN orders o ON oi.order_id = o.order_id
       LEFT JOIN product_variants pv ON oi.variant_id = pv.variant_id
+      LEFT JOIN variant_images vi ON pv.variant_id = vi.variant_id AND vi.is_primary = 1
       WHERE o.user_id = ?
         AND o.order_status IN ('delivered', 'shipping')
       GROUP BY oi.variant_id

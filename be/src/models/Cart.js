@@ -98,16 +98,16 @@ class Cart {
         ci.quantity,
         p.product_name as productName,
         pv.variant_name as variantName,
-        pv.current_price as currentPrice,
-        pv.original_price as originalPrice,
-        pv.image_url as imageUrl,
+        pv.price as price,
         pv.stock_quantity as stockQuantity,
         pv.sku,
         pv.is_active as isActive,
+        vi.image_url as imageUrl,
         ci.added_at as addedAt
       FROM cart_items ci
       JOIN product_variants pv ON ci.variant_id = pv.variant_id
       JOIN products p ON pv.product_id = p.product_id
+      LEFT JOIN variant_images vi ON pv.variant_id = vi.variant_id AND vi.is_primary = 1
       WHERE ci.cart_id = ?`,
       [cartId]
     );
@@ -243,8 +243,7 @@ class Cart {
   async calculateTotal(cartId) {
     const [result] = await db.query(
       `SELECT 
-        SUM(ci.quantity * pv.current_price) as subtotal,
-        SUM(ci.quantity * (pv.original_price - pv.current_price)) as total_savings,
+        SUM(ci.quantity * pv.price) as subtotal,
         SUM(ci.quantity) as total_items,
         COUNT(DISTINCT ci.variant_id) as unique_items
       FROM cart_items ci
@@ -255,7 +254,6 @@ class Cart {
 
     return {
       subtotal: result[0].subtotal || 0,
-      totalSavings: result[0].total_savings || 0,
       totalItems: result[0].total_items || 0,
       uniqueItems: result[0].unique_items || 0
     };

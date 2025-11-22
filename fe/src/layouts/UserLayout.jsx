@@ -11,6 +11,7 @@ import { useNotificationStore } from '@/stores/useNotificationStore';
 import { useCartItemStore } from '@/stores/useCartItemStore';
 import { useCouponStore } from '@/stores/useCouponStore';
 import { couponService } from '@/services/couponService';
+import CartDropdown from '@/components/common/CartDropdown';
 import {
   Dialog,
   DialogContent,
@@ -219,63 +220,64 @@ const UserLayout = () => {
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-4">
-              {/* Shopping Cart Icon - Circular with blue background */}
-              <Link 
-                to="/cart" 
-                className="relative transition-all duration-300 ease-in-out inline-flex items-center justify-center"
-                style={{
-                  position: 'relative',
-                  backgroundColor: '#3b82f6', // blue-500
-                  color: '#ffffff',
-                  borderRadius: '50%',
-                  width: '48px',
-                  height: '48px',
-                  padding: '0',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  transform: 'scale(1)',
-                  transition: 'all 0.3s ease-in-out',
-                  border: 'none',
-                  textDecoration: 'none'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#2563eb'; // blue-600 (darker on hover)
-                  e.currentTarget.style.transform = 'scale(1.1)';
-                  e.currentTarget.style.transition = 'all 0.3s ease-in-out';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = '#3b82f6'; // blue-500
-                  e.currentTarget.style.transform = 'scale(1)';
-                  e.currentTarget.style.transition = 'all 0.3s ease-in-out';
-                }}
-              >
-                <ShoppingCart className="size-6" style={{ color: '#ffffff' }} />
-                {cartItemsCount > 0 && (
-                  <Badge 
-                    className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1.5 flex items-center justify-center bg-red-500 text-white text-xs font-bold border-2 border-white rounded-full"
-                    style={{
-                      position: 'absolute',
-                      top: '-4px',
-                      right: '-4px',
-                      minWidth: '20px',
-                      height: '20px',
-                      padding: '0 6px',
-                      backgroundColor: '#ef4444',
-                      color: '#ffffff',
-                      fontSize: '12px',
-                      fontWeight: 'bold',
-                      border: '2px solid #ffffff',
-                      borderRadius: '9999px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}
-                  >
-                    {cartItemsCount > 99 ? '99+' : cartItemsCount}
-                  </Badge>
-                )}
-              </Link>
+            {/* Shopping Cart Icon - Circular with blue background */}
+              <CartDropdown cartItemsCount={cartItemsCount}>
+                <div
+                  className="relative transition-all duration-300 ease-in-out inline-flex items-center justify-center cursor-pointer"
+                  style={{
+                    position: 'relative',
+                    backgroundColor: '#3b82f6', // blue-500
+                    color: '#ffffff',
+                    borderRadius: '50%',
+                    width: '48px',
+                    height: '48px',
+                    padding: '0',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transform: 'scale(1)',
+                    transition: 'all 0.3s ease-in-out',
+                    border: 'none',
+                    textDecoration: 'none'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = '#2563eb'; // blue-600 (darker on hover)
+                    e.currentTarget.style.transform = 'scale(1.1)';
+                    e.currentTarget.style.transition = 'all 0.3s ease-in-out';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = '#3b82f6'; // blue-500
+                    e.currentTarget.style.transform = 'scale(1)';
+                    e.currentTarget.style.transition = 'all 0.3s ease-in-out';
+                  }}
+                >
+                  <ShoppingCart className="size-6" style={{ color: '#ffffff' }} />
+                  {cartItemsCount > 0 && (
+                    <Badge 
+                      className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1.5 flex items-center justify-center bg-red-500 text-white text-xs font-bold border-2 border-white rounded-full"
+                      style={{
+                        position: 'absolute',
+                        top: '-4px',
+                        right: '-4px',
+                        minWidth: '20px',
+                        height: '20px',
+                        padding: '0 6px',
+                        backgroundColor: '#ef4444',
+                        color: '#ffffff',
+                        fontSize: '12px',
+                        fontWeight: 'bold',
+                        border: '2px solid #ffffff',
+                        borderRadius: '9999px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                    >
+                      {cartItemsCount > 99 ? '99+' : cartItemsCount}
+                    </Badge>
+                  )}
+                </div>
+              </CartDropdown>
 
               {/* Build PC Icon */}
               <Link

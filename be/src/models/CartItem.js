@@ -128,13 +128,16 @@ class CartItem {
         ci.*,
         pv.variant_name,
         pv.sku,
+        pv.price,
         pv.stock_quantity,
         pv.is_active,
         p.product_id,
-        p.product_name
+        p.product_name,
+        vi.image_url
       FROM cart_items ci
       JOIN product_variants pv ON ci.variant_id = pv.variant_id
       JOIN products p ON pv.product_id = p.product_id
+      LEFT JOIN variant_images vi ON pv.variant_id = vi.variant_id AND vi.is_primary = 1
       WHERE ci.cart_item_id = ?`,
       [cartItemId]
     );
@@ -153,10 +156,12 @@ class CartItem {
         pv.is_active,
         p.product_id,
         p.product_name,
+        vi.image_url,
         (ci.quantity * pv.price) as subtotal
       FROM cart_items ci
       JOIN product_variants pv ON ci.variant_id = pv.variant_id
       JOIN products p ON pv.product_id = p.product_id
+      LEFT JOIN variant_images vi ON pv.variant_id = vi.variant_id AND vi.is_primary = 1
       WHERE ci.cart_id = ?
       ORDER BY ci.added_at DESC`,
       [cartId]
@@ -302,16 +307,13 @@ class CartItem {
         ci.quantity,
         pv.variant_name,
         pv.sku,
-        pv.current_price,
-        pv.original_price,
-        pv.image_url,
+        pv.price,
         pv.stock_quantity,
-        pv.weight,
         p.product_id,
         p.product_name,
         c.category_name,
-        (ci.quantity * pv.current_price) as subtotal,
-        (ci.quantity * (pv.original_price - pv.current_price)) as savings,
+        vi.image_url,
+        (ci.quantity * pv.price) as subtotal,
         CASE 
           WHEN pv.is_active = 0 THEN 'inactive'
           WHEN pv.stock_quantity = 0 THEN 'out_of_stock'
@@ -322,6 +324,7 @@ class CartItem {
       JOIN product_variants pv ON ci.variant_id = pv.variant_id
       JOIN products p ON pv.product_id = p.product_id
       LEFT JOIN categories c ON p.category_id = c.category_id
+      LEFT JOIN variant_images vi ON pv.variant_id = vi.variant_id AND vi.is_primary = 1
       WHERE ci.cart_id = ?
       ORDER BY ci.added_at ASC`,
       [cartId]

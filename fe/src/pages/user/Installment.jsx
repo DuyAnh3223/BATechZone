@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -11,6 +12,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { 
   CreditCard, 
   ShoppingCart, 
@@ -20,6 +32,8 @@ import {
 } from 'lucide-react';
 import { useCartItemStore } from '@/stores/useCartItemStore';
 import { useCartStore } from '@/stores/useCartStore';
+import { useOrderStore } from '@/stores/useOrderStore';
+import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
 
 // Mock installment policies - replace with API call later
@@ -39,14 +53,50 @@ const downPaymentOptions = [
   { value: 50, label: '50%' },
 ];
 
+// Provinces and districts
+const provinces = [
+  { name: 'TP. Hồ Chí Minh', code: 'hcm' },
+  { name: 'Hà Nội', code: 'hanoi' },
+  { name: 'Đà Nẵng', code: 'danang' },
+  { name: 'Hải Phòng', code: 'haiphong' },
+  { name: 'Cần Thơ', code: 'cantho' },
+  { name: 'Bình Dương', code: 'binhdung' },
+  { name: 'Đồng Nai', code: 'dongnai' },
+  { name: 'Bà Rịa - Vũng Tàu', code: 'bariavungtau' },
+];
+
+const districtsByProvince = {
+  hcm: [
+    'Quận 1', 'Quận 2', 'Quận 3', 'Quận 4', 'Quận 5', 'Quận 6', 'Quận 7', 'Quận 8', 'Quận 9', 'Quận 10',
+    'Quận 11', 'Quận 12', 'Quận Bình Thạnh', 'Quận Bình Tân', 'Quận Gò Vấp', 'Quận Phú Nhuận', 
+    'Quận Tân Bình', 'Quận Tân Phú', 'Quận Thủ Đức', 'Huyện Bình Chánh', 'Huyện Cần Giờ', 'Huyện Hóc Môn'
+  ],
+  hanoi: [
+    'Ba Đình', 'Bắc Từ Liêm', 'Chương Mỹ', 'Đan Phượng', 'Đông Anh', 'Gia Lâm', 'Hà Đông', 
+    'Hoài Đức', 'Hoàng Mai', 'Long Biên', 'Phú Xuyên', 'Quốc Oai', 'Sơn Tây', 'Thanh Oai', 
+    'Thanh Trì', 'Thạch Thất', 'Tây Hồ', 'Từ Liêm', 'Ứng Hòa'
+  ],
+  danang: ['Hải Châu', 'Cẩm Lệ', 'Ngũ Hành Sơn', 'Liên Chiểu', 'Sơn Trà', 'Thanh Khê'],
+  haiphong: ['Hồng Bàng', 'Ngô Quyền', 'Lê Chân', 'Đồ Sơn', 'Kiến An', 'An Dương', 'Thủy Nguyên', 'Tiên Lãng'],
+  cantho: ['Ninh Kiều', 'Bình Thủy', 'Cờ Đỏ', 'Phong Điền', 'Châu Thành', 'Vĩnh Thạnh', 'Thot Nốt'],
+  binhdung: ['Thủ Dầu Một', 'Bến Cát', 'Dầu Tiếng', 'Chơn Thành', 'Phú Giáo', 'Tân Uyên'],
+  dongnai: ['Biên Hoà', 'Long Khánh', 'Nhơn Trạch', 'Tân Phú', 'Vĩnh Cửu', 'Định Quán', 'Thống Nhất'],
+  bariavungtau: ['Vũng Tàu', 'Bà Rịa', 'Long Điền', 'Đất Đỏ', 'Châu Đức', 'Xuyên Mộc', 'Tuy Phong']
+};
+
 const Installment = () => {
   const navigate = useNavigate();
-  const { cartItems } = useCartItemStore();
+  const { user } = useAuth();
+  const { cartItems, reset: resetCartItems } = useCartItemStore();
   const { cart } = useCartStore();
 
   const [selectedMonths, setSelectedMonths] = useState(6);
   const [selectedDownPaymentPercent, setSelectedDownPaymentPercent] = useState(20);
   const [calculation, setCalculation] = useState(null);
+  const [showForm, setShowForm] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedProvince, setSelectedProvince] = useState('hcm');
+  const { createOrder, loading: orderLoading } = useOrderStore();
 
   // Get selected policy
   const selectedPolicy = installmentPolicies.find(p => p.months === selectedMonths);
@@ -105,14 +155,97 @@ const Installment = () => {
     }).format(amount);
   };
 
-  const handlePlaceOrder = () => {
+  const form = useForm({
+    defaultValues: {
+      fullName: user?.fullName || user?.username || '',
+      phone: user?.phone || '',
+      email: user?.email || '',
+      province: '',
+      district: '',
+      address: '',
+      note: '',
+      customerType: 'student',
+      idNumber: '',
+      jobTitle: '',
+      salary: '',
+      company: '',
+      taxId: '',
+    },
+  });
+
+  const handlePlaceOrder = async (formData) => {
     if (!calculation || cartItems.length === 0) {
       toast.error('Vui lòng chọn sản phẩm để mua trả góp');
       return;
     }
 
-    // TODO: Navigate to installment checkout page
-    toast.info('Chức năng đang được phát triển');
+    try {
+      setIsSubmitting(true);
+
+      // Format items for backend
+      const items = cartItems.map((item) => ({
+        variantId: item.variant_id,
+        productName: item.product_name || item.productName,
+        variantName: item.variant_name || item.variantName || '',
+        sku: item.sku || '',
+        quantity: parseInt(item.quantity),
+        unitPrice: parseFloat(item.price || 0),
+        discountAmount: 0,
+      }));
+
+      const orderData = {
+        userId: user?.user_id || user?.userId || null, // Use logged-in user ID if available
+        discountAmount: 0,
+        shippingFee: 0,
+        taxAmount: 0,
+        notes: formData.note || null,
+        paymentMethod: 'installment',
+        installmentDetails: {
+          months: selectedMonths,
+          downPayment: calculation.downPaymentAmount,
+          monthlyPayment: calculation.monthlyPayment,
+          totalWithInterest: calculation.totalPayment,
+          customerType: formData.customerType,
+          idNumber: formData.idNumber,
+          jobTitle: formData.jobTitle,
+          salary: formData.salary ? parseInt(formData.salary) : 0,
+          company: formData.company,
+          taxId: formData.taxId,
+        },
+      };
+
+      const shippingAddress = {
+        fullName: formData.fullName,
+        phone: formData.phone,
+        email: formData.email,
+        province: formData.province,
+        district: formData.district,
+        address: formData.address,
+      };
+
+      const requestData = {
+        orderData,
+        shippingAddress,
+        items,
+      };
+
+      const response = await createOrder(requestData);
+
+      if (response.success) {
+        // Xóa giỏ hàng sau khi đặt hàng thành công
+        resetCartItems();
+        
+        toast.success('Đơn hàng trả góp đã được tạo thành công!');
+        navigate(`/order-success/${response.data.orderId}`);
+      } else {
+        toast.error(response.message || 'Không thể tạo đơn hàng');
+      }
+    } catch (error) {
+      console.error('Error creating order:', error);
+      toast.error('Có lỗi xảy ra khi tạo đơn hàng');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (!cartItems || cartItems.length === 0) {
@@ -341,7 +474,7 @@ const Installment = () => {
                     </Button>
                     <Button 
                       size="lg"
-                      onClick={handlePlaceOrder}
+                      onClick={() => setShowForm(true)}
                       disabled={selectedDownPaymentPercent < selectedPolicy.min_down_payment}
                       className="bg-red-600 hover:bg-red-700"
                     >
@@ -354,6 +487,390 @@ const Installment = () => {
           </Card>
         </div>
       </div>
+
+      {/* User Information Form Section */}
+      {showForm && (
+        <div className="mt-8">
+          <Card>
+            <CardHeader>
+              <CardTitle>Điền thông tin người mua</CardTitle>
+              <Separator className="mt-4" />
+            </CardHeader>
+            <CardContent>
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(handlePlaceOrder)} className="space-y-6">
+                  {/* Personal Information */}
+                  <div className="space-y-4">
+                    <h3 className="font-semibold text-lg">Thông tin cá nhân</h3>
+                    
+                    <FormField
+                      control={form.control}
+                      name="fullName"
+                      rules={{ required: "Vui lòng nhập họ và tên" }}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Họ và tên</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Nhập họ và tên" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="phone"
+                      rules={{
+                        required: "Vui lòng nhập số điện thoại",
+                        pattern: {
+                          value: /^[0-9]{10,11}$/,
+                          message: "Số điện thoại không hợp lệ",
+                        },
+                      }}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Số điện thoại</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Nhập số điện thoại" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="email"
+                      rules={{
+                        required: "Vui lòng nhập email",
+                        pattern: {
+                          value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                          message: "Email không hợp lệ",
+                        },
+                      }}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email</FormLabel>
+                          <FormControl>
+                            <Input type="email" placeholder="Nhập email" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="idNumber"
+                      rules={{ required: "Vui lòng nhập CMND/CCCD" }}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>CMND/CCCD</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Nhập CMND/CCCD" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <Separator />
+
+                  {/* Customer Type */}
+                  <div className="space-y-4">
+                    <h3 className="font-semibold text-lg">Loại khách hàng</h3>
+                    
+                    <FormField
+                      control={form.control}
+                      name="customerType"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <RadioGroup
+                              onValueChange={field.onChange}
+                              defaultValue={field.value}
+                              className="space-y-3"
+                            >
+                              <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="student" id="student" />
+                                <label htmlFor="student" className="cursor-pointer">
+                                  Sinh viên
+                                </label>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="employee" id="employee" />
+                                <label htmlFor="employee" className="cursor-pointer">
+                                  Người đi làm
+                                </label>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="business" id="business" />
+                                <label htmlFor="business" className="cursor-pointer">
+                                  Doanh nghiệp
+                                </label>
+                              </div>
+                            </RadioGroup>
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  {form.watch('customerType') === 'student' && (
+                    <>
+                      <Separator />
+                      <div className="space-y-4">
+                        <h3 className="font-semibold text-lg">Thông tin sinh viên</h3>
+                        
+                        <FormField
+                          control={form.control}
+                          name="company"
+                          rules={{ required: "Vui lòng nhập tên trường" }}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Trường đại học / Cao đẳng</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Nhập tên trường" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="jobTitle"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Chuyên ngành (tuỳ chọn)</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Nhập chuyên ngành" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    </>
+                  )}
+
+                  {form.watch('customerType') === 'employee' && (
+                    <>
+                      <Separator />
+                      <div className="space-y-4">
+                        <h3 className="font-semibold text-lg">Thông tin công ty</h3>
+                        
+                        <FormField
+                          control={form.control}
+                          name="company"
+                          rules={{ required: "Vui lòng nhập tên công ty" }}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Công ty / Tổ chức</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Nhập tên công ty" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="jobTitle"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Vị trí công việc (tuỳ chọn)</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Nhập vị trí công việc" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    </>
+                  )}
+
+                  {form.watch('customerType') === 'business' && (
+                    <>
+                      <Separator />
+                      <div className="space-y-4">
+                        <h3 className="font-semibold text-lg">Thông tin doanh nghiệp</h3>
+                        
+                        <FormField
+                          control={form.control}
+                          name="company"
+                          rules={{ required: "Vui lòng nhập tên công ty" }}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Tên công ty</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Nhập tên công ty" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="taxId"
+                          rules={{ required: "Vui lòng nhập mã số thuế" }}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Mã số thuế</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Nhập mã số thuế" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="salary"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Doanh thu tháng (VND) (tuỳ chọn)</FormLabel>
+                              <FormControl>
+                                <Input type="number" placeholder="Nhập doanh thu tháng" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    </>
+                  )}
+
+                  <Separator />
+
+                  {/* Delivery Address */}
+                  <div className="space-y-4">
+                    <h3 className="font-semibold text-lg">Địa chỉ giao hàng</h3>
+                    
+                    <FormField
+                      control={form.control}
+                      name="province"
+                      rules={{ required: "Vui lòng chọn tỉnh/thành" }}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Tỉnh/Thành phố</FormLabel>
+                          <FormControl>
+                            <Select 
+                              value={field.value} 
+                              onValueChange={(value) => {
+                                field.onChange(value);
+                                setSelectedProvince(value);
+                                form.setValue('district', '');
+                              }}
+                            >
+                              <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Chọn tỉnh/thành phố" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {provinces.map((prov) => (
+                                  <SelectItem key={prov.code} value={prov.code}>
+                                    {prov.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="district"
+                      rules={{ required: "Vui lòng chọn quận/huyện" }}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Quận/Huyện</FormLabel>
+                          <FormControl>
+                            <Select 
+                              value={field.value}
+                              onValueChange={field.onChange}
+                            >
+                              <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Chọn quận/huyện" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {districtsByProvince[selectedProvince]?.map((district) => (
+                                  <SelectItem key={district} value={district}>
+                                    {district}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="address"
+                      rules={{ required: "Vui lòng nhập địa chỉ chi tiết" }}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Địa chỉ chi tiết</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Số nhà, tên đường..." {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <Separator />
+
+                  {/* Notes */}
+                  <FormField
+                    control={form.control}
+                    name="note"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Ghi chú (tuỳ chọn)</FormLabel>
+                        <FormControl>
+                          <Textarea placeholder="Ghi chú về đơn hàng..." {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Action Buttons */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setShowForm(false)}
+                    >
+                      Hủy
+                    </Button>
+                    <Button
+                      type="submit"
+                      disabled={isSubmitting || orderLoading}
+                      className="bg-red-600 hover:bg-red-700"
+                    >
+                      {isSubmitting || orderLoading ? "Đang xử lý..." : "Xác nhận đặt mua"}
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 };

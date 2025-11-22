@@ -22,11 +22,15 @@ import {
 import { orderService } from "@/services/orderService";
 import { toast } from "sonner";
 import { useOrderStore } from "@/stores/useOrderStore";
+import { useCartStore } from "@/stores/useCartStore";
+import { useCartItemStore } from "@/stores/useCartItemStore";
 
 const Payment = () => {
   const { orderId } = useParams();
   const navigate = useNavigate();
   const { fetchOrderById } = useOrderStore();
+  const { cart, clearCart } = useCartStore();
+  const { reset: resetCartItems } = useCartItemStore();
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [processingPayment, setProcessingPayment] = useState(false);
@@ -117,6 +121,13 @@ const Payment = () => {
 
       // Nếu là COD, chỉ cần xác nhận
       if (paymentMethod === 'cod') {
+        // Xóa giỏ hàng
+        const cartId = cart?.cart_id || cart?.cartId;
+        if (cartId) {
+          await clearCart(cartId);
+        }
+        resetCartItems();
+        
         toast.success("Đơn hàng đã được xác nhận. Bạn sẽ thanh toán khi nhận hàng.");
         navigate(`/order-success/${orderId}`);
         return;

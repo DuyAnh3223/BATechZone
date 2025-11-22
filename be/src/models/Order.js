@@ -123,6 +123,37 @@ class Order {
         );
       }
 
+      // Handle installment if payment method is installment
+      if (orderData.paymentMethod === 'installment' && orderData.installmentDetails) {
+        const details = orderData.installmentDetails;
+        
+        try {
+          // Insert basic installment record with standard columns
+          await conn.query(
+            `INSERT INTO installments (
+              order_id, user_id, total_amount, down_payment, num_terms, 
+              monthly_payment, interest_rate, status, start_date, end_date
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), DATE_ADD(NOW(), INTERVAL ? MONTH))`,
+            [
+              orderId,
+              orderData.userId || null,
+              totalAmount,
+              details.downPayment || 0,
+              details.months || 12,
+              details.monthlyPayment || 0,
+              1.5, // default interest rate
+              'active',
+              details.months || 12
+            ]
+          );
+          
+          console.log('Installment record created successfully for order:', orderId);
+        } catch (error) {
+          console.error('Failed to create installment record:', error.message);
+          // Don't fail the order creation if installment record fails
+        }
+      }
+
       await conn.commit();
       return orderId;
     } catch (error) {

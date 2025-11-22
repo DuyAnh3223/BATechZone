@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -20,6 +21,7 @@ import { toast } from "sonner";
 import { X, Tag } from "lucide-react";
 
 const Cart = () => {
+  const navigate = useNavigate();
   const { user } = useAuthStore();
   const { getOrCreateCart, cart } = useCartStore();
   const { 
@@ -352,11 +354,12 @@ const Cart = () => {
                   <ShoppingCart className="h-16 w-16 mx-auto mb-4 text-gray-300" />
                   <p className="text-lg font-medium mb-2">Giỏ hàng của bạn đang trống</p>
                   <p className="text-sm mb-4">Hãy thêm sản phẩm vào giỏ hàng để tiếp tục mua sắm</p>
-                  <Link to="/">
-                    <Button className="mt-4">
-                      Tiếp tục mua sắm
-                    </Button>
-                  </Link>
+                  <Button 
+                    className="mt-4"
+                    onClick={() => navigate("/")}
+                  >
+                    Tiếp tục mua sắm
+                  </Button>
                 </div>
               )}
             </CardContent>
@@ -450,20 +453,21 @@ const Cart = () => {
               </div>
             </CardContent>
             <CardFooter className="flex flex-col gap-3">
-              <Link  to="/checkout" className="w-full" size="lg" >
-                <Button className="w-full" size="lg">
-                  Tiến hành đặt hàng
-                </Button>
-              </Link>
-              <Link to="/installment" className="w-full">
-                <Button 
-                  variant="outline" 
-                  className="w-full border-blue-600 text-blue-600 hover:bg-blue-50 hover:text-blue-700" 
-                  size="lg"
-                >
-                  Mua trả góp
-                </Button>
-              </Link>
+              <Button 
+                className="w-full" 
+                size="lg"
+                onClick={() => navigate("/checkout")}
+              >
+                Tiến hành đặt hàng
+              </Button>
+              <Button 
+                variant="outline" 
+                className="w-full border-blue-600 text-blue-600 hover:bg-blue-50 hover:text-blue-700" 
+                size="lg"
+                onClick={() => navigate("/installment")}
+              >
+                Mua trả góp
+              </Button>
             </CardFooter>
           </Card>
         </div>
