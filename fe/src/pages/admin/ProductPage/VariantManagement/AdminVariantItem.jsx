@@ -1,14 +1,59 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Image as ImageIcon } from 'lucide-react';
+import api from '@/lib/axios';
+
+const getImageUrl = (imagePath) => {
+  if (!imagePath) return null;
+  if (imagePath.startsWith('http')) {
+    return imagePath;
+  }
+  const baseURL = api.defaults.baseURL.replace('/api', '');
+  return `${baseURL}${imagePath}`;
+};
 
 const AdminVariantItem = ({ variant, index, onEdit, onDelete, onManageImages }) => {
   const attributes = variant.attribute_values || [];
   const label = attributes.length > 0 
     ? attributes.map((av) => av.value_name || av.attribute_value_id).join(' / ')
     : `Biến thể #${index || 1}`;
+  
+  const [primaryImage, setPrimaryImage] = useState(null);
+
+  useEffect(() => {
+    const loadPrimaryImage = async () => {
+      try {
+        const response = await api.get(`/variant-images/variants/${variant.variant_id}/images/primary`);
+        if (response.data?.data) {
+          setPrimaryImage(response.data.data);
+        }
+      } catch (error) {
+        // Nếu không có primary image, không hiển thị lỗi
+        setPrimaryImage(null);
+      }
+    };
+
+    if (variant?.variant_id) {
+      loadPrimaryImage();
+    }
+  }, [variant?.variant_id, variant?.imageUpdated]);
 
   return (
-    <div className="p-3 border rounded-md bg-white flex items-center justify-between">
+    <div className="p-3 border rounded-md bg-white flex items-center justify-between gap-4">
+      {/* Primary Image */}
+      <div className="flex-shrink-0">
+        <div className="w-20 h-20 bg-gray-100 border rounded-md flex items-center justify-center overflow-hidden">
+          {primaryImage ? (
+            <img
+              src={getImageUrl(primaryImage.image_url)}
+              alt="Primary variant"
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <ImageIcon className="w-8 h-8 text-gray-300" />
+          )}
+        </div>
+      </div>
+
       <div className="flex-1">
         <div className="flex items-center gap-2">
           <div className="font-medium">{label}</div>

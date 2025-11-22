@@ -169,6 +169,13 @@ const AdminVariantList = ({ variants: initial = [], product, onUpdate, onDelete 
     setManagingImagesVariant(null);
   }
 
+  function handleImageUpdated(variant) {
+    // Cập nhật lại biến thể trong state để component con reload ảnh
+    setVariants(prev => prev.map(v => 
+      (v.variant_id === variant.variant_id) ? { ...v, imageUpdated: Date.now() } : v
+    ));
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -206,7 +213,7 @@ const AdminVariantList = ({ variants: initial = [], product, onUpdate, onDelete 
           {variants.length === 0 && <div className="text-sm text-gray-500">Chưa có biến thể nào.</div>}
           {variants.map((v, index) => (
             <AdminVariantItem 
-              key={v.variant_id || v.id || `variant-${index}`} 
+              key={`${v.variant_id || v.id || `variant-${index}`}-${v.imageUpdated || ''}`}
               variant={v}
               index={index + 1}
               onEdit={handleEdit} 
@@ -222,6 +229,7 @@ const AdminVariantList = ({ variants: initial = [], product, onUpdate, onDelete 
         variant={managingImagesVariant}
         isOpen={showImageManager}
         onClose={handleCloseImageManager}
+        onImageUpdated={handleImageUpdated}
       />
 
       {/* Delete Confirmation Dialog */}

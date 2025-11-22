@@ -10,8 +10,17 @@ import {
 import { Button } from '@/components/ui/button';
 import { variantImageService } from '@/services/variantImageService';
 import { toast } from 'sonner';
+import api from '@/lib/axios';
 
-const VariantImageManager = ({ variant, isOpen, onClose }) => {
+const getImageUrl = (imagePath) => {
+  if (imagePath.startsWith('http')) {
+    return imagePath;
+  }
+  const baseURL = api.defaults.baseURL.replace('/api', '');
+  return `${baseURL}${imagePath}`;
+};
+
+const VariantImageManager = ({ variant, isOpen, onClose, onImageUpdated }) => {
   const [images, setImages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -57,6 +66,10 @@ const VariantImageManager = ({ variant, isOpen, onClose }) => {
       await variantImageService.bulkUploadImages(variant.variant_id, formData);
       toast.success(`Đã tải lên ${files.length} ảnh thành công`);
       await loadImages();
+      // Thông báo cho parent component để cập nhật ảnh
+      if (onImageUpdated) {
+        onImageUpdated(variant);
+      }
     } catch (error) {
       console.error('Error uploading images:', error);
       toast.error(error.response?.data?.message || 'Có lỗi khi tải ảnh lên');
@@ -71,6 +84,10 @@ const VariantImageManager = ({ variant, isOpen, onClose }) => {
       await variantImageService.setPrimaryImage(imageId);
       toast.success('Đã đặt làm ảnh chính');
       await loadImages();
+      // Thông báo cho parent component để cập nhật ảnh
+      if (onImageUpdated) {
+        onImageUpdated(variant);
+      }
     } catch (error) {
       console.error('Error setting primary image:', error);
       toast.error('Không thể đặt làm ảnh chính');
@@ -84,6 +101,10 @@ const VariantImageManager = ({ variant, isOpen, onClose }) => {
       await variantImageService.deleteVariantImage(imageId);
       toast.success('Đã xóa ảnh');
       await loadImages();
+      // Thông báo cho parent component để cập nhật ảnh (nếu ảnh bị xóa là ảnh chính)
+      if (onImageUpdated) {
+        onImageUpdated(variant);
+      }
     } catch (error) {
       console.error('Error deleting image:', error);
       toast.error(error.response?.data?.message || 'Không thể xóa ảnh');
@@ -158,7 +179,7 @@ const VariantImageManager = ({ variant, isOpen, onClose }) => {
                 >
                   {/* Image */}
                   <img
-                    src={`http://localhost:3000/${image.image_url}`}
+                    src={getImageUrl(image.image_url)}
                     alt={image.alt_text || 'Variant image'}
                     className="w-full h-full object-cover"
                     onError={(e) => {

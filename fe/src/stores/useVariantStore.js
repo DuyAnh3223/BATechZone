@@ -217,12 +217,15 @@ export const useVariantStore = create((set) => ({
         set({ loadingImages: true, error: null });
         try {
             const response = await variantService.getVariantImages(variantId);
-            set({ variantImages: response.data || response, loadingImages: false });
+            
+            // API returns { success: true, data: [...] }
+            const images = response.data || [];
+            
+            set({ variantImages: images, loadingImages: false });
             return response;
         } catch (error) {
             const message = error.response?.data?.message || 'Không tải được ảnh biến thể';
             set({ error: message, loadingImages: false });
-            toast.error(message);
             throw error;
         }
     },

@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { productService } from '@/services/productService';
+import { variantService } from '@/services/variantService';
 import { ChevronLeft, ChevronRight, ShoppingCart } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
@@ -12,6 +13,7 @@ import { useVariantStore } from '@/stores/useVariantStore';
 
 const AllComponents = () => {
   const [allProducts, setAllProducts] = useState([]);
+  const [variantImages, setVariantImages] = useState({}); // product_id -> image_url from uploads
   const [loading, setLoading] = useState(true);
   const carouselRef = useRef(null);
   const { getOrCreateCart } = useCartStore();
@@ -31,7 +33,22 @@ const AllComponents = () => {
           sortBy: 'created_at',
           sortOrder: 'DESC'
         });
-        setAllProducts(response.data || []);
+        const products = response.data || [];
+        setAllProducts(products);
+        
+        // Lấy ảnh primary của variant đầu tiên cho mỗi sản phẩm
+        const imagesMap = {};
+        for (const product of products) {
+          try {
+            const image = await variantService.getFirstVariantPrimaryImage(product.product_id);
+            if (image?.image_url) {
+              imagesMap[product.product_id] = image.image_url;
+            }
+          } catch (error) {
+            console.error(`Error loading image for product ${product.product_id}:`, error);
+          }
+        }
+        setVariantImages(imagesMap);
       } catch (error) {
         console.error('Error loading all products:', error);
       } finally {
@@ -171,9 +188,12 @@ const AllComponents = () => {
                 <div className="relative overflow-hidden bg-gray-100">
                   <div className="relative aspect-square w-full">
                     <img
-                      src={product.image_url || 'https://via.placeholder.com/300x250?text=No+Image'}
+                      src={variantImages[product.product_id] ? `http://localhost:5001${variantImages[product.product_id]}` : product.image_url || 'data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22300%22 height=%22250%22><rect width=%22100%25%22 height=%22100%25%22 fill=%22%23eeeeee%22/><text x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 fill=%22%23888888%22 font-family=%22Arial%22 font-size=%2220%22>No Image</text></svg>'}
                       alt={product.product_name}
                       className="w-full h-full object-cover hover:scale-110 transition-transform duration-300"
+                      onError={(e) => {
+                        e.target.src = 'data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22300%22 height=%22250%22><rect width=%22100%25%22 height=%22100%25%22 fill=%22%23eeeeee%22/><text x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 fill=%22%23888888%22 font-family=%22Arial%22 font-size=%2220%22>No Image</text></svg>';
+                      }}
                     />
                   {product.discount && (
                     <div className="absolute top-3 right-3 bg-red-500 text-white px-3 py-1 rounded-full text-sm font-semibold">

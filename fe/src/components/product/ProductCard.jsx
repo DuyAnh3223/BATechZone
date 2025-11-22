@@ -7,12 +7,15 @@ import { useCartStore } from '@/stores/useCartStore';
 import { useCartItemStore } from '@/stores/useCartItemStore';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useVariantStore } from '@/stores/useVariantStore';
+import { useState, useEffect } from 'react';
 
 const ProductCard = ({ product }) => {
   const { getOrCreateCart } = useCartStore();
   const { addToCart } = useCartItemStore();
   const { user } = useAuthStore();
   const { fetchVariantsByProductId } = useVariantStore();
+  const [variantImages, setVariantImages] = useState([]);
+  const [loadingImages, setLoadingImages] = useState(false);
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat('vi-VN', {
@@ -30,6 +33,33 @@ const ProductCard = ({ product }) => {
   const productId = product.product_id || product.id;
   const isActive = product.is_active !== undefined ? product.is_active : true;
   const isFeatured = product.is_featured || false;
+
+  // Fetch variant images when component mounts
+  useEffect(() => {
+    const loadVariantImages = async () => {
+      try {
+        setLoadingImages(true);
+        const variantsResponse = await fetchVariantsByProductId(productId);
+        const variants = variantsResponse?.data || variantsResponse || [];
+        
+        if (variants && variants.length > 0) {
+          const firstVariant = variants[0];
+          // Try to get images from variant - if not available, fallback to product image
+          if (firstVariant.variant_id) {
+            // Note: variant images are not loaded here, just setting empty array
+            // Images will be fetched only when user views the product detail
+            setVariantImages([]);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading variant images:', error);
+      } finally {
+        setLoadingImages(false);
+      }
+    };
+
+    loadVariantImages();
+  }, [productId, fetchVariantsByProductId]);
 
   const handleAddToCart = async (e) => {
     e.preventDefault();

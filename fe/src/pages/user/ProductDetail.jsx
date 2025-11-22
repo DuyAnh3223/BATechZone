@@ -23,7 +23,7 @@ const ProductDetail = () => {
   const { productId } = useParams();
   const navigate = useNavigate();
   const { currentProduct, loading, fetchProduct, increaseView } = useProductStore();
-  const { variants, loading: loadingVariants, fetchVariantsByProductId } = useVariantStore();
+  const { variants, loading: loadingVariants, fetchVariantsByProductId, fetchVariantImages, variantImages } = useVariantStore();
   const { getOrCreateCart } = useCartStore();
   const { addToCart } = useCartItemStore();
   const { user } = useAuthStore();
@@ -47,6 +47,13 @@ const ProductDetail = () => {
       setSelectedVariant(defaultVariant);
     }
   }, [variants, selectedVariant]);
+
+  // Fetch variant images when selected variant changes
+  useEffect(() => {
+    if (selectedVariant?.variant_id) {
+      fetchVariantImages(selectedVariant.variant_id).catch(err => console.error('Error loading variant images:', err));
+    }
+  }, [selectedVariant?.variant_id, fetchVariantImages]);
 
   const handleQuantityChange = (type) => {
     if (type === "increase") {
@@ -206,6 +213,7 @@ const ProductDetail = () => {
           productName={currentProduct.product_name}
           isActive={isActive}
           isFeatured={isFeatured}
+          variantImages={variantImages}
         />
 
         {/* Product Info */}
