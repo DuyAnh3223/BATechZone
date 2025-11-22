@@ -9,11 +9,21 @@ import { useAuthStore } from '@/stores/useAuthStore';
 import { useVariantStore } from '@/stores/useVariantStore';
 import { useState, useEffect } from 'react';
 
+// Base URL for serving uploads
+const BASE_API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+
+const toAbsoluteUrl = (url) => {
+  if (!url) return url;
+  if (/^https?:\/\//i.test(url)) return url;
+  if (url.startsWith('/uploads')) return `${BASE_API_URL}${url}`;
+  return url;
+};
+
 const ProductCard = ({ product }) => {
   const { getOrCreateCart } = useCartStore();
   const { addToCart } = useCartItemStore();
   const { user } = useAuthStore();
-  const { fetchVariantsByProductId } = useVariantStore();
+  const { fetchVariantsByProductId, fetchVariantImages } = useVariantStore();
   const [variantImages, setVariantImages] = useState([]);
   const [loadingImages, setLoadingImages] = useState(false);
 
@@ -29,10 +39,21 @@ const ProductCard = ({ product }) => {
   const categoryName = product.category_name || product.category;
   // Lấy giá từ default variant hoặc variant đầu tiên (vì product không còn base_price)
   const price = product.default_variant_price || product.min_variant_price || product.price || 0;
-  const imageUrl = product.image_url || product.image || 'https://via.placeholder.com/300';
+  const imageUrl = product.image_url || product.image || null;
   const productId = product.product_id || product.id;
   const isActive = product.is_active !== undefined ? product.is_active : true;
   const isFeatured = product.is_featured || false;
+
+  // Get primary image from variantImages, or first image, or fallback to product imageUrl
+  const getPrimaryImage = () => {
+    if (variantImages && variantImages.length > 0) {
+      const primary = variantImages.find(img => img.is_primary);
+      return toAbsoluteUrl(primary?.image_url || variantImages[0]?.image_url);
+    }
+    return imageUrl ? toAbsoluteUrl(imageUrl) : null;
+  };
+
+  const displayImageUrl = getPrimaryImage();
 
   // Fetch variant images when component mounts
   useEffect(() => {
@@ -43,23 +64,28 @@ const ProductCard = ({ product }) => {
         const variants = variantsResponse?.data || variantsResponse || [];
         
         if (variants && variants.length > 0) {
-          const firstVariant = variants[0];
-          // Try to get images from variant - if not available, fallback to product image
-          if (firstVariant.variant_id) {
-            // Note: variant images are not loaded here, just setting empty array
-            // Images will be fetched only when user views the product detail
-            setVariantImages([]);
+          const firstVariant = variants.find(v => v.is_default) || variants[0];
+          if (firstVariant?.variant_id) {
+            // Fetch images for the first variant
+            try {
+              const imagesResponse = await fetchVariantImages(firstVariant.variant_id);
+              const images = imagesResponse?.data || imagesResponse || [];
+              setVariantImages(images);
+            } catch (error) {
+              console.error('Error loading variant images:', error);
+              setVariantImages([]);
+            }
           }
         }
       } catch (error) {
-        console.error('Error loading variant images:', error);
+        console.error('Error loading variants:', error);
       } finally {
         setLoadingImages(false);
       }
     };
 
     loadVariantImages();
-  }, [productId, fetchVariantsByProductId]);
+  }, [productId, fetchVariantsByProductId, fetchVariantImages]);
 
   const handleAddToCart = async (e) => {
     e.preventDefault();
@@ -140,14 +166,25 @@ const ProductCard = ({ product }) => {
       {/* Image Container */}
       <Link to={`/product/${productId}`} className="relative block overflow-hidden bg-gray-100">
         <div className="relative aspect-square w-full">
-          <img
-            src={imageUrl}
-            alt={productName}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-            onError={(e) => {
-              e.target.src = 'https://via.placeholder.com/300';
-            }}
-          />
+          {displayImageUrl ? (
+            <img
+              src={displayImageUrl}
+              alt={productName}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              onError={(e) => {
+                e.target.style.display = 'none';
+                if (e.target.nextElementSibling) {
+                  e.target.nextElementSibling.style.display = 'flex';
+                }
+              }}
+            />
+          ) : null}
+          {/* Placeholder when no image */}
+          <div 
+            className={`w-full h-full bg-gray-200 flex items-center justify-center ${displayImageUrl ? 'hidden' : ''}`}
+          >
+            <span className="text-gray-400 text-sm">Không có ảnh</span>
+          </div>
           
           {/* Featured Badge */}
           {isFeatured && (

@@ -156,12 +156,14 @@ class CartItem {
         pv.is_active,
         p.product_id,
         p.product_name,
-        vi.image_url,
+        COALESCE(
+          (SELECT image_url FROM variant_images WHERE variant_id = pv.variant_id AND is_primary = 1 LIMIT 1),
+          (SELECT image_url FROM variant_images WHERE variant_id = pv.variant_id LIMIT 1)
+        ) as image_url,
         (ci.quantity * pv.price) as subtotal
       FROM cart_items ci
       JOIN product_variants pv ON ci.variant_id = pv.variant_id
       JOIN products p ON pv.product_id = p.product_id
-      LEFT JOIN variant_images vi ON pv.variant_id = vi.variant_id AND vi.is_primary = 1
       WHERE ci.cart_id = ?
       ORDER BY ci.added_at DESC`,
       [cartId]

@@ -29,6 +29,15 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
+// Base URL for serving uploads
+const BASE_API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+
+const toAbsoluteUrl = (url) => {
+  if (!url) return url;
+  if (/^https?:\/\//i.test(url)) return url;
+  if (url.startsWith('/uploads')) return `${BASE_API_URL}${url}`;
+  return url;
+};
 import { Link, useNavigate } from "react-router";
 import { useCartStore } from "@/stores/useCartStore";
 import { useCartItemStore } from "@/stores/useCartItemStore";
@@ -581,7 +590,7 @@ const Checkout = () => {
                 <>
                   <ScrollArea className="h-[300px] pr-4">
                     {cartItems.map((item) => {
-                      const imageUrl = item.image_url || item.imageUrl || 'https://via.placeholder.com/100';
+                      const imageUrl = toAbsoluteUrl(item.image_url || item.imageUrl) || null;
                       const productName = item.product_name || item.productName || item.name || 'Sản phẩm';
                       const variantName = item.variant_name || item.variantName || '';
                       const displayName = variantName ? `${productName}` : productName;
@@ -589,14 +598,24 @@ const Checkout = () => {
                       
                       return (
                         <div key={item.cart_item_id} className="flex gap-4 py-4 border-b last:border-0">
-                          <img
-                            src={imageUrl}
-                            alt={displayName}
-                            className="w-20 h-20 object-cover rounded"
-                            onError={(e) => {
-                              e.target.src = 'https://via.placeholder.com/100';
-                            }}
-                          />
+                          {imageUrl ? (
+                            <img
+                              src={imageUrl}
+                              alt={displayName}
+                              className="w-20 h-20 object-cover rounded"
+                              onError={(e) => {
+                                e.target.style.display = 'none';
+                                if (e.target.nextElementSibling) {
+                                  e.target.nextElementSibling.style.display = 'flex';
+                                }
+                              }}
+                            />
+                          ) : null}
+                          <div 
+                            className={`w-20 h-20 rounded bg-gray-200 flex items-center justify-center ${imageUrl ? 'hidden' : ''}`}
+                          >
+                            <span className="text-gray-400 text-xs">Không có ảnh</span>
+                          </div>
                           <div className="flex-1">
                             <h4 className="font-medium line-clamp-2">{displayName}</h4>
                             {item.sku && (
