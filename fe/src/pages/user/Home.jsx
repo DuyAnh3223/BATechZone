@@ -13,9 +13,10 @@ const Home = () => {
   const { categories, loading: categoriesLoading, fetchCategories } = useCategoryStore();
 
   const banners = [
-    'https://via.placeholder.com/1200x400?text=Gaming+PC+Sale',
-    'https://via.placeholder.com/1200x400?text=New+RTX+4000+Series',
-    'https://via.placeholder.com/1200x400?text=SSD+Promotion',
+    // Using data URLs or local images instead of placeholder.com to avoid DNS errors
+    'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="1200" height="400"%3E%3Crect fill="%231e40af" width="1200" height="400"/%3E%3Ctext x="600" y="200" font-size="48" fill="white" text-anchor="middle" dominant-baseline="middle" font-family="Arial"%3EGamePCGaming PC Sale%3C/text%3E%3C/svg%3E',
+    'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="1200" height="400"%3E%3Crect fill="%23dc2626" width="1200" height="400"/%3E%3Ctext x="600" y="200" font-size="48" fill="white" text-anchor="middle" dominant-baseline="middle" font-family="Arial"%3ENew RTX 4000 Series%3C/text%3E%3C/svg%3E',
+    'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="1200" height="400"%3E%3Crect fill="%2316a34a" width="1200" height="400"/%3E%3Ctext x="600" y="200" font-size="48" fill="white" text-anchor="middle" dominant-baseline="middle" font-family="Arial"%3ESSD Promotion%3C/text%3E%3C/svg%3E',
   ];
 
   // Fetch featured products (is_featured = true, is_active = true)

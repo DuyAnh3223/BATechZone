@@ -1,7 +1,10 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import { cartService } from '@/services/cartService';
 
-export const useCartStore = create((set) => ({
+export const useCartStore = create(
+  persist(
+    (set) => ({
     cart: null,
     cartTotal: null,
     stockCheck: null,
@@ -149,4 +152,13 @@ export const useCartStore = create((set) => ({
         loading: false, 
         error: null 
     })
-}));
+    }),
+    {
+      name: 'cart-storage',
+      partialize: (state) => ({
+        cart: state.cart,
+        cartTotal: state.cartTotal,
+      }),
+    }
+  )
+);
