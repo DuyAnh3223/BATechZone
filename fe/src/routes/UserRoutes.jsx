@@ -7,16 +7,18 @@ import Checkout from '../pages/user/Checkout';
 import Home from '../pages/user/Home';
 import ProductDetail from '../pages/user/ProductDetail';
 import ProductList from '../pages/user/ProductList';
-import Profile from '../pages/user/Profile';
+import Profile from '../pages/user/Profile/Profile';
 import ReturnPolicy from '../pages/user/ReturnPolicy';
 import ShipTracking from '../pages/user/ShipTracking';
 import WarrantyCheck from '../pages/user/WarrantyCheck';
 import WarrantyPolicy from '../pages/user/WarrantyPolicy';
 import Wishlist from '../pages/user/Wishlist';
-import OrderSuccess from '../pages/user/OrderSuccess';
-import Installment from '../pages/user/Installment';
+import OrderSuccess from '../pages/user/OrderPage/OrderSuccess';
+import Installment from '../pages/user/InstallmentPage/Installment';
 import SignIn from '../pages/auth/SignIn';
 import SignUp from '../pages/auth/SignUp';
+import InstallmentCheckoutPage from '@/pages/user/InstallmentPage/InstallmentCheckoutPage';
+import InstallmentPendingPage from '@/pages/user/InstallmentPage/InstallmentPendingPage';
 
 const UserRoutes = () => {
   return (
@@ -28,6 +30,8 @@ const UserRoutes = () => {
         <Route path="cart" element={<Cart />} />
         <Route path="checkout" element={<Checkout />} />
         <Route path="installment" element={<Installment />} />
+        <Route path="/installment/checkout" element={<InstallmentCheckoutPage />} />
+        <Route path="/installment/pending" element={<InstallmentPendingPage />} />
         <Route path="order-success/:orderId" element={<OrderSuccess />} />
         <Route path="product/:productId" element={<ProductDetail />} />
         <Route path="category/:categoryId" element={<ProductList />} />

@@ -9,7 +9,7 @@ import Cart from './pages/user/Cart';
 import Checkout from './pages/user/Checkout';
 import ProductDetail from './pages/user/ProductDetail';
 import ProductList from './pages/user/ProductList';
-import Profile from './pages/user/Profile';
+import Profile from './pages/user/Profile/Profile';
 import ReturnPolicy from './pages/user/ReturnPolicy';
 import ShipTracking from './pages/user/ShipTracking';
 import WarrantyCheck from './pages/user/WarrantyCheck';
@@ -34,12 +34,14 @@ import AdminPostDetail from './pages/admin/AdminPostDetail';
 import AdminWishlist from './pages/admin/AdminWishlist';
 import AdminPayment from './pages/admin/AdminPayment';
 import AdminServiceCenter from './pages/admin/AdminServiceCenter';
-import OrderSuccess from './pages/user/OrderSuccess';
+import OrderSuccess from './pages/user/OrderPage/OrderSuccess';
 import Payment from './pages/user/Payment';
-import Orders from './pages/user/Orders';
-import OrderDetail from './pages/user/OrderDetail';
+import Orders from './pages/user/OrderPage/Orders';
+import OrderDetail from './pages/user/OrderPage/OrderDetail';
 import AdminInstallmentPage from './pages/admin/InstallmentPage/AdminInstallmentPage';
-import Installment from './pages/user/Installment';
+import Installment from './pages/user/InstallmentPage/Installment';
+import InstallmentCheckoutPage from './pages/user/InstallmentPage/InstallmentCheckoutPage';
+import InstallmentPendingPage from './pages/user/InstallmentPage/InstallmentPendingPage';
 
 function App() {
   return (
@@ -55,6 +57,8 @@ function App() {
             <Route path="cart" element={<Cart />} />
             <Route path="checkout" element={<Checkout />} />
             <Route path="installment" element={<Installment />} />
+            <Route path="/installment/checkout" element={<InstallmentCheckoutPage />} />
+            <Route path="/installment/pending" element={<InstallmentPendingPage />} />
             <Route path="payment/:orderId" element={<Payment />} />
             <Route path="order-success/:orderId" element={<OrderSuccess />} />
             <Route path="orders" element={<Orders />} />

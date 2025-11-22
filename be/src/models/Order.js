@@ -128,26 +128,39 @@ class Order {
         const details = orderData.installmentDetails;
         
         try {
-          // Insert basic installment record with standard columns
-          await conn.query(
+          // Calculate interest rate based on customer type
+          const interestRate = details.customerType === 'customer' ? 2.2 : 1.9;
+          
+          // Use totalWithInterest from frontend calculation (includes interest)
+          const totalWithInterest = details.totalWithInterest || totalAmount;
+          
+          // Insert installment record with status 'pending' (waiting for admin approval)
+          const [installmentResult] = await conn.query(
             `INSERT INTO installments (
               order_id, user_id, total_amount, down_payment, num_terms, 
               monthly_payment, interest_rate, status, start_date, end_date
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), DATE_ADD(NOW(), INTERVAL ? MONTH))`,
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', NOW(), DATE_ADD(NOW(), INTERVAL ? MONTH))`,
             [
               orderId,
               orderData.userId || null,
-              totalAmount,
+              totalWithInterest,
               details.downPayment || 0,
               details.months || 12,
               details.monthlyPayment || 0,
-              1.5, // default interest rate
-              'active',
+              interestRate,
               details.months || 12
             ]
           );
           
-          console.log('Installment record created successfully for order:', orderId);
+          console.log('Installment created:', {
+            installmentId: installmentResult.insertId,
+            orderId,
+            totalWithInterest,
+            downPayment: details.downPayment,
+            monthlyPayment: details.monthlyPayment,
+            interestRate,
+            status: 'pending'
+          });
         } catch (error) {
           console.error('Failed to create installment record:', error.message);
           // Don't fail the order creation if installment record fails

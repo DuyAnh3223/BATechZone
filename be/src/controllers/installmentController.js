@@ -389,9 +389,11 @@ export const deleteInstallment = async (req, res) => {
 export const getMyInstallments = async (req, res) => {
     try {
         // user_id từ session đã được gán vào req.user bởi authMiddleware
+        console.log('getMyInstallments - req.user:', req.user);
         const userId = req.user?.user_id;
 
         if (!userId) {
+            console.log('getMyInstallments - No userId found in req.user');
             return res.status(401).json({
                 success: false,
                 message: 'Không xác định được user'

@@ -4,7 +4,7 @@ import { db } from '../libs/db.js';
 // Tạo đơn hàng mới
 export const createOrder = async (req, res) => {
   try {
-    const { orderData, items, shippingAddress } = req.body;
+    const { orderData, items, shippingAddress, guestUserData } = req.body;
 
     // Validate
     if (!items || items.length === 0) {
@@ -20,6 +20,34 @@ export const createOrder = async (req, res) => {
         success: false,
         message: 'Thiếu thông tin giao hàng'
       });
+    }
+
+    // Create guest user if not logged in and guestUserData provided
+    let userId = orderData.userId;
+    if (!userId && guestUserData) {
+      console.log('Creating guest user:', guestUserData);
+      
+      // Hash password (phone number)
+      const bcrypt = await import('bcrypt');
+      const passwordHash = await bcrypt.hash(guestUserData.password, 10);
+      
+      const [userResult] = await db.query(
+        `INSERT INTO users (username, email, password_hash, full_name, phone, role, is_active)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [
+          guestUserData.username,
+          guestUserData.email,
+          passwordHash,
+          guestUserData.fullName,
+          guestUserData.phone,
+          guestUserData.role,
+          guestUserData.isActive
+        ]
+      );
+      
+      userId = userResult.insertId;
+      orderData.userId = userId;
+      console.log('Guest user created with ID:', userId);
     }
 
     // Tạo address nếu chưa có addressId
@@ -65,10 +93,27 @@ export const createOrder = async (req, res) => {
       addressId
     }, items);
 
+    // Get installment_id if created by Order.create()
+    let installmentId = null;
+    if (orderData.paymentMethod === 'installment') {
+      const [installments] = await db.query(
+        'SELECT installment_id FROM installments WHERE order_id = ? ORDER BY created_at DESC LIMIT 1',
+        [orderId]
+      );
+      if (installments.length > 0) {
+        installmentId = installments[0].installment_id;
+        console.log('Installment found with ID:', installmentId);
+      }
+    }
+
     res.status(201).json({
       success: true,
       message: 'Đặt hàng thành công',
-      data: { orderId }
+      data: { 
+        orderId,
+        userId,
+        installmentId 
+      }
     });
   } catch (error) {
     console.error('Error creating order:', error);

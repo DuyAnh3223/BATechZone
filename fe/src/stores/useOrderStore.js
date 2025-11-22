@@ -26,9 +26,10 @@ export const useOrderStore = create((set) => ({
         set({ loading: true, error: null });
         try {
             const response = await orderService.getOrders(params);
-            console.log('OrderService response:', response);
-            // Response structure: { success: true, data: [...], pagination: {...} }
-            const ordersData = Array.isArray(response.data) ? response.data : (Array.isArray(response) ? response : []);
+            
+            // API trả về camelCase (orderId, orderNumber, etc.)
+            const ordersData = Array.isArray(response.data) ? response.data : [];
+            
             set({ 
                 orders: ordersData, 
                 pagination: response.pagination || null,
@@ -47,8 +48,9 @@ export const useOrderStore = create((set) => ({
         set({ loading: true, error: null });
         try {
             const response = await orderService.getOrderById(orderId);
-            set({ currentOrder: response.data || response, loading: false });
-            return response;
+            const orderData = response.data || response;
+            set({ currentOrder: orderData, loading: false });
+            return orderData;
         } catch (error) {
             set({ error: error.message, loading: false });
             throw error;

@@ -1,0 +1,1847 @@
+import { useState, useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { Link } from "react-router-dom";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
+import { format } from "date-fns";
+import { vi } from "date-fns/locale";
+import { Star, ShoppingCart, Trash2, Eye } from "lucide-react";
+import { toast } from "sonner";
+import api from "@/lib/axios";
+import { useUserAddressStore } from "@/stores/useAddressStore";
+import { useOrderStore } from "@/stores/useOrderStore";
+import { useAuth } from "@/context/AuthContext";
+import InstallmentsTab from "./InstallmentsTab";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+// Mock user data
+const mockUser = {
+  id: 1,
+  fullName: "Nguyễn Văn A",
+  email: "nguyenvana@email.com",
+  phone: "0123456789",
+  avatar: "https://via.placeholder.com/150",
+  addresses: [
+    {
+      id: 1,
+      isDefault: true,
+      fullName: "Nguyễn Văn A",
+      phone: "0123456789",
+      address: "123 Đường ABC",
+      ward: "Phường XYZ",
+      district: "Quận 1",
+      city: "TP. Hồ Chí Minh",
+    },
+    // Add more addresses
+  ],
+  orders: [
+    {
+      id: "HD123456",
+      date: "2025-10-28",
+      total: 24980000,
+      status: "completed",
+      items: [
+        {
+          name: "AMD Ryzen 7 5800X",
+          quantity: 1,
+          price: 8990000,
+        },
+        {
+          name: "NVIDIA RTX 4070",
+          quantity: 1,
+          price: 15990000,
+        },
+      ],
+    },
+    // Add more orders
+  ],
+};
+
+// Mock notifications data
+const mockNotifications = [
+  {
+    id: 1,
+    type: 'order',
+    message: 'Đơn hàng #HD123456 đã được giao thành công',
+    isRead: false,
+    created_at: '2025-10-31T10:00:00Z'
+  },
+  {
+    id: 2,
+    type: 'promotion',
+    message: 'Giảm giá 20% cho các sản phẩm CPU AMD trong tuần này',
+    isRead: true,
+    created_at: '2025-10-30T08:30:00Z'
+  },
+];
+
+// Mock coupons data
+const mockCoupons = [
+  {
+    id: 1,
+    code: 'CPU20',
+    description: 'Giảm 20% cho CPU',
+    discount_value: 20,
+    discount_type: 'percent',
+    min_order: 1000000,
+    max_discount: 2000000,
+    valid_until: '2025-12-31',
+    category: 'CPU',
+    is_saved: false
+  },
+  {
+    id: 2,
+    code: 'VGA500K',
+    description: 'Giảm 500K cho VGA',
+    discount_value: 500000,
+    discount_type: 'fixed',
+    min_order: 5000000,
+    valid_until: '2025-11-30',
+    category: 'VGA',
+    is_saved: true
+  }
+];
+
+// Mock wishlist data
+const mockWishlist = [
+  {
+    id: 1,
+    name: "AMD Ryzen 7 5800X",
+    category: "CPU",
+    price: 8990000,
+    originalPrice: 9990000,
+    discount: 10,
+    image: "https://via.placeholder.com/300",
+    stock: true,
+  },
+  {
+    id: 2,
+    name: "NVIDIA RTX 4070",
+    category: "VGA",
+    price: 15990000,
+    originalPrice: 16990000,
+    discount: 5,
+    image: "https://via.placeholder.com/300",
+    stock: true,
+  }
+];
+
+// Mock reviews data
+const mockReviews = [
+  {
+    id: 1,
+    product_id: 1,
+    product_name: 'AMD Ryzen 7 5800X',
+    product_image: 'https://via.placeholder.com/100',
+    rating: 5,
+    comment: 'CPU tuyệt vời, hiệu năng cao',
+    created_at: '2025-10-15T09:00:00Z',
+    updated_at: '2025-10-15T09:00:00Z'
+  },
+  {
+    id: 2,
+    product_id: 2,
+    product_name: 'NVIDIA RTX 4070',
+    product_image: 'https://via.placeholder.com/100',
+    rating: 4,
+    comment: 'Card đồ họa mạnh mẽ, giá hơi cao',
+    created_at: '2025-10-20T14:30:00Z',
+    updated_at: '2025-10-20T14:30:00Z'
+  }
+];
+
+const Profile = () => {
+  const [activeTab, setActiveTab] = useState("profile");
+  const [isEditing, setIsEditing] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [notifications, setNotifications] = useState(mockNotifications);
+  const [wishlistItems, setWishlistItems] = useState(mockWishlist);
+  const [coupons, setCoupons] = useState(mockCoupons);
+  const [reviews, setReviews] = useState(mockReviews);
+  
+  const {
+    addresses,
+    loading: addressStoreLoading,
+    fetchAddresses,
+    addAddress,
+    updateAddress: updateAddressStore,
+    removeAddress,
+  } = useUserAddressStore();
+  const [isAddAddressOpen, setIsAddAddressOpen] = useState(false);
+  const [isEditAddressOpen, setIsEditAddressOpen] = useState(false);
+  const [editingAddressId, setEditingAddressId] = useState(null);
+  const [isSubmittingAddress, setIsSubmittingAddress] = useState(false);
+
+  // Order states
+  const { user } = useAuth();
+  const { orders, loading: ordersLoading, fetchOrders, fetchOrderById, cancelOrder } = useOrderStore();
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [isOrderDetailOpen, setIsOrderDetailOpen] = useState(false);
+
+  // Profile states
+  const [userProfile, setUserProfile] = useState(null);
+  const [loadingProfile, setLoadingProfile] = useState(false);
+  const [isSubmittingProfile, setIsSubmittingProfile] = useState(false);
+
+  const profileForm = useForm({
+    defaultValues: {
+      full_name: "",
+      email: "",
+      phone: "",
+    },
+  });
+
+  const passwordForm = useForm({
+    defaultValues: {
+      currentPassword: "",
+      newPassword: "",
+      confirmPassword: "",
+    },
+  });
+
+  const addressForm = useForm({
+    defaultValues: {
+      recipient_name: "",
+      phone: "",
+      address_line1: "",
+      address_line2: "",
+      ward: "",
+      district: "",
+      city: "",
+      postal_code: "",
+      country: "Vietnam",
+      is_default: false,
+      address_type: "home",
+    },
+  });
+
+  // Load addresses when addresses tab is active
+  useEffect(() => {
+    if (activeTab === 'addresses') {
+      fetchAddresses();
+    }
+  }, [activeTab, fetchAddresses]);
+
+  // Load orders when orders tab is active
+  useEffect(() => {
+    if (activeTab === 'orders' && user) {
+      const userId = user.user_id || user.userId;
+      fetchOrders({ userId });
+    }
+  }, [activeTab, user, fetchOrders]);
+
+  // Load profile from API
+  const loadProfile = async () => {
+    try {
+      setLoadingProfile(true);
+      const res = await api.get('/user/profile', { withCredentials: true });
+      const profileData = res.data?.data;
+      if (profileData) {
+        setUserProfile(profileData);
+        profileForm.reset({
+          full_name: profileData.full_name || "",
+          email: profileData.email || "",
+          phone: profileData.phone || "",
+        });
+      }
+    } catch (error) {
+      console.error('Error loading profile:', error);
+      toast.error(error.response?.data?.message || 'Không thể tải thông tin cá nhân');
+    } finally {
+      setLoadingProfile(false);
+    }
+  };
+
+  // Load profile when profile tab is active
+  useEffect(() => {
+    if (activeTab === 'profile') {
+      loadProfile();
+    }
+  }, [activeTab]);
+
+  // Address handlers
+  const handleAddAddress = () => {
+    addressForm.reset({
+      recipient_name: "",
+      phone: "",
+      address_line1: "",
+      address_line2: "",
+      ward: "",
+      district: "",
+      city: "",
+      postal_code: "",
+      country: "Vietnam",
+      is_default: false,
+      address_type: "home",
+    });
+    setEditingAddressId(null);
+    setIsAddAddressOpen(true);
+  };
+
+  const handleEditAddress = (address) => {
+    addressForm.reset({
+      recipient_name: address.recipient_name,
+      phone: address.phone,
+      address_line1: address.address_line1,
+      address_line2: address.address_line2 || "",
+      ward: address.ward || "",
+      district: address.district || "",
+      city: address.city,
+      postal_code: address.postal_code || "",
+      country: address.country || "Vietnam",
+      is_default: address.is_default,
+      address_type: address.address_type || "home",
+    });
+    setEditingAddressId(address.address_id);
+    setIsEditAddressOpen(true);
+  };
+
+  const handleSubmitAddress = async (data) => {
+    try {
+      setIsSubmittingAddress(true);
+      if (editingAddressId) {
+        await updateAddressStore(editingAddressId, data);
+        setIsEditAddressOpen(false);
+        setEditingAddressId(null);
+      } else {
+        await addAddress(data);
+        setIsAddAddressOpen(false);
+      }
+      addressForm.reset();
+    } catch (error) {
+      console.error('Error submitting address:', error);
+      if (error?.message) {
+        toast.error(error.message);
+      }
+    } finally {
+      setIsSubmittingAddress(false);
+    }
+  };
+
+  const handleDeleteAddress = async (addressId) => {
+    if (!confirm('Bạn có chắc chắn muốn xóa địa chỉ này?')) {
+      return;
+    }
+    try {
+      await removeAddress(addressId);
+    } catch (error) {
+      console.error('Error deleting address:', error);
+      if (error?.message) {
+        toast.error(error.message);
+      }
+    }
+  };
+
+  const getAddressTypeLabel = (type) => {
+    const labels = {
+      home: 'Nhà riêng',
+      office: 'Văn phòng',
+      other: 'Khác'
+    };
+    return labels[type] || type;
+  };
+
+  // Order handlers
+  const handleViewOrderDetail = async (order) => {
+    try {
+      setIsOrderDetailOpen(true);
+      setSelectedOrder({ ...order, loading: true });
+      
+      // Fetch full order details with items and address
+      const fullOrderData = await fetchOrderById(order.orderId || order.order_id);
+      console.log('Full Order Data:', fullOrderData);
+      
+      setSelectedOrder(fullOrderData);
+    } catch (error) {
+      console.error('Error fetching order details:', error);
+      toast.error('Không thể tải chi tiết đơn hàng');
+      setIsOrderDetailOpen(false);
+    }
+  };
+
+  const handleCancelOrder = async (orderId) => {
+    if (!confirm('Bạn có chắc chắn muốn hủy đơn hàng này?')) {
+      return;
+    }
+    try {
+      await cancelOrder(orderId, 'Khách hàng hủy đơn');
+      toast.success('Đã hủy đơn hàng');
+      fetchOrders(); // Reload orders
+    } catch (error) {
+      console.error('Error canceling order:', error);
+      toast.error('Không thể hủy đơn hàng');
+    }
+  };
+
+  const getOrderStatusLabel = (status) => {
+    const labels = {
+      pending: 'Chờ xác nhận',
+      confirmed: 'Đã xác nhận',
+      processing: 'Đang xử lý',
+      shipping: 'Đang giao',
+      delivered: 'Đã giao',
+      completed: 'Hoàn thành',
+      cancelled: 'Đã hủy',
+      refunded: 'Đã hoàn tiền'
+    };
+    return labels[status] || status;
+  };
+
+  const getPaymentStatusLabel = (status) => {
+    const labels = {
+      pending: 'Chờ thanh toán',
+      paid: 'Đã thanh toán',
+      failed: 'Thanh toán thất bại',
+      refunded: 'Đã hoàn tiền'
+    };
+    return labels[status] || status;
+  };
+
+  const getOrderStatusColor = (status) => {
+    const colors = {
+      pending: 'bg-yellow-100 text-yellow-800',
+      confirmed: 'bg-blue-100 text-blue-800',
+      processing: 'bg-purple-100 text-purple-800',
+      shipping: 'bg-indigo-100 text-indigo-800',
+      delivered: 'bg-green-100 text-green-800',
+      completed: 'bg-green-100 text-green-800',
+      cancelled: 'bg-red-100 text-red-800',
+      refunded: 'bg-gray-100 text-gray-800'
+    };
+    return colors[status] || 'bg-gray-100 text-gray-800';
+  };
+
+  const getPaymentStatusColor = (status) => {
+    const colors = {
+      pending: 'bg-yellow-100 text-yellow-800',
+      paid: 'bg-green-100 text-green-800',
+      failed: 'bg-red-100 text-red-800',
+      refunded: 'bg-gray-100 text-gray-800'
+    };
+    return colors[status] || 'bg-gray-100 text-gray-800';
+  };
+
+  // Profile handlers
+  const handleSubmitProfile = async (data) => {
+    try {
+      setIsSubmittingProfile(true);
+      const res = await api.put('/user/profile', data, { withCredentials: true });
+      toast.success(res.data?.message || 'Cập nhật thông tin thành công');
+      await loadProfile();
+      setIsEditing(false);
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi cập nhật thông tin');
+    } finally {
+      setIsSubmittingProfile(false);
+    }
+  };
+
+  const formatPrice = (price) => {
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
+    }).format(price);
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return 'N/A';
+      return format(date, "dd/MM/yyyy", { locale: vi });
+    } catch (error) {
+      return 'N/A';
+    }
+  };
+
+  // Notification handlers
+  const handleMarkAsRead = (notificationId) => {
+    setNotifications(prev => 
+      prev.map(notification =>
+        notification.id === notificationId 
+          ? { ...notification, isRead: true }
+          : notification
+      )
+    );
+    toast.success('Đã đánh dấu thông báo là đã đọc');
+  };
+
+  const handleMarkAllAsRead = () => {
+    setNotifications(prev =>
+      prev.map(notification => ({ ...notification, isRead: true }))
+    );
+    toast.success('Đã đánh dấu tất cả thông báo là đã đọc');
+  };
+
+  // Wishlist handlers
+  const handleRemoveFromWishlist = (id) => {
+    setWishlistItems(prev => prev.filter(item => item.id !== id));
+    toast.success('Đã xóa sản phẩm khỏi danh sách yêu thích');
+  };
+
+  const handleAddToCart = (item) => {
+    toast.success(`Đã thêm ${item.name} vào giỏ hàng`);
+  };
+
+  // Coupon handlers
+  const handleSaveCoupon = (couponId) => {
+    setCoupons(prev =>
+      prev.map(coupon =>
+        coupon.id === couponId
+          ? { ...coupon, is_saved: !coupon.is_saved }
+          : coupon
+      )
+    );
+    toast.success('Đã cập nhật trạng thái mã giảm giá');
+  };
+
+  // Review handlers
+  const handleDeleteReview = (reviewId) => {
+    setReviews(prev => prev.filter(review => review.id !== reviewId));
+    toast.success('Đã xóa đánh giá');
+  };
+
+  const handleEditReview = (review) => {
+    // Implement edit review logic
+    toast.info('Tính năng đang được phát triển');
+  };
+
+  return (
+    <div className="py-8">
+      <Tabs defaultValue="profile" value={activeTab} onValueChange={setActiveTab} orientation="vertical">
+        <div className="flex flex-col md:flex-row gap-6">
+          {/* Sidebar */}
+          <aside className="w-full md:w-64 shrink-0">
+            <TabsList className="flex flex-col h-auto items-stretch gap-2 w-full bg-transparent p-0">
+              <TabsTrigger className="justify-start w-full" value="profile">
+                Thông tin cá nhân
+              </TabsTrigger>
+              <TabsTrigger className="justify-start w-full" value="addresses">
+                Sổ địa chỉ
+              </TabsTrigger>
+              <TabsTrigger className="justify-start w-full" value="orders">
+                Đơn hàng
+              </TabsTrigger>
+              <TabsTrigger className="justify-start w-full" value="installments">
+                Trả góp
+              </TabsTrigger>
+              <TabsTrigger className="justify-start w-full" value="security">
+                Bảo mật
+              </TabsTrigger>
+              <TabsTrigger className="justify-start w-full" value="notifications">
+                Thông báo
+              </TabsTrigger>
+              <TabsTrigger className="justify-start w-full" value="wishlist">
+                Yêu thích
+              </TabsTrigger>
+              <TabsTrigger className="justify-start w-full" value="coupons">
+                Mã giảm giá
+              </TabsTrigger>
+              <TabsTrigger className="justify-start w-full" value="reviews">
+                Đánh giá
+              </TabsTrigger>
+            </TabsList>
+          </aside>
+          {/* Content */}
+          <section className="flex-1 min-w-0">
+        {/* Profile Information */}
+        <TabsContent value="profile">
+          <Card>
+            <CardHeader>
+              <CardTitle>Thông tin cá nhân</CardTitle>
+              <CardDescription>
+                Quản lý thông tin cá nhân của bạn
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {loadingProfile ? (
+                <div className="text-center py-8">
+                  <p className="text-gray-500">Đang tải thông tin...</p>
+                </div>
+              ) : (
+                <div className="flex flex-col md:flex-row gap-8">
+                  {/* Avatar */}
+                  <div className="flex flex-col items-center space-y-4">
+                    <div className="w-32 h-32 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
+                      {userProfile?.full_name ? (
+                        <span className="text-4xl font-bold text-gray-600">
+                          {userProfile.full_name.charAt(0).toUpperCase()}
+                        </span>
+                      ) : (
+                        <span className="text-4xl font-bold text-gray-600">
+                          {userProfile?.username?.charAt(0).toUpperCase() || 'U'}
+                        </span>
+                      )}
+                    </div>
+                    <Button variant="outline" disabled>
+                      Đổi ảnh đại diện
+                    </Button>
+                  </div>
+
+                  {/* Profile Form */}
+                  <div className="flex-1">
+                    <Form {...profileForm}>
+                      <form onSubmit={profileForm.handleSubmit(handleSubmitProfile)} className="space-y-4">
+                        <FormField
+                          control={profileForm.control}
+                          name="full_name"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Họ tên</FormLabel>
+                              <FormControl>
+                                <Input {...field} disabled={!isEditing || isSubmittingProfile} placeholder="Nhập họ tên" />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={profileForm.control}
+                          name="email"
+                          rules={{
+                            pattern: {
+                              value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                              message: 'Email không hợp lệ'
+                            }
+                          }}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Email</FormLabel>
+                              <FormControl>
+                                <Input {...field} disabled={!isEditing || isSubmittingProfile} type="email" placeholder="Nhập email" />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={profileForm.control}
+                          name="phone"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Số điện thoại</FormLabel>
+                              <FormControl>
+                                <Input {...field} disabled={!isEditing || isSubmittingProfile} placeholder="Nhập số điện thoại" />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        {userProfile && (
+                          <div className="text-sm text-gray-500 space-y-1 pt-2 border-t">
+                            <p><span className="font-medium">Username:</span> {userProfile.username}</p>
+                            <p><span className="font-medium">Ngày tạo:</span> {formatDate(userProfile.created_at)}</p>
+                            {userProfile.updated_at && (
+                              <p><span className="font-medium">Cập nhật lần cuối:</span> {formatDate(userProfile.updated_at)}</p>
+                            )}
+                          </div>
+                        )}
+
+                        <div className="flex justify-end">
+                          {isEditing ? (
+                            <div className="space-x-2">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                className="hover:bg-gray-200"
+                                onClick={() => {
+                                  setIsEditing(false);
+                                  // Reset form về giá trị ban đầu
+                                  if (userProfile) {
+                                    profileForm.reset({
+                                      full_name: userProfile.full_name || "",
+                                      email: userProfile.email || "",
+                                      phone: userProfile.phone || "",
+                                    });
+                                  }
+                                }}
+                                disabled={isSubmittingProfile}
+                              >
+                                Hủy
+                              </Button>
+                              <Button 
+                                type="submit" 
+                                className="bg-blue-600 hover:bg-blue-700 text-white"
+                                disabled={isSubmittingProfile}
+                              >
+                                {isSubmittingProfile ? 'Đang lưu...' : 'Lưu thay đổi'}
+                              </Button>
+                            </div>
+                          ) : (
+                            <Button 
+                              type="button" 
+                              className="bg-blue-600 hover:bg-blue-700 text-white" 
+                              onClick={() => setIsEditing(true)}
+                            >
+                              Chỉnh sửa
+                            </Button>
+                          )}
+                        </div>
+                      </form>
+                    </Form>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Address Book */}
+        <TabsContent value="addresses">
+          <div className="space-y-6">
+            {/* Address List */}
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle>Sổ địa chỉ</CardTitle>
+                  <CardDescription>
+                    Quản lý địa chỉ giao hàng của bạn
+                  </CardDescription>
+                </div>
+                <Button variant="outline" onClick={handleAddAddress}>
+                  Thêm địa chỉ mới
+                </Button>
+              </CardHeader>
+              <CardContent>
+                {addressStoreLoading ? (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500">Đang tải...</p>
+                  </div>
+                ) : addresses.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500 mb-4">Bạn chưa có địa chỉ nào</p>
+                    <Button variant="outline" onClick={handleAddAddress}>
+                      Thêm địa chỉ mới
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {addresses.map((address) => (
+                      <div
+                        key={address.address_id}
+                        className="flex justify-between items-start p-4 border rounded-lg hover:bg-gray-50 transition"
+                      >
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="font-medium">{address.recipient_name}</span>
+                            {address.is_default && (
+                              <Badge variant="secondary">Mặc định</Badge>
+                            )}
+                            <Badge variant="outline" className="text-xs">
+                              {getAddressTypeLabel(address.address_type)}
+                            </Badge>
+                          </div>
+                          <div className="text-sm text-gray-500 mb-1">
+                            {address.phone}
+                          </div>
+                          <div className="text-sm text-gray-600">
+                            {address.address_line1}
+                            {address.address_line2 && `, ${address.address_line2}`}
+                            {address.ward && `, ${address.ward}`}
+                            {address.district && `, ${address.district}`}
+                            {address.city && `, ${address.city}`}
+                            {address.postal_code && ` - ${address.postal_code}`}
+                          </div>
+                        </div>
+                        <div className="space-x-2 ml-4">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="hover:bg-gray-200"
+                            onClick={() => handleEditAddress(address)}
+                          >
+                            Sửa
+                          </Button>
+                          <Button 
+                            variant="destructive" 
+                            size="sm" 
+                            className="hover:bg-red-600 hover:text-white"
+                            onClick={() => handleDeleteAddress(address.address_id)}
+                          >
+                            Xóa
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        {/* Add Address Dialog */}
+        <Dialog open={isAddAddressOpen} onOpenChange={setIsAddAddressOpen}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Thêm địa chỉ mới</DialogTitle>
+              <DialogDescription>
+                Thêm địa chỉ giao hàng mới vào sổ địa chỉ của bạn
+              </DialogDescription>
+            </DialogHeader>
+            <Form {...addressForm}>
+              <form onSubmit={addressForm.handleSubmit(handleSubmitAddress)} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={addressForm.control}
+                    name="recipient_name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Tên người nhận *</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={addressForm.control}
+                    name="phone"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Số điện thoại *</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <FormField
+                  control={addressForm.control}
+                  name="address_line1"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Địa chỉ *</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="Số nhà, tên đường" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={addressForm.control}
+                  name="address_line2"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Địa chỉ phụ (tùy chọn)</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="Tầng, phòng, tòa nhà..." />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="grid grid-cols-3 gap-4">
+                  <FormField
+                    control={addressForm.control}
+                    name="ward"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Phường/Xã</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={addressForm.control}
+                    name="district"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Quận/Huyện</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={addressForm.control}
+                    name="city"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Thành phố *</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <div className="grid grid-cols-3 gap-4">
+                  <FormField
+                    control={addressForm.control}
+                    name="postal_code"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Mã bưu điện</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={addressForm.control}
+                    name="country"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Quốc gia</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={addressForm.control}
+                    name="address_type"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Loại địa chỉ</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Chọn loại" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="home">Nhà riêng</SelectItem>
+                            <SelectItem value="office">Văn phòng</SelectItem>
+                            <SelectItem value="other">Khác</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <FormField
+                  control={addressForm.control}
+                  name="is_default"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                      <FormControl>
+                        <input
+                          type="checkbox"
+                          checked={field.value}
+                          onChange={field.onChange}
+                          className="mt-1"
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel>Đặt làm địa chỉ mặc định</FormLabel>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+                <DialogFooter>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setIsAddAddressOpen(false)}
+                    disabled={isSubmittingAddress}
+                  >
+                    Hủy
+                  </Button>
+                  <Button type="submit" disabled={isSubmittingAddress}>
+                    {isSubmittingAddress ? 'Đang lưu...' : 'Thêm địa chỉ'}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit Address Dialog */}
+        <Dialog open={isEditAddressOpen} onOpenChange={setIsEditAddressOpen}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Sửa địa chỉ</DialogTitle>
+              <DialogDescription>
+                Cập nhật thông tin địa chỉ của bạn
+              </DialogDescription>
+            </DialogHeader>
+            <Form {...addressForm}>
+              <form onSubmit={addressForm.handleSubmit(handleSubmitAddress)} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={addressForm.control}
+                    name="recipient_name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Tên người nhận *</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={addressForm.control}
+                    name="phone"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Số điện thoại *</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <FormField
+                  control={addressForm.control}
+                  name="address_line1"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Địa chỉ *</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="Số nhà, tên đường" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={addressForm.control}
+                  name="address_line2"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Địa chỉ phụ (tùy chọn)</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="Tầng, phòng, tòa nhà..." />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="grid grid-cols-3 gap-4">
+                  <FormField
+                    control={addressForm.control}
+                    name="ward"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Phường/Xã</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={addressForm.control}
+                    name="district"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Quận/Huyện</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={addressForm.control}
+                    name="city"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Thành phố *</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <div className="grid grid-cols-3 gap-4">
+                  <FormField
+                    control={addressForm.control}
+                    name="postal_code"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Mã bưu điện</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={addressForm.control}
+                    name="country"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Quốc gia</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={addressForm.control}
+                    name="address_type"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Loại địa chỉ</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Chọn loại" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="home">Nhà riêng</SelectItem>
+                            <SelectItem value="office">Văn phòng</SelectItem>
+                            <SelectItem value="other">Khác</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <FormField
+                  control={addressForm.control}
+                  name="is_default"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                      <FormControl>
+                        <input
+                          type="checkbox"
+                          checked={field.value}
+                          onChange={field.onChange}
+                          className="mt-1"
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel>Đặt làm địa chỉ mặc định</FormLabel>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+                <DialogFooter>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setIsEditAddressOpen(false)}
+                    disabled={isSubmittingAddress}
+                  >
+                    Hủy
+                  </Button>
+                  <Button type="submit" disabled={isSubmittingAddress}>
+                    {isSubmittingAddress ? 'Đang lưu...' : 'Cập nhật'}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
+
+        {/* Order History */}
+        <TabsContent value="orders">
+          <Card>
+            <CardHeader>
+              <CardTitle>Đơn hàng của tôi</CardTitle>
+              <CardDescription>
+                Xem lại lịch sử đơn hàng của bạn
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {ordersLoading ? (
+                <div className="text-center py-8">
+                  <p className="text-gray-500">Đang tải đơn hàng...</p>
+                </div>
+              ) : orders.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-gray-500 mb-4">Bạn chưa có đơn hàng nào</p>
+                  <Button asChild>
+                    <Link to="/">Tiếp tục mua sắm</Link>
+                  </Button>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Mã đơn hàng</TableHead>
+                        <TableHead>Ngày đặt</TableHead>
+                        <TableHead>Tổng tiền</TableHead>
+                        <TableHead>Trạng thái đơn</TableHead>
+                        <TableHead>Thanh toán</TableHead>
+                        <TableHead className="text-right">Thao tác</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {orders.map((order) => (
+                        <TableRow key={order.orderId || order.order_id}>
+                          <TableCell className="font-medium">
+                            #{order.orderNumber || order.order_number || order.orderId || order.order_id}
+                          </TableCell>
+                          <TableCell>
+                            {formatDate(order.createdAt || order.created_at)}
+                          </TableCell>
+                          <TableCell className="font-semibold">
+                            {formatPrice(order.totalAmount || order.total_amount)}
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={getOrderStatusColor(order.orderStatus || order.order_status)}>
+                              {getOrderStatusLabel(order.orderStatus || order.order_status)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={getPaymentStatusColor(order.paymentStatus || order.payment_status)}>
+                              {getPaymentStatusLabel(order.paymentStatus || order.payment_status)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleViewOrderDetail(order)}
+                              >
+                                <Eye className="h-4 w-4 mr-1" />
+                                Xem
+                              </Button>
+                              {(order.paymentStatus === 'pending' || order.payment_status === 'pending') && 
+                               (order.orderStatus !== 'cancelled' && order.order_status !== 'cancelled') && (
+                                <Button
+                                  variant="default"
+                                  size="sm"
+                                  className="bg-blue-600 hover:bg-blue-700"
+                                  onClick={() => toast.info('Tính năng thanh toán đang phát triển')}
+                                >
+                                  Thanh toán
+                                </Button>
+                              )}
+                              {(order.orderStatus === 'pending' || order.order_status === 'pending') && (
+                                <Button
+                                  variant="destructive"
+                                  size="sm"
+                                  onClick={() => handleCancelOrder(order.orderId || order.order_id)}
+                                >
+                                  Hủy
+                                </Button>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Order Detail Dialog */}
+        <Dialog open={isOrderDetailOpen} onOpenChange={setIsOrderDetailOpen}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Chi tiết đơn hàng #{selectedOrder?.orderNumber || selectedOrder?.order_number || selectedOrder?.orderId || selectedOrder?.order_id}</DialogTitle>
+              <DialogDescription>
+                Thông tin chi tiết về đơn hàng của bạn
+              </DialogDescription>
+            </DialogHeader>
+            {selectedOrder && (
+              <div className="space-y-6">
+                {/* Order Status */}
+                <div className="flex gap-4">
+                  <div className="flex-1">
+                    <p className="text-sm text-gray-500 mb-1">Trạng thái đơn hàng</p>
+                    <Badge className={getOrderStatusColor(selectedOrder.orderStatus || selectedOrder.order_status)}>
+                      {getOrderStatusLabel(selectedOrder.orderStatus || selectedOrder.order_status)}
+                    </Badge>
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm text-gray-500 mb-1">Trạng thái thanh toán</p>
+                    <Badge className={getPaymentStatusColor(selectedOrder.paymentStatus || selectedOrder.payment_status)}>
+                      {getPaymentStatusLabel(selectedOrder.paymentStatus || selectedOrder.payment_status)}
+                    </Badge>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Order Items */}
+                <div>
+                  <h3 className="font-semibold mb-3">Sản phẩm</h3>
+                  {selectedOrder.loading ? (
+                    <div className="text-center py-4 text-gray-500">
+                      Đang tải chi tiết...
+                    </div>
+                  ) : !selectedOrder.items || selectedOrder.items.length === 0 ? (
+                    <div className="text-center py-4 text-gray-500">
+                      Không có sản phẩm
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {selectedOrder.items.map((item, index) => (
+                      <div key={index} className="flex justify-between items-start p-3 border rounded-lg">
+                        <div className="flex-1">
+                          <p className="font-medium">{item.productName || item.product_name}</p>
+                          {(item.variantName || item.variant_name) && (
+                            <p className="text-sm text-gray-500">{item.variantName || item.variant_name}</p>
+                          )}
+                          {item.sku && (
+                            <p className="text-xs text-gray-400">SKU: {item.sku}</p>
+                          )}
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm text-gray-500">x{item.quantity}</p>
+                          <p className="font-semibold">{formatPrice((item.unitPrice || item.unit_price || item.price) * item.quantity)}</p>
+                          {(item.discountAmount || item.discount_amount || 0) > 0 && (
+                            <p className="text-xs text-green-600">-{formatPrice(item.discountAmount || item.discount_amount)}</p>
+                          )}
+                        </div>
+                      </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <Separator />
+
+                {/* Shipping Address */}
+                <div>
+                  <h3 className="font-semibold mb-3">Địa chỉ giao hàng</h3>
+                  {selectedOrder.loading ? (
+                    <div className="text-center py-4 text-gray-500">
+                      Đang tải...
+                    </div>
+                  ) : (
+                    <div className="p-3 bg-gray-50 rounded-lg">
+                      <p className="font-medium">{selectedOrder.recipient_name || 'N/A'}</p>
+                      <p className="text-sm text-gray-600 mt-1">{selectedOrder.recipient_phone || selectedOrder.user_phone || 'N/A'}</p>
+                      <p className="text-sm text-gray-600 mt-2">
+                        {selectedOrder.address_line1 || 'Địa chỉ chưa cập nhật'}
+                        {selectedOrder.address_line2 && `, ${selectedOrder.address_line2}`}
+                        {selectedOrder.ward && `, ${selectedOrder.ward}`}
+                        {selectedOrder.district && `, ${selectedOrder.district}`}
+                        {selectedOrder.city && `, ${selectedOrder.city}`}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                <Separator />
+
+                {/* Order Summary */}
+                <div>
+                  <h3 className="font-semibold mb-3">Tổng kết đơn hàng</h3>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Tạm tính</span>
+                      <span>{formatPrice(selectedOrder.subtotalAmount || selectedOrder.subtotal_amount || selectedOrder.totalAmount || selectedOrder.total_amount)}</span>
+                    </div>
+                    {(selectedOrder.discountAmount || selectedOrder.discount_amount) > 0 && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Giảm giá</span>
+                        <span className="text-green-600">-{formatPrice(selectedOrder.discountAmount || selectedOrder.discount_amount)}</span>
+                      </div>
+                    )}
+                    {(selectedOrder.shippingFee || selectedOrder.shipping_fee) > 0 && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Phí vận chuyển</span>
+                        <span>{formatPrice(selectedOrder.shippingFee || selectedOrder.shipping_fee)}</span>
+                      </div>
+                    )}
+                    {(selectedOrder.taxAmount || selectedOrder.tax_amount) > 0 && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Thuế</span>
+                        <span>{formatPrice(selectedOrder.taxAmount || selectedOrder.tax_amount)}</span>
+                      </div>
+                    )}
+                    <Separator />
+                    <div className="flex justify-between font-semibold text-lg">
+                      <span>Tổng cộng</span>
+                      <span className="text-red-600">{formatPrice(selectedOrder.totalAmount || selectedOrder.total_amount)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Notes */}
+                {selectedOrder.notes && (
+                  <>
+                    <Separator />
+                    <div>
+                      <h3 className="font-semibold mb-2">Ghi chú</h3>
+                      <p className="text-sm text-gray-600">{selectedOrder.notes}</p>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsOrderDetailOpen(false)}>
+                Đóng
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Installments Tab */}
+        <TabsContent value="installments">
+          <InstallmentsTab />
+        </TabsContent>
+
+        {/* Security Settings */}
+        <TabsContent value="security">
+          <Card>
+            <CardHeader>
+              <CardTitle>Bảo mật</CardTitle>
+              <CardDescription>
+                Quản lý mật khẩu và bảo mật tài khoản
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="max-w-md">
+                <Form {...passwordForm}>
+                  <form className="space-y-4">
+                    <FormField
+                      control={passwordForm.control}
+                      name="currentPassword"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Mật khẩu hiện tại</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="password"
+                              {...field}
+                              disabled={!isChangingPassword}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={passwordForm.control}
+                      name="newPassword"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Mật khẩu mới</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="password"
+                              {...field}
+                              disabled={!isChangingPassword}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={passwordForm.control}
+                      name="confirmPassword"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Xác nhận mật khẩu mới</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="password"
+                              {...field}
+                              disabled={!isChangingPassword}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <div className="flex justify-end">
+                      {isChangingPassword ? (
+                        <div className="space-x-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="hover:bg-gray-200"
+                            onClick={() => setIsChangingPassword(false)}
+                          >
+                            Hủy
+                          </Button>
+                          <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white">Đổi mật khẩu</Button>
+                        </div>
+                      ) : (
+                        <Button
+                          type="button"
+                          className="bg-blue-600 hover:bg-blue-700 text-white"
+                          onClick={() => setIsChangingPassword(true)}
+                        >
+                          Đổi mật khẩu
+                        </Button>
+                      )}
+                    </div>
+                  </form>
+                </Form>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Notifications */}
+        <TabsContent value="notifications">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Thông báo</CardTitle>
+                <CardDescription>
+                  Các thông báo về đơn hàng và khuyến mãi
+                </CardDescription>
+              </div>
+              <Button variant="outline" className="hover:bg-gray-200" onClick={handleMarkAllAsRead}>
+                Đánh dấu tất cả là đã đọc
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {notifications.map((notification) => (
+                  <div
+                    key={notification.id}
+                    className={`p-4 border rounded-lg ${
+                      notification.isRead ? 'bg-gray-50' : 'bg-blue-50'
+                    }`}
+                  >
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className={`${notification.isRead ? 'text-gray-600' : 'text-black'}`}>
+                          {notification.message}
+                        </p>
+                        <p className="text-sm text-gray-500 mt-1">
+                          {formatDate(notification.created_at)}
+                        </p>
+                      </div>
+                      {!notification.isRead && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleMarkAsRead(notification.id)}
+                        >
+                          Đánh dấu đã đọc
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+                {notifications.length === 0 && (
+                  <p className="text-center text-gray-500 py-8">
+                    Không có thông báo nào
+                  </p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Wishlist */}
+        <TabsContent value="wishlist">
+          <Card>
+            <CardHeader>
+              <CardTitle>Danh sách yêu thích</CardTitle>
+              <CardDescription>
+                {wishlistItems.length} sản phẩm trong danh sách yêu thích
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {wishlistItems.map((item) => (
+                  <Card key={item.id}>
+                    <CardContent className="p-4">
+                      <div className="relative group">
+                        <img
+                          src={item.image}
+                          alt={item.name}
+                          className="w-full aspect-square object-cover rounded-lg mb-4"
+                        />
+                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                          <Button variant="secondary" size="icon" asChild>
+                            <Link to={`/product/${item.id}`}>
+                              <Eye className="h-4 w-4" />
+                            </Link>
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="icon"
+                            className="hover:bg-red-600 hover:text-white"
+                            onClick={() => handleRemoveFromWishlist(item.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <Link
+                              to={`/product/${item.id}`}
+                              className="font-medium hover:text-blue-600 transition-colors line-clamp-2"
+                            >
+                              {item.name}
+                            </Link>
+                            <div className="text-sm text-gray-500">{item.category}</div>
+                          </div>
+                          {item.discount > 0 && (
+                            <Badge variant="destructive">-{item.discount}%</Badge>
+                          )}
+                        </div>
+
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-lg font-bold text-red-600">
+                            {formatPrice(item.price)}
+                          </span>
+                          {item.discount > 0 && (
+                            <span className="text-sm text-gray-500 line-through">
+                              {formatPrice(item.originalPrice)}
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="space-y-2">
+                          <Badge variant="secondary" className="w-full">
+                            {item.stock ? 'Còn hàng' : 'Hết hàng'}
+                          </Badge>
+                          <Button
+                            className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                            disabled={!item.stock}
+                            onClick={() => handleAddToCart(item)}
+                          >
+                            <ShoppingCart className="h-4 w-4 mr-2" />
+                            Thêm vào giỏ
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+
+                {wishlistItems.length === 0 && (
+                  <div className="col-span-full text-center py-12">
+                    <p className="text-gray-500 mb-4">
+                      Danh sách yêu thích của bạn đang trống
+                    </p>
+                    <Button asChild>
+                      <Link to="/products">Tiếp tục mua sắm</Link>
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Coupons */}
+        <TabsContent value="coupons">
+          <Card>
+            <CardHeader>
+              <CardTitle>Mã giảm giá</CardTitle>
+              <CardDescription>
+                Các mã giảm giá có thể sử dụng
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {coupons.map((coupon) => (
+                  <Card key={coupon.id}>
+                    <CardContent className="p-4">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h4 className="font-bold text-lg">{coupon.code}</h4>
+                          <p className="text-sm text-gray-600 mt-1">
+                            {coupon.description}
+                          </p>
+                        </div>
+                        <Button
+                          variant={coupon.is_saved ? "secondary" : "default"}
+                          className="hover:bg-blue-600 hover:text-white"
+                          onClick={() => handleSaveCoupon(coupon.id)}
+                        >
+                          {coupon.is_saved ? 'Đã lưu' : 'Lưu mã'}
+                        </Button>
+                      </div>
+                      <Separator className="my-4" />
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Giá trị giảm:</span>
+                          <span className="font-medium">
+                            {coupon.discount_type === 'percent' 
+                              ? `${coupon.discount_value}%`
+                              : formatPrice(coupon.discount_value)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Đơn tối thiểu:</span>
+                          <span className="font-medium">{formatPrice(coupon.min_order)}</span>
+                        </div>
+                        {coupon.max_discount && (
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Giảm tối đa:</span>
+                            <span className="font-medium">{formatPrice(coupon.max_discount)}</span>
+                          </div>
+                        )}
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Hiệu lực đến:</span>
+                          <span className="font-medium">{formatDate(coupon.valid_until)}</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Reviews */}
+        <TabsContent value="reviews">
+          <Card>
+            <CardHeader>
+              <CardTitle>Đánh giá của tôi</CardTitle>
+              <CardDescription>
+                Các đánh giá bạn đã viết cho sản phẩm
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                {reviews.map((review) => (
+                  <div key={review.id} className="border rounded-lg p-4">
+                    <div className="flex items-start gap-4">
+                      <img
+                        src={review.product_image}
+                        alt={review.product_name}
+                        className="w-20 h-20 object-cover rounded"
+                      />
+                      <div className="flex-1">
+                        <Link
+                          to={`/product/${review.product_id}`}
+                          className="font-medium hover:text-blue-600"
+                        >
+                          {review.product_name}
+                        </Link>
+                        <div className="flex items-center gap-2 mt-1">
+                          <div className="flex">
+                            {[...Array(5)].map((_, i) => (
+                              <Star
+                                key={i}
+                                className={`w-4 h-4 ${
+                                  i < review.rating
+                                    ? 'text-yellow-400 fill-yellow-400'
+                                    : 'text-gray-300'
+                                }`}
+                              />
+                            ))}
+                          </div>
+                          <span className="text-sm text-gray-500">
+                            {formatDate(review.created_at)}
+                          </span>
+                        </div>
+                        <p className="mt-2 text-gray-600">{review.comment}</p>
+                      </div>
+                      <div className="space-x-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="hover:bg-gray-200"
+                          onClick={() => {/* Handle edit */}}
+                        >
+                          Sửa
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          className="hover:bg-red-600 hover:text-white"
+                          onClick={() => handleDeleteReview(review.id)}
+                        >
+                          Xóa
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
+                {reviews.length === 0 && (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500">
+                      Bạn chưa có đánh giá nào
+                    </p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+          </section>
+        </div>
+      </Tabs>
+    </div>
+    );
+};
+
+export default Profile;

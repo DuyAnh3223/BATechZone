@@ -14,6 +14,7 @@ import {
   getAllOverduePayments,
   getStatistics
 } from '../controllers/installmentController.js';
+import { requireAuth } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
 
@@ -32,31 +33,31 @@ router.get('/statistics', getStatistics);
 // Tạo khoản trả góp mới
 router.post('/', createInstallment);
 
-// Lấy chi tiết khoản trả góp
-router.get('/:installmentId', getInstallmentById);
+// Lấy chi tiết khoản trả góp - requires auth
+router.get('/:installmentId', requireAuth, getInstallmentById);
 
-// Lấy tổng hợp thanh toán
-router.get('/:installmentId/summary',  getPaymentSummary);
+// Lấy tổng hợp thanh toán - requires auth
+router.get('/:installmentId/summary', requireAuth, getPaymentSummary);
 
-// Kiểm tra các khoản thanh toán quá hạn
-router.get('/:installmentId/overdue',  checkOverduePayments);
+// Kiểm tra các khoản thanh toán quá hạn - requires auth
+router.get('/:installmentId/overdue', requireAuth, checkOverduePayments);
 
 // Lấy tất cả khoản trả góp của một user (admin)
 router.get('/user/:userId',  getInstallmentsByUserId);
 
-// Lấy khoản trả góp của user hiện tại (từ JWT token)
-router.get('/me/list',  getMyInstallments);
+// Lấy khoản trả góp của user hiện tại (từ session) - requires auth
+router.get('/me/list', requireAuth, getMyInstallments);
 
-// Thanh toán một kỳ
-router.post('/payments/:paymentId/pay',  makePayment);
+// Thanh toán một kỳ - requires auth
+router.post('/payments/:paymentId/pay', requireAuth, makePayment);
 
-// Cập nhật thông tin khoản trả góp
-router.put('/:installmentId',  updateInstallment);
+// Cập nhật thông tin khoản trả góp - requires auth
+router.put('/:installmentId', requireAuth, updateInstallment);
 
-// Hủy khoản trả góp
-router.patch('/:installmentId/cancel',  cancelInstallment);
+// Hủy khoản trả góp - requires auth
+router.patch('/:installmentId/cancel', requireAuth, cancelInstallment);
 
-// Xóa khoản trả góp
-router.delete('/:installmentId',  deleteInstallment);
+// Xóa khoản trả góp - requires auth
+router.delete('/:installmentId', requireAuth, deleteInstallment);
 
 export default router;
