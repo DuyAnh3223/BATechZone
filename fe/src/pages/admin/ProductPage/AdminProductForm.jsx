@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useCategoryStore } from '@/stores/useCategoryStore';
 import { attributeService } from '@/services/attributeService';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { X, Image as ImageIcon, ChevronDown, ChevronUp } from 'lucide-react';
 import LocalVariantImageManager from './VariantImageManagement/LocalVariantImageManager';
 
 // Helper: cartesian product of arrays
@@ -32,15 +31,6 @@ const AdminProductForm = ({ initialData = null, onSubmit, onCancel }) => {
 
   // selected values per attribute (attribute_id -> Set of attribute_value_id)
   const [selectedValues, setSelectedValues] = useState({});
-
-  // generated variants
-  const [variants, setVariants] = useState(() => initialData?.variants || []);
-  
-  // Track images for each variant (by variant local ID)
-  const [variantImages, setVariantImages] = useState({}); // { variantId: [images] }
-  
-  // Track which variant's image section is expanded
-  const [expandedVariant, setExpandedVariant] = useState(null);
 
   // product basic fields
   const [name, setName] = useState(initialData?.product_name || '');
@@ -102,7 +92,6 @@ const AdminProductForm = ({ initialData = null, onSubmit, onCancel }) => {
             return next;
           });
           setVariantAttributes([]);
-          setVariants([]);
         })
         .catch((error) => {
           console.error('Error loading attributes:', error);
@@ -170,83 +159,7 @@ const AdminProductForm = ({ initialData = null, onSubmit, onCancel }) => {
     });
   }
 
-  // compute arrays used for cartesian product in the order of variantAttributes
-  const selectedArrays = useMemo(() => {
-    return variantAttributes.map((attrId) => {
-      const attr = attributes.find((a) => a.attribute_id === attrId);
-      const selected = Array.from((selectedValues[attrId] && selectedValues[attrId].size) ? selectedValues[attrId] : []).map((valId) => {
-        const v = (attr?.values || []).find((x) => x.attribute_value_id === valId) || attributeValues.find((x) => x.attribute_value_id === valId);
-        return { attribute_id: attrId, attribute_name: attr?.attribute_name, attribute_value_id: valId, value_name: v?.value_name ?? String(valId) };
-      });
-    return selected;
-    });
-  }, [variantAttributes, selectedValues, attributes, attributeValues]);
 
-  function generateVariants() {
-    if (variantAttributes.length === 0) return alert('Chọn ít nhất 1 thuộc tính để sinh biến thể');
-    // ensure each variant attribute has at least one selected value
-    for (let attrId of variantAttributes) {
-      if (!selectedValues[attrId] || selectedValues[attrId].size === 0) return alert('Chọn giá trị cho từng thuộc tính đã chọn');
-    }
-
-    const arrays = selectedArrays;
-    const combos = cartesianProduct(arrays);
-    
-    // Generate new variants with unique IDs
-    const existingMaxId = variants.length > 0 
-      ? Math.max(...variants.map(v => v.id || 0))
-      : 0;
-    
-    const newVariants = combos.map((combo, idx) => {
-      const skuParts = combo.map((c) => (c.value_name || c.attribute_value_id)).join('-');
-      return {
-        id: existingMaxId + idx + 1,
-        sku: `${skuParts}`,
-        price: 0,
-        stock: 0,
-        attribute_values: combo,
-      };
-    });
-    
-    // Add new variants to existing list instead of replacing
-    setVariants((prev) => [...prev, ...newVariants]);
-    
-    // Reset selected values for the attributes that were used
-    setSelectedValues((prev) => {
-      const copy = { ...prev };
-      variantAttributes.forEach(attrId => {
-        if (copy[attrId]) {
-          copy[attrId] = new Set();
-        }
-      });
-      return copy;
-    });
-  }
-
-  function updateVariant(idx, patch) {
-    setVariants((prev) => prev.map((v, i) => (i === idx ? { ...v, ...patch } : v)));
-  }
-
-  function removeVariant(idx) {
-    const variantToRemove = variants[idx];
-    if (variantToRemove) {
-      // Remove images for this variant
-      setVariantImages(prev => {
-        const copy = { ...prev };
-        delete copy[variantToRemove.id];
-        return copy;
-      });
-    }
-    setVariants((prev) => prev.filter((_, i) => i !== idx));
-  }
-
-  // Handle variant image changes
-  const handleVariantImagesChange = (variantId, images) => {
-    setVariantImages(prev => ({
-      ...prev,
-      [variantId]: images
-    }));
-  };
 
   function handleSubmit(e) {
     e.preventDefault();
@@ -280,11 +193,11 @@ const AdminProductForm = ({ initialData = null, onSubmit, onCancel }) => {
       return;
     }
 
-    // Chỉ sử dụng variants đã được sinh thủ công (bấm nút "Sinh biến thể")
-    // Không tự động sinh từ attributes nếu chưa click nút
-    let finalVariants = [...variants];
+    // Kiểm tra có thuộc tính nào được chọn không
+    const hasSelectedAttributes = variantAttributes.length > 0 && 
+      variantAttributes.some(attrId => selectedValues[attrId] && selectedValues[attrId].size > 0);
 
-    // build payload
+    // Build payload
     const payload = {
       product_name: name.trim(),
       slug: finalSlug,
@@ -294,18 +207,56 @@ const AdminProductForm = ({ initialData = null, onSubmit, onCancel }) => {
       is_featured: isFeatured,
       base_price: defaultVariantPrice,
       variant_attributes: variantAttributes,
-      // Default variant data
-      defaultVariant: {
+    };
+
+    if (hasSelectedAttributes) {
+      // Có thuộc tính được chọn => Tạo variants từ thuộc tính
+      // Validate: ensure each variant attribute has at least one selected value
+      for (let attrId of variantAttributes) {
+        if (!selectedValues[attrId] || selectedValues[attrId].size === 0) {
+          alert('Chọn giá trị cho từng thuộc tính đã chọn');
+          return;
+        }
+      }
+
+      // Generate variants using cartesian product
+      const selectedArrays = variantAttributes.map((attrId) => {
+        const attr = attributes.find((a) => a.attribute_id === attrId);
+        return Array.from(selectedValues[attrId] || []).map((valId) => {
+          const v = (attr?.values || []).find((x) => x.attribute_value_id === valId) || 
+                    attributeValues.find((x) => x.attribute_value_id === valId);
+          return { 
+            attribute_id: attrId, 
+            attribute_name: attr?.attribute_name, 
+            attribute_value_id: valId, 
+            value_name: v?.value_name ?? String(valId) 
+          };
+        });
+      });
+
+      const combos = cartesianProduct(selectedArrays);
+      const generatedVariants = combos.map((combo) => {
+        const skuParts = combo.map((c) => (c.value_name || c.attribute_value_id)).join('-');
+        return {
+          sku: `${skuParts}`,
+          price: defaultVariantPrice,
+          stock: defaultVariantStock,
+          attribute_values: combo,
+          images: defaultVariantImages
+        };
+      });
+
+      payload.defaultVariant = null;
+      payload.additionalVariants = generatedVariants;
+    } else {
+      // Không có thuộc tính => Dùng defaultVariant
+      payload.defaultVariant = {
         price: defaultVariantPrice,
         stock: defaultVariantStock,
         images: defaultVariantImages
-      },
-      // Additional variants (chỉ nếu user click "Sinh biến thể")
-      additionalVariants: finalVariants.map(v => ({
-        ...v,
-        images: variantImages[v.id] || []
-      }))
-    };
+      };
+      payload.additionalVariants = [];
+    }
     
     // Include product_id only for parent component to know which product to update
     if (initialData?.product_id) {
@@ -418,28 +369,6 @@ const AdminProductForm = ({ initialData = null, onSubmit, onCancel }) => {
             </div>
           ))}
         </div>
-
-        <div className="mt-4 flex items-center gap-3">
-          <button type="button" onClick={generateVariants} className="px-4 py-2 rounded-md bg-green-600 text-white hover:bg-green-700">
-            Sinh biến thể
-          </button>
-          <span className="text-sm text-gray-600">Tổng: <span className="font-medium">{variants.length}</span> biến thể</span>
-          {variants.length > 0 && (
-            <button 
-              type="button" 
-              onClick={() => {
-                if (confirm('Xóa tất cả biến thể đã tạo?')) {
-                  setVariants([]);
-                  setVariantAttributes([]);
-                  setSelectedValues({});
-                }
-              }} 
-              className="px-3 py-1.5 rounded-md bg-red-100 text-red-800 text-sm hover:bg-red-200"
-            >
-              Xóa tất cả
-            </button>
-          )}
-        </div>
        
       {/* Price and Stock for default variant */}
       <div className=" pt-5 grid grid-cols-2 gap-4">
@@ -494,73 +423,6 @@ const AdminProductForm = ({ initialData = null, onSubmit, onCancel }) => {
           onChange={setDefaultVariantImages}
         />
       </div>
-
-      
-
-        {/* Variants list with images (only show if variants exist) */}
-        {variants.length > 0 && (
-          <div className="border-t pt-4 mt-4">
-            <h4 className="font-medium mb-3">Biến thể đã tạo ({variants.length})</h4>
-            <div className="space-y-3">
-              {variants.map((variant, idx) => (
-                <div key={variant.id} className="border rounded-lg bg-white">
-                  {/* Variant header */}
-                  <div className="p-3 flex items-center justify-between">
-                    <div className="flex items-center gap-3 flex-1">
-                      <span className="text-sm font-medium text-gray-900">
-                        {variant.attribute_values.map(av => av.value_name).join(' / ')}
-                      </span>
-                      <span className="text-xs text-gray-500 px-2 py-0.5 bg-gray-100 rounded">
-                        SKU: {variant.sku}
-                      </span>
-                    </div>
-                    
-                    <div className="flex items-center gap-2">
-                      {/* Image count badge */}
-                      {variantImages[variant.id]?.length > 0 && (
-                        <span className="flex items-center gap-1 text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">
-                          <ImageIcon className="w-3 h-3" />
-                          {variantImages[variant.id].length}
-                        </span>
-                      )}
-                      
-                      <button
-                        type="button"
-                        onClick={() => setExpandedVariant(expandedVariant === variant.id ? null : variant.id)}
-                        className="p-1 hover:bg-gray-100 rounded"
-                      >
-                        {expandedVariant === variant.id ? (
-                          <ChevronUp className="w-4 h-4 text-gray-500" />
-                        ) : (
-                          <ChevronDown className="w-4 h-4 text-gray-500" />
-                        )}
-                      </button>
-                      
-                      <button
-                        type="button"
-                        onClick={() => removeVariant(idx)}
-                        className="p-1 hover:bg-red-50 rounded text-red-600"
-                        title="Xóa biến thể"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Expanded content - Images */}
-                  {expandedVariant === variant.id && (
-                    <div className="border-t p-4 bg-gray-50">
-                      <LocalVariantImageManager
-                        initialImages={variantImages[variant.id] || []}
-                        onChange={(images) => handleVariantImagesChange(variant.id, images)}
-                      />
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
 
         </div>
       </div>

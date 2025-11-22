@@ -12,6 +12,7 @@ import { CheckCircle } from 'lucide-react';
 import AdminVariantItem from './AdminVariantItem';
 import AdminVariantForm from './AdminVariantForm';
 import AdminVariantEditForm from './AdminVariantEditForm';
+import VariantImageManager from './VariantImageManager';
 import { useVariantStore } from '@/stores/useVariantStore';
 
 const AdminVariantList = ({ variants: initial = [], product, onUpdate, onDelete }) => {
@@ -26,6 +27,10 @@ const AdminVariantList = ({ variants: initial = [], product, onUpdate, onDelete 
   const [successMessage, setSuccessMessage] = useState('');
   const shouldShowSuccessRef = useRef(false);
   const pendingMessageRef = useRef('');
+  
+  // Image management state
+  const [managingImagesVariant, setManagingImagesVariant] = useState(null);
+  const [showImageManager, setShowImageManager] = useState(false);
 
   // Update variants when initial prop changes
   useEffect(() => {
@@ -154,6 +159,16 @@ const AdminVariantList = ({ variants: initial = [], product, onUpdate, onDelete 
     setEditing(null);
   }
 
+  function handleManageImages(variant) {
+    setManagingImagesVariant(variant);
+    setShowImageManager(true);
+  }
+
+  function handleCloseImageManager() {
+    setShowImageManager(false);
+    setManagingImagesVariant(null);
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -195,11 +210,19 @@ const AdminVariantList = ({ variants: initial = [], product, onUpdate, onDelete 
               variant={v}
               index={index + 1}
               onEdit={handleEdit} 
-              onDelete={handleDelete} 
+              onDelete={handleDelete}
+              onManageImages={handleManageImages}
             />
           ))}
         </div>
       )}
+
+      {/* Image Manager Dialog */}
+      <VariantImageManager
+        variant={managingImagesVariant}
+        isOpen={showImageManager}
+        onClose={handleCloseImageManager}
+      />
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={(open) => {

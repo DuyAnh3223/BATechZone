@@ -141,66 +141,47 @@ const AdminProductPage = () => {
 				response = await updateProduct(product_id, updateData);
 			} else {
 				// Create new product
-				// Extract images from payload before sending
 				const { defaultVariant, additionalVariants, variant_attributes, ...productData } = productPayload;
 				
-				// Send product data without images
-				const createPayload = {
-					...productData,
-					variant_attributes: variant_attributes || [], // **FIX**: Include variant_attributes
-					defaultVariant: {
-						price: defaultVariant.price,
-						stock: defaultVariant.stock
-					},
-					additionalVariants: (additionalVariants || []).map(v => ({
-						...v,
-						images: undefined // Don't send images in initial creation
-					}))
-				};
+				// Kiểm tra có thuộc tính được chọn không
+				const hasSelectedAttributes = additionalVariants && additionalVariants.length > 0;
 				
-				response = await createProduct(createPayload);
-				
-				// Upload images after product creation
-				if (response?.data?.product_id) {
-					const productId = response.data.product_id;
+				if (hasSelectedAttributes) {
+					// CÓ thuộc tính => Tạo variants từ additionalVariants
+					const createPayload = {
+						...productData,
+						variant_attributes: variant_attributes || [],
+						defaultVariant: null, // Không dùng defaultVariant
+						additionalVariants: additionalVariants.map(v => ({
+							sku: v.sku,
+							price: v.price,
+							stock: v.stock,
+							attribute_values: v.attribute_values
+							// Không gửi images trong initial creation
+						}))
+					};
 					
-					// Get variants for the created product
-					const variantsResponse = await fetchVariantsByProductId(productId);
-					const variants = Array.isArray(variantsResponse) 
-						? variantsResponse 
-						: (variantsResponse?.data || []);
+					response = await createProduct(createPayload);
 					
-					// Find default variant
-					const defaultVariant_db = variants.find(v => v.is_default === 1);
-					
-					// Upload default variant images
-					if (defaultVariant_db && defaultVariant.images && defaultVariant.images.length > 0) {
-						try {
-							const formData = new FormData();
-							defaultVariant.images.forEach(img => {
-								formData.append('images', img.file);
-								if (img.isPrimary) {
-									formData.append('isPrimary', 'true');
-								}
-							});
-							
-							await variantImageService.bulkUploadImages(defaultVariant_db.variant_id, formData);
-						} catch (imgError) {
-							console.error('Error uploading default variant images:', imgError);
-						}
-					}
-					
-					// Upload additional variant images
-					if (additionalVariants && additionalVariants.length > 0) {
-						// Match additional variants by SKU
+					// Upload images cho các variants đã tạo
+					if (response?.data?.product_id) {
+						const productId = response.data.product_id;
+						
+						// Get variants từ DB
+						const variantsResponse = await fetchVariantsByProductId(productId);
+						const variants_db = Array.isArray(variantsResponse) 
+							? variantsResponse 
+							: (variantsResponse?.data || []);
+						
+						// Upload images cho từng variant
 						for (let i = 0; i < additionalVariants.length; i++) {
-							const additionalVariant = additionalVariants[i];
-							const variant_db = variants.find(v => v.sku === additionalVariant.sku);
+							const variantPayload = additionalVariants[i];
+							const variant_db = variants_db.find(v => v.sku === variantPayload.sku);
 							
-							if (variant_db && additionalVariant.images && additionalVariant.images.length > 0) {
+							if (variant_db && variantPayload.images && variantPayload.images.length > 0) {
 								try {
 									const formData = new FormData();
-									additionalVariant.images.forEach(img => {
+									variantPayload.images.forEach(img => {
 										formData.append('images', img.file);
 										if (img.isPrimary) {
 											formData.append('isPrimary', 'true');
@@ -209,8 +190,51 @@ const AdminProductPage = () => {
 									
 									await variantImageService.bulkUploadImages(variant_db.variant_id, formData);
 								} catch (imgError) {
-									console.error(`Error uploading images for variant ${i + 1}:`, imgError);
+									console.error(`Error uploading images for variant ${variantPayload.sku}:`, imgError);
 								}
+							}
+						}
+					}
+				} else {
+					// KHÔNG có thuộc tính => Dùng defaultVariant
+					const createPayload = {
+						...productData,
+						variant_attributes: [],
+						defaultVariant: {
+							price: defaultVariant.price,
+							stock: defaultVariant.stock
+							// Không gửi images
+						},
+						additionalVariants: []
+					};
+					
+					response = await createProduct(createPayload);
+					
+					// Upload images cho default variant
+					if (response?.data?.product_id && defaultVariant.images && defaultVariant.images.length > 0) {
+						const productId = response.data.product_id;
+						
+						// Get default variant từ DB
+						const variantsResponse = await fetchVariantsByProductId(productId);
+						const variants_db = Array.isArray(variantsResponse) 
+							? variantsResponse 
+							: (variantsResponse?.data || []);
+						
+						const defaultVariant_db = variants_db.find(v => v.is_default === 1);
+						
+						if (defaultVariant_db) {
+							try {
+								const formData = new FormData();
+								defaultVariant.images.forEach(img => {
+									formData.append('images', img.file);
+									if (img.isPrimary) {
+										formData.append('isPrimary', 'true');
+									}
+								});
+								
+								await variantImageService.bulkUploadImages(defaultVariant_db.variant_id, formData);
+							} catch (imgError) {
+								console.error('Error uploading default variant images:', imgError);
 							}
 						}
 					}
