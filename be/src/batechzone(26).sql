@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th10 23, 2025 lúc 10:04 AM
+-- Thời gian đã tạo: Th10 23, 2025 lúc 12:26 PM
 -- Phiên bản máy phục vụ: 10.4.32-MariaDB
 -- Phiên bản PHP: 8.2.12
 
@@ -81,7 +81,8 @@ INSERT INTO `addresses` (`address_id`, `user_id`, `recipient_name`, `phone`, `ad
 (41, 10, 'dddd', '0123456788', 'abcd', NULL, 'hanoi', 'Ứng Hòa', NULL, NULL, 'Vietnam', 0, 'other', '2025-11-23 05:12:22', '2025-11-23 05:12:22'),
 (42, 10, 'dddd', '0123456788', 'EEDDFF', NULL, 'danang', 'Cẩm Lệ', NULL, NULL, 'Vietnam', 0, 'other', '2025-11-23 05:19:06', '2025-11-23 05:19:06'),
 (43, 10, 'dddd', '09756478576', 'abcdef123', NULL, 'binhdung', 'Bến Cát', NULL, NULL, 'Vietnam', 0, 'other', '2025-11-23 08:27:16', '2025-11-23 08:27:16'),
-(44, 10, 'dddd', '0987654657', 'gg 15p', NULL, 'cantho', 'Ninh Kiều', NULL, NULL, 'Vietnam', 0, 'other', '2025-11-23 08:37:14', '2025-11-23 08:37:14');
+(44, 10, 'dddd', '0987654657', 'gg 15p', NULL, 'cantho', 'Ninh Kiều', NULL, NULL, 'Vietnam', 0, 'other', '2025-11-23 08:37:14', '2025-11-23 08:37:14'),
+(45, 10, 'nguyen van a', '0123456788', '123, dsa', NULL, 'hcm', 'q1', NULL, NULL, 'Vietnam', 0, 'other', '2025-11-23 10:39:40', '2025-11-23 10:39:40');
 
 -- --------------------------------------------------------
 
@@ -451,8 +452,7 @@ INSERT INTO `cart_items` (`cart_item_id`, `cart_id`, `variant_id`, `quantity`, `
 (51, 8, 337, 2, '2025-11-22 17:12:43', '2025-11-22 17:12:49'),
 (52, 8, 372, 1, '2025-11-22 17:25:01', '2025-11-22 17:25:01'),
 (53, 8, 368, 1, '2025-11-22 17:36:20', '2025-11-22 17:36:20'),
-(54, 5, 372, 1, '2025-11-23 02:31:12', '2025-11-23 02:31:12'),
-(56, 4, 372, 6, '2025-11-23 08:26:49', '2025-11-23 08:36:51');
+(54, 5, 372, 1, '2025-11-23 02:31:12', '2025-11-23 02:31:12');
 
 -- --------------------------------------------------------
 
@@ -564,7 +564,7 @@ INSERT INTO `installments` (`installment_id`, `order_id`, `user_id`, `total_amou
 (12, 32, 10, 653341.76, 130000.00, 6, 87223.63, 2.20, '2025-11-23', '2026-05-23', 'pending', '2025-11-23 02:45:09'),
 (13, 33, 10, 854369.99, 170000.00, 6, 114061.67, 2.20, '2025-11-23', '2026-05-23', 'pending', '2025-11-23 05:12:22'),
 (14, 34, 10, 100514.12, 20000.00, 6, 13419.02, 2.20, '2025-11-23', '2026-05-23', 'pending', '2025-11-23 05:19:06'),
-(15, 35, 10, 603084.70, 120000.00, 6, 80514.12, 2.20, '2025-11-23', '2026-05-23', 'pending', '2025-11-23 08:27:16'),
+(15, 35, 10, 603084.70, 120000.00, 6, 80514.12, 2.20, '2025-11-23', '2026-05-23', 'approved', '2025-11-23 08:27:16'),
 (16, 36, 10, 1212204.89, 240000.00, 15, 64813.66, 2.20, '2025-11-23', '2027-02-23', 'approved', '2025-11-23 08:37:14');
 
 -- --------------------------------------------------------
@@ -686,8 +686,9 @@ INSERT INTO `orders` (`order_id`, `user_id`, `order_number`, `address_id`, `coup
 (32, 10, 'ORD65909943154', 40, NULL, 'confirmed', 'unpaid', 650000.00, 0.00, 0.00, 0.00, 650000.00, NULL, NULL, '2025-11-23 02:45:09', '2025-11-23 02:56:54', NULL, NULL, NULL, NULL),
 (33, 10, 'ORD74742479759', 41, NULL, 'pending', 'unpaid', 850000.00, 0.00, 0.00, 0.00, 850000.00, NULL, NULL, '2025-11-23 05:12:22', '2025-11-23 08:25:15', NULL, NULL, NULL, NULL),
 (34, 10, 'ORD75146696523', 42, NULL, 'pending', 'unpaid', 100000.00, 0.00, 0.00, 0.00, 100000.00, 'aa', NULL, '2025-11-23 05:19:06', '2025-11-23 08:49:05', '2025-11-23 08:48:51', NULL, NULL, NULL),
-(35, 10, 'ORD86436938249', 43, NULL, 'pending', 'unpaid', 600000.00, 0.00, 0.00, 0.00, 600000.00, NULL, NULL, '2025-11-23 08:27:16', '2025-11-23 08:29:42', NULL, NULL, NULL, NULL),
-(36, 10, 'ORD87034076723', 44, NULL, 'processing', 'unpaid', 1200000.00, 0.00, 0.00, 0.00, 1200000.00, 'abf', NULL, '2025-11-23 08:37:14', '2025-11-23 08:49:59', '2025-11-23 08:49:59', NULL, NULL, NULL);
+(35, 10, 'ORD86436938249', 43, NULL, 'processing', 'unpaid', 600000.00, 0.00, 0.00, 0.00, 600000.00, NULL, NULL, '2025-11-23 08:27:16', '2025-11-23 11:04:17', '2025-11-23 11:04:17', NULL, NULL, NULL),
+(36, 10, 'ORD87034076723', 44, NULL, 'processing', 'unpaid', 1200000.00, 0.00, 0.00, 0.00, 1200000.00, 'abf', NULL, '2025-11-23 08:37:14', '2025-11-23 08:49:59', '2025-11-23 08:49:59', NULL, NULL, NULL),
+(37, 10, 'ORD94380350862', 45, NULL, 'pending', 'unpaid', 1260000.00, 0.00, 50000.00, 0.00, 1310000.00, NULL, NULL, '2025-11-23 10:39:40', '2025-11-23 10:39:40', NULL, NULL, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -747,7 +748,9 @@ INSERT INTO `order_items` (`order_item_id`, `order_id`, `variant_id`, `product_n
 (43, 33, 336, 'Intel Core i5 14600kf', 'Intel Core i5 14600kf', 'intel-core-i5-14600kf-default', 1, 450000.00, 0.00, 450000.00, '2025-11-23 05:12:22'),
 (44, 34, 368, 'ABD', 'Seagate-1TB-5400RPM', 'Seagate-1TB-5400RPM', 5, 20000.00, 0.00, 100000.00, '2025-11-23 05:19:06'),
 (45, 35, 372, 'DD', 'AMD-RTX 4070-12GB-Gigabyte', 'AMD-RTX 4070-12GB-Gigabyte', 3, 200000.00, 0.00, 600000.00, '2025-11-23 08:27:16'),
-(46, 36, 372, 'DD', 'AMD-RTX 4070-12GB-Gigabyte', 'AMD-RTX 4070-12GB-Gigabyte', 6, 200000.00, 0.00, 1200000.00, '2025-11-23 08:37:14');
+(46, 36, 372, 'DD', 'AMD-RTX 4070-12GB-Gigabyte', 'AMD-RTX 4070-12GB-Gigabyte', 6, 200000.00, 0.00, 1200000.00, '2025-11-23 08:37:14'),
+(47, 37, 368, 'ABD', 'Seagate-1TB-5400RPM', 'Seagate-1TB-5400RPM', 3, 20000.00, 0.00, 60000.00, '2025-11-23 10:39:40'),
+(48, 37, 372, 'DD', 'AMD-RTX 4070-12GB-Gigabyte', 'AMD-RTX 4070-12GB-Gigabyte', 6, 200000.00, 0.00, 1200000.00, '2025-11-23 10:39:40');
 
 -- --------------------------------------------------------
 
@@ -865,8 +868,8 @@ INSERT INTO `product_variants` (`variant_id`, `product_id`, `sku`, `variant_name
 (358, 249, 'mac-inh-default', 'Mặc định', 50100.00, 5, 1, 1, '2025-11-21 12:52:03', '2025-11-21 12:52:03'),
 (361, 250, 'Seagate', 'Seagate', 600.00, 0, 1, 1, '2025-11-21 13:02:29', '2025-11-21 13:02:29'),
 (363, 253, 'Seagate-1TB', 'Seagate-1TB', 600.00, 0, 1, 1, '2025-11-21 13:59:12', '2025-11-21 13:59:12'),
-(368, 257, 'Seagate-1TB-5400RPM', 'Seagate-1TB-5400RPM', 20000.00, 13, 1, 1, '2025-11-22 05:42:02', '2025-11-23 05:19:06'),
-(372, 263, 'AMD-RTX 4070-12GB-Gigabyte', 'AMD-RTX 4070-12GB-Gigabyte', 200000.00, 0, 1, 1, '2025-11-22 07:21:36', '2025-11-23 08:37:14'),
+(368, 257, 'Seagate-1TB-5400RPM', 'Seagate-1TB-5400RPM', 20000.00, 10, 1, 1, '2025-11-22 05:42:02', '2025-11-23 10:39:40'),
+(372, 263, 'AMD-RTX 4070-12GB-Gigabyte', 'AMD-RTX 4070-12GB-Gigabyte', 200000.00, -6, 1, 1, '2025-11-22 07:21:36', '2025-11-23 10:39:40'),
 (373, 263, 'NVIDIA-RX 7600-8GB-XFX', NULL, 980000.00, 29, 1, 0, '2025-11-23 02:33:49', '2025-11-23 02:33:49');
 
 -- --------------------------------------------------------
@@ -973,16 +976,18 @@ INSERT INTO `users` (`user_id`, `username`, `email`, `password_hash`, `full_name
 (2, 'user2', 'user2@gmail.com', '$2b$10$sgscek75SEoXGWwZHmFfMuXSHZW0JLHE3pgLAEqCPe7pGimDqo3gS', NULL, NULL, 0, 1, '2025-11-01 01:07:16', '2025-11-01 01:07:16', NULL, NULL),
 (3, 'abcdef', 'abc@gmail.com', '$2b$10$M8uNkONltbbKsY8y9DdqUeF3IFn1CeH9B0S6SBQzNB5QyVinKZ37.', NULL, NULL, 0, 1, '2025-11-01 10:27:03', '2025-11-01 10:27:03', NULL, NULL),
 (4, 'bao', 'bao@gmail.com', '$2b$10$zPJUT/20Y4wiZUXjELb0QuDSWVxSkubIKLIpNIfYkVQuJY7E92J.e', 'bao', '0965656565', 0, 1, '2025-11-03 15:09:28', '2025-11-07 03:26:14', NULL, NULL),
-(5, 'admin1', 'admin1@gmail.com', '$2b$10$b9lCzWVznD4ZMQ1Y6/bOc.Jn6efXZS1Us.ZjYVv2PFgHkqKr1PD1.', 'aaa', '0123456789', 2, 0, '2025-11-05 09:18:39', '2025-11-05 10:08:50', NULL, '39c81725075b25e0e973c080d442c787a6e9fdc55a1f613fab08e3fc7facbb7c'),
-(6, 'admin', 'admin@gmail.com', '$2b$10$84e9xqnTc50CPaf5pOldT.Ob9zW9/RVK.G3Whr.TdAncfRdE.UivG', 'admin', '0123456788', 2, 1, '2025-11-05 09:33:52', '2025-11-23 08:37:36', NULL, 'cc439b55757122c8f8e22755dd81c2d62b406dad9e93b97bb3bf9439909ddef9'),
+(5, 'admin1', 'admin1@gmail.com', '$2b$10$b9lCzWVznD4ZMQ1Y6/bOc.Jn6efXZS1Us.ZjYVv2PFgHkqKr1PD1.', 'aaa', '0123456789', 2, 0, '2025-11-05 09:18:39', '2025-11-23 11:21:43', NULL, NULL),
+(6, 'admin', 'admin@gmail.com', '$2b$10$84e9xqnTc50CPaf5pOldT.Ob9zW9/RVK.G3Whr.TdAncfRdE.UivG', 'admin', '0123456788', 2, 1, '2025-11-05 09:33:52', '2025-11-23 11:26:10', NULL, '1557352651e2417092ad65f0ba5ed49945cd5d0d473817ac27200423b90e3b1f'),
 (7, 'bao1', 'bao1@gmail.com', '$2b$10$sVY/zhJ2cKlwydAjQ090e.bMn1eFJKudObM.yOZiR06XPanyUgaFW', 'bao1', '0975846352', 0, 0, '2025-11-05 10:09:19', '2025-11-05 10:09:38', NULL, NULL),
 (8, 'bb', 'bb@gmail.com', '$2b$10$i/dzC6SfHsM.5cHiYaS89ed4rg4SAoLtZz1/O2mA6eagocIogJoL6', NULL, NULL, 0, 1, '2025-11-07 03:26:38', '2025-11-07 08:05:59', NULL, NULL),
-(9, 'ccc', 'cc@gmail.com', '$2b$10$zdMHGgXEqVXcvRmaoymJceZdwLmNnViMKR.Gss2KmhtlJzm9k8pp.', 'bao', '0987676765', 0, 1, '2025-11-07 08:06:49', '2025-11-07 08:23:41', NULL, '25df20a38db4f2d83703655c8fa0289a37154f1beeceb3ab72ad43f1bb4f13e3'),
-(10, 'dddd', 'dd@gmail.com', '$2b$10$VOQn9zNNzcmwyWhyaGBHt.XROz23EkcPmj2Gzo8GEr3I07ARid5gq', 'dd', '0123456788', 0, 1, '2025-11-07 08:24:07', '2025-11-23 08:32:08', NULL, '27d598a1cf63e2a849a015f726fcfdebad78cd26691eb4047cb7473a20b772cf'),
+(9, 'ccc', 'cc@gmail.com', '$2b$10$zdMHGgXEqVXcvRmaoymJceZdwLmNnViMKR.Gss2KmhtlJzm9k8pp.', 'bao', '0987676765', 0, 1, '2025-11-07 08:06:49', '2025-11-23 11:21:43', NULL, NULL),
+(10, 'dddd', 'dd@gmail.com', '$2b$10$VOQn9zNNzcmwyWhyaGBHt.XROz23EkcPmj2Gzo8GEr3I07ARid5gq', 'dd', '0123456788', 0, 1, '2025-11-07 08:24:07', '2025-11-23 11:21:43', NULL, NULL),
 (11, 'nguyenvana', 'nguyenvana@example.com', 'hashedpassword1', 'Nguyễn Văn A', '0912345678', 0, 1, '2025-11-20 06:17:00', '2025-11-20 06:17:00', NULL, NULL),
 (12, 'lethib', 'lethib@example.com', 'hashedpassword2', 'Lê Thị B', '0987654321', 0, 1, '2025-11-20 06:17:00', '2025-11-20 06:17:00', NULL, NULL),
 (14, 'nguyenvana561', 'vana@gmail.com', '$2b$10$0jlQsiiH5sdXf2XIoWIYB.lRKQwt5tUwJOeVlTMnknSknSkJUsi3i', 'Nguyễn Văn A', '0908786561', 0, 1, '2025-11-22 15:32:12', '2025-11-22 15:51:54', NULL, NULL),
-(15, 'tranthib671', 'thib@gmail.com', '$2b$10$wDdwM3aIYCD.rNA.eT53N.r89OYZyI7o3vb1qLvQvV0Rc0etwSXAu', 'Trần Thị B', '0908787671', 0, 1, '2025-11-22 15:53:20', '2025-11-22 17:00:44', NULL, '847814c560668b07ac519c7066eda5156ef153169311360b7455c02974c68791');
+(15, 'tranthib671d', 'thib@gmail.com', '$2b$10$wDdwM3aIYCD.rNA.eT53N.r89OYZyI7o3vb1qLvQvV0Rc0etwSXAu', 'Trần Thị B', '0908787671', 0, 1, '2025-11-22 15:53:20', '2025-11-23 11:21:43', NULL, NULL),
+(16, 'nd1', 'nd1@gmail.com', '$2b$10$JOVbyAdir.3O0YMvF64COOEdFv2cw77rfW10QImXe9jQH3mZtS9dC', 'nd1', '0123456788', 0, 1, '2025-11-23 11:15:09', '2025-11-23 11:25:58', NULL, '45220622faa6f9cacf3ee5d5b32341cba82a7ed4eed51f740e7a64931cc9d62f'),
+(17, 'ad1', 'ad1@gmail.com', '$2b$10$zE.RfZEcYf/th.S7Krdkmu/l0jDW7Nq3Ge9eP4lU78KVlVJzXCUwG', 'ad1', '0987676765', 2, 1, '2025-11-23 11:15:30', '2025-11-23 11:15:30', NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -1381,7 +1386,7 @@ ALTER TABLE `wishlist_items`
 -- AUTO_INCREMENT cho bảng `addresses`
 --
 ALTER TABLE `addresses`
-  MODIFY `address_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=45;
+  MODIFY `address_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=46;
 
 --
 -- AUTO_INCREMENT cho bảng `articles`
@@ -1429,7 +1434,7 @@ ALTER TABLE `carts`
 -- AUTO_INCREMENT cho bảng `cart_items`
 --
 ALTER TABLE `cart_items`
-  MODIFY `cart_item_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=57;
+  MODIFY `cart_item_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=58;
 
 --
 -- AUTO_INCREMENT cho bảng `categories`
@@ -1465,13 +1470,13 @@ ALTER TABLE `notifications`
 -- AUTO_INCREMENT cho bảng `orders`
 --
 ALTER TABLE `orders`
-  MODIFY `order_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=37;
+  MODIFY `order_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=38;
 
 --
 -- AUTO_INCREMENT cho bảng `order_items`
 --
 ALTER TABLE `order_items`
-  MODIFY `order_item_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=47;
+  MODIFY `order_item_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=49;
 
 --
 -- AUTO_INCREMENT cho bảng `payments`
@@ -1525,7 +1530,7 @@ ALTER TABLE `service_requests`
 -- AUTO_INCREMENT cho bảng `users`
 --
 ALTER TABLE `users`
-  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
+  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
 
 --
 -- AUTO_INCREMENT cho bảng `variant_images`

@@ -103,7 +103,7 @@ export const adminSignIn = async(req,res)=>{
         const sessionToken = crypto.randomBytes(32).toString('hex');
         await User.updateSessionToken(admin.user_id, sessionToken);
 
-        res.cookie('session_token', sessionToken, {
+        res.cookie('admin_session_token', sessionToken, {
             httpOnly: true,
             secure: false,
             sameSite: 'strict',
@@ -150,7 +150,7 @@ export const signIn = async(req,res)=>{
         const sessionToken = crypto.randomBytes(32).toString('hex');
         await User.updateSessionToken(user.user_id, sessionToken);
 
-        res.cookie('session_token', sessionToken, {
+        res.cookie('user_session_token', sessionToken, {
             httpOnly: true,
             secure: false,
             sameSite: 'strict',
@@ -173,33 +173,36 @@ export const signIn = async(req,res)=>{
 
 export const signOut = async(req,res)=>{
     try {
-        // Lấy session token từ cookie
-        const sessionToken = req.cookies.session_token;
+        // Lấy session token từ cookie (kiểm tra cả admin và user)
+        const adminToken = req.cookies.admin_session_token;
+        const userToken = req.cookies.user_session_token;
+        const sessionToken = adminToken || userToken;
         
         if (!sessionToken) {
-            return res.status(400).json({
-                success: false,
-                message: "Không tìm thấy phiên đăng nhập"
+            // Vẫn xóa cookies để đảm bảo đăng xuất thành công
+            res.clearCookie('admin_session_token');
+            res.clearCookie('user_session_token');
+            return res.json({
+                success: true,
+                message: "Đăng xuất thành công"
             });
         }
 
         // Tìm user bằng session token
         const user = await User.findBySessionToken(sessionToken);
         
-        if (!user) {
-            // Xóa cookie ngay cả khi không tìm thấy user
-            res.clearCookie('session_token');
-            return res.status(400).json({
-                success: false,
-                message: "Phiên đăng nhập không hợp lệ"
-            });
+        if (user) {
+            // Xóa session token trong database
+            await User.clearSessionToken(user.user_id);
         }
 
-        // Xóa session token trong database
-        await User.clearSessionToken(user.user_id);
-
-        // Xóa cookie
-        res.clearCookie('session_token');
+        // Xóa cookie tương ứng
+        if (adminToken) {
+            res.clearCookie('admin_session_token');
+        }
+        if (userToken) {
+            res.clearCookie('user_session_token');
+        }
 
         return res.json({
             success: true,
@@ -217,16 +220,22 @@ export const signOut = async(req,res)=>{
 
 export const getMe = async (req, res) => {
     try {
-        const sessionToken = req.cookies?.session_token;
+        // Kiểm tra cả 2 loại cookie
+        const adminToken = req.cookies?.admin_session_token;
+        const userToken = req.cookies?.user_session_token;
+        const sessionToken = adminToken || userToken;
+        
         if (!sessionToken) {
             return res.status(401).json({ success: false, message: 'Chưa đăng nhập' });
         }
+        
         const user = await User.findBySessionToken(sessionToken);
         if (!user) {
             return res.status(401).json({ success: false, message: 'Phiên đăng nhập không hợp lệ' });
         }
         if (!user.is_active) {
-            res.clearCookie('session_token');
+            res.clearCookie('admin_session_token');
+            res.clearCookie('user_session_token');
             return res.status(403).json({ success: false, message: 'Tài khoản đã bị vô hiệu hóa' });
         }
         return res.json({ success: true, user: {
@@ -238,6 +247,87 @@ export const getMe = async (req, res) => {
         }});
     } catch (error) {
         console.error('Error getting me:', error);
+        return res.status(500).json({ success: false, message: 'Lỗi lấy thông tin người dùng' });
+    }
+};
+
+// Endpoint riêng cho admin
+export const getAdminMe = async (req, res) => {
+    try {
+        const adminToken = req.cookies?.admin_session_token;
+        
+        if (!adminToken) {
+            return res.status(401).json({ success: false, message: 'Chưa đăng nhập admin' });
+        }
+        
+        const user = await User.findBySessionToken(adminToken);
+        if (!user) {
+            return res.status(401).json({ success: false, message: 'Phiên đăng nhập không hợp lệ' });
+        }
+        
+        // Kiểm tra có phải admin không
+        if (user.role !== 2) {
+            return res.status(403).json({ success: false, message: 'Không có quyền admin' });
+        }
+        
+        if (!user.is_active) {
+            res.clearCookie('admin_session_token');
+            return res.status(403).json({ success: false, message: 'Tài khoản đã bị vô hiệu hóa' });
+        }
+        
+        return res.json({ success: true, user: {
+            user_id: user.user_id,
+            username: user.username,
+            email: user.email,
+            role: user.role,
+            is_active: user.is_active,
+        }});
+    } catch (error) {
+        console.error('Error getting admin me:', error);
+        return res.status(500).json({ success: false, message: 'Lỗi lấy thông tin admin' });
+    }
+};
+
+// Endpoint riêng cho user
+export const getUserMe = async (req, res) => {
+    try {
+        console.log('getUserMe - Cookies received:', req.cookies);
+        const userToken = req.cookies?.user_session_token;
+        
+        if (!userToken) {
+            console.log('getUserMe - No user_session_token found');
+            return res.status(401).json({ success: false, message: 'Chưa đăng nhập' });
+        }
+        
+        console.log('getUserMe - Found user_session_token:', userToken);
+        const user = await User.findBySessionToken(userToken);
+        if (!user) {
+            console.log('getUserMe - No user found for token');
+            return res.status(401).json({ success: false, message: 'Phiên đăng nhập không hợp lệ' });
+        }
+        
+        console.log('getUserMe - Found user:', user.user_id, user.username, 'role:', user.role);
+        
+        if (!user.is_active) {
+            res.clearCookie('user_session_token');
+            return res.status(403).json({ success: false, message: 'Tài khoản đã bị vô hiệu hóa' });
+        }
+        
+        // Chỉ trả về nếu là user (role = 0), không trả về admin
+        if (user.role !== 0) {
+            console.log('getUserMe - User has admin role, rejecting');
+            return res.status(403).json({ success: false, message: 'Tài khoản này không phải user' });
+        }
+        
+        return res.json({ success: true, user: {
+            user_id: user.user_id,
+            username: user.username,
+            email: user.email,
+            role: user.role,
+            is_active: user.is_active,
+        }});
+    } catch (error) {
+        console.error('Error getting user me:', error);
         return res.status(500).json({ success: false, message: 'Lỗi lấy thông tin người dùng' });
     }
 };

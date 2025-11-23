@@ -2,7 +2,11 @@ import User from '../models/User.js';
 
 export const requireAuth = async (req, res, next) => {
     try {
-        const sessionToken = req.cookies?.session_token;
+        // Kiểm tra cả 2 loại cookie
+        const adminToken = req.cookies?.admin_session_token;
+        const userToken = req.cookies?.user_session_token;
+        const sessionToken = adminToken || userToken;
+        
         if (!sessionToken) {
             return res.status(401).json({ success: false, message: 'Chưa đăng nhập' });
         }
@@ -13,7 +17,8 @@ export const requireAuth = async (req, res, next) => {
         }
         
         if (!user.is_active) {
-            res.clearCookie('session_token');
+            res.clearCookie('admin_session_token');
+            res.clearCookie('user_session_token');
             return res.status(403).json({ success: false, message: 'Tài khoản đã bị vô hiệu hóa' });
         }
         

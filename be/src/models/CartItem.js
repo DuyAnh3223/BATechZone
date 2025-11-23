@@ -391,4 +391,4 @@ class CartItem {
   }
 }
 
-export default new CartItem();
+export default CartItem;

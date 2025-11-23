@@ -12,7 +12,8 @@ export const addToCart = async (req, res) => {
       });
     }
 
-    const result = await CartItem.add(cartId, variantId, quantity || 1);
+    const cartItem = new CartItem();
+    const result = await cartItem.add(cartId, variantId, quantity || 1);
 
     res.status(201).json({
       success: true,
@@ -41,7 +42,8 @@ export const updateCartItemQuantity = async (req, res) => {
       });
     }
 
-    const success = await CartItem.updateQuantity(id, quantity);
+    const cartItem = new CartItem();
+    const success = await cartItem.updateQuantity(id, quantity);
 
     if (!success) {
       return res.status(404).json({
@@ -68,7 +70,8 @@ export const removeCartItem = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const success = await CartItem.remove(id);
+    const cartItem = new CartItem();
+    const success = await cartItem.remove(id);
 
     if (!success) {
       return res.status(404).json({
@@ -96,7 +99,8 @@ export const removeCartItemByVariant = async (req, res) => {
   try {
     const { cartId, variantId } = req.params;
 
-    const success = await CartItem.removeByVariant(cartId, variantId);
+    const cartItem = new CartItem();
+    const success = await cartItem.removeByVariant(cartId, variantId);
 
     if (!success) {
       return res.status(404).json({
@@ -124,7 +128,8 @@ export const getCartItemById = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const item = await CartItem.getById(id);
+    const cartItem = new CartItem();
+    const item = await cartItem.getById(id);
 
     if (!item) {
       return res.status(404).json({
@@ -152,7 +157,8 @@ export const getCartItems = async (req, res) => {
   try {
     const { cartId } = req.params;
 
-    const items = await CartItem.getByCartId(cartId);
+    const cartItem = new CartItem();
+    const items = await cartItem.getByCartId(cartId);
 
     res.json({
       success: true,
@@ -173,7 +179,8 @@ export const checkCartItemExists = async (req, res) => {
   try {
     const { cartId, variantId } = req.params;
 
-    const exists = await CartItem.exists(cartId, variantId);
+    const cartItem = new CartItem();
+    const exists = await cartItem.exists(cartId, variantId);
 
     res.json({
       success: true,
@@ -194,7 +201,8 @@ export const getCartItemQuantity = async (req, res) => {
   try {
     const { cartId, variantId } = req.params;
 
-    const quantity = await CartItem.getQuantity(cartId, variantId);
+    const cartItem = new CartItem();
+    const quantity = await cartItem.getQuantity(cartId, variantId);
 
     res.json({
       success: true,
@@ -215,7 +223,8 @@ export const countCartItems = async (req, res) => {
   try {
     const { cartId } = req.params;
 
-    const count = await CartItem.count(cartId);
+    const cartItem = new CartItem();
+    const count = await cartItem.count(cartId);
 
     res.json({
       success: true,
@@ -237,7 +246,8 @@ export const incrementCartItem = async (req, res) => {
     const { id } = req.params;
     const { amount } = req.body;
 
-    await CartItem.increment(id, amount || 1);
+    const cartItem = new CartItem();
+    await cartItem.increment(id, amount || 1);
 
     res.json({
       success: true,
@@ -258,7 +268,8 @@ export const decrementCartItem = async (req, res) => {
     const { id } = req.params;
     const { amount } = req.body;
 
-    await CartItem.decrement(id, amount || 1);
+    const cartItem = new CartItem();
+    await cartItem.decrement(id, amount || 1);
 
     res.json({
       success: true,
@@ -278,7 +289,8 @@ export const removeInvalidCartItems = async (req, res) => {
   try {
     const { cartId } = req.params;
 
-    const deletedCount = await CartItem.removeInvalidItems(cartId);
+    const cartItem = new CartItem();
+    const deletedCount = await cartItem.removeInvalidItems(cartId);
 
     res.json({
       success: true,
@@ -300,7 +312,8 @@ export const adjustCartItemsToStock = async (req, res) => {
   try {
     const { cartId } = req.params;
 
-    const adjustedCount = await CartItem.adjustToStock(cartId);
+    const cartItem = new CartItem();
+    const adjustedCount = await cartItem.adjustToStock(cartId);
 
     res.json({
       success: true,
@@ -322,7 +335,8 @@ export const getCartItemsForCheckout = async (req, res) => {
   try {
     const { cartId } = req.params;
 
-    const items = await CartItem.getItemsForCheckout(cartId);
+    const cartItem = new CartItem();
+    const items = await cartItem.getItemsForCheckout(cartId);
 
     res.json({
       success: true,
@@ -350,7 +364,8 @@ export const bulkAddToCart = async (req, res) => {
       });
     }
 
-    await CartItem.bulkAdd(cartId, items);
+    const cartItem = new CartItem();
+    await cartItem.bulkAdd(cartId, items);
 
     res.status(201).json({
       success: true,
@@ -377,7 +392,8 @@ export const transferCartItems = async (req, res) => {
       });
     }
 
-    const transferredCount = await CartItem.transferItems(fromCartId, toCartId);
+    const cartItem = new CartItem();
+    const transferredCount = await cartItem.transferItems(fromCartId, toCartId);
 
     res.json({
       success: true,

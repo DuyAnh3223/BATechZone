@@ -2,11 +2,26 @@ import User from '../models/User.js';
 
 export const getProfile = async (req, res) => {
     try {
-        const userId = req.user.user_id;
-        const user = await User.findById(userId);
+        // Chỉ chấp nhận user_session_token, không chấp nhận admin token
+        const userToken = req.cookies?.user_session_token;
         
+        if (!userToken) {
+            return res.status(401).json({ success: false, message: 'Chưa đăng nhập' });
+        }
+        
+        const user = await User.findBySessionToken(userToken);
         if (!user) {
-            return res.status(404).json({ success: false, message: 'Không tìm thấy người dùng' });
+            return res.status(401).json({ success: false, message: 'Phiên đăng nhập không hợp lệ' });
+        }
+        
+        // Chỉ cho phép user (role = 0), không cho phép admin
+        if (user.role !== 0) {
+            return res.status(403).json({ success: false, message: 'Tài khoản này không phải user' });
+        }
+        
+        if (!user.is_active) {
+            res.clearCookie('user_session_token');
+            return res.status(403).json({ success: false, message: 'Tài khoản đã bị vô hiệu hóa' });
         }
         
         return res.json({ success: true, data: user.toJSON() });
@@ -18,13 +33,30 @@ export const getProfile = async (req, res) => {
 
 export const updateProfile = async (req, res) => {
     try {
-        const userId = req.user.user_id;
-        const { full_name, phone, email } = req.body;
+        // Chỉ chấp nhận user_session_token
+        const userToken = req.cookies?.user_session_token;
         
-        const user = await User.findById(userId);
-        if (!user) {
-            return res.status(404).json({ success: false, message: 'Không tìm thấy người dùng' });
+        if (!userToken) {
+            return res.status(401).json({ success: false, message: 'Chưa đăng nhập' });
         }
+        
+        const user = await User.findBySessionToken(userToken);
+        if (!user) {
+            return res.status(401).json({ success: false, message: 'Phiên đăng nhập không hợp lệ' });
+        }
+        
+        // Chỉ cho phép user (role = 0)
+        if (user.role !== 0) {
+            return res.status(403).json({ success: false, message: 'Tài khoản này không phải user' });
+        }
+        
+        if (!user.is_active) {
+            res.clearCookie('user_session_token');
+            return res.status(403).json({ success: false, message: 'Tài khoản đã bị vô hiệu hóa' });
+        }
+        
+        const userId = user.user_id;
+        const { full_name, phone, email } = req.body;
         
         // Validation
         if (email) {
