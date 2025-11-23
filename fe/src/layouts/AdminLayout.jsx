@@ -1,6 +1,7 @@
-import React from "react";
-import { Outlet, NavLink } from "react-router-dom";
-import { User2, Home, Box, ShoppingCart, ListOrdered, Percent, Bell, Search, Users, Star, MapPin, Wrench, Tags, Book, Heart, CreditCard, LifeBuoy, Eye } from "lucide-react";
+import React, { useEffect } from "react";
+import { Outlet, NavLink, useNavigate } from "react-router-dom";
+import { User2, Home, Box, ShoppingCart, ListOrdered, Percent, Bell, Search, Users, Star, MapPin, Wrench, Tags, Book, Heart, CreditCard, LifeBuoy, Eye, LogOut } from "lucide-react";
+import { useAdminAuthStore } from "@/stores/useAdminAuthStore";
 import adminAvatar from "../assets/react.svg"; // dùng tạm hình có sẵn
 
 const menu = [
@@ -18,6 +19,40 @@ const menu = [
 ];
 
 const AdminLayout = () => {
+  const navigate = useNavigate();
+  const { user, loading, checkAuth, signOut } = useAdminAuthStore();
+
+  useEffect(() => {
+    checkAuth();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Chỉ chạy 1 lần khi mount
+
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate('/admin/login');
+    }
+  }, [loading, user, navigate]);
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/admin/login');
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Đang tải...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null;
+  }
+
   return (
     <div className="flex min-h-screen bg-blue-100">
       {/* Sidebar */}
@@ -58,9 +93,16 @@ const AdminLayout = () => {
             <div className="flex items-center gap-3 border-l pl-4">
               <img src={adminAvatar} alt="Avatar" className="w-9 h-9 rounded-full border border-blue-200 bg-white shadow" />
               <div className="text-right">
-                <div className="font-semibold text-gray-700">Admin</div>
+                <div className="font-semibold text-gray-700">{user?.username || 'Admin'}</div>
                 <div className="text-xs text-gray-400">Quản trị viên</div>
               </div>
+              <button 
+                onClick={handleSignOut}
+                className="ml-2 p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+                title="Đăng xuất"
+              >
+                <LogOut size={18} />
+              </button>
             </div>
           </div>
         </header>

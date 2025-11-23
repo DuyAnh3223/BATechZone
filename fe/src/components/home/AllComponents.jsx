@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useCartStore } from '@/stores/useCartStore';
 import { useCartItemStore } from '@/stores/useCartItemStore';
-import { useAuthStore } from '@/stores/useAuthStore';
+import { useUserAuthStore } from '@/stores/useUserAuthStore';
 import { useVariantStore } from '@/stores/useVariantStore';
 
 const AllComponents = () => {
@@ -18,7 +18,7 @@ const AllComponents = () => {
   const carouselRef = useRef(null);
   const { getOrCreateCart } = useCartStore();
   const { addToCart } = useCartItemStore();
-  const { user } = useAuthStore();
+  const { user } = useUserAuthStore();
   const { fetchVariantsByProductId } = useVariantStore();
 
   // Fetch all active products directly from service
@@ -132,6 +132,8 @@ const AllComponents = () => {
       toast.success('Đã thêm sản phẩm vào giỏ hàng');
     } catch (error) {
       console.error('Error adding to cart:', error);
+      console.error('Error response:', error.response?.data);
+      console.error('Error status:', error.response?.status);
       toast.error(error.response?.data?.message || 'Không thể thêm vào giỏ hàng');
     }
   };

@@ -5,7 +5,7 @@ import { ShoppingCart, Package } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCartStore } from '@/stores/useCartStore';
 import { useCartItemStore } from '@/stores/useCartItemStore';
-import { useAuthStore } from '@/stores/useAuthStore';
+import { useUserAuthStore } from '@/stores/useUserAuthStore';
 import { useVariantStore } from '@/stores/useVariantStore';
 import { useState, useEffect } from 'react';
 
@@ -22,7 +22,7 @@ const toAbsoluteUrl = (url) => {
 const ProductCard = ({ product }) => {
   const { getOrCreateCart } = useCartStore();
   const { addToCart } = useCartItemStore();
-  const { user } = useAuthStore();
+  const { user } = useUserAuthStore();
   const { fetchVariantsByProductId, fetchVariantImages } = useVariantStore();
   const [variantImages, setVariantImages] = useState([]);
   const [loadingImages, setLoadingImages] = useState(false);

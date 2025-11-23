@@ -7,7 +7,7 @@ import { useProductStore } from "@/stores/useProductStore";
 import { useVariantStore } from "@/stores/useVariantStore";
 import { useCartStore } from "@/stores/useCartStore";
 import { useCartItemStore } from "@/stores/useCartItemStore";
-import { useAuthStore } from "@/stores/useAuthStore";
+import { useUserAuthStore } from "@/stores/useUserAuthStore";
 import { toast } from "sonner";
 import ProductImage from "@/components/product/ProductImage";
 import ProductInfo from "@/components/product/ProductInfo";
@@ -26,7 +26,7 @@ const ProductDetail = () => {
   const { variants, loading: loadingVariants, fetchVariantsByProductId, fetchVariantImages, variantImages } = useVariantStore();
   const { getOrCreateCart } = useCartStore();
   const { addToCart } = useCartItemStore();
-  const { user } = useAuthStore();
+  const { user } = useUserAuthStore();
   const [quantity, setQuantity] = useState(1);
   const [selectedVariant, setSelectedVariant] = useState(null);
 

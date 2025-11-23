@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect } from 'react';
-import { useAuthStore } from '@/stores/useAuthStore';
+import { useUserAuthStore } from '@/stores/useUserAuthStore';
 
 const AuthContext = createContext();
 
@@ -12,22 +12,18 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }) => {
-    const user = useAuthStore((state) => state.user);
-    const loading = useAuthStore((state) => state.loading);
-    const checkAuth = useAuthStore((state) => state.checkAuth);
-    const storeSignIn = useAuthStore((state) => state.signIn);
-    const storeAdminSignIn = useAuthStore((state) => state.adminSignIn);
-    const storeSignUp = useAuthStore((state) => state.signUp);
-    const storeSignOut = useAuthStore((state) => state.signOut);
-    const storeUpdateProfile = useAuthStore((state) => state.updateProfile);
+    const user = useUserAuthStore((state) => state.user);
+    const loading = useUserAuthStore((state) => state.loading);
+    const checkAuth = useUserAuthStore((state) => state.checkAuth);
+    const storeSignIn = useUserAuthStore((state) => state.signIn);
+    const storeSignUp = useUserAuthStore((state) => state.signUp);
+    const storeSignOut = useUserAuthStore((state) => state.signOut);
+    const storeUpdateProfile = useUserAuthStore((state) => state.updateProfile);
 
     useEffect(() => {
         checkAuth();
-    }, [checkAuth]);
-
-    const adminLogin = async ({ username, password }) => {
-        return storeAdminSignIn(username, password);
-    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []); // Chỉ chạy 1 lần khi mount
 
     const login = async ({ email, password }) => {
         return storeSignIn(email, password);
@@ -46,7 +42,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ user, loading, adminLogin, login, register, logout, updateProfile }}>
+        <AuthContext.Provider value={{ user, loading, login, register, logout, updateProfile }}>
             {children}
         </AuthContext.Provider>
     );

@@ -24,7 +24,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { ShoppingCart, CreditCard, ArrowLeft } from 'lucide-react';
 import { useCartItemStore } from '@/stores/useCartItemStore';
 import { useOrderStore } from '@/stores/useOrderStore';
-import { useAuth } from '@/context/AuthContext';
+import { useUserAuthStore } from '@/stores/useUserAuthStore';
 import { toast } from 'sonner';
 
 // Base URL for serving uploads
@@ -43,7 +43,7 @@ import { provinces, districtsByProvince } from './constants';
 const InstallmentCheckoutPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useAuth();
+  const { user } = useUserAuthStore();
   const { cartItems, reset: resetCartItems } = useCartItemStore();
   const { createOrder, loading: orderLoading } = useOrderStore();
   const [isSubmitting, setIsSubmitting] = useState(false);

@@ -10,13 +10,13 @@ import {
   ArrowLeft
 } from "lucide-react";
 import { useOrderStore } from "@/stores/useOrderStore";
-import { useAuthStore } from "@/stores/useAuthStore";
+import { useUserAuthStore } from "@/stores/useUserAuthStore";
 import { toast } from "sonner";
 import { translateOrderStatus } from "@/utils/statusTranslations";
 
 const Orders = () => {
   const navigate = useNavigate();
-  const { user } = useAuthStore();
+  const { user } = useUserAuthStore();
   const { orders, pagination, loading, fetchOrders } = useOrderStore();
   const [page, setPage] = useState(1);
   const [pageSize] = useState(10);

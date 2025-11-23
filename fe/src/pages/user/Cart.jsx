@@ -15,7 +15,7 @@ import { MinusIcon, PlusIcon, Trash2Icon, ShoppingCart } from "lucide-react";
 import { Link } from "react-router";
 import { useCartStore } from "@/stores/useCartStore";
 import { useCartItemStore } from "@/stores/useCartItemStore";
-import { useAuthStore } from "@/stores/useAuthStore";
+import { useUserAuthStore } from "@/stores/useUserAuthStore";
 import { couponService } from "@/services/couponService";
 import { toast } from "sonner";
 import { X, Tag } from "lucide-react";
@@ -32,7 +32,7 @@ const toAbsoluteUrl = (url) => {
 
 const Cart = () => {
   const navigate = useNavigate();
-  const { user } = useAuthStore();
+  const { user } = useUserAuthStore();
   const { getOrCreateCart, cart } = useCartStore();
   const { 
     cartItems, 

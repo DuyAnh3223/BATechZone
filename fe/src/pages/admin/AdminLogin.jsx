@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { useAuth } from '../../context/AuthContext';
+import { useAdminAuthStore } from '@/stores/useAdminAuthStore';
 import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Shield, User2, Lock, Eye, EyeOff, BarChart3 } from 'lucide-react';
 
 const AdminLogin = () => {
-	const { adminLogin } = useAuth();
+	const { adminSignIn } = useAdminAuthStore();
 	const navigate = useNavigate();
 	const [username, setUsername] = useState('');
 	const [password, setPassword] = useState('');
@@ -16,13 +16,9 @@ const AdminLogin = () => {
 		e.preventDefault();
 		try {
 			setIsSubmitting(true);
-			// Đảm bảo gửi đúng format mà API yêu cầu
-			await adminLogin({ 
-				username: username,  // Gửi đúng tên trường là 'username'
-				password: password
-			});
+			await adminSignIn(username, password);
 			toast.success('Đăng nhập admin thành công');
-			navigate('/admin/dashboard'); // <-- chuyển về dashboard admin
+			navigate('/admin/dashboard');
 		} catch (err) {
 			toast.error(err.message || 'Đăng nhập thất bại');
 		} finally {

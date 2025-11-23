@@ -2,7 +2,7 @@ import { Outlet, useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import { useState, useEffect, useCallback } from 'react';
 import { ShoppingCart, Cpu, User, Menu, X, Search, LogIn, LogOut, ChevronRight, Bell, Tag, Copy, Check } from "lucide-react";
-import { useAuth } from '@/context/AuthContext';
+import { useUserAuthStore } from '@/stores/useUserAuthStore';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -32,7 +32,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 const UserLayout = () => {
-  const { user, logout } = useAuth();
+  const { user, loading: authLoading, checkAuth, signOut } = useUserAuthStore();
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -49,6 +49,12 @@ const UserLayout = () => {
   // Coupon dialog state
   const [isCouponDialogOpen, setIsCouponDialogOpen] = useState(false);
   const [copiedCouponCode, setCopiedCouponCode] = useState(null);
+
+  // Check auth khi mount
+  useEffect(() => {
+    checkAuth();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Chỉ chạy 1 lần khi mount
 
   // Load active coupons when dialog opens
   useEffect(() => {
@@ -157,7 +163,10 @@ const UserLayout = () => {
         try {
           await fetchNotifications({ limit: 10, page: 1 });
         } catch (error) {
-          console.error('Failed to load notifications:', error);
+          // Silently ignore 404 error if notification API not implemented yet
+          if (error.response?.status !== 404) {
+            console.error('Failed to load notifications:', error);
+          }
         }
       };
       loadNotifications();
@@ -169,7 +178,7 @@ const UserLayout = () => {
 
   const handleLogout = async () => {
     try {
-      await logout();
+      await signOut();
       navigate('/');
     } catch (error) {
       console.error('Logout error:', error);

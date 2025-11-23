@@ -41,7 +41,7 @@ const toAbsoluteUrl = (url) => {
 import { Link, useNavigate } from "react-router";
 import { useCartStore } from "@/stores/useCartStore";
 import { useCartItemStore } from "@/stores/useCartItemStore";
-import { useAuthStore } from "@/stores/useAuthStore";
+import { useUserAuthStore } from "@/stores/useUserAuthStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { couponService } from "@/services/couponService";
 import { toast } from "sonner";
@@ -50,7 +50,7 @@ import { X, Tag } from "lucide-react";
 
 const Checkout = () => {
   const navigate = useNavigate();
-  const { user } = useAuthStore();
+  const { user } = useUserAuthStore();
   const { getOrCreateCart, cart, clearCart } = useCartStore();
   const { 
     cartItems, 

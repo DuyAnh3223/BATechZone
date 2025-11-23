@@ -42,7 +42,7 @@ import { toast } from "sonner";
 import api from "@/lib/axios";
 import { useUserAddressStore } from "@/stores/useAddressStore";
 import { useOrderStore } from "@/stores/useOrderStore";
-import { useAuth } from "@/context/AuthContext";
+import { useUserAuthStore } from "@/stores/useUserAuthStore";
 import InstallmentsTab from "./InstallmentsTab";
 import {
   Dialog,
@@ -213,7 +213,7 @@ const Profile = () => {
   const [isSubmittingAddress, setIsSubmittingAddress] = useState(false);
 
   // Order states
-  const { user } = useAuth();
+  const { user } = useUserAuthStore();
   const { orders, loading: ordersLoading, fetchOrders, fetchOrderById, cancelOrder } = useOrderStore();
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [isOrderDetailOpen, setIsOrderDetailOpen] = useState(false);

@@ -33,7 +33,7 @@ import {
 import { useCartItemStore } from '@/stores/useCartItemStore';
 import { useCartStore } from '@/stores/useCartStore';
 import { useOrderStore } from '@/stores/useOrderStore';
-import { useAuth } from '@/context/AuthContext';
+import { useUserAuthStore } from '@/stores/useUserAuthStore';
 import { toast } from 'sonner';
 
 // Base URL for serving uploads
@@ -96,7 +96,7 @@ const districtsByProvince = {
 
 const Installment = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user } = useUserAuthStore();
   const { cartItems, reset: resetCartItems } = useCartItemStore();
   const { cart } = useCartStore();
 

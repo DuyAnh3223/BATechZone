@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { useAuthStore } from '@/stores/useAuthStore';
+import { useUserAuthStore } from '@/stores/useUserAuthStore';
 import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Mail, Phone, Lock, Eye, EyeOff, ShieldCheck, ShoppingBag } from 'lucide-react';
 
 const Login = () => {
-	const { signIn } = useAuthStore();
+	const { signIn } = useUserAuthStore();
 	const navigate = useNavigate();
 	const [tab, setTab] = useState('email');
 	const [emailOrUsername, setEmailOrUsername] = useState('');

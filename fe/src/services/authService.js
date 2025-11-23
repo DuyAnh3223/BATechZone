@@ -1,9 +1,21 @@
 import api from '@/lib/axios';
 
 export const authService = {
-    // Kiểm tra trạng thái đăng nhập
+    // Kiểm tra trạng thái đăng nhập (dùng chung)
     checkAuth: async () => {
         const response = await api.get('/auth/me');
+        return response.data;
+    },
+
+    // Kiểm tra trạng thái đăng nhập admin
+    checkAdminAuth: async () => {
+        const response = await api.get('/auth/admin/me');
+        return response.data;
+    },
+
+    // Kiểm tra trạng thái đăng nhập user
+    checkUserAuth: async () => {
+        const response = await api.get('/auth/user/me');
         return response.data;
     },
 
