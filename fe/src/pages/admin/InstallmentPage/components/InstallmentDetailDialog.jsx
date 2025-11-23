@@ -4,6 +4,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -27,12 +28,14 @@ const InstallmentDetailDialog = ({ installment, open, onClose }) => {
   const { 
     fetchInstallmentById, 
     fetchPaymentSummary,
+    updateInstallment,
     currentInstallment,
     paymentSummary,
     loading 
   } = useInstallmentStore();
 
   const [activeTab, setActiveTab] = useState('info');
+  const [isUpdating, setIsUpdating] = useState(false);
 
   useEffect(() => {
     if (open && installment) {
@@ -73,6 +76,48 @@ const InstallmentDetailDialog = ({ installment, open, onClose }) => {
     toast.info('Chức năng xuất hợp đồng đang được phát triển');
   };
 
+  const handleApprove = async () => {
+    if (!currentInstallment) return;
+    
+    setIsUpdating(true);
+    try {
+      await updateInstallment(currentInstallment.installment_id, { 
+        status: 'approved' 
+      });
+      toast.success('Đã duyệt hợp đồng trả góp');
+      
+      // Close dialog without reloading - parent will reload list
+      onClose();
+    } catch (error) {
+      console.error('Error approving installment:', error);
+      // Vẫn đóng dialog vì update có thể đã thành công
+      onClose();
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleReject = async () => {
+    if (!currentInstallment) return;
+    
+    setIsUpdating(true);
+    try {
+      await updateInstallment(currentInstallment.installment_id, { 
+        status: 'cancelled' 
+      });
+      toast.success('Đã từ chối hợp đồng trả góp');
+      
+      // Close dialog without reloading - parent will reload list
+      onClose();
+    } catch (error) {
+      console.error('Error rejecting installment:', error);
+      // Vẫn đóng dialog vì update có thể đã thành công
+      onClose();
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   if (!currentInstallment || !paymentSummary) {
     return null;
   }
@@ -85,11 +130,16 @@ const InstallmentDetailDialog = ({ installment, open, onClose }) => {
         <DialogHeader>
           <DialogTitle className="flex items-center justify-between">
             <span>Chi tiết hợp đồng trả góp #{installment.installment_id}</span>
-            <Button variant="outline" size="sm" onClick={handleExportContract}>
-              <Download className="w-4 h-4 mr-2" />
-              Xuất HĐ
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={handleExportContract}>
+                <Download className="w-4 h-4 mr-2" />
+                Xuất HĐ
+              </Button>
+            </div>
           </DialogTitle>
+          <DialogDescription className="sr-only">
+            Xem chi tiết thông tin hợp đồng trả góp, lịch thanh toán và tổng hợp
+          </DialogDescription>
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -120,14 +170,42 @@ const InstallmentDetailDialog = ({ installment, open, onClose }) => {
                     <div className="mt-1">
                       <Badge className={
                         currentInstallment.status === 'completed' ? 'bg-green-100 text-green-800' :
+                        currentInstallment.status === 'approved' ? 'bg-emerald-100 text-emerald-800' :
                         currentInstallment.status === 'active' ? 'bg-blue-100 text-blue-800' :
                         currentInstallment.status === 'cancelled' ? 'bg-gray-100 text-gray-800' :
                         'bg-yellow-100 text-yellow-800'
                       }>
                         {currentInstallment.status === 'completed' ? 'Hoàn thành' :
+                         currentInstallment.status === 'approved' ? 'Đã duyệt' :
                          currentInstallment.status === 'active' ? 'Đang trả' :
                          currentInstallment.status === 'cancelled' ? 'Đã hủy' : 'Chờ duyệt'}
                       </Badge>
+                      
+                      {/* Action buttons below status */}
+                      {currentInstallment?.status === 'pending' && (
+                        <div className="flex gap-2 mt-2">
+                          <Button 
+                            variant="default" 
+                            size="sm" 
+                            onClick={handleApprove}
+                            disabled={isUpdating}
+                            className="bg-green-600 hover:bg-green-700 h-7 text-xs"
+                          >
+                            <CheckCircle className="w-3 h-3 mr-1" />
+                            Duyệt
+                          </Button>
+                          <Button 
+                            variant="destructive" 
+                            size="sm" 
+                            onClick={handleReject}
+                            disabled={isUpdating}
+                            className="h-7 text-xs"
+                          >
+                            <XCircle className="w-3 h-3 mr-1" />
+                            Từ chối
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

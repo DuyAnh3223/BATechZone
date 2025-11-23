@@ -104,22 +104,40 @@ class Installment {
     static async update(id, newData)
     {
         try {
-            const {
-                installment_id, 
-                order_id, 
-                user_id, 
-                total_amount, 
-                down_payment, 
-                num_terms, 
-                monthly_payment, 
-                interest_rate, 
-                start_date, 
-                end_date, 
-                status
-            } = newData;
-            const [result] = await query(
-                `UPDATE installments SET ? WHERE installment_id = ?`, [newData, id]
+            // Validate input
+            if (!newData || typeof newData !== 'object') {
+                throw new Error('MODEL newData phải là object');
+            }
+
+            // Xóa các field không được phép update
+            const { installment_id, created_at, ...updateFields } = newData;
+            
+            // Kiểm tra có field nào để update không
+            if (Object.keys(updateFields).length === 0) {
+                throw new Error('MODEL Không có field nào để update');
+            }
+            
+            // Build SET clause động
+            const setClause = Object.keys(updateFields)
+                .map(key => `${key} = ?`)
+                .join(', ');
+            
+            const values = Object.values(updateFields);
+            
+            console.log('MODEL: Building query with:', { 
+                setClause, 
+                values, 
+                valuesType: typeof values,
+                isArray: Array.isArray(values),
+                id 
+            });
+            
+            const result = await query(
+                `UPDATE installments SET ${setClause} WHERE installment_id = ?`, 
+                [...values, id]
             );
+            
+            console.log('MODEL: Query result:', result);
             return result.affectedRows > 0;
                 
         } catch (error) {

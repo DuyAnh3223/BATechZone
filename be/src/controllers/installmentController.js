@@ -304,6 +304,12 @@ export const updateInstallment = async (req, res) => {
         const { installmentId } = req.params;
         const updateData = req.body;
 
+        console.log('CONTROLLER Received update request:', {
+            installmentId,
+            updateData,
+            body: req.body
+        });
+
         if (!installmentId) {
             return res.status(400).json({
                 success: false,
@@ -318,6 +324,8 @@ export const updateInstallment = async (req, res) => {
                 delete updateData[field];
             }
         });
+
+        console.log('CONTROLLER After filtering:', updateData);
 
         const installment = await InstallmentService.updateInstallment(parseInt(installmentId), updateData);
 

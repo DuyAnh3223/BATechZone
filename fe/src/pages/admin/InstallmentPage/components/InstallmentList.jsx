@@ -45,6 +45,7 @@ const InstallmentList = () => {
   const getStatusBadge = (status) => {
     const statusConfig = {
       pending: { label: 'Chờ duyệt', className: 'bg-yellow-100 text-yellow-800' },
+      approved: { label: 'Đã duyệt', className: 'bg-emerald-100 text-emerald-800' },
       active: { label: 'Đang trả', className: 'bg-blue-100 text-blue-800' },
       completed: { label: 'Hoàn thành', className: 'bg-green-100 text-green-800' },
       cancelled: { label: 'Đã hủy', className: 'bg-gray-100 text-gray-800' }
@@ -103,6 +104,7 @@ const InstallmentList = () => {
               <SelectContent>
                 <SelectItem value="all">Tất cả</SelectItem>
                 <SelectItem value="pending">Chờ duyệt</SelectItem>
+                <SelectItem value="approved">Đã duyệt</SelectItem>
                 <SelectItem value="active">Đang trả</SelectItem>
                 <SelectItem value="completed">Hoàn thành</SelectItem>
                 <SelectItem value="cancelled">Đã hủy</SelectItem>
@@ -151,11 +153,11 @@ const InstallmentList = () => {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-500">Hoàn thành</CardTitle>
+            <CardTitle className="text-sm font-medium text-gray-500">Đã duyệt</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              {installmentsList.filter(i => i.status === 'completed').length}
+            <div className="text-2xl font-bold text-emerald-600">
+              {installmentsList.filter(i => i.status === 'approved').length}
             </div>
           </CardContent>
         </Card>
@@ -256,6 +258,8 @@ const InstallmentList = () => {
           onClose={() => {
             setShowDetailDialog(false);
             setSelectedInstallment(null);
+            // Reload list after closing dialog (in case status was updated)
+            loadInstallments();
           }}
         />
       )}

@@ -181,9 +181,14 @@ export const useInstallmentStore = create((set, get) => ({
             const response = await installmentService.updateInstallment(installmentId, data);
             
             if (response.success) {
-                // Refresh current installment
+                // Update local state only, don't fetch again
                 if (get().currentInstallment?.installment_id === installmentId) {
-                    await get().fetchInstallmentById(installmentId);
+                    set(state => ({
+                        currentInstallment: {
+                            ...state.currentInstallment,
+                            ...data
+                        }
+                    }));
                 }
                 
                 toast.success('Cập nhật khoản trả góp thành công');

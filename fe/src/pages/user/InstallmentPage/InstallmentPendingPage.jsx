@@ -5,6 +5,16 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { ShoppingCart, CreditCard, User, Clock, CheckCircle2 } from 'lucide-react';
 
+// Base URL for serving uploads
+const BASE_API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+
+const toAbsoluteUrl = (url) => {
+  if (!url) return url;
+  if (/^https?:\/\//i.test(url)) return url;
+  if (url.startsWith('/uploads')) return `${BASE_API_URL}${url}`;
+  return url;
+};
+
 const InstallmentPendingPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -80,7 +90,7 @@ const InstallmentPendingPage = () => {
             <CardContent>
               <div className="space-y-4">
                 {cartItems?.map((item, index) => {
-                  const imageUrl = item.image_url || item.imageUrl || 'https://via.placeholder.com/80';
+                  const imageUrl = toAbsoluteUrl(item.image_url || item.imageUrl) || null;
                   const productName = item.product_name || item.productName || 'Sản phẩm';
                   const variantName = item.variant_name || item.variantName || '';
                   const price = parseFloat(item.price || 0);
@@ -88,11 +98,21 @@ const InstallmentPendingPage = () => {
 
                   return (
                     <div key={index} className="flex gap-3 pb-4 border-b last:border-0">
-                      <img 
-                        src={imageUrl}
-                        alt={productName}
-                        className="w-20 h-20 object-cover rounded-md border"
-                      />
+                      <div className="relative w-20 h-20 rounded-md border overflow-hidden bg-gray-100">
+                        {imageUrl ? (
+                          <img 
+                            src={imageUrl}
+                            alt={productName}
+                            className="w-20 h-20 object-cover"
+                            onError={(e) => {
+                              e.target.style.display = 'none';
+                            }}
+                          />
+                        ) : null}
+                        <div className={`absolute inset-0 flex items-center justify-center text-xs text-gray-400 ${imageUrl ? 'hidden' : ''}`}>
+                          Không có ảnh
+                        </div>
+                      </div>
                       <div className="flex-1 min-w-0">
                         <h3 className="text-sm font-medium text-gray-900 line-clamp-2">
                           {productName}

@@ -1,5 +1,6 @@
 import Installment from '../models/Installment.js';
 import InstallmentPayment from '../models/InstallmentPayment.js';
+import Order from '../models/Order.js';
 import { query } from '../libs/db.js';
 class InstallmentService {
     /**
@@ -61,7 +62,7 @@ class InstallmentService {
                 interest_rate,
                 start_date,
                 end_date: endDateObj,
-                status: 'pending' // pending, active, completed, cancelled
+                status: 'pending' // pending, approved, active, completed, cancelled
             });
 
             // Tạo các kỳ thanh toán
@@ -300,22 +301,58 @@ class InstallmentService {
      */
     async updateInstallment(installmentId, updateData) {
         try {
+            console.log('SERVICE updateInstallment called with:', { installmentId, updateData });
+            
             const installment = await Installment.findInstallmentById(installmentId);
             if (!installment) {
                 throw new Error('SERVICE Không tìm thấy khoản trả góp');
             }
 
-            const updated = await Installment.update(installmentId, {
-                ...installment,
-                ...updateData
-            });
+            console.log('SERVICE Found installment:', installment);
+
+            // Chỉ pass updateData, không spread installment (vì là class instance)
+            const updated = await Installment.update(installmentId, updateData);
+
+            console.log('SERVICE Update result:', updated);
 
             if (!updated) {
                 throw new Error('SERVICE Không thể cập nhật khoản trả góp');
             }
 
-            return await Installment.findInstallmentById(installmentId);
+            // Nếu status được đổi thành 'approved', cập nhật order status thành 'processing'
+            if (updateData.status === 'approved') {
+                try {
+                    const orderData = await Order.getById(installment.order_id);
+                    if (orderData) {
+                        // Create Order instance from plain object
+                        const order = new Order(orderData);
+                        console.log(`SERVICE: Found order ${order.orderId} with status '${order.orderStatus}'`);
+                        
+                        // Update order sang 'processing' nếu đang ở 'pending' hoặc 'confirmed'
+                        if (order.orderStatus === 'pending' || order.orderStatus === 'confirmed') {
+                            // Nếu pending, confirm trước rồi mới process
+                            if (order.orderStatus === 'pending') {
+                                await order.confirm();
+                                console.log(`SERVICE: Confirmed order ${order.orderId}`);
+                            }
+                            await order.process();
+                            console.log(`SERVICE: Updated order ${order.orderId} to processing status`);
+                        } else {
+                            console.log(`SERVICE: Order ${order.orderId} status is '${order.orderStatus}', cannot process. Skip.`);
+                        }
+                    } else {
+                        console.log(`SERVICE: Order ${installment.order_id} not found`);
+                    }
+                } catch (orderError) {
+                    console.error('SERVICE: Error updating order status:', orderError.message);
+                    // Không throw error vì installment đã update thành công
+                }
+            }
+
+            // Fetch lại để có dữ liệu mới nhất từ DB
+            return await this.getInstallmentById(installmentId);
         } catch (error) {
+            console.error('SERVICE Error in updateInstallment:', error);
             throw new Error(`SERVICE Lỗi cập nhật trả góp: ${error.message}`);
         }
     }
