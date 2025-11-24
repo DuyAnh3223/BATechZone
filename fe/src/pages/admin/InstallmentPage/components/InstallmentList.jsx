@@ -20,6 +20,10 @@ import {
 import InstallmentDetailDialog from './InstallmentDetailDialog';
 import { Badge } from '@/components/ui/badge';
 import { formatCurrency, formatDate } from '@/lib/utils';
+import {
+  getInstallmentStatusLabel,
+  getInstallmentStatusColor
+} from '@/constants/installmentStatus';
 
 const InstallmentList = () => {
   const { installments, loading, fetchAllInstallments } = useInstallmentStore();
@@ -42,18 +46,7 @@ const InstallmentList = () => {
     }
   };
 
-  const getStatusBadge = (status) => {
-    const statusConfig = {
-      pending: { label: 'Chờ duyệt', className: 'bg-yellow-100 text-yellow-800' },
-      approved: { label: 'Đã duyệt', className: 'bg-emerald-100 text-emerald-800' },
-      active: { label: 'Đang trả', className: 'bg-blue-100 text-blue-800' },
-      completed: { label: 'Hoàn thành', className: 'bg-green-100 text-green-800' },
-      cancelled: { label: 'Đã hủy', className: 'bg-gray-100 text-gray-800' }
-    };
-    
-    const config = statusConfig[status] || statusConfig.pending;
-    return <Badge className={config.className}>{config.label}</Badge>;
-  };
+  // Removed getStatusBadge - now using constants from @/constants/installmentStatus
 
   // Ensure installments is always an array
   const installmentsList = Array.isArray(installments) ? installments : [];
@@ -230,7 +223,9 @@ const InstallmentList = () => {
                         <span className="text-sm">{formatDate(installment.start_date)}</span>
                       </td>
                       <td className="py-3 px-4 text-center">
-                        {getStatusBadge(installment.status)}
+                        <Badge className={getInstallmentStatusColor(installment.status)}>
+                          {getInstallmentStatusLabel(installment.status)}
+                        </Badge>
                       </td>
                       <td className="py-3 px-4 text-center">
                         <Button

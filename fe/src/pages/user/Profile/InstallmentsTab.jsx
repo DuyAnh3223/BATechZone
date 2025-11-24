@@ -16,6 +16,12 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
+  getInstallmentStatusLabel,
+  getInstallmentStatusColor,
+  getPaymentStatusLabel,
+  getPaymentStatusColor
+} from '@/constants/installmentStatus';
+import {
   Card,
   CardContent,
   CardDescription,
@@ -86,61 +92,10 @@ const InstallmentsTab = () => {
     }
   };
 
-  const getWorkflowStatusLabel = (status) => {
-    const statusMap = {
-      pending: 'Chờ duyệt',
-      submitted: 'Đã gửi',
-      needs_info: 'Cần bổ sung',
-      approved: 'Đã duyệt',
-      rejected: 'Từ chối',
-      contract_sent: 'Đã gửi hợp đồng',
-      contract_signed: 'Đã ký hợp đồng',
-      down_payment_received: 'Đã nhận trả trước',
-      active: 'Đang hoạt động',
-      completed: 'Hoàn thành',
-      overdue: 'Quá hạn',
-      cancelled: 'Đã hủy'
-    };
-    return statusMap[status] || status;
-  };
-
-  const getWorkflowStatusColor = (status) => {
-    const colorMap = {
-      pending: 'bg-yellow-100 text-yellow-800',
-      submitted: 'bg-blue-100 text-blue-800',
-      needs_info: 'bg-orange-100 text-orange-800',
-      approved: 'bg-green-100 text-green-800',
-      rejected: 'bg-red-100 text-red-800',
-      contract_sent: 'bg-purple-100 text-purple-800',
-      contract_signed: 'bg-indigo-100 text-indigo-800',
-      down_payment_received: 'bg-teal-100 text-teal-800',
-      active: 'bg-green-100 text-green-800',
-      completed: 'bg-gray-100 text-gray-800',
-      overdue: 'bg-red-100 text-red-800',
-      cancelled: 'bg-gray-100 text-gray-800'
-    };
-    return colorMap[status] || 'bg-gray-100 text-gray-800';
-  };
-
-  const getPaymentStatusLabel = (status) => {
-    const statusMap = {
-      pending: 'Chờ thanh toán',
-      paid: 'Đã thanh toán',
-      overdue: 'Quá hạn',
-      cancelled: 'Đã hủy'
-    };
-    return statusMap[status] || status;
-  };
-
-  const getPaymentStatusColor = (status) => {
-    const colorMap = {
-      pending: 'bg-yellow-100 text-yellow-800',
-      paid: 'bg-green-100 text-green-800',
-      overdue: 'bg-red-100 text-red-800',
-      cancelled: 'bg-gray-100 text-gray-800'
-    };
-    return colorMap[status] || 'bg-gray-100 text-gray-800';
-  };
+  // Removed getWorkflowStatusLabel - now using from constants
+  // Removed getWorkflowStatusColor - now using from constants
+  // Removed getPaymentStatusLabel - now using from constants  
+  // Removed getPaymentStatusColor - now using from constants
 
   const handleViewDetail = async (installment) => {
     try {
@@ -377,8 +332,8 @@ const InstallmentsTab = () => {
                         {formatPrice(calculateOutstandingBalance(installment))}
                       </TableCell>
                       <TableCell>
-                        <Badge className={getWorkflowStatusColor(installment.workflow_status)}>
-                          {getWorkflowStatusLabel(installment.workflow_status)}
+                        <Badge className={getInstallmentStatusColor(installment.status)}>
+                          {getInstallmentStatusLabel(installment.status)}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
@@ -423,8 +378,8 @@ const InstallmentsTab = () => {
                 <div className="grid grid-cols-2 gap-4 pb-4 border-b">
                   <div>
                     <p className="text-sm text-gray-500 mb-2">Trạng thái hợp đồng</p>
-                    <Badge className={getWorkflowStatusColor(selectedInstallment.workflow_status)}>
-                      {getWorkflowStatusLabel(selectedInstallment.workflow_status)}
+                    <Badge className={getInstallmentStatusColor(selectedInstallment.status)}>
+                      {getInstallmentStatusLabel(selectedInstallment.status)}
                     </Badge>
                   </div>
                   <div>
@@ -553,7 +508,7 @@ const InstallmentsTab = () => {
                                 )}
                               </div>
                               <div className="flex-1">
-                                <p className="font-medium">{getWorkflowStatusLabel(event.status)}</p>
+                                <p className="font-medium">{getInstallmentStatusLabel(event.status)}</p>
                                 <p className="text-sm text-gray-500">{formatDate(event.created_at)}</p>
                                 {event.note && (
                                   <p className="text-sm text-gray-600 mt-1">{event.note}</p>
@@ -596,12 +551,12 @@ const InstallmentsTab = () => {
                         <Table>
                           <TableHeader className="sticky top-0 bg-white z-10">
                             <TableRow>
-                              <TableHead>Kỳ</TableHead>
-                              <TableHead>Ngày đến hạn</TableHead>
-                              <TableHead>Số tiền</TableHead>
-                              <TableHead>Đã trả</TableHead>
-                              <TableHead>Trạng thái</TableHead>
-                              <TableHead className="text-right">Thao tác</TableHead>
+                              <TableHead className="w-[80px]">Kỳ</TableHead>
+                              <TableHead className="w-[120px]">Ngày đến hạn</TableHead>
+                              <TableHead className="w-[140px]">Số tiền trả góp</TableHead>
+                              <TableHead className="w-[150px]">Đã trả</TableHead>
+                              <TableHead className="w-[140px]">Trạng thái</TableHead>
+                              <TableHead className="text-right w-[140px]">Thao tác</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>

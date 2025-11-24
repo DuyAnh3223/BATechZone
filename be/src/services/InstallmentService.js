@@ -190,6 +190,28 @@ class InstallmentService {
                 status: 'active'
             });
 
+            // Cập nhật trạng thái đơn hàng sang "shipping" (đang giao hàng)
+            try {
+                const orderData = await Order.getById(installment.order_id);
+                if (orderData) {
+                    // Create Order instance from plain object
+                    const order = new Order(orderData);
+                    console.log(`SERVICE: Found order ${order.orderId} with status '${order.orderStatus}'`);
+                    
+                    if (order.orderStatus !== 'shipping' && order.orderStatus !== 'delivered') {
+                        await order.updateStatus('shipping');
+                        console.log(`SERVICE: Đã cập nhật order #${installment.order_id} sang trạng thái shipping`);
+                    } else {
+                        console.log(`SERVICE: Order #${installment.order_id} đã ở trạng thái '${order.orderStatus}', bỏ qua cập nhật`);
+                    }
+                } else {
+                    console.log(`SERVICE: Không tìm thấy order #${installment.order_id}`);
+                }
+            } catch (orderError) {
+                console.error('SERVICE: Lỗi khi cập nhật trạng thái order:', orderError);
+                // Không throw error để không ảnh hưởng đến thanh toán trả trước
+            }
+
             return await Installment.findInstallmentById(installmentId);
         } catch (error) {
             throw new Error(`SERVICE Lỗi thanh toán trả trước: ${error.message}`);
