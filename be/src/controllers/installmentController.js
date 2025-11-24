@@ -91,6 +91,8 @@ export const getInstallmentById = async (req, res) => {
         }
 
         const installment = await InstallmentService.getInstallmentById(parseInt(installmentId));
+        console.log('CONTROLLER - Installment data:', JSON.stringify(installment, null, 2));
+        console.log('CONTROLLER - Has payments:', installment?.payments?.length);
 
         res.json({
             success: true,
@@ -140,6 +142,49 @@ export const getInstallmentsByUserId = async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Lỗi khi lấy danh sách trả góp',
+            error: error.message
+        });
+    }
+};
+
+/**
+ * Thanh toán trả trước (down payment)
+ */
+export const makeDownPayment = async (req, res) => {
+    try {
+        const { installmentId } = req.params;
+        const { paid_date, note } = req.body;
+
+        if (!installmentId) {
+            return res.status(400).json({
+                success: false,
+                message: 'Thiếu installment_id'
+            });
+        }
+
+        const installment = await InstallmentService.makeDownPayment(parseInt(installmentId), {
+            paid_date: paid_date || new Date(),
+            note
+        });
+
+        res.json({
+            success: true,
+            message: 'Thanh toán trả trước thành công',
+            data: installment
+        });
+    } catch (error) {
+        console.error('CONTROLLER Error making down payment:', error);
+        
+        if (error.message.includes('Không tìm thấy') || error.message.includes('đã được thanh toán') || error.message.includes('không yêu cầu')) {
+            return res.status(400).json({
+                success: false,
+                message: error.message.replace('SERVICE ', '')
+            });
+        }
+
+        res.status(500).json({
+            success: false,
+            message: 'Lỗi khi thanh toán trả trước',
             error: error.message
         });
     }
@@ -487,6 +532,37 @@ export const getStatistics = async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Lỗi khi lấy thống kê',
+            error: error.message
+        });
+    }
+};
+
+/**
+ * Generate payments cho installment (nếu chưa có)
+ */
+export const generatePayments = async (req, res) => {
+    try {
+        const { installmentId } = req.params;
+
+        if (!installmentId) {
+            return res.status(400).json({
+                success: false,
+                message: 'Thiếu installment_id'
+            });
+        }
+
+        const payments = await InstallmentService.generatePayments(parseInt(installmentId));
+
+        res.json({
+            success: true,
+            message: `Đã tạo ${payments.length} kỳ thanh toán`,
+            data: payments
+        });
+    } catch (error) {
+        console.error('Error generating payments:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Lỗi khi tạo kỳ thanh toán',
             error: error.message
         });
     }

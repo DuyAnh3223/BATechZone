@@ -74,6 +74,20 @@ export const installmentService = {
     },
 
     /**
+     * Thanh toán trả trước (down payment)
+     * @param {number} installmentId - ID của installment
+     * @param {Object} data - Dữ liệu thanh toán
+     * @param {Date} data.paid_date - Ngày thanh toán (optional)
+     * @param {string} data.note - Ghi chú (optional)
+     */
+    makeDownPayment: async (installmentId, data = {}) => {
+        const response = await api.post(`/installments/${installmentId}/pay-down-payment`, data, {
+            withCredentials: true
+        });
+        return response.data;
+    },
+
+    /**
      * Thanh toán một kỳ trả góp
      * @param {number} paymentId - ID của kỳ thanh toán
      * @param {Object} data - Dữ liệu thanh toán

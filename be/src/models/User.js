@@ -14,10 +14,35 @@ class User {
         this.created_at = userData.created_at;
         this.updated_at = userData.updated_at;
         this.last_login = userData.last_login;
-        this.session_token = userData.session_token;
+        this.session_token = userData.session_token; // Deprecated - giữ lại cho compatibility
+        this.admin_session_token = userData.admin_session_token;
+        this.user_session_token = userData.user_session_token;
     }
 
 
+    // Update admin session token
+    static async updateAdminSessionToken(userId, sessionToken) {
+        try {
+            const sql = 'UPDATE users SET admin_session_token = ? WHERE user_id = ?';
+            const result = await query(sql, [sessionToken, userId]);
+            return result.affectedRows > 0;
+        } catch (error) {
+            throw new Error(`Error updating admin session token: ${error.message}`);
+        }
+    }
+
+    // Update user session token
+    static async updateUserSessionToken(userId, sessionToken) {
+        try {
+            const sql = 'UPDATE users SET user_session_token = ? WHERE user_id = ?';
+            const result = await query(sql, [sessionToken, userId]);
+            return result.affectedRows > 0;
+        } catch (error) {
+            throw new Error(`Error updating user session token: ${error.message}`);
+        }
+    }
+
+    // Deprecated - giữ lại cho compatibility
     static async updateSessionToken(userId, sessionToken) {
         try {
             const sql = 'UPDATE users SET session_token = ? WHERE user_id = ?';
@@ -28,6 +53,29 @@ class User {
         }
     }
 
+    // Find user by admin session token
+    static async findByAdminSessionToken(sessionToken) {
+        try {
+            const sql = 'SELECT * FROM users WHERE admin_session_token = ?';
+            const users = await query(sql, [sessionToken]);
+            return users.length ? new User(users[0]) : null;
+        } catch (error) {
+            throw new Error(`Error finding user by admin session token: ${error.message}`);
+        }
+    }
+
+    // Find user by user session token
+    static async findByUserSessionToken(sessionToken) {
+        try {
+            const sql = 'SELECT * FROM users WHERE user_session_token = ?';
+            const users = await query(sql, [sessionToken]);
+            return users.length ? new User(users[0]) : null;
+        } catch (error) {
+            throw new Error(`Error finding user by user session token: ${error.message}`);
+        }
+    }
+
+    // Deprecated - giữ lại cho compatibility
     static async findBySessionToken(sessionToken) {
         try {
             const sql = 'SELECT * FROM users WHERE session_token = ?';
@@ -38,6 +86,29 @@ class User {
         }
     }
 
+    // Clear admin session token
+    static async clearAdminSessionToken(userId) {
+        try {
+            const sql = 'UPDATE users SET admin_session_token = NULL WHERE user_id = ?';
+            const result = await query(sql, [userId]);
+            return result.affectedRows > 0;
+        } catch (error) {
+            throw new Error(`Error clearing admin session token: ${error.message}`);
+        }
+    }
+
+    // Clear user session token
+    static async clearUserSessionToken(userId) {
+        try {
+            const sql = 'UPDATE users SET user_session_token = NULL WHERE user_id = ?';
+            const result = await query(sql, [userId]);
+            return result.affectedRows > 0;
+        } catch (error) {
+            throw new Error(`Error clearing user session token: ${error.message}`);
+        }
+    }
+
+    // Clear session token (deprecated - giữ lại cho compatibility)
     static async clearSessionToken(userId) {
         try {
             const sql = 'UPDATE users SET session_token = NULL WHERE user_id = ?';
@@ -128,7 +199,7 @@ class User {
     }
 
     toJSON() {
-        const { password_hash, session_token, ...safeUser } = this;
+        const { password_hash, session_token, admin_session_token, user_session_token, ...safeUser } = this;
         const roles = {
             0: 'customer',
             1: 'shipper',

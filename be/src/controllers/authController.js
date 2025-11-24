@@ -101,7 +101,7 @@ export const adminSignIn = async(req,res)=>{
         }
 
         const sessionToken = crypto.randomBytes(32).toString('hex');
-        await User.updateSessionToken(admin.user_id, sessionToken);
+        await User.updateAdminSessionToken(admin.user_id, sessionToken);
 
         res.cookie('admin_session_token', sessionToken, {
             httpOnly: true,
@@ -148,7 +148,7 @@ export const signIn = async(req,res)=>{
         }
 
         const sessionToken = crypto.randomBytes(32).toString('hex');
-        await User.updateSessionToken(user.user_id, sessionToken);
+        await User.updateUserSessionToken(user.user_id, sessionToken);
 
         res.cookie('user_session_token', sessionToken, {
             httpOnly: true,
@@ -189,11 +189,18 @@ export const signOut = async(req,res)=>{
         }
 
         // Tìm user bằng session token
-        const user = await User.findBySessionToken(sessionToken);
-        
-        if (user) {
-            // Xóa session token trong database
-            await User.clearSessionToken(user.user_id);
+        let user = null;
+        if (adminToken) {
+            user = await User.findByAdminSessionToken(adminToken);
+            if (user) {
+                await User.clearAdminSessionToken(user.user_id);
+            }
+        }
+        if (userToken) {
+            user = await User.findByUserSessionToken(userToken);
+            if (user) {
+                await User.clearUserSessionToken(user.user_id);
+            }
         }
 
         // Xóa cookie tương ứng
@@ -229,7 +236,13 @@ export const getMe = async (req, res) => {
             return res.status(401).json({ success: false, message: 'Chưa đăng nhập' });
         }
         
-        const user = await User.findBySessionToken(sessionToken);
+        // Tìm user từ admin token hoặc user token
+        let user = null;
+        if (adminToken) {
+            user = await User.findByAdminSessionToken(adminToken);
+        } else if (userToken) {
+            user = await User.findByUserSessionToken(userToken);
+        }
         if (!user) {
             return res.status(401).json({ success: false, message: 'Phiên đăng nhập không hợp lệ' });
         }
@@ -260,7 +273,7 @@ export const getAdminMe = async (req, res) => {
             return res.status(401).json({ success: false, message: 'Chưa đăng nhập admin' });
         }
         
-        const user = await User.findBySessionToken(adminToken);
+        const user = await User.findByAdminSessionToken(adminToken);
         if (!user) {
             return res.status(401).json({ success: false, message: 'Phiên đăng nhập không hợp lệ' });
         }
@@ -300,7 +313,7 @@ export const getUserMe = async (req, res) => {
         }
         
         console.log('getUserMe - Found user_session_token:', userToken);
-        const user = await User.findBySessionToken(userToken);
+        const user = await User.findByUserSessionToken(userToken);
         if (!user) {
             console.log('getUserMe - No user found for token');
             return res.status(401).json({ success: false, message: 'Phiên đăng nhập không hợp lệ' });

@@ -143,6 +143,60 @@ class InstallmentService {
     }
 
     /**
+     * Thanh toán trả trước (down payment)
+     * @param {number} installmentId - ID của installment
+     * @param {Object} paymentData - Dữ liệu thanh toán {paid_date, note}
+     * @returns {Object} Installment đã cập nhật
+     */
+    async makeDownPayment(installmentId, paymentData = {}) {
+        try {
+            const installment = await Installment.findInstallmentById(installmentId);
+            if (!installment) {
+                throw new Error('SERVICE Không tìm thấy hợp đồng trả góp');
+            }
+
+            // Kiểm tra trạng thái hợp đồng - CHỈ cho phép thanh toán khi approved
+            if (installment.status !== 'approved') {
+                if (installment.status === 'pending') {
+                    throw new Error('SERVICE Hợp đồng đang chờ admin duyệt, chưa thể thanh toán');
+                } else if (installment.status === 'rejected' || installment.status === 'cancelled') {
+                    throw new Error('SERVICE Hợp đồng đã bị từ chối hoặc hủy, không thể thanh toán');
+                } else {
+                    throw new Error('SERVICE Trạng thái hợp đồng không hợp lệ để thanh toán trả trước');
+                }
+            }
+
+            if (installment.down_payment_status === 'paid') {
+                throw new Error('SERVICE Khoản trả trước đã được thanh toán');
+            }
+
+            if (installment.down_payment <= 0) {
+                throw new Error('SERVICE Hợp đồng này không yêu cầu trả trước');
+            }
+
+            // Cập nhật trạng thái thanh toán trả trước
+            const updated = await Installment.update(installmentId, {
+                down_payment_status: 'paid',
+                down_payment_date: paymentData.paid_date || new Date(),
+                down_payment_note: paymentData.note || 'Thanh toán trả trước'
+            });
+
+            if (!updated) {
+                throw new Error('SERVICE Không thể cập nhật thanh toán trả trước');
+            }
+
+            // Sau khi thanh toán trả trước thành công, chuyển sang active
+            await Installment.update(installmentId, {
+                status: 'active'
+            });
+
+            return await Installment.findInstallmentById(installmentId);
+        } catch (error) {
+            throw new Error(`SERVICE Lỗi thanh toán trả trước: ${error.message}`);
+        }
+    }
+
+    /**
      * Thanh toán một kỳ trả góp
      * @param {number} paymentId - ID của kỳ thanh toán
      * @param {Object} paymentData - Dữ liệu thanh toán
@@ -159,6 +213,26 @@ class InstallmentService {
                 throw new Error('SERVICE Kỳ thanh toán này đã được thanh toán');
             }
 
+            // Kiểm tra trạng thái hợp đồng - CHỈ cho phép thanh toán khi active
+            const installment = await Installment.findInstallmentById(payment.installment_id);
+            if (!installment) {
+                throw new Error('SERVICE Không tìm thấy hợp đồng trả góp');
+            }
+
+            if (installment.status !== 'active') {
+                if (installment.status === 'pending') {
+                    throw new Error('SERVICE Hợp đồng đang chờ admin duyệt, chưa thể thanh toán các kỳ');
+                } else if (installment.status === 'approved') {
+                    throw new Error('SERVICE Vui lòng thanh toán trả trước trước khi thanh toán các kỳ');
+                } else if (installment.status === 'rejected' || installment.status === 'cancelled') {
+                    throw new Error('SERVICE Hợp đồng đã bị từ chối hoặc hủy, không thể thanh toán');
+                } else if (installment.status === 'completed') {
+                    throw new Error('SERVICE Hợp đồng đã hoàn thành');
+                } else {
+                    throw new Error('SERVICE Trạng thái hợp đồng không hợp lệ để thanh toán các kỳ');
+                }
+            }
+
             // Cập nhật trạng thái thanh toán
             const updated = await InstallmentPayment.update(paymentId, {
                 paid_date: paymentData.paid_date || new Date(),
@@ -171,7 +245,6 @@ class InstallmentService {
             }
 
             // Kiểm tra xem tất cả các kỳ đã thanh toán chưa
-            const installment = await Installment.findInstallmentById(payment.installment_id);
             const allPayments = await InstallmentPayment.findAllPaymentsByInstallmentId(payment.installment_id);
             
             const allPaid = allPayments.every(p => p.status === 'paid');
@@ -182,13 +255,9 @@ class InstallmentService {
                     ...installment,
                     status: 'completed'
                 });
-            } else if (installment.status === 'pending') {
-                // Nếu có ít nhất 1 payment được thanh toán, chuyển sang active
-                await Installment.update(payment.installment_id, {
-                    ...installment,
-                    status: 'active'
-                });
             }
+            // Không còn auto-transition từ pending sang active
+            // Phải thanh toán trả trước (down payment) trước để status = active
 
             return await InstallmentPayment.findPaymentById(paymentId);
         } catch (error) {
@@ -221,6 +290,53 @@ class InstallmentService {
             return overduePayments;
         } catch (error) {
             throw new Error(`SERVICE Lỗi kiểm tra thanh toán quá hạn: ${error.message}`);
+        }
+    }
+
+    /**
+     * Generate payments cho installment (nếu chưa có)
+     * @param {number} installmentId 
+     * @returns {Array} Generated payments
+     */
+    async generatePayments(installmentId) {
+        try {
+            const installment = await Installment.findInstallmentById(installmentId);
+            if (!installment) {
+                throw new Error('SERVICE Không tìm thấy khoản trả góp');
+            }
+
+            // Check if payments already exist
+            const existingPayments = await InstallmentPayment.findAllPaymentsByInstallmentId(installmentId);
+            if (existingPayments.length > 0) {
+                console.log(`Installment ${installmentId} already has ${existingPayments.length} payments`);
+                return existingPayments;
+            }
+
+            // Generate payments
+            const startDateObj = new Date(installment.start_date);
+            const payments = [];
+
+            for (let i = 1; i <= installment.num_terms; i++) {
+                const dueDate = new Date(startDateObj);
+                dueDate.setMonth(dueDate.getMonth() + i);
+
+                const payment = await InstallmentPayment.create({
+                    installment_id: installment.installment_id,
+                    payment_no: i,
+                    due_date: dueDate,
+                    paid_date: null,
+                    amount: installment.monthly_payment,
+                    status: 'pending',
+                    note: null
+                });
+
+                payments.push(payment);
+            }
+
+            console.log(`Generated ${payments.length} payments for installment ${installmentId}`);
+            return payments;
+        } catch (error) {
+            throw new Error(`SERVICE Lỗi tạo payments: ${error.message}`);
         }
     }
 

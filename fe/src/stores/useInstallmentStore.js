@@ -40,14 +40,18 @@ export const useInstallmentStore = create((set, get) => ({
         set({ loading: true, error: null });
         try {
             const response = await installmentService.getInstallmentById(installmentId);
+            console.log('Store - Raw response:', response);
+            
             const installmentData = response.data || response;
+            console.log('Store - Extracted installmentData:', installmentData);
             
             set({ 
                 currentInstallment: installmentData,
                 loading: false 
             });
             
-            return response;
+            // Return extracted data, not raw response
+            return installmentData;
         } catch (error) {
             console.error('Error fetching installment:', error);
             set({ error: error.message, loading: false });
@@ -140,6 +144,34 @@ export const useInstallmentStore = create((set, get) => ({
             console.error('Error fetching my installments:', error);
             set({ error: error.message, loading: false });
             toast.error(error.response?.data?.message || 'Lỗi khi lấy danh sách trả góp');
+            throw error;
+        }
+    },
+
+    // Thanh toán trả trước (down payment)
+    makeDownPayment: async (installmentId, data = {}) => {
+        set({ loading: true, error: null });
+        try {
+            const response = await installmentService.makeDownPayment(installmentId, data);
+            
+            if (response.success) {
+                // Refresh current installment
+                if (get().currentInstallment?.installment_id === installmentId) {
+                    await get().fetchInstallmentById(installmentId);
+                }
+                
+                // Refresh list
+                await get().fetchMyInstallments();
+                
+                toast.success('Thanh toán trả trước thành công');
+            }
+            
+            set({ loading: false });
+            return response;
+        } catch (error) {
+            console.error('Error making down payment:', error);
+            set({ error: error.message, loading: false });
+            toast.error(error.response?.data?.message || 'Lỗi khi thanh toán trả trước');
             throw error;
         }
     },

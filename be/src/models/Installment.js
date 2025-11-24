@@ -7,6 +7,9 @@ class Installment {
         this.user_id = data.user_id;
         this.total_amount = data.total_amount;
         this.down_payment = data.down_payment;
+        this.down_payment_status = data.down_payment_status;
+        this.down_payment_date = data.down_payment_date;
+        this.down_payment_note = data.down_payment_note;
         this.num_terms = data.num_terms;
         this.monthly_payment = data.monthly_payment;
         this.interest_rate = data.interest_rate;

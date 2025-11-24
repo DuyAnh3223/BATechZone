@@ -5,13 +5,19 @@ export const requireAuth = async (req, res, next) => {
         // Kiểm tra cả 2 loại cookie
         const adminToken = req.cookies?.admin_session_token;
         const userToken = req.cookies?.user_session_token;
-        const sessionToken = adminToken || userToken;
         
-        if (!sessionToken) {
+        if (!adminToken && !userToken) {
             return res.status(401).json({ success: false, message: 'Chưa đăng nhập' });
         }
         
-        const user = await User.findBySessionToken(sessionToken);
+        // Tìm user từ admin token hoặc user token
+        let user = null;
+        if (adminToken) {
+            user = await User.findByAdminSessionToken(adminToken);
+        } else if (userToken) {
+            user = await User.findByUserSessionToken(userToken);
+        }
+        
         if (!user) {
             return res.status(401).json({ success: false, message: 'Phiên đăng nhập không hợp lệ' });
         }
