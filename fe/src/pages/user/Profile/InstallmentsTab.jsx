@@ -252,7 +252,7 @@ const InstallmentsTab = () => {
     return Math.max(0, total - paid);
   };
 
-  // Helper: Check if down payment is allowed
+  
   const canPayDownPayment = (installment) => {
     if (!installment) return false;
     // Chỉ cho phép thanh toán trả trước khi status = 'approved'
@@ -261,14 +261,14 @@ const InstallmentsTab = () => {
            installment.down_payment > 0;
   };
 
-  // Helper: Check if installment payments are allowed
+  
   const canPayInstallments = (installment) => {
     if (!installment) return false;
     // Chỉ cho phép thanh toán các kỳ khi status = 'active'
     return installment.status === 'active';
   };
 
-  // Helper: Get status explanation message
+  
   const getStatusExplanation = (installment) => {
     if (!installment) return '';
     

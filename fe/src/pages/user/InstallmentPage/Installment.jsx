@@ -46,7 +46,6 @@ const toAbsoluteUrl = (url) => {
   return url;
 };
 
-// Mock installment policies - replace with API call later
 const installmentPolicies = [
   { months: 6, interest_rate: 2.2, min_down_payment: 20, name: 'Trả góp 6 tháng' },
   { months: 8, interest_rate: 1.9, min_down_payment: 20, name: 'Trả góp 8 tháng' },
