@@ -103,6 +103,9 @@ export const adminSignIn = async(req,res)=>{
         const sessionToken = crypto.randomBytes(32).toString('hex');
         await User.updateAdminSessionToken(admin.user_id, sessionToken);
 
+        // Xóa user_session_token nếu tồn tại để tránh xung đột
+        res.clearCookie('user_session_token');
+        
         res.cookie('admin_session_token', sessionToken, {
             httpOnly: true,
             secure: false,
@@ -150,6 +153,9 @@ export const signIn = async(req,res)=>{
         const sessionToken = crypto.randomBytes(32).toString('hex');
         await User.updateUserSessionToken(user.user_id, sessionToken);
 
+        // Xóa admin_session_token nếu tồn tại để tránh xung đột
+        res.clearCookie('admin_session_token');
+        
         res.cookie('user_session_token', sessionToken, {
             httpOnly: true,
             secure: false,

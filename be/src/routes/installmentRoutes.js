@@ -16,7 +16,7 @@ import {
   getStatistics,
   generatePayments
 } from '../controllers/installmentController.js';
-import { requireAuth } from '../middlewares/authMiddleware.js';
+import { requireUserAuth } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
 
@@ -35,37 +35,37 @@ router.get('/statistics', getStatistics);
 // Tạo khoản trả góp mới
 router.post('/', createInstallment);
 
-// Lấy chi tiết khoản trả góp - requires auth
-router.get('/:installmentId', requireAuth, getInstallmentById);
+// Lấy chi tiết khoản trả góp - requires user auth
+router.get('/:installmentId', requireUserAuth, getInstallmentById);
 
-// Lấy tổng hợp thanh toán - requires auth
-router.get('/:installmentId/summary', requireAuth, getPaymentSummary);
+// Lấy tổng hợp thanh toán - requires user auth
+router.get('/:installmentId/summary', requireUserAuth, getPaymentSummary);
 
-// Kiểm tra các khoản thanh toán quá hạn - requires auth
-router.get('/:installmentId/overdue', requireAuth, checkOverduePayments);
+// Kiểm tra các khoản thanh toán quá hạn - requires user auth
+router.get('/:installmentId/overdue', requireUserAuth, checkOverduePayments);
 
 // Lấy tất cả khoản trả góp của một user (admin)
 router.get('/user/:userId',  getInstallmentsByUserId);
 
-// Lấy khoản trả góp của user hiện tại (từ session) - requires auth
-router.get('/me/list', requireAuth, getMyInstallments);
+// Lấy khoản trả góp của user hiện tại (từ session) - requires user auth
+router.get('/me/list', requireUserAuth, getMyInstallments);
 
-// Generate payments cho installment - requires auth
-router.post('/:installmentId/generate-payments', requireAuth, generatePayments);
+// Generate payments cho installment - requires user auth
+router.post('/:installmentId/generate-payments', requireUserAuth, generatePayments);
 
-// Thanh toán trả trước - requires auth
-router.post('/:installmentId/pay-down-payment', requireAuth, makeDownPayment);
+// Thanh toán trả trước - requires user auth
+router.post('/:installmentId/pay-down-payment', requireUserAuth, makeDownPayment);
 
-// Thanh toán một kỳ - requires auth
-router.post('/payments/:paymentId/pay', requireAuth, makePayment);
+// Thanh toán một kỳ - requires user auth
+router.post('/payments/:paymentId/pay', requireUserAuth, makePayment);
 
-// Cập nhật thông tin khoản trả góp - requires auth
-router.put('/:installmentId', requireAuth, updateInstallment);
+// Cập nhật thông tin khoản trả góp - requires user auth
+router.put('/:installmentId', requireUserAuth, updateInstallment);
 
-// Hủy khoản trả góp - requires auth
-router.patch('/:installmentId/cancel', requireAuth, cancelInstallment);
+// Hủy khoản trả góp - requires user auth
+router.patch('/:installmentId/cancel', requireUserAuth, cancelInstallment);
 
-// Xóa khoản trả góp - requires auth
-router.delete('/:installmentId', requireAuth, deleteInstallment);
+// Xóa khoản trả góp - requires user auth
+router.delete('/:installmentId', requireUserAuth, deleteInstallment);
 
 export default router;

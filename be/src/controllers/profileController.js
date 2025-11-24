@@ -9,7 +9,7 @@ export const getProfile = async (req, res) => {
             return res.status(401).json({ success: false, message: 'Chưa đăng nhập' });
         }
         
-        const user = await User.findBySessionToken(userToken);
+        const user = await User.findByUserSessionToken(userToken);
         if (!user) {
             return res.status(401).json({ success: false, message: 'Phiên đăng nhập không hợp lệ' });
         }
