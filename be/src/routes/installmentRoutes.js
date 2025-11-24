@@ -16,9 +16,13 @@ import {
   getStatistics,
   generatePayments
 } from '../controllers/installmentController.js';
-import { requireUserAuth } from '../middlewares/authMiddleware.js';
+import { requireUserAuth, requireAuth } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
+
+// ====================
+// SPECIFIC ROUTES FIRST (must come before /:installmentId)
+// ====================
 
 // Admin routes
 // Lấy tất cả installments (Admin only)
@@ -30,25 +34,31 @@ router.get('/overdue/all', getAllOverduePayments);
 // Lấy thống kê tổng quan (Admin only)
 router.get('/statistics', getStatistics);
 
-// Public routes (có thể cần authenticate tùy yêu cầu)
+// Lấy khoản trả góp của user hiện tại (từ session) - requires user auth
+router.get('/me/list', requireUserAuth, getMyInstallments);
+
+// Lấy tất cả khoản trả góp của một user (admin)
+router.get('/user/:userId', getInstallmentsByUserId);
+
+// ====================
+// GENERAL ROUTES
+// ====================
 
 // Tạo khoản trả góp mới
 router.post('/', createInstallment);
 
-// Lấy chi tiết khoản trả góp - requires user auth
-router.get('/:installmentId', requireUserAuth, getInstallmentById);
+// ====================
+// ROUTES WITH :installmentId PARAM (must come after specific routes)
+// ====================
 
-// Lấy tổng hợp thanh toán - requires user auth
-router.get('/:installmentId/summary', requireUserAuth, getPaymentSummary);
+// Lấy chi tiết khoản trả góp - cho phép cả admin và user
+router.get('/:installmentId', requireAuth, getInstallmentById);
 
-// Kiểm tra các khoản thanh toán quá hạn - requires user auth
-router.get('/:installmentId/overdue', requireUserAuth, checkOverduePayments);
+// Lấy tổng hợp thanh toán - cho phép cả admin và user
+router.get('/:installmentId/summary', requireAuth, getPaymentSummary);
 
-// Lấy tất cả khoản trả góp của một user (admin)
-router.get('/user/:userId',  getInstallmentsByUserId);
-
-// Lấy khoản trả góp của user hiện tại (từ session) - requires user auth
-router.get('/me/list', requireUserAuth, getMyInstallments);
+// Kiểm tra các khoản thanh toán quá hạn - cho phép cả admin và user
+router.get('/:installmentId/overdue', requireAuth, checkOverduePayments);
 
 // Generate payments cho installment - requires user auth
 router.post('/:installmentId/generate-payments', requireUserAuth, generatePayments);
@@ -59,13 +69,13 @@ router.post('/:installmentId/pay-down-payment', requireUserAuth, makeDownPayment
 // Thanh toán một kỳ - requires user auth
 router.post('/payments/:paymentId/pay', requireUserAuth, makePayment);
 
-// Cập nhật thông tin khoản trả góp - requires user auth
-router.put('/:installmentId', requireUserAuth, updateInstallment);
+// Cập nhật thông tin khoản trả góp - cho phép cả admin và user (admin để duyệt/từ chối)
+router.put('/:installmentId', requireAuth, updateInstallment);
 
-// Hủy khoản trả góp - requires user auth
-router.patch('/:installmentId/cancel', requireUserAuth, cancelInstallment);
+// Hủy khoản trả góp - cho phép cả admin và user
+router.patch('/:installmentId/cancel', requireAuth, cancelInstallment);
 
-// Xóa khoản trả góp - requires user auth
-router.delete('/:installmentId', requireUserAuth, deleteInstallment);
+// Xóa khoản trả góp - cho phép cả admin và user
+router.delete('/:installmentId', requireAuth, deleteInstallment);
 
 export default router;

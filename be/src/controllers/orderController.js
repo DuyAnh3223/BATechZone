@@ -25,59 +25,102 @@ export const createOrder = async (req, res) => {
     // Create guest user if not logged in and guestUserData provided
     let userId = orderData.userId;
     if (!userId && guestUserData) {
-      console.log('Creating guest user:', guestUserData);
+      console.log('Checking for existing user:', guestUserData);
       
-      // Hash password (phone number)
-      const bcrypt = await import('bcrypt');
-      const passwordHash = await bcrypt.hash(guestUserData.password, 10);
-      
-      const [userResult] = await db.query(
-        `INSERT INTO users (username, email, password_hash, full_name, phone, role, is_active)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        [
-          guestUserData.username,
-          guestUserData.email,
-          passwordHash,
-          guestUserData.fullName,
-          guestUserData.phone,
-          guestUserData.role,
-          guestUserData.isActive
-        ]
+      // Kiểm tra user đã tồn tại chưa (theo email hoặc phone)
+      const [existingUsers] = await db.query(
+        `SELECT user_id FROM users 
+         WHERE email = ? OR phone = ?
+         LIMIT 1`,
+        [guestUserData.email, guestUserData.phone]
       );
-      
-      userId = userResult.insertId;
-      orderData.userId = userId;
-      console.log('Guest user created with ID:', userId);
+
+      if (existingUsers && existingUsers.length > 0) {
+        // Sử dụng user đã có
+        userId = existingUsers[0].user_id;
+        orderData.userId = userId;
+        console.log('Using existing user with ID:', userId);
+      } else {
+        // Tạo user mới
+        console.log('Creating new guest user:', guestUserData);
+        
+        // Hash password (phone number)
+        const bcrypt = await import('bcrypt');
+        const passwordHash = await bcrypt.hash(guestUserData.password, 10);
+        
+        const [userResult] = await db.query(
+          `INSERT INTO users (username, email, password_hash, full_name, phone, role, is_active)
+           VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          [
+            guestUserData.username,
+            guestUserData.email,
+            passwordHash,
+            guestUserData.fullName,
+            guestUserData.phone,
+            guestUserData.role,
+            guestUserData.isActive
+          ]
+        );
+        
+        userId = userResult.insertId;
+        orderData.userId = userId;
+        console.log('New guest user created with ID:', userId);
+      }
     }
 
     // Tạo address nếu chưa có addressId
     let addressId = orderData.addressId;
     if (!addressId && shippingAddress) {
-      console.log('Creating address:', shippingAddress);
-      const [result] = await db.query(
-        `INSERT INTO addresses (
-          user_id, recipient_name, phone, 
-          address_line1, address_line2, 
-          city, district, ward, postal_code, country, 
-          is_default, address_type
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      // Kiểm tra xem địa chỉ đã tồn tại chưa (cùng user_id, phone, address, city, district)
+      const [existingAddresses] = await db.query(
+        `SELECT address_id FROM addresses 
+         WHERE user_id = ? 
+         AND phone = ? 
+         AND address_line1 = ? 
+         AND city = ? 
+         AND district = ?
+         LIMIT 1`,
         [
-          orderData.userId || null, // user_id = null for guest, userId for registered user
-          shippingAddress.fullName,
+          orderData.userId || null,
           shippingAddress.phone,
           shippingAddress.address,
-          shippingAddress.note || null,
           shippingAddress.province,
-          shippingAddress.district,
-          shippingAddress.ward || null, // ward
-          null, // postal_code
-          'Vietnam',
-          0,
-          'other'
+          shippingAddress.district
         ]
       );
-      addressId = result.insertId;
-      console.log('Address created with ID:', addressId);
+
+      if (existingAddresses && existingAddresses.length > 0) {
+        // Sử dụng địa chỉ đã có
+        addressId = existingAddresses[0].address_id;
+        console.log('Using existing address with ID:', addressId);
+      } else {
+        // Tạo địa chỉ mới
+        console.log('Creating new address:', shippingAddress);
+        const [result] = await db.query(
+          `INSERT INTO addresses (
+            user_id, recipient_name, phone, 
+            address_line1, address_line2, 
+            city, district, ward, postal_code, country, 
+            is_default, address_type
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            orderData.userId || null, // user_id = null for guest, userId for registered user
+            shippingAddress.fullName,
+            shippingAddress.phone,
+            shippingAddress.address,
+            shippingAddress.note || null,
+            shippingAddress.province,
+            shippingAddress.district,
+            shippingAddress.ward || null, // ward
+            null, // postal_code
+            'Vietnam',
+            0,
+            'other'
+          ]
+        );
+        addressId = result.insertId;
+        console.log('New address created with ID:', addressId);
+      }
     }
 
     // Validate address for registered user (nếu không có shippingAddress để tạo mới)
