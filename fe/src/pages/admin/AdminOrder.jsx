@@ -282,7 +282,6 @@ const AdminOrder = () => {
                   <th className="px-4 py-3 font-semibold text-gray-600">ID User</th>
                   <th className="px-4 py-3 font-semibold text-gray-600">Mã đơn hàng</th>
                   <th className="px-4 py-3 font-semibold text-gray-600">Trạng thái đơn</th>
-                  <th className="px-4 py-3 font-semibold text-gray-600">Trạng thái TT</th>
                   <th className="px-4 py-3 font-semibold text-gray-600">Tổng tiền</th>
                   <th className="px-4 py-3 font-semibold text-gray-600">Ngày tạo</th>
                   <th className="px-4 py-3 font-semibold text-gray-600">Cập nhật lúc</th>
@@ -309,11 +308,6 @@ const AdminOrder = () => {
                       <td className="px-4 py-3">
                         <span className={`px-3 py-0.5 rounded-full text-xs font-semibold ${getOrderStatusClass(orderStatus)}`}>
                           {translateOrderStatus(orderStatus)}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className={`px-3 py-0.5 rounded-full text-xs font-semibold ${getPaymentStatusClass(paymentStatus)}`}>
-                          {translatePaymentStatus(paymentStatus)}
                         </span>
                       </td>
                       <td className="px-4 py-3 font-semibold text-blue-700">

@@ -131,6 +131,7 @@ const Installment = () => {
     const monthlyInterestRate = selectedPolicy.interest_rate / 100 / 12;
     let monthlyPayment;
     
+    // P*r*(1+r)^n / ((1+r)^n -1)
     if (selectedPolicy.interest_rate > 0) {
       monthlyPayment = (remainingAmount * monthlyInterestRate * Math.pow(1 + monthlyInterestRate, selectedMonths)) 
         / (Math.pow(1 + monthlyInterestRate, selectedMonths) - 1);
@@ -341,12 +342,7 @@ const Installment = () => {
 
                   {/* Payment Details */}
                   <div className="space-y-3">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Không hỗ trợ mức trả trước này</span>
-                      <span className="text-sm font-medium">
-                        {selectedDownPaymentPercent >= selectedPolicy.min_down_payment ? 'Không' : 'Có'}
-                      </span>
-                    </div>
+                  
 
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-gray-600">Lãi suất thực</span>
@@ -362,10 +358,7 @@ const Installment = () => {
                       </span>
                     </div>
 
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Không hỗ trợ thời hạn này</span>
-                      <span className="text-sm font-medium">Không</span>
-                    </div>
+              
 
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-gray-600">Tổng tiền phải trả</span>

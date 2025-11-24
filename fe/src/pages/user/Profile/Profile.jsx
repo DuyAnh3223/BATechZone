@@ -1230,7 +1230,7 @@ const Profile = () => {
                         <TableHead>Ngày đặt</TableHead>
                         <TableHead>Tổng tiền</TableHead>
                         <TableHead>Trạng thái đơn</TableHead>
-                        <TableHead>Thanh toán</TableHead>
+                        
                         <TableHead className="text-right">Thao tác</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -1249,11 +1249,6 @@ const Profile = () => {
                           <TableCell>
                             <Badge className={getOrderStatusColor(order.orderStatus || order.order_status)}>
                               {getOrderStatusLabel(order.orderStatus || order.order_status)}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <Badge className={getPaymentStatusColor(order.paymentStatus || order.payment_status)}>
-                              {getPaymentStatusLabel(order.paymentStatus || order.payment_status)}
                             </Badge>
                           </TableCell>
                           <TableCell className="text-right">

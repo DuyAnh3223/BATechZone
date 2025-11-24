@@ -192,12 +192,12 @@ const InstallmentCheckoutPage = () => {
     // Remove Vietnamese accents and convert to lowercase
     const removeAccents = (str) => {
       return str
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .replace(/đ/g, 'd')
-        .replace(/Đ/g, 'D')
+        .normalize('NFD') // tách chữ cái thành 2 phần: chữ gốc và dấu
+        .replace(/[\u0300-\u036f]/g, '') // bỏ tất cả phần dấu
+        .replace(/đ/g, 'd') 
+        .replace(/Đ/g, 'D') 
         .toLowerCase()
-        .replace(/\s+/g, '');
+        .replace(/\s+/g, ''); 
     };
     
     const namePart = removeAccents(fullName);

@@ -55,6 +55,8 @@ export const PAYMENT_STATUS = {
   PENDING: 'pending',
   PAID: 'paid',
   OVERDUE: 'overdue',
+  LATE: 'late', // Database uses 'late' instead of 'overdue'
+  FAILED: 'failed',
   CANCELLED: 'cancelled'
 };
 
@@ -62,6 +64,8 @@ export const PAYMENT_STATUS_LABELS = {
   [PAYMENT_STATUS.PENDING]: 'Chờ thanh toán',
   [PAYMENT_STATUS.PAID]: 'Đã thanh toán',
   [PAYMENT_STATUS.OVERDUE]: 'Quá hạn',
+  [PAYMENT_STATUS.LATE]: 'Quá hạn',
+  [PAYMENT_STATUS.FAILED]: 'Thất bại',
   [PAYMENT_STATUS.CANCELLED]: 'Đã hủy'
 };
 
@@ -69,6 +73,8 @@ export const PAYMENT_STATUS_COLORS = {
   [PAYMENT_STATUS.PENDING]: 'bg-yellow-100 text-yellow-800',
   [PAYMENT_STATUS.PAID]: 'bg-green-100 text-green-800',
   [PAYMENT_STATUS.OVERDUE]: 'bg-red-100 text-red-800',
+  [PAYMENT_STATUS.LATE]: 'bg-red-100 text-red-800',
+  [PAYMENT_STATUS.FAILED]: 'bg-red-100 text-red-800',
   [PAYMENT_STATUS.CANCELLED]: 'bg-gray-100 text-gray-800'
 };
 

@@ -41,7 +41,6 @@ class InstallmentPayment {
     static async create(data){
         try {
             const {
-                payment_id, 
                 installment_id, 
                 payment_no, 
                 due_date, 
@@ -51,9 +50,9 @@ class InstallmentPayment {
                 note
             } = data;
 
+            // payment_id is AUTO_INCREMENT, don't insert it
             const result = await query(
                 `INSERT INTO installment_payments (
-                 payment_id, 
                 installment_id, 
                 payment_no, 
                 due_date, 
@@ -61,9 +60,8 @@ class InstallmentPayment {
                 amount, 
                 status, 
                 note)
-                 VALUES(?, ?, ?, ?, ?, ?, ?, ? )`,
+                 VALUES(?, ?, ?, ?, ?, ?, ?)`,
                  [
-                    payment_id, 
                     installment_id, 
                     payment_no, 
                     due_date, 
@@ -75,12 +73,12 @@ class InstallmentPayment {
                 );
                 
 
-        const [rows] = await query(
+        const rows = await query(
             `SELECT * FROM installment_payments WHERE payment_id = ?`,
             [result.insertId]
         );
 
-        return rows ? new InstallmentPayment(rows[0]) : null;
+        return rows && rows.length > 0 ? new InstallmentPayment(rows[0]) : null;
 
         } catch (error) {
             throw new Error(`MODELLỗi truy vấn SQL (create): ${error.message}`);
@@ -90,19 +88,25 @@ class InstallmentPayment {
     static async update(id, newData)
     {
         try {
-            const {
-                payment_id, 
-                installment_id, 
-                payment_no, 
-                due_date, 
-                paid_date, 
-                amount, 
-                status, 
-                note
-            } = newData;
-            const [result] = await query(
-                `UPDATE installment_payments SET ? WHERE payment_id = ?`, [newData, id]
+            // Remove fields that shouldn't be updated
+            const { payment_id, installment_id, ...updateFields } = newData;
+            
+            // Build SET clause dynamically
+            const setClause = Object.keys(updateFields)
+                .map(key => `${key} = ?`)
+                .join(', ');
+            
+            if (!setClause) {
+                throw new Error('No fields to update');
+            }
+            
+            const values = Object.values(updateFields);
+            
+            const result = await query(
+                `UPDATE installment_payments SET ${setClause} WHERE payment_id = ?`, 
+                [...values, id]
             );
+            
             return result.affectedRows > 0;
                 
         } catch (error) {
@@ -113,7 +117,7 @@ class InstallmentPayment {
     static async delete(id)
     {
         try {
-            const [result] = await query(
+            const result = await query(
                 `DELETE FROM installment_payments WHERE payment_id = ?`, [id]
             );
             return result.affectedRows > 0;

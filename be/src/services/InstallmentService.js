@@ -5,14 +5,14 @@ import { query } from '../libs/db.js';
 class InstallmentService {
     /**
      * Tạo mới một khoản trả góp
-     * @param {Object} installmentData - Dữ liệu trả góp
-     * @param {number} installmentData.order_id - ID đơn hàng
-     * @param {number} installmentData.user_id - ID người dùng
-     * @param {number} installmentData.total_amount - Tổng số tiền
-     * @param {number} installmentData.down_payment - Số tiền trả trước
-     * @param {number} installmentData.num_terms - Số kỳ trả góp
-     * @param {number} installmentData.interest_rate - Lãi suất (%)
-     * @param {Date} installmentData.start_date - Ngày bắt đầu
+     * @param {Object} installmentData 
+     * @param {number} installmentData.order_id 
+     * @param {number} installmentData.user_id 
+     * @param {number} installmentData.total_amount 
+     * @param {number} installmentData.down_payment 
+     * @param {number} installmentData.num_terms 
+     * @param {number} installmentData.interest_rate 
+     * @param {Date} installmentData.start_date 
      * @returns {Object} Installment và danh sách các kỳ thanh toán
      */
     async createInstallment(installmentData) {
@@ -27,31 +27,31 @@ class InstallmentService {
                 start_date
             } = installmentData;
 
-            // Tính toán số tiền còn lại sau khi trả trước
+            // Calculate remaining amount after down payment
             const remainingAmount = total_amount - down_payment;
 
-            // Tính toán số tiền phải trả hàng tháng (bao gồm lãi suất)
+            // Calculate monthly payment amount (including interest)
             const monthlyInterestRate = interest_rate / 100 / 12;
             let monthly_payment;
 
             if (interest_rate > 0) {
-                // Công thức tính trả góp có lãi suất
+                // Formula for installment with interest
                 monthly_payment = (remainingAmount * monthlyInterestRate * Math.pow(1 + monthlyInterestRate, num_terms)) 
                     / (Math.pow(1 + monthlyInterestRate, num_terms) - 1);
             } else {
-                // Không có lãi suất
+                // No interest
                 monthly_payment = remainingAmount / num_terms;
             }
 
-            // Làm tròn đến 2 chữ số thập phân
+            // Round to 2 decimal places
             monthly_payment = Math.round(monthly_payment * 100) / 100;
 
-            // Tính ngày kết thúc (start_date + num_terms months)
+            // Calculate end date (start_date + num_terms months)
             const startDateObj = new Date(start_date);
             const endDateObj = new Date(startDateObj);
             endDateObj.setMonth(endDateObj.getMonth() + num_terms);
 
-            // Tạo installment
+            // Create installment
             const installment = await Installment.create({
                 order_id,
                 user_id,
@@ -65,7 +65,7 @@ class InstallmentService {
                 status: 'pending' // pending, approved, active, completed, cancelled
             });
 
-            // Tạo các kỳ thanh toán
+            // Create installment payments
             const payments = [];
             for (let i = 1; i <= num_terms; i++) {
                 const dueDate = new Date(startDateObj);
@@ -107,12 +107,27 @@ class InstallmentService {
 
             const payments = await InstallmentPayment.findAllPaymentsByInstallmentId(installmentId);
 
+            // Calculate total amount paid
+            const totalPaidFromPayments = payments
+                .filter(p => p.status === 'paid')
+                .reduce((sum, p) => sum + parseFloat(p.amount || 0), 0);
+            
+            // Add down payment if paid
+            const downPaymentPaid = installment.down_payment_status === 'paid' 
+                ? parseFloat(installment.down_payment || 0) 
+                : 0;
+            
+            const totalPaid = totalPaidFromPayments + downPaymentPaid;
+            const outstandingPrincipal = parseFloat(installment.total_amount || 0) - totalPaid;
+
             return {
                 ...installment,
-                payments
+                payments,
+                total_paid: totalPaid,
+                outstanding_principal: Math.max(0, outstandingPrincipal)
             };
         } catch (error) {
-            throw new Error(`SERVICELỗi lấy thông tin trả góp: ${error.message}`);
+            throw new Error(`SERVICE Lỗi lấy thông tin trả góp: ${error.message}`);
         }
     }
 
@@ -125,13 +140,29 @@ class InstallmentService {
         try {
             const installments = await Installment.findAllInstallmentsByUserId(userId);
 
-            // Lấy payments cho từng installment
+            // Get payments for each installment and calculate total_paid
             const installmentsWithPayments = await Promise.all(
                 installments.map(async (installment) => {
                     const payments = await InstallmentPayment.findAllPaymentsByInstallmentId(installment.installment_id);
+                    
+                    // Calculate total amount paid
+                    const totalPaidFromPayments = payments
+                        .filter(p => p.status === 'paid')
+                        .reduce((sum, p) => sum + parseFloat(p.amount || 0), 0);
+                    
+                    // Add down payment if paid
+                    const downPaymentPaid = installment.down_payment_status === 'paid' 
+                        ? parseFloat(installment.down_payment || 0) 
+                        : 0;
+                    
+                    const totalPaid = totalPaidFromPayments + downPaymentPaid;
+                    const outstandingPrincipal = parseFloat(installment.total_amount || 0) - totalPaid;
+
                     return {
                         ...installment,
-                        payments
+                        payments,
+                        total_paid: totalPaid,
+                        outstanding_principal: Math.max(0, outstandingPrincipal)
                     };
                 })
             );
@@ -143,10 +174,10 @@ class InstallmentService {
     }
 
     /**
-     * Thanh toán trả trước (down payment)
-     * @param {number} installmentId - ID của installment
-     * @param {Object} paymentData - Dữ liệu thanh toán {paid_date, note}
-     * @returns {Object} Installment đã cập nhật
+     * Make a down payment
+     * @param {number} installmentId 
+     * @param {Object} paymentData 
+     * @returns {Object} Updated installment
      */
     async makeDownPayment(installmentId, paymentData = {}) {
         try {
@@ -155,7 +186,7 @@ class InstallmentService {
                 throw new Error('SERVICE Không tìm thấy hợp đồng trả góp');
             }
 
-            // Kiểm tra trạng thái hợp đồng - CHỈ cho phép thanh toán khi approved
+            // Check contract status - ONLY allow payment when approved
             if (installment.status !== 'approved') {
                 if (installment.status === 'pending') {
                     throw new Error('SERVICE Hợp đồng đang chờ admin duyệt, chưa thể thanh toán');
@@ -170,11 +201,15 @@ class InstallmentService {
                 throw new Error('SERVICE Khoản trả trước đã được thanh toán');
             }
 
-            if (installment.down_payment <= 0) {
-                throw new Error('SERVICE Hợp đồng này không yêu cầu trả trước');
+            // Check and create payments if not exist
+            const existingPayments = await InstallmentPayment.findAllPaymentsByInstallmentId(installmentId);
+            if (existingPayments.length === 0) {
+                console.log(`SERVICE: Installment ${installmentId} chưa có payments, đang tạo...`);
+                await this.generatePayments(installmentId);
+                console.log(`SERVICE: Đã tạo ${installment.num_terms} payments cho installment ${installmentId}`);
             }
 
-            // Cập nhật trạng thái thanh toán trả trước
+            // Update down payment status
             const updated = await Installment.update(installmentId, {
                 down_payment_status: 'paid',
                 down_payment_date: paymentData.paid_date || new Date(),
@@ -185,12 +220,12 @@ class InstallmentService {
                 throw new Error('SERVICE Không thể cập nhật thanh toán trả trước');
             }
 
-            // Sau khi thanh toán trả trước thành công, chuyển sang active
+            // Change status to active after successful down payment
             await Installment.update(installmentId, {
                 status: 'active'
             });
 
-            // Cập nhật trạng thái đơn hàng sang "shipping" (đang giao hàng)
+            // Update order status to "shipping"
             try {
                 const orderData = await Order.getById(installment.order_id);
                 if (orderData) {
@@ -219,10 +254,10 @@ class InstallmentService {
     }
 
     /**
-     * Thanh toán một kỳ trả góp
-     * @param {number} paymentId - ID của kỳ thanh toán
-     * @param {Object} paymentData - Dữ liệu thanh toán
-     * @returns {Object} Payment đã cập nhật
+     * Make a payment for an installment term
+     * @param {number} paymentId 
+     * @param {Object} paymentData 
+     * @returns {Object} Updated payment
      */
     async makePayment(paymentId, paymentData = {}) {
         try {
@@ -235,7 +270,7 @@ class InstallmentService {
                 throw new Error('SERVICE Kỳ thanh toán này đã được thanh toán');
             }
 
-            // Kiểm tra trạng thái hợp đồng - CHỈ cho phép thanh toán khi active
+            // Check contract status - ONLY allow payment when active
             const installment = await Installment.findInstallmentById(payment.installment_id);
             if (!installment) {
                 throw new Error('SERVICE Không tìm thấy hợp đồng trả góp');
@@ -255,7 +290,7 @@ class InstallmentService {
                 }
             }
 
-            // Cập nhật trạng thái thanh toán
+            // Update payment status
             const updated = await InstallmentPayment.update(paymentId, {
                 paid_date: paymentData.paid_date || new Date(),
                 status: 'paid',
@@ -266,20 +301,20 @@ class InstallmentService {
                 throw new Error('SERVICE Không thể cập nhật thanh toán');
             }
 
-            // Kiểm tra xem tất cả các kỳ đã thanh toán chưa
+            // Check if all payments are paid
             const allPayments = await InstallmentPayment.findAllPaymentsByInstallmentId(payment.installment_id);
             
             const allPaid = allPayments.every(p => p.status === 'paid');
             
             if (allPaid) {
-                // Cập nhật trạng thái installment thành completed
+                // Update installment status to completed
                 await Installment.update(payment.installment_id, {
                     ...installment,
                     status: 'completed'
                 });
             }
-            // Không còn auto-transition từ pending sang active
-            // Phải thanh toán trả trước (down payment) trước để status = active
+            // No more auto-transition from pending to active
+            // Must pay down payment first to set status = active
 
             return await InstallmentPayment.findPaymentById(paymentId);
         } catch (error) {
@@ -300,10 +335,10 @@ class InstallmentService {
 
             for (const payment of payments) {
                 if (payment.status === 'pending' && new Date(payment.due_date) < today) {
-                    // Cập nhật trạng thái thành overdue
+                    // Cập nhật trạng thái thành late (database uses 'late' instead of 'overdue')
                     await InstallmentPayment.update(payment.payment_id, {
                         ...payment,
-                        status: 'overdue'
+                        status: 'late'
                     });
                     overduePayments.push(payment);
                 }
@@ -406,7 +441,7 @@ class InstallmentService {
 
             const paidPayments = payments.filter(p => p.status === 'paid');
             const pendingPayments = payments.filter(p => p.status === 'pending');
-            const overduePayments = payments.filter(p => p.status === 'overdue');
+            const overduePayments = payments.filter(p => p.status === 'overdue' || p.status === 'late');
 
             const totalPaid = paidPayments.reduce((sum, p) => sum + parseFloat(p.amount), 0) + parseFloat(installment.down_payment);
             const totalRemaining = parseFloat(installment.total_amount) - totalPaid;
@@ -427,7 +462,7 @@ class InstallmentService {
                 next_payment: pendingPayments[0] || null
             };
         } catch (error) {
-            throw new Error(`SERVICELỗi tính toán tổng hợp thanh toán: ${error.message}`);
+            throw new Error(`SERVICE Lỗi tính toán tổng hợp thanh toán: ${error.message}`);
         }
     }
 
@@ -457,18 +492,27 @@ class InstallmentService {
                 throw new Error('SERVICE Không thể cập nhật khoản trả góp');
             }
 
-            // Nếu status được đổi thành 'approved', cập nhật order status thành 'processing'
+            // Status = approved automatically generate payments if not exist
             if (updateData.status === 'approved') {
                 try {
+                    // Kiểm tra và tạo payments
+                    const existingPayments = await InstallmentPayment.findAllPaymentsByInstallmentId(installmentId);
+                    if (existingPayments.length === 0) {
+                        console.log(`SERVICE: Installment ${installmentId} approved but no payments, creating...`);
+                        await this.generatePayments(installmentId);
+                        console.log(`SERVICE: Created ${installment.num_terms} payments for installment ${installmentId}`);
+                    }
+
+                    // Update order status to 'processing'
                     const orderData = await Order.getById(installment.order_id);
                     if (orderData) {
-                        // Create Order instance from plain object
+                        
                         const order = new Order(orderData);
                         console.log(`SERVICE: Found order ${order.orderId} with status '${order.orderStatus}'`);
                         
-                        // Update order sang 'processing' nếu đang ở 'pending' hoặc 'confirmed'
+                        // Update order to 'processing' if currently 'pending' or 'confirmed'
                         if (order.orderStatus === 'pending' || order.orderStatus === 'confirmed') {
-                            // Nếu pending, confirm trước rồi mới process
+                            // If pending, confirm first then process
                             if (order.orderStatus === 'pending') {
                                 await order.confirm();
                                 console.log(`SERVICE: Confirmed order ${order.orderId}`);
@@ -482,12 +526,12 @@ class InstallmentService {
                         console.log(`SERVICE: Order ${installment.order_id} not found`);
                     }
                 } catch (orderError) {
-                    console.error('SERVICE: Error updating order status:', orderError.message);
-                    // Không throw error vì installment đã update thành công
+                    console.error('SERVICE: Error in approval process:', orderError.message);
+                    
                 }
             }
 
-            // Fetch lại để có dữ liệu mới nhất từ DB
+            // Fetch again to get the latest data from DB
             return await this.getInstallmentById(installmentId);
         } catch (error) {
             console.error('SERVICE Error in updateInstallment:', error);
@@ -496,7 +540,7 @@ class InstallmentService {
     }
 
     /**
-     * Xóa khoản trả góp (chỉ nếu chưa có payment nào được thanh toán)
+     * Delete installment (only if no payment has been made)
      * @param {number} installmentId 
      * @returns {boolean}
      */
