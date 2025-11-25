@@ -148,6 +148,87 @@ class Product {
     );
     return true;
   }
+
+  // Get filter options for a category (brands and attributes)
+  async getFilterOptions(categoryId) {
+    try {
+      console.log('🔍 Getting filter options for category:', categoryId);
+      
+      // Get price range from variants
+      const [priceRange] = await db.query(
+        `SELECT 
+          COALESCE(MIN(v.price), 0) as minPrice,
+          COALESCE(MAX(v.price), 0) as maxPrice
+        FROM products p
+        INNER JOIN product_variants v ON p.product_id = v.product_id
+        WHERE p.category_id = ? AND p.is_active = 1 AND v.is_active = 1`,
+        [categoryId]
+      );
+      console.log('✅ Price range:', priceRange);
+
+      // Get brands from attributes (Hãng, Thương hiệu, Nhà sản xuất)
+      const [brands] = await db.query(
+        `SELECT DISTINCT av.value_name as brand
+        FROM products p
+        INNER JOIN product_variants v ON p.product_id = v.product_id
+        INNER JOIN variant_attributes vam ON v.variant_id = vam.variant_id
+        INNER JOIN attribute_values av ON vam.attribute_value_id = av.attribute_value_id
+        INNER JOIN attributes a ON av.attribute_id = a.attribute_id
+        WHERE p.category_id = ? 
+          AND p.is_active = 1 
+          AND v.is_active = 1
+          AND (a.attribute_name = 'Hãng' OR a.attribute_name = 'Thương hiệu' OR a.attribute_name = 'Nhà sản xuất')
+        ORDER BY av.value_name ASC`,
+        [categoryId]
+      );
+
+      // Get all attributes for this category with their values
+      const [attributes] = await db.query(
+        `SELECT DISTINCT
+          a.attribute_id,
+          a.attribute_name,
+          av.attribute_value_id,
+          av.value_name,
+          av.display_order
+        FROM attributes a
+        INNER JOIN attribute_categories ac ON a.attribute_id = ac.attribute_id
+        INNER JOIN attribute_values av ON a.attribute_id = av.attribute_id
+        WHERE ac.category_id = ?
+          AND av.is_active = 1
+          AND a.attribute_name NOT IN ('Hãng', 'Thương hiệu', 'Nhà sản xuất')
+        ORDER BY a.attribute_name, av.display_order ASC, av.value_name ASC`,
+        [categoryId]
+      );
+
+      // Group attributes by name
+      const attributeGroups = {};
+      attributes.forEach(attr => {
+        if (!attributeGroups[attr.attribute_name]) {
+          attributeGroups[attr.attribute_name] = {
+            attributeId: attr.attribute_id,
+            attributeName: attr.attribute_name,
+            values: []
+          };
+        }
+        attributeGroups[attr.attribute_name].values.push({
+          valueId: attr.attribute_value_id,
+          valueName: attr.value_name
+        });
+      });
+
+      return {
+        priceRange: {
+          min: priceRange[0]?.minPrice || 0,
+          max: priceRange[0]?.maxPrice || 0
+        },
+        brands: brands.map(b => b.brand),
+        attributes: Object.values(attributeGroups)
+      };
+    } catch (error) {
+      console.error('Error getting filter options:', error);
+      throw error;
+    }
+  }
 }
 
 export default new Product();

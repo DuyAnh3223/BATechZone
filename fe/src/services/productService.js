@@ -48,5 +48,23 @@ export const productService = {
             withCredentials: true
         });
         return response.data;
+    },
+
+    // Lấy products cho Build PC theo category
+    getProductsForBuildPC: async (categoryId) => {
+        const response = await api.get('/products/build-pc', {
+            params: { category_id: categoryId },
+            withCredentials: true
+        });
+        return response.data;
+    },
+
+    // Lấy filter options cho một category
+    getFilterOptions: async (categoryId) => {
+        const response = await api.get('/products/filters/options', {
+            params: { category_id: categoryId },
+            withCredentials: true
+        });
+        return response.data;
     }
 };

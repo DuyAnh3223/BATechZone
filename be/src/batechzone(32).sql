@@ -2,10 +2,10 @@
 -- version 5.2.1
 -- https://www.phpmyadmin.net/
 --
--- Host: 127.0.0.1
--- Generation Time: Nov 24, 2025 at 10:37 AM
--- Server version: 10.4.32-MariaDB
--- PHP Version: 8.2.12
+-- Máy chủ: 127.0.0.1
+-- Thời gian đã tạo: Th10 25, 2025 lúc 10:08 AM
+-- Phiên bản máy phục vụ: 10.4.32-MariaDB
+-- Phiên bản PHP: 8.2.12
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -18,13 +18,13 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8mb4 */;
 
 --
--- Database: `batechzone`
+-- Cơ sở dữ liệu: `batechzone`
 --
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `addresses`
+-- Cấu trúc bảng cho bảng `addresses`
 --
 
 CREATE TABLE `addresses` (
@@ -46,49 +46,17 @@ CREATE TABLE `addresses` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Dumping data for table `addresses`
+-- Đang đổ dữ liệu cho bảng `addresses`
 --
 
 INSERT INTO `addresses` (`address_id`, `user_id`, `recipient_name`, `phone`, `address_line1`, `address_line2`, `city`, `district`, `ward`, `postal_code`, `country`, `is_default`, `address_type`, `created_at`, `updated_at`) VALUES
-(1, 4, 'bao1', '0987676765', '123 bao', 'dsa', 'dsa', 'dsa', 'dsa', 'dsa', 'Vietnam', 0, 'home', '2025-11-06 06:56:49', '2025-11-06 06:57:32'),
-(2, 4, 'fsaf', '0987676765', '123 bao', 'rqw', 'rq', 'rqw', 'rqw', 'rq', 'Vietnam', 1, 'office', '2025-11-06 06:57:27', '2025-11-06 06:57:32'),
-(4, 9, 'bao1', '0987676765', '123 bao', 'dsa', 'rq', 'dsa', 'dsa', '312', 'Vietnam', 1, 'home', '2025-11-07 08:22:15', '2025-11-07 08:22:21'),
-(15, NULL, 'Mai Trần Duy Anh', '0947657637', '25A Do Duc Duc, Phu Tho Hoa, Tan Phu, HCM', NULL, 'hcm', 'q1', NULL, NULL, 'Vietnam', 0, 'other', '2025-11-16 03:33:04', '2025-11-16 03:33:04'),
-(17, NULL, 'Lê Tôn Bảo ', '0908231611', '25A Do Duc Duc, Phu Tho Hoa, Tan Phu, HCM', NULL, 'hcm', 'q1', NULL, NULL, 'Vietnam', 0, 'other', '2025-11-16 03:43:36', '2025-11-16 03:43:36'),
-(18, NULL, 'Lê Tôn Bảo ', '0908231611', '25A Do Duc Duc, Phu Tho Hoa, Tan Phu, HCM', NULL, 'hn', 'q1', NULL, NULL, 'Vietnam', 0, 'other', '2025-11-16 05:17:55', '2025-11-16 05:17:55'),
-(19, 10, 'nguyen van a', '0123456788', 'abc,123', 'gừger', 'hcm', 'q1', NULL, NULL, 'Vietnam', 0, 'other', '2025-11-16 06:38:02', '2025-11-16 06:38:02'),
-(20, 10, 'nguyen van a', '0987676765', '123, dsa', 'fsafsa', 'hcm', 'q1', NULL, NULL, 'Vietnam', 0, 'other', '2025-11-16 07:19:38', '2025-11-16 07:19:38'),
-(21, 10, 'nguyen van a', '0987676765', '123, dsa', 'brtetrbtrbrt', 'hcm', 'q1', NULL, NULL, 'Vietnam', 0, 'other', '2025-11-16 07:48:51', '2025-11-16 07:48:51'),
-(22, 10, 'nguyen van a', '0123456788', '123, dsa', 'đasa', 'hcm', 'q1', '', '', 'Vietnam', 1, 'other', '2025-11-16 08:22:55', '2025-11-16 08:34:07'),
-(23, 6, 'Mai Trần Duy Anh', '0947657637', '25A Do Duc Duc, Phu Tho Hoa, Tan Phu, HCM', NULL, 'hcm', 'q1', NULL, NULL, 'Vietnam', 0, 'other', '2025-11-16 13:00:12', '2025-11-16 13:00:12'),
-(24, NULL, 'A', '0947657637', '25A Do Duc Duc, Phu Tho Hoa, Tan Phu, HCM', NULL, 'hcm', 'q1', NULL, NULL, 'Vietnam', 0, 'other', '2025-11-16 13:09:01', '2025-11-16 13:09:01'),
-(25, NULL, 'Lê Tôn Bảo ', '0987654321', '25A Do Duc Duc, Phu Tho Hoa, Tan Phu, HCM', NULL, 'hcm', 'q1', NULL, NULL, 'Vietnam', 0, 'other', '2025-11-16 13:10:31', '2025-11-16 13:10:31'),
-(26, 1, 'Nguyễn Linh', '0987654321', '25A Do Duc Duc, Phu Tho Hoa, Tan Phu, HCM', NULL, 'hcm', 'q1', NULL, NULL, 'Vietnam', 0, 'other', '2025-11-16 13:18:01', '2025-11-16 13:18:01'),
-(27, 10, 'nguyen van a', '0123456788', '123, dsa', NULL, 'hcm', 'q2', NULL, NULL, 'Vietnam', 0, 'other', '2025-11-22 10:13:10', '2025-11-22 10:13:10'),
-(28, NULL, 'nguyen van a', '0123456788', '123, dsa', NULL, 'hcm', 'Quận 1', NULL, NULL, 'Vietnam', 0, 'other', '2025-11-22 11:04:40', '2025-11-22 11:04:40'),
-(29, NULL, 'nguyen van a', '0123456788', '321,uu', NULL, 'hcm', 'Quận Phú Nhuận', NULL, NULL, 'Vietnam', 0, 'other', '2025-11-22 11:12:29', '2025-11-22 11:12:29'),
-(30, 10, 'dddd', '0123456788', 'abc', NULL, 'danang', 'Cẩm Lệ', NULL, NULL, 'Vietnam', 0, 'other', '2025-11-22 11:16:35', '2025-11-22 11:16:35'),
-(31, 10, 'nguyen van a', '0123456788', '123, dsa', NULL, 'hcm', 'q1', NULL, NULL, 'Vietnam', 0, 'other', '2025-11-22 11:26:51', '2025-11-22 11:26:51'),
-(32, 10, 'dddd', '0123456788', '321,uu', 'a', 'hcm', 'q1', NULL, NULL, 'Vietnam', 0, 'other', '2025-11-22 11:31:52', '2025-11-22 11:31:52'),
-(33, 10, 'dddd', '0123456788', 'abcd', NULL, 'danang', 'Ngũ Hành Sơn', NULL, NULL, 'Vietnam', 0, 'other', '2025-11-22 11:32:39', '2025-11-22 11:32:39'),
-(34, 6, 'admin', '0947657637', '25A Do Duc Duc, Phu Tho Hoa, Tan Phu, HCM', NULL, 'hcm', 'Quận 11', NULL, NULL, 'Vietnam', 0, 'other', '2025-11-22 12:19:25', '2025-11-22 12:19:25'),
-(35, NULL, 'Mai Trần Duy Anh', '0947657637', '25A Do Duc Duc, Phu Tho Hoa, Tan Phu, HCM', NULL, 'hanoi', 'Bắc Từ Liêm', NULL, NULL, 'Vietnam', 0, 'other', '2025-11-22 15:05:17', '2025-11-22 15:05:17'),
-(36, 14, 'Nguyễn Văn A', '0908786561', '123 Thạch Lãm', NULL, 'hcm', 'Quận 2', NULL, NULL, 'Vietnam', 0, 'other', '2025-11-22 15:32:12', '2025-11-22 15:32:12'),
-(40, 10, 'dddd', '0123456788', '321,uu', NULL, 'danang', 'Cẩm Lệ', NULL, NULL, 'Vietnam', 0, 'other', '2025-11-23 02:45:09', '2025-11-23 02:45:09'),
-(41, 10, 'dddd', '0123456788', 'abcd', NULL, 'hanoi', 'Ứng Hòa', NULL, NULL, 'Vietnam', 0, 'other', '2025-11-23 05:12:22', '2025-11-23 05:12:22'),
-(42, 10, 'dddd', '0123456788', 'EEDDFF', NULL, 'danang', 'Cẩm Lệ', NULL, NULL, 'Vietnam', 0, 'other', '2025-11-23 05:19:06', '2025-11-23 05:19:06'),
-(43, 10, 'dddd', '09756478576', 'abcdef123', NULL, 'binhdung', 'Bến Cát', NULL, NULL, 'Vietnam', 0, 'other', '2025-11-23 08:27:16', '2025-11-23 08:27:16'),
-(44, 10, 'dddd', '0987654657', 'gg 15p', NULL, 'cantho', 'Ninh Kiều', NULL, NULL, 'Vietnam', 0, 'other', '2025-11-23 08:37:14', '2025-11-23 08:37:14'),
-(45, 10, 'nguyen van a', '0123456788', '123, dsa', NULL, 'hcm', 'q1', NULL, NULL, 'Vietnam', 0, 'other', '2025-11-23 10:39:40', '2025-11-23 10:39:40'),
-(46, 18, 'Phạm Văn Tín', '0908987661', '32 Bùi Ngọ', NULL, 'hanoi', 'Bắc Từ Liêm', NULL, NULL, 'Vietnam', 0, 'other', '2025-11-24 04:34:05', '2025-11-24 04:34:05'),
-(48, 15, 'tranthib671d', '0908987661', '32 Bùi Ngọ', NULL, 'hcm', 'Quận Gò Vấp', NULL, NULL, 'Vietnam', 0, 'other', '2025-11-24 08:54:04', '2025-11-24 08:54:04'),
-(49, 19, 'Demo', '0908887777', '32 Demo', '', 'danang', 'Hải Châu', '', '', 'Vietnam', 1, 'other', '2025-11-24 09:04:43', '2025-11-24 09:05:51'),
-(51, 19, 'Demo', '0908887776', '32 Demo', NULL, 'danang', 'Hải Châu', NULL, NULL, 'Vietnam', 0, 'other', '2025-11-24 09:18:38', '2025-11-24 09:18:38');
+(52, 20, 'Trần Thị B', '0908787671', '32 Bùi Ngọ', NULL, 'hcm', 'Quận 1', NULL, NULL, 'Vietnam', 0, 'other', '2025-11-24 12:44:44', '2025-11-24 12:44:44'),
+(53, 21, 'Nguyễn Văn A', '0908786561', '123 Thạch Lãm', NULL, 'hcm', 'Quận 1', NULL, NULL, 'Vietnam', 0, 'other', '2025-11-24 14:41:59', '2025-11-24 14:41:59');
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `articles`
+-- Cấu trúc bảng cho bảng `articles`
 --
 
 CREATE TABLE `articles` (
@@ -105,7 +73,7 @@ CREATE TABLE `articles` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `attributes`
+-- Cấu trúc bảng cho bảng `attributes`
 --
 
 CREATE TABLE `attributes` (
@@ -118,7 +86,7 @@ CREATE TABLE `attributes` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Dumping data for table `attributes`
+-- Đang đổ dữ liệu cho bảng `attributes`
 --
 
 INSERT INTO `attributes` (`attribute_id`, `attribute_name`, `attribute_type`, `display_order`, `is_active`, `created_at`) VALUES
@@ -156,12 +124,16 @@ INSERT INTO `attributes` (`attribute_id`, `attribute_name`, `attribute_type`, `d
 (32, 'Hãng', 'other', 1, 1, '2025-11-15 05:46:33'),
 (33, 'Dung lượng', 'storage', 2, 1, '2025-11-15 05:46:33'),
 (34, 'Tốc độ quay', 'other', 3, 1, '2025-11-15 05:46:33'),
-(35, 'Buss', 'other', 0, 1, '2025-11-16 13:14:29');
+(35, 'Buss', 'other', 0, 1, '2025-11-16 13:14:29'),
+(36, 'DDR4', 'other', 0, 1, '2025-11-24 12:24:59'),
+(37, 'DDR5', 'other', 0, 1, '2025-11-24 12:25:05'),
+(38, 'Thế hệ', 'other', 0, 1, '2025-11-24 12:25:33'),
+(41, 'Chipset', 'other', 0, 1, '2025-11-24 12:27:38');
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `attribute_categories`
+-- Cấu trúc bảng cho bảng `attribute_categories`
 --
 
 CREATE TABLE `attribute_categories` (
@@ -171,7 +143,7 @@ CREATE TABLE `attribute_categories` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data for table `attribute_categories`
+-- Đang đổ dữ liệu cho bảng `attribute_categories`
 --
 
 INSERT INTO `attribute_categories` (`attribute_category_id`, `attribute_id`, `category_id`) VALUES
@@ -210,12 +182,18 @@ INSERT INTO `attribute_categories` (`attribute_category_id`, `attribute_id`, `ca
 (33, 33, 13),
 (34, 34, 13),
 (35, 1, 35),
-(36, 35, 35);
+(36, 35, 35),
+(37, 36, 35),
+(38, 37, 35),
+(39, 38, 1),
+(40, 39, 4),
+(41, 40, 4),
+(42, 41, 5);
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `attribute_values`
+-- Cấu trúc bảng cho bảng `attribute_values`
 --
 
 CREATE TABLE `attribute_values` (
@@ -230,7 +208,7 @@ CREATE TABLE `attribute_values` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Dumping data for table `attribute_values`
+-- Đang đổ dữ liệu cho bảng `attribute_values`
 --
 
 INSERT INTO `attribute_values` (`attribute_value_id`, `attribute_id`, `value_name`, `color_code`, `image_url`, `display_order`, `is_active`, `created_at`) VALUES
@@ -359,12 +337,21 @@ INSERT INTO `attribute_values` (`attribute_value_id`, `attribute_id`, `value_nam
 (123, 34, '5400RPM', NULL, NULL, 1, 1, '2025-11-15 05:46:33'),
 (124, 34, '7200RPM', NULL, NULL, 2, 1, '2025-11-15 05:46:33'),
 (125, 1, 'Gskill', NULL, NULL, 0, 1, '2025-11-16 13:14:20'),
-(126, 35, '3600', NULL, NULL, 0, 1, '2025-11-16 13:14:29');
+(126, 35, '3600', NULL, NULL, 0, 1, '2025-11-16 13:14:29'),
+(127, 3, 'Core i3', NULL, NULL, 0, 1, '2025-11-24 05:32:43'),
+(128, 6, 'RTX 4050', NULL, NULL, 0, 1, '2025-11-24 05:32:43'),
+(129, 15, 'M.2 NVMe PCIe 4.0', NULL, NULL, 0, 1, '2025-11-24 05:32:43'),
+(130, 18, 'B550', NULL, NULL, 0, 1, '2025-11-24 05:32:43'),
+(131, 22, '550W Gold', NULL, NULL, 0, 1, '2025-11-24 05:32:43'),
+(132, 25, 'Mid Tower', NULL, NULL, 0, 1, '2025-11-24 05:32:43'),
+(133, 29, 'AIO 240mm', NULL, NULL, 0, 1, '2025-11-24 05:32:43'),
+(134, 33, '6TB', NULL, NULL, 0, 1, '2025-11-24 05:32:43'),
+(135, 11, '8GB (1x8GB)', NULL, NULL, 0, 1, '2025-11-24 05:32:43');
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `builds`
+-- Cấu trúc bảng cho bảng `builds`
 --
 
 CREATE TABLE `builds` (
@@ -384,7 +371,7 @@ CREATE TABLE `builds` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `build_items`
+-- Cấu trúc bảng cho bảng `build_items`
 --
 
 CREATE TABLE `build_items` (
@@ -401,7 +388,7 @@ CREATE TABLE `build_items` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `carts`
+-- Cấu trúc bảng cho bảng `carts`
 --
 
 CREATE TABLE `carts` (
@@ -414,24 +401,21 @@ CREATE TABLE `carts` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Dumping data for table `carts`
+-- Đang đổ dữ liệu cho bảng `carts`
 --
 
 INSERT INTO `carts` (`cart_id`, `user_id`, `session_id`, `created_at`, `updated_at`, `expires_at`) VALUES
 (1, NULL, 'guest_1763223671171_m9llpews6', '2025-11-15 16:30:52', '2025-11-15 16:30:52', '2025-12-15 16:30:52'),
 (2, 6, NULL, '2025-11-16 02:29:53', '2025-11-16 02:29:53', '2025-12-16 02:29:53'),
 (3, 6, NULL, '2025-11-16 02:29:53', '2025-11-16 02:29:53', '2025-12-16 02:29:53'),
-(4, 10, NULL, '2025-11-16 05:36:21', '2025-11-16 05:36:21', '2025-12-16 05:36:21'),
 (5, NULL, 'guest_1763273048440_dxnpt7o32', '2025-11-16 06:04:08', '2025-11-16 06:04:08', '2025-12-16 06:04:08'),
 (6, NULL, 'guest_1763273048440_dxnpt7o32', '2025-11-16 06:04:08', '2025-11-16 06:04:08', '2025-12-16 06:04:08'),
-(7, 1, NULL, '2025-11-16 13:11:37', '2025-11-16 13:11:37', '2025-12-16 13:11:37'),
-(8, 15, NULL, '2025-11-22 17:04:24', '2025-11-22 17:04:24', '2025-12-22 17:04:24'),
-(9, 19, NULL, '2025-11-24 09:06:25', '2025-11-24 09:06:25', '2025-12-24 09:06:25');
+(10, 20, NULL, '2025-11-24 13:26:23', '2025-11-24 13:26:23', '2025-12-24 13:26:23');
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `cart_items`
+-- Cấu trúc bảng cho bảng `cart_items`
 --
 
 CREATE TABLE `cart_items` (
@@ -444,23 +428,19 @@ CREATE TABLE `cart_items` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data for table `cart_items`
+-- Đang đổ dữ liệu cho bảng `cart_items`
 --
 
 INSERT INTO `cart_items` (`cart_item_id`, `cart_id`, `variant_id`, `quantity`, `added_at`, `updated_at`) VALUES
-(46, 2, 336, 2, '2025-11-22 12:22:49', '2025-11-22 12:22:58'),
-(48, 7, 336, 1, '2025-11-22 15:18:59', '2025-11-22 15:18:59'),
-(51, 8, 337, 2, '2025-11-22 17:12:43', '2025-11-22 17:12:49'),
-(54, 5, 372, 1, '2025-11-23 02:31:12', '2025-11-23 02:31:12'),
-(58, 1, 336, 1, '2025-11-24 04:31:53', '2025-11-24 04:31:53'),
-(59, 1, 368, 1, '2025-11-24 04:32:45', '2025-11-24 04:32:45'),
-(60, 1, 373, 1, '2025-11-24 04:32:53', '2025-11-24 04:32:53'),
-(62, 9, 336, 4, '2025-11-24 09:06:25', '2025-11-24 09:18:09');
+(63, 1, 400, 1, '2025-11-24 12:42:21', '2025-11-24 14:40:52'),
+(64, 1, 379, 1, '2025-11-24 12:42:26', '2025-11-24 14:37:31'),
+(67, 10, 400, 1, '2025-11-24 14:32:43', '2025-11-24 14:32:43'),
+(68, 10, 379, 1, '2025-11-24 14:32:44', '2025-11-24 14:32:44');
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `categories`
+-- Cấu trúc bảng cho bảng `categories`
 --
 
 CREATE TABLE `categories` (
@@ -478,7 +458,7 @@ CREATE TABLE `categories` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Dumping data for table `categories`
+-- Đang đổ dữ liệu cho bảng `categories`
 --
 
 INSERT INTO `categories` (`category_id`, `category_name`, `slug`, `description`, `parent_category_id`, `image_url`, `icon`, `is_active`, `display_order`, `created_at`, `updated_at`) VALUES
@@ -490,12 +470,22 @@ INSERT INTO `categories` (`category_id`, `category_name`, `slug`, `description`,
 (7, 'Case', 'case', 'Vỏ máy tính (Computer Case) - Case PC ATX, mATX, ITX với quạt RGB, tản nhiệt tốt', NULL, '/uploads/categories/CASE-1763457197140-926410204.webp', NULL, 1, 7, '2025-11-05 12:37:11', '2025-11-18 09:13:17'),
 (8, 'Cooling', 'cooling', 'Tản nhiệt và làm mát - Quạt case, tản nhiệt CPU, tản nhiệt nước AIO', NULL, '/uploads/categories/cooling-1763787556488-628471150.jpg', NULL, 1, 8, '2025-11-05 12:37:11', '2025-11-22 04:59:16'),
 (13, 'HDD', 'hdd', 'Ổ đĩa cứng (Hard Disk Drive) là thiết bị lưu trữ dữ liệu chính cho máy tính', NULL, '/uploads/categories/hdd-1763456945816-496007346.jpg', NULL, 1, 0, '2025-11-08 14:08:34', '2025-11-18 09:09:05'),
-(35, 'RAM', 'ram', NULL, NULL, '/uploads/categories/RAM-1763457131288-611013067.webp', NULL, 1, 0, '2025-11-16 13:14:05', '2025-11-18 09:12:11');
+(35, 'RAM', 'ram', NULL, NULL, '/uploads/categories/RAM-1763457131288-611013067.webp', NULL, 1, 0, '2025-11-16 13:14:05', '2025-11-18 09:12:11'),
+(40, 'Monitor', 'monitor', 'Màn hình máy tính - Gaming monitor, màn hình văn phòng', NULL, '', NULL, 1, 40, '2025-11-25 08:58:13', '2025-11-25 08:58:13'),
+(41, 'Keyboard', 'keyboard', 'Bàn phím - Bàn phím cơ, bàn phím gaming', NULL, '', NULL, 1, 41, '2025-11-25 08:58:13', '2025-11-25 08:58:13'),
+(42, 'Mouse', 'mouse', 'Chuột máy tính - Chuột gaming, chuột văn phòng', NULL, '', NULL, 1, 42, '2025-11-25 08:58:13', '2025-11-25 08:58:13'),
+(43, 'Headphone', 'headphone', 'Tai nghe - Tai nghe gaming, tai nghe văn phòng', NULL, '', NULL, 1, 43, '2025-11-25 08:58:13', '2025-11-25 08:58:13'),
+(44, 'Speaker', 'speaker', 'Loa máy tính - Loa 2.0, 2.1, 5.1', NULL, '', NULL, 1, 44, '2025-11-25 08:58:13', '2025-11-25 08:58:13'),
+(45, 'Gaming Chair', 'gaming-chair', 'Ghế gaming - Ghế công thái học, ghế gaming cao cấp', NULL, '', NULL, 1, 45, '2025-11-25 08:58:13', '2025-11-25 08:58:13'),
+(46, 'Case Fan', 'case-fan', 'Quạt case - Quạt tản nhiệt RGB, quạt PWM', NULL, '', NULL, 1, 46, '2025-11-25 08:58:13', '2025-11-25 08:58:13'),
+(47, 'Air Cooler', 'air-cooler', 'Tản nhiệt khí - Tản nhiệt CPU tower, dual tower', 8, '', NULL, 1, 47, '2025-11-25 08:58:13', '2025-11-25 08:58:13'),
+(48, 'AIO Cooler', 'aio-cooler', 'Tản nhiệt nước AIO - Tản nước 240mm, 360mm', 8, '', NULL, 1, 48, '2025-11-25 08:58:13', '2025-11-25 08:58:13'),
+(49, 'Custom Water', 'custom-water', 'Tản nhiệt nước custom - Bộ kit tản nước custom loop', 8, '', NULL, 1, 49, '2025-11-25 08:58:13', '2025-11-25 08:58:13');
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `coupons`
+-- Cấu trúc bảng cho bảng `coupons`
 --
 
 CREATE TABLE `coupons` (
@@ -515,7 +505,7 @@ CREATE TABLE `coupons` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data for table `coupons`
+-- Đang đổ dữ liệu cho bảng `coupons`
 --
 
 INSERT INTO `coupons` (`coupon_id`, `coupon_code`, `description`, `discount_type`, `discount_value`, `max_discount_amount`, `min_order_amount`, `usage_limit`, `used_count`, `is_active`, `valid_from`, `valid_until`, `created_at`) VALUES
@@ -532,7 +522,7 @@ INSERT INTO `coupons` (`coupon_id`, `coupon_code`, `description`, `discount_type
 -- --------------------------------------------------------
 
 --
--- Table structure for table `installments`
+-- Cấu trúc bảng cho bảng `installments`
 --
 
 CREATE TABLE `installments` (
@@ -554,37 +544,17 @@ CREATE TABLE `installments` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data for table `installments`
+-- Đang đổ dữ liệu cho bảng `installments`
 --
 
 INSERT INTO `installments` (`installment_id`, `order_id`, `user_id`, `total_amount`, `down_payment`, `down_payment_status`, `down_payment_date`, `down_payment_note`, `num_terms`, `monthly_payment`, `interest_rate`, `start_date`, `end_date`, `status`, `created_at`) VALUES
-(1, 1, 11, 5200000.00, 2000000.00, 'paid', '2025-11-20 13:17:00', NULL, 6, 533333.33, 1.50, '2025-11-20', '2026-05-20', 'active', '2025-11-20 06:17:00'),
-(2, 2, 12, 7700000.00, 3000000.00, 'paid', '2025-11-20 13:17:00', NULL, 12, 391666.67, 0.00, '2025-11-20', '2026-11-20', 'active', '2025-11-20 06:17:00'),
-(3, 22, 10, 200000.00, 40000.00, 'paid', '2025-11-22 18:16:35', NULL, 9, 17918.82, 1.50, '2025-11-22', '2026-08-22', 'active', '2025-11-22 11:16:35'),
-(4, 25, 10, 450000.00, 90000.00, 'paid', '2025-11-22 18:32:39', NULL, 6, 60385.59, 1.50, '2025-11-22', '2026-05-22', 'active', '2025-11-22 11:32:39'),
-(5, 26, 6, 8470000.00, 1694000.00, 'paid', '2025-11-22 19:19:25', NULL, 15, 457476.41, 1.50, '2025-11-22', '2027-02-22', 'approved', '2025-11-22 12:19:25'),
-(6, 28, 14, 900000.00, 180000.00, 'paid', '2025-11-22 22:32:12', NULL, 6, 120771.18, 1.50, '2025-11-22', '2026-05-22', 'active', '2025-11-22 15:32:12'),
-(8, 29, 15, 8041129.35, 1600000.00, 'paid', '2025-11-22 22:53:20', NULL, 6, 1073521.56, 2.20, '2025-11-22', '2026-05-22', 'approved', '2025-11-22 15:53:20'),
-(10, 30, 15, 452313.53, 90000.00, 'paid', '2025-11-24 07:18:45', 'Thanh toán trả trước qua Chuyển khoản', 6, 60385.59, 2.20, '2025-11-22', '2026-05-22', 'approved', '2025-11-22 17:04:45'),
-(11, 31, 15, 16082258.70, 3200000.00, 'paid', '2025-11-24 07:44:14', 'Thanh toán trả trước qua Chuyển khoản', 6, 2147043.12, 2.20, '2025-11-23', '2026-05-23', 'approved', '2025-11-22 17:13:34'),
-(12, 32, 10, 653341.76, 130000.00, 'pending', NULL, NULL, 6, 87223.63, 2.20, '2025-11-23', '2026-05-23', 'pending', '2025-11-23 02:45:09'),
-(13, 33, 10, 854369.99, 170000.00, 'pending', NULL, NULL, 6, 114061.67, 2.20, '2025-11-23', '2026-05-23', 'pending', '2025-11-23 05:12:22'),
-(14, 34, 10, 100514.12, 20000.00, 'pending', NULL, NULL, 6, 13419.02, 2.20, '2025-11-23', '2026-05-23', 'pending', '2025-11-23 05:19:06'),
-(15, 35, 10, 603084.70, 120000.00, 'paid', '2025-11-23 15:27:16', NULL, 6, 80514.12, 2.20, '2025-11-23', '2026-05-23', 'approved', '2025-11-23 08:27:16'),
-(16, 36, 10, 1212204.89, 240000.00, 'paid', '2025-11-23 15:37:14', NULL, 15, 64813.66, 2.20, '2025-11-23', '2027-02-23', 'approved', '2025-11-23 08:37:14'),
-(17, 38, 18, 1458280.26, 290000.00, 'paid', '2025-11-24 11:34:05', NULL, 8, 146035.03, 2.20, '2025-11-24', '2026-07-24', 'approved', '2025-11-24 04:34:05'),
-(18, 39, 15, 16765194.38, 3334000.00, 'paid', '2025-11-24 07:45:00', 'Thanh toán trả trước qua Chuyển khoản', 8, 1678899.30, 2.20, '2025-11-24', '2026-07-24', 'approved', '2025-11-24 07:30:10'),
-(19, 40, 15, 17228655.39, 3424000.00, 'pending', NULL, NULL, 9, 1533850.60, 2.20, '2025-11-24', '2026-08-24', 'pending', '2025-11-24 08:54:04'),
-(20, 41, 19, 1458280.26, 290000.00, 'pending', NULL, NULL, 8, 146035.03, 2.20, '2025-11-24', '2026-07-24', 'pending', '2025-11-24 09:04:43'),
-(21, 42, 19, 452569.73, 90000.00, 'pending', NULL, NULL, 8, 45321.22, 2.20, '2025-11-24', '2026-07-24', 'pending', '2025-11-24 09:10:16'),
-(22, 43, 19, 905139.47, 180000.00, 'pending', NULL, NULL, 8, 90642.43, 2.20, '2025-11-24', '2026-07-24', 'pending', '2025-11-24 09:15:17'),
-(23, 44, 19, 1357709.20, 270000.00, 'paid', '2025-11-24 09:34:38', 'Thanh toán trả trước qua Chuyển khoản', 8, 135963.65, 2.20, '2025-11-24', '2026-07-24', 'active', '2025-11-24 09:16:58'),
-(24, 45, 19, 1810278.94, 360000.00, 'paid', '2025-11-24 09:29:36', 'Thanh toán trả trước qua Chuyển khoản', 8, 181284.87, 2.20, '2025-11-24', '2026-07-24', 'active', '2025-11-24 09:18:38');
+(25, 46, 20, 12099086.57, 2400000.00, 'paid', '2025-11-24 12:49:52', 'Thanh toán trả trước qua Chuyển khoản', 12, 808257.21, 2.20, '2025-11-24', '2026-11-24', 'active', '2025-11-24 12:44:44'),
+(26, 47, 21, 12076160.32, 2400000.00, 'paid', '2025-11-24 14:44:46', 'Thanh toán trả trước qua Chuyển khoản', 9, 1075128.92, 2.20, '2025-11-24', '2026-08-24', 'active', '2025-11-24 14:41:59');
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `installment_payments`
+-- Cấu trúc bảng cho bảng `installment_payments`
 --
 
 CREATE TABLE `installment_payments` (
@@ -599,39 +569,36 @@ CREATE TABLE `installment_payments` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data for table `installment_payments`
+-- Đang đổ dữ liệu cho bảng `installment_payments`
 --
 
 INSERT INTO `installment_payments` (`payment_id`, `installment_id`, `payment_no`, `due_date`, `paid_date`, `amount`, `status`, `note`) VALUES
-(1, 1, 1, '2025-12-20', NULL, 533333.33, 'pending', NULL),
-(2, 1, 2, '2026-01-20', NULL, 533333.33, 'pending', NULL),
-(3, 1, 3, '2026-02-20', NULL, 533333.33, 'pending', NULL),
-(4, 1, 4, '2026-03-20', NULL, 533333.33, 'pending', NULL),
-(5, 1, 5, '2026-04-20', NULL, 533333.33, 'pending', NULL),
-(6, 1, 6, '2026-05-20', NULL, 533333.33, 'pending', NULL),
-(7, 2, 1, '2025-12-20', '2025-12-22', 391666.67, 'paid', 'Thanh toán trước hạn'),
-(8, 2, 2, '2026-01-20', NULL, 391666.67, 'pending', NULL),
-(9, 2, 3, '2026-02-20', NULL, 391666.67, 'pending', NULL),
-(10, 2, 4, '2026-03-20', NULL, 391666.67, 'pending', NULL),
-(11, 2, 5, '2026-04-20', NULL, 391666.67, 'pending', NULL),
-(12, 2, 6, '2026-05-20', NULL, 391666.67, 'pending', NULL),
-(13, 2, 7, '2026-06-20', NULL, 391666.67, 'pending', NULL),
-(14, 2, 8, '2026-07-20', NULL, 391666.67, 'pending', NULL),
-(15, 2, 9, '2026-08-20', NULL, 391666.67, 'pending', NULL),
-(16, 2, 10, '2026-09-20', NULL, 391666.67, 'pending', NULL),
-(17, 2, 11, '2026-10-20', NULL, 391666.67, 'pending', NULL),
-(18, 2, 12, '2026-11-20', NULL, 391666.67, 'pending', NULL),
-(19, 8, 1, '2025-12-22', NULL, 1073521.56, 'pending', NULL),
-(20, 8, 2, '2026-01-22', NULL, 1073521.56, 'pending', NULL),
-(21, 8, 3, '2026-02-22', NULL, 1073521.56, 'pending', NULL),
-(22, 8, 4, '2026-03-22', NULL, 1073521.56, 'pending', NULL),
-(23, 8, 5, '2026-04-22', NULL, 1073521.56, 'pending', NULL),
-(24, 8, 6, '2026-05-22', NULL, 1073521.56, 'pending', NULL);
+(25, 25, 1, '2025-12-24', '2025-11-24', 808257.21, 'paid', 'Thanh toán qua Chuyển khoản'),
+(26, 25, 2, '2026-01-24', NULL, 808257.21, 'pending', NULL),
+(27, 25, 3, '2026-02-24', NULL, 808257.21, 'pending', NULL),
+(28, 25, 4, '2026-03-24', NULL, 808257.21, 'pending', NULL),
+(29, 25, 5, '2026-04-24', NULL, 808257.21, 'pending', NULL),
+(30, 25, 6, '2026-05-24', NULL, 808257.21, 'pending', NULL),
+(31, 25, 7, '2026-06-24', NULL, 808257.21, 'pending', NULL),
+(32, 25, 8, '2026-07-24', NULL, 808257.21, 'pending', NULL),
+(33, 25, 9, '2026-08-24', NULL, 808257.21, 'pending', NULL),
+(34, 25, 10, '2026-09-24', NULL, 808257.21, 'pending', NULL),
+(35, 25, 11, '2026-10-24', NULL, 808257.21, 'pending', NULL),
+(36, 25, 12, '2026-11-24', NULL, 808257.21, 'pending', NULL),
+(37, 26, 1, '2025-12-24', '2025-11-24', 1075128.92, 'paid', 'Thanh toán qua Chuyển khoản'),
+(38, 26, 2, '2026-01-24', NULL, 1075128.92, 'pending', NULL),
+(39, 26, 3, '2026-02-24', NULL, 1075128.92, 'pending', NULL),
+(40, 26, 4, '2026-03-24', NULL, 1075128.92, 'pending', NULL),
+(41, 26, 5, '2026-04-24', NULL, 1075128.92, 'pending', NULL),
+(42, 26, 6, '2026-05-24', NULL, 1075128.92, 'pending', NULL),
+(43, 26, 7, '2026-06-24', NULL, 1075128.92, 'pending', NULL),
+(44, 26, 8, '2026-07-24', NULL, 1075128.92, 'pending', NULL),
+(45, 26, 9, '2026-08-24', NULL, 1075128.92, 'pending', NULL);
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `notifications`
+-- Cấu trúc bảng cho bảng `notifications`
 --
 
 CREATE TABLE `notifications` (
@@ -649,7 +616,7 @@ CREATE TABLE `notifications` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `orders`
+-- Cấu trúc bảng cho bảng `orders`
 --
 
 CREATE TABLE `orders` (
@@ -676,52 +643,17 @@ CREATE TABLE `orders` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data for table `orders`
+-- Đang đổ dữ liệu cho bảng `orders`
 --
 
 INSERT INTO `orders` (`order_id`, `user_id`, `order_number`, `address_id`, `coupon_id`, `order_status`, `payment_status`, `subtotal`, `discount_amount`, `shipping_fee`, `tax_amount`, `total_amount`, `notes`, `cancelled_reason`, `created_at`, `updated_at`, `confirmed_at`, `shipped_at`, `delivered_at`, `cancelled_at`) VALUES
-(1, 11, 'ORD001', NULL, NULL, 'pending', 'unpaid', 5000000.00, 0.00, 0.00, 0.00, 5200000.00, NULL, NULL, '2025-11-19 02:30:00', '2025-11-20 06:17:00', NULL, NULL, NULL, NULL),
-(2, 12, 'ORD002', NULL, NULL, 'pending', 'unpaid', 7500000.00, 0.00, 0.00, 0.00, 7700000.00, NULL, NULL, '2025-11-19 08:10:00', '2025-11-20 06:17:00', NULL, NULL, NULL, NULL),
-(11, 10, 'ORD75082611921', 19, 5, 'pending', 'unpaid', 5900000.00, 100000.00, 50000.00, 0.00, 5850000.00, 'gừger', NULL, '2025-11-16 06:38:02', '2025-11-16 06:38:02', NULL, NULL, NULL, NULL),
-(12, 10, 'ORD77578948294', 20, NULL, 'pending', 'unpaid', 900000.00, 0.00, 50000.00, 0.00, 950000.00, 'fsafsa', NULL, '2025-11-16 07:19:38', '2025-11-16 07:19:38', NULL, NULL, NULL, NULL),
-(13, 10, 'ORD79331079801', 21, 5, 'shipping', 'unpaid', 1350000.00, 100000.00, 50000.00, 0.00, 1300000.00, 'brtetrbtrbrt', NULL, '2025-11-16 07:48:51', '2025-11-16 09:28:00', NULL, NULL, NULL, NULL),
-(14, 10, 'ORD81375687283', 22, NULL, 'shipping', 'unpaid', 450000.00, 0.00, 50000.00, 0.00, 500000.00, 'đasa', NULL, '2025-11-16 08:22:55', '2025-11-16 11:51:10', NULL, NULL, NULL, NULL),
-(15, 6, 'ORD98012082332', 23, NULL, 'pending', 'unpaid', 5450000.00, 0.00, 50000.00, 0.00, 5500000.00, NULL, NULL, '2025-11-16 13:00:12', '2025-11-16 13:00:12', NULL, NULL, NULL, NULL),
-(16, NULL, 'ORD98541802163', 24, NULL, 'pending', 'unpaid', 450000.00, 0.00, 50000.00, 0.00, 500000.00, NULL, NULL, '2025-11-16 13:09:01', '2025-11-16 13:09:01', NULL, NULL, NULL, NULL),
-(17, NULL, 'ORD98631027172', 25, 7, 'pending', 'unpaid', 450000.00, 50000.00, 50000.00, 0.00, 450000.00, NULL, NULL, '2025-11-16 13:10:31', '2025-11-16 13:10:31', NULL, NULL, NULL, NULL),
-(18, 1, 'ORD99081462641', 26, 4, 'confirmed', 'unpaid', 1350000.00, 100000.00, 50000.00, 0.00, 1300000.00, NULL, NULL, '2025-11-16 13:18:01', '2025-11-16 13:21:48', NULL, NULL, NULL, NULL),
-(19, 10, 'ORD06390176808', 27, NULL, 'pending', 'unpaid', 650000.00, 0.00, 50000.00, 0.00, 700000.00, NULL, NULL, '2025-11-22 10:13:10', '2025-11-22 10:13:10', NULL, NULL, NULL, NULL),
-(20, NULL, 'ORD09480910274', 28, NULL, 'pending', 'unpaid', 800000.00, 0.00, 0.00, 0.00, 800000.00, NULL, NULL, '2025-11-22 11:04:40', '2025-11-22 11:04:40', NULL, NULL, NULL, NULL),
-(21, NULL, 'ORD09949187111', 29, NULL, 'pending', 'unpaid', 20000.00, 0.00, 0.00, 0.00, 20000.00, NULL, NULL, '2025-11-22 11:12:29', '2025-11-22 11:12:29', NULL, NULL, NULL, NULL),
-(22, 10, 'ORD10195813111', 30, NULL, 'pending', 'unpaid', 200000.00, 0.00, 0.00, 0.00, 200000.00, NULL, NULL, '2025-11-22 11:16:35', '2025-11-22 11:16:35', NULL, NULL, NULL, NULL),
-(23, 10, 'ORD10811392350', 31, NULL, 'pending', 'unpaid', 200000.00, 0.00, 50000.00, 0.00, 250000.00, NULL, NULL, '2025-11-22 11:26:51', '2025-11-22 11:26:51', NULL, NULL, NULL, NULL),
-(24, 10, 'ORD11112641065', 32, NULL, 'pending', 'unpaid', 650000.00, 0.00, 50000.00, 0.00, 700000.00, 'a', NULL, '2025-11-22 11:31:52', '2025-11-22 11:31:52', NULL, NULL, NULL, NULL),
-(25, 10, 'ORD11159100387', 33, NULL, 'pending', 'unpaid', 450000.00, 0.00, 0.00, 0.00, 450000.00, NULL, NULL, '2025-11-22 11:32:39', '2025-11-22 11:32:39', NULL, NULL, NULL, NULL),
-(26, 6, 'ORD13965713943', 34, NULL, 'pending', 'unpaid', 8470000.00, 0.00, 0.00, 0.00, 8470000.00, NULL, NULL, '2025-11-22 12:19:25', '2025-11-22 12:19:25', NULL, NULL, NULL, NULL),
-(27, NULL, 'ORD23917507553', 35, NULL, 'pending', 'unpaid', 450000.00, 0.00, 0.00, 0.00, 450000.00, NULL, NULL, '2025-11-22 15:05:17', '2025-11-22 15:05:17', NULL, NULL, NULL, NULL),
-(28, 14, 'ORD25532451128', 36, NULL, 'pending', 'unpaid', 900000.00, 0.00, 0.00, 0.00, 900000.00, NULL, NULL, '2025-11-22 15:32:12', '2025-11-22 15:32:12', NULL, NULL, NULL, NULL),
-(29, 15, 'ORD26800159920', NULL, NULL, 'pending', 'unpaid', 8000000.00, 0.00, 0.00, 0.00, 8000000.00, NULL, NULL, '2025-11-22 15:53:20', '2025-11-22 15:53:20', NULL, NULL, NULL, NULL),
-(30, 15, 'ORD31085937064', NULL, NULL, 'pending', 'unpaid', 450000.00, 0.00, 0.00, 0.00, 450000.00, NULL, NULL, '2025-11-22 17:04:45', '2025-11-22 17:04:45', NULL, NULL, NULL, NULL),
-(31, 15, 'ORD31614776498', NULL, NULL, 'pending', 'unpaid', 16000000.00, 0.00, 0.00, 0.00, 16000000.00, NULL, NULL, '2025-11-22 17:13:34', '2025-11-22 17:13:34', NULL, NULL, NULL, NULL),
-(32, 10, 'ORD65909943154', 40, NULL, 'confirmed', 'unpaid', 650000.00, 0.00, 0.00, 0.00, 650000.00, NULL, NULL, '2025-11-23 02:45:09', '2025-11-23 02:56:54', NULL, NULL, NULL, NULL),
-(33, 10, 'ORD74742479759', 41, NULL, 'pending', 'unpaid', 850000.00, 0.00, 0.00, 0.00, 850000.00, NULL, NULL, '2025-11-23 05:12:22', '2025-11-23 08:25:15', NULL, NULL, NULL, NULL),
-(34, 10, 'ORD75146696523', 42, NULL, 'pending', 'unpaid', 100000.00, 0.00, 0.00, 0.00, 100000.00, 'aa', NULL, '2025-11-23 05:19:06', '2025-11-23 08:49:05', '2025-11-23 08:48:51', NULL, NULL, NULL),
-(35, 10, 'ORD86436938249', 43, NULL, 'processing', 'unpaid', 600000.00, 0.00, 0.00, 0.00, 600000.00, NULL, NULL, '2025-11-23 08:27:16', '2025-11-23 11:04:17', '2025-11-23 11:04:17', NULL, NULL, NULL),
-(36, 10, 'ORD87034076723', 44, NULL, 'processing', 'unpaid', 1200000.00, 0.00, 0.00, 0.00, 1200000.00, 'abf', NULL, '2025-11-23 08:37:14', '2025-11-23 08:49:59', '2025-11-23 08:49:59', NULL, NULL, NULL),
-(37, 10, 'ORD94380350862', 45, NULL, 'pending', 'unpaid', 1260000.00, 0.00, 50000.00, 0.00, 1310000.00, NULL, NULL, '2025-11-23 10:39:40', '2025-11-23 10:39:40', NULL, NULL, NULL, NULL),
-(38, 18, 'ORD58845143046', 46, NULL, 'processing', 'unpaid', 1450000.00, 0.00, 0.00, 0.00, 1450000.00, NULL, NULL, '2025-11-24 04:34:05', '2025-11-24 04:48:44', '2025-11-24 04:48:44', NULL, NULL, NULL),
-(39, 15, 'ORD69410958448', NULL, NULL, 'pending', 'unpaid', 16670000.00, 0.00, 0.00, 0.00, 16670000.00, NULL, NULL, '2025-11-24 07:30:10', '2025-11-24 07:30:10', NULL, NULL, NULL, NULL),
-(40, 15, 'ORD74444234240', 48, NULL, 'pending', 'unpaid', 17120000.00, 0.00, 0.00, 0.00, 17120000.00, NULL, NULL, '2025-11-24 08:54:04', '2025-11-24 08:54:04', NULL, NULL, NULL, NULL),
-(41, 19, 'ORD75083661603', 49, NULL, 'pending', 'unpaid', 1450000.00, 0.00, 0.00, 0.00, 1450000.00, NULL, NULL, '2025-11-24 09:04:43', '2025-11-24 09:04:43', NULL, NULL, NULL, NULL),
-(42, 19, 'ORD75416081756', NULL, NULL, 'pending', 'unpaid', 450000.00, 0.00, 0.00, 0.00, 450000.00, NULL, NULL, '2025-11-24 09:10:16', '2025-11-24 09:10:16', NULL, NULL, NULL, NULL),
-(43, 19, 'ORD75717790532', 49, NULL, 'pending', 'unpaid', 900000.00, 0.00, 0.00, 0.00, 900000.00, NULL, NULL, '2025-11-24 09:15:17', '2025-11-24 09:15:17', NULL, NULL, NULL, NULL),
-(44, 19, 'ORD75818828082', 49, NULL, 'shipping', 'unpaid', 1350000.00, 0.00, 0.00, 0.00, 1350000.00, NULL, NULL, '2025-11-24 09:16:58', '2025-11-24 09:35:52', '2025-11-24 09:34:01', NULL, NULL, NULL),
-(45, 19, 'ORD75918555209', 51, NULL, 'processing', 'unpaid', 1800000.00, 0.00, 0.00, 0.00, 1800000.00, NULL, NULL, '2025-11-24 09:18:38', '2025-11-24 09:29:12', '2025-11-24 09:29:12', NULL, NULL, NULL);
+(46, 20, 'ORD88284166267', 52, NULL, 'shipping', 'unpaid', 12000000.00, 0.00, 0.00, 0.00, 12000000.00, NULL, NULL, '2025-11-24 12:44:44', '2025-11-24 12:49:52', NULL, NULL, NULL, NULL),
+(47, 21, 'ORD95319130334', 53, NULL, 'shipping', 'unpaid', 12000000.00, 0.00, 0.00, 0.00, 12000000.00, NULL, NULL, '2025-11-24 14:41:59', '2025-11-24 14:44:46', '2025-11-24 14:43:33', NULL, NULL, NULL);
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `order_items`
+-- Cấu trúc bảng cho bảng `order_items`
 --
 
 CREATE TABLE `order_items` (
@@ -739,69 +671,19 @@ CREATE TABLE `order_items` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data for table `order_items`
+-- Đang đổ dữ liệu cho bảng `order_items`
 --
 
 INSERT INTO `order_items` (`order_item_id`, `order_id`, `variant_id`, `product_name`, `variant_name`, `sku`, `quantity`, `unit_price`, `discount_amount`, `subtotal`, `created_at`) VALUES
-(13, 11, 338, 'Asus B760M-E Tuf', 'Asus B760M-E Tuf', 'asus-b760m-e-tuf-default', 1, 5000000.00, 0.00, 5000000.00, '2025-11-16 06:38:02'),
-(14, 11, 336, 'Intel Core i5 14600kf', 'Intel Core i5 14600kf', 'intel-core-i5-14600kf-default', 2, 450000.00, 0.00, 900000.00, '2025-11-16 06:38:02'),
-(15, 12, 336, 'Intel Core i5 14600kf', 'Intel Core i5 14600kf', 'intel-core-i5-14600kf-default', 2, 450000.00, 0.00, 900000.00, '2025-11-16 07:19:38'),
-(16, 13, 336, 'Intel Core i5 14600kf', 'Intel Core i5 14600kf', 'intel-core-i5-14600kf-default', 3, 450000.00, 0.00, 1350000.00, '2025-11-16 07:48:51'),
-(17, 14, 336, 'Intel Core i5 14600kf', 'Intel Core i5 14600kf', 'intel-core-i5-14600kf-default', 1, 450000.00, 0.00, 450000.00, '2025-11-16 08:22:55'),
-(18, 15, 338, 'Asus B760M-E Tuf', 'Asus B760M-E Tuf', 'asus-b760m-e-tuf-default', 1, 5000000.00, 0.00, 5000000.00, '2025-11-16 13:00:12'),
-(19, 15, 336, 'Intel Core i5 14600kf', 'Intel Core i5 14600kf', 'intel-core-i5-14600kf-default', 1, 450000.00, 0.00, 450000.00, '2025-11-16 13:00:12'),
-(20, 16, 336, 'Intel Core i5 14600kf', 'Intel Core i5 14600kf', 'intel-core-i5-14600kf-default', 1, 450000.00, 0.00, 450000.00, '2025-11-16 13:09:01'),
-(21, 17, 336, 'Intel Core i5 14600kf', 'Intel Core i5 14600kf', 'intel-core-i5-14600kf-default', 1, 450000.00, 0.00, 450000.00, '2025-11-16 13:10:31'),
-(22, 18, 336, 'Intel Core i5 14600kf', 'Intel Core i5 14600kf', 'intel-core-i5-14600kf-default', 3, 450000.00, 0.00, 1350000.00, '2025-11-16 13:18:01'),
-(23, 19, 336, 'Intel Core i5 14600kf', 'Intel Core i5 14600kf', 'intel-core-i5-14600kf-default', 1, 450000.00, 0.00, 450000.00, '2025-11-22 10:13:10'),
-(24, 19, 372, 'DD', 'AMD-RTX 4070-12GB-Gigabyte', 'AMD-RTX 4070-12GB-Gigabyte', 1, 200000.00, 0.00, 200000.00, '2025-11-22 10:13:10'),
-(25, 20, 372, 'DD', 'AMD-RTX 4070-12GB-Gigabyte', 'AMD-RTX 4070-12GB-Gigabyte', 4, 200000.00, 0.00, 800000.00, '2025-11-22 11:04:40'),
-(26, 21, 368, 'ABD', 'Seagate-1TB-5400RPM', 'Seagate-1TB-5400RPM', 1, 20000.00, 0.00, 20000.00, '2025-11-22 11:12:29'),
-(27, 22, 372, 'DD', 'AMD-RTX 4070-12GB-Gigabyte', 'AMD-RTX 4070-12GB-Gigabyte', 1, 200000.00, 0.00, 200000.00, '2025-11-22 11:16:35'),
-(28, 23, 372, 'DD', 'AMD-RTX 4070-12GB-Gigabyte', 'AMD-RTX 4070-12GB-Gigabyte', 1, 200000.00, 0.00, 200000.00, '2025-11-22 11:26:51'),
-(29, 24, 336, 'Intel Core i5 14600kf', 'Intel Core i5 14600kf', 'intel-core-i5-14600kf-default', 1, 450000.00, 0.00, 450000.00, '2025-11-22 11:31:52'),
-(30, 24, 372, 'DD', 'AMD-RTX 4070-12GB-Gigabyte', 'AMD-RTX 4070-12GB-Gigabyte', 1, 200000.00, 0.00, 200000.00, '2025-11-22 11:31:52'),
-(31, 25, 336, 'Intel Core i5 14600kf', 'Intel Core i5 14600kf', 'intel-core-i5-14600kf-default', 1, 450000.00, 0.00, 450000.00, '2025-11-22 11:32:39'),
-(32, 26, 368, 'ABD', 'Seagate-1TB-5400RPM', 'Seagate-1TB-5400RPM', 1, 20000.00, 0.00, 20000.00, '2025-11-22 12:19:25'),
-(33, 26, 336, 'Intel Core i5 14600kf', 'Intel Core i5 14600kf', 'intel-core-i5-14600kf-default', 1, 450000.00, 0.00, 450000.00, '2025-11-22 12:19:25'),
-(34, 26, 337, 'Asus RTX 5060Ti', 'Asus RTX 5060Ti', 'asus-rtx-5060ti-default', 1, 8000000.00, 0.00, 8000000.00, '2025-11-22 12:19:25'),
-(35, 27, 336, 'Intel Core i5 14600kf', 'Intel Core i5 14600kf', 'intel-core-i5-14600kf-default', 1, 450000.00, 0.00, 450000.00, '2025-11-22 15:05:17'),
-(36, 28, 336, 'Intel Core i5 14600kf', 'Intel Core i5 14600kf', 'intel-core-i5-14600kf-default', 2, 450000.00, 0.00, 900000.00, '2025-11-22 15:32:12'),
-(37, 29, 337, 'Asus RTX 5060Ti', 'Asus RTX 5060Ti', 'asus-rtx-5060ti-default', 1, 8000000.00, 0.00, 8000000.00, '2025-11-22 15:53:20'),
-(38, 30, 336, 'Intel Core i5 14600kf', 'Intel Core i5 14600kf', 'intel-core-i5-14600kf-default', 1, 450000.00, 0.00, 450000.00, '2025-11-22 17:04:45'),
-(39, 31, 337, 'Asus RTX 5060Ti', 'Asus RTX 5060Ti', 'asus-rtx-5060ti-default', 2, 8000000.00, 0.00, 16000000.00, '2025-11-22 17:13:34'),
-(40, 32, 372, 'DD', 'AMD-RTX 4070-12GB-Gigabyte', 'AMD-RTX 4070-12GB-Gigabyte', 1, 200000.00, 0.00, 200000.00, '2025-11-23 02:45:09'),
-(41, 32, 336, 'Intel Core i5 14600kf', 'Intel Core i5 14600kf', 'intel-core-i5-14600kf-default', 1, 450000.00, 0.00, 450000.00, '2025-11-23 02:45:09'),
-(42, 33, 372, 'DD', 'AMD-RTX 4070-12GB-Gigabyte', 'AMD-RTX 4070-12GB-Gigabyte', 2, 200000.00, 0.00, 400000.00, '2025-11-23 05:12:22'),
-(43, 33, 336, 'Intel Core i5 14600kf', 'Intel Core i5 14600kf', 'intel-core-i5-14600kf-default', 1, 450000.00, 0.00, 450000.00, '2025-11-23 05:12:22'),
-(44, 34, 368, 'ABD', 'Seagate-1TB-5400RPM', 'Seagate-1TB-5400RPM', 5, 20000.00, 0.00, 100000.00, '2025-11-23 05:19:06'),
-(45, 35, 372, 'DD', 'AMD-RTX 4070-12GB-Gigabyte', 'AMD-RTX 4070-12GB-Gigabyte', 3, 200000.00, 0.00, 600000.00, '2025-11-23 08:27:16'),
-(46, 36, 372, 'DD', 'AMD-RTX 4070-12GB-Gigabyte', 'AMD-RTX 4070-12GB-Gigabyte', 6, 200000.00, 0.00, 1200000.00, '2025-11-23 08:37:14'),
-(47, 37, 368, 'ABD', 'Seagate-1TB-5400RPM', 'Seagate-1TB-5400RPM', 3, 20000.00, 0.00, 60000.00, '2025-11-23 10:39:40'),
-(48, 37, 372, 'DD', 'AMD-RTX 4070-12GB-Gigabyte', 'AMD-RTX 4070-12GB-Gigabyte', 6, 200000.00, 0.00, 1200000.00, '2025-11-23 10:39:40'),
-(49, 38, 373, 'DD', NULL, 'NVIDIA-RX 7600-8GB-XFX', 1, 980000.00, 0.00, 980000.00, '2025-11-24 04:34:05'),
-(50, 38, 368, 'ABD', 'Seagate-1TB-5400RPM', 'Seagate-1TB-5400RPM', 1, 20000.00, 0.00, 20000.00, '2025-11-24 04:34:05'),
-(51, 38, 336, 'Intel Core i5 14600kf', 'Intel Core i5 14600kf', 'intel-core-i5-14600kf-default', 1, 450000.00, 0.00, 450000.00, '2025-11-24 04:34:05'),
-(52, 39, 336, 'Intel Core i5 14600kf', 'Intel Core i5 14600kf', 'intel-core-i5-14600kf-default', 1, 450000.00, 0.00, 450000.00, '2025-11-24 07:30:10'),
-(53, 39, 368, 'ABD', 'Seagate-1TB-5400RPM', 'Seagate-1TB-5400RPM', 1, 20000.00, 0.00, 20000.00, '2025-11-24 07:30:10'),
-(54, 39, 372, 'DD', 'AMD-RTX 4070-12GB-Gigabyte', 'AMD-RTX 4070-12GB-Gigabyte', 1, 200000.00, 0.00, 200000.00, '2025-11-24 07:30:10'),
-(55, 39, 337, 'Asus RTX 5060Ti', 'Asus RTX 5060Ti', 'asus-rtx-5060ti-default', 2, 8000000.00, 0.00, 16000000.00, '2025-11-24 07:30:10'),
-(56, 40, 336, 'Intel Core i5 14600kf', 'Intel Core i5 14600kf', 'intel-core-i5-14600kf-default', 2, 450000.00, 0.00, 900000.00, '2025-11-24 08:54:04'),
-(57, 40, 368, 'ABD', 'Seagate-1TB-5400RPM', 'Seagate-1TB-5400RPM', 1, 20000.00, 0.00, 20000.00, '2025-11-24 08:54:04'),
-(58, 40, 372, 'DD', 'AMD-RTX 4070-12GB-Gigabyte', 'AMD-RTX 4070-12GB-Gigabyte', 1, 200000.00, 0.00, 200000.00, '2025-11-24 08:54:04'),
-(59, 40, 337, 'Asus RTX 5060Ti', 'Asus RTX 5060Ti', 'asus-rtx-5060ti-default', 2, 8000000.00, 0.00, 16000000.00, '2025-11-24 08:54:04'),
-(60, 41, 373, 'DD', NULL, 'NVIDIA-RX 7600-8GB-XFX', 1, 980000.00, 0.00, 980000.00, '2025-11-24 09:04:43'),
-(61, 41, 368, 'ABD', 'Seagate-1TB-5400RPM', 'Seagate-1TB-5400RPM', 1, 20000.00, 0.00, 20000.00, '2025-11-24 09:04:43'),
-(62, 41, 336, 'Intel Core i5 14600kf', 'Intel Core i5 14600kf', 'intel-core-i5-14600kf-default', 1, 450000.00, 0.00, 450000.00, '2025-11-24 09:04:43'),
-(63, 42, 336, 'Intel Core i5 14600kf', 'Intel Core i5 14600kf', 'intel-core-i5-14600kf-default', 1, 450000.00, 0.00, 450000.00, '2025-11-24 09:10:16'),
-(64, 43, 336, 'Intel Core i5 14600kf', 'Intel Core i5 14600kf', 'intel-core-i5-14600kf-default', 2, 450000.00, 0.00, 900000.00, '2025-11-24 09:15:17'),
-(65, 44, 336, 'Intel Core i5 14600kf', 'Intel Core i5 14600kf', 'intel-core-i5-14600kf-default', 3, 450000.00, 0.00, 1350000.00, '2025-11-24 09:16:58'),
-(66, 45, 336, 'Intel Core i5 14600kf', 'Intel Core i5 14600kf', 'intel-core-i5-14600kf-default', 4, 450000.00, 0.00, 1800000.00, '2025-11-24 09:18:38');
+(67, 46, 379, 'Intel Core i7-13700K', 'Box', 'INTEL-13700K-BOX', 1, 9000000.00, 0.00, 9000000.00, '2025-11-24 12:44:44'),
+(68, 46, 400, 'Seasonic Focus GX-750', '750W Gold', 'SSN-GX750', 1, 3000000.00, 0.00, 3000000.00, '2025-11-24 12:44:44'),
+(69, 47, 379, 'Intel Core i7-13700K', 'Box', 'INTEL-13700K-BOX', 1, 9000000.00, 0.00, 9000000.00, '2025-11-24 14:41:59'),
+(70, 47, 400, 'Seasonic Focus GX-750', '750W Gold', 'SSN-GX750', 1, 3000000.00, 0.00, 3000000.00, '2025-11-24 14:41:59');
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `payments`
+-- Cấu trúc bảng cho bảng `payments`
 --
 
 CREATE TABLE `payments` (
@@ -821,7 +703,7 @@ CREATE TABLE `payments` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `posts`
+-- Cấu trúc bảng cho bảng `posts`
 --
 
 CREATE TABLE `posts` (
@@ -845,7 +727,7 @@ CREATE TABLE `posts` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `products`
+-- Cấu trúc bảng cho bảng `products`
 --
 
 CREATE TABLE `products` (
@@ -866,25 +748,65 @@ CREATE TABLE `products` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Dumping data for table `products`
+-- Đang đổ dữ liệu cho bảng `products`
 --
 
 INSERT INTO `products` (`product_id`, `category_id`, `product_name`, `slug`, `description`, `base_price`, `is_active`, `is_featured`, `view_count`, `rating_average`, `review_count`, `created_at`, `updated_at`, `img_path`) VALUES
-(239, 1, 'Intel Core i5 14600kf', 'intel-core-i5-14600kf', NULL, 450000.00, 1, 1, 40, 0.00, 0, '2025-11-15 15:03:12', '2025-11-22 08:18:25', ''),
-(240, 2, 'Asus RTX 5060Ti', 'asus-rtx-5060ti', NULL, 8000000.00, 1, 1, 30, 0.00, 0, '2025-11-15 15:10:15', '2025-11-22 08:18:29', ''),
-(241, 5, 'Asus B760M-E Tuf', 'asus-b760m-e-tuf', NULL, 5000000.00, 1, 0, 14, 0.00, 0, '2025-11-16 02:14:13', '2025-11-22 08:55:52', ''),
-(242, 35, 'Gskill Trident Z', 'gskill-trident-z', NULL, 0.00, 1, 0, 8, 0.00, 0, '2025-11-16 13:14:54', '2025-11-16 13:37:29', ''),
-(243, 2, 'Asus RTX 5070', 'asus-rtx-5070', NULL, 0.00, 1, 0, 2, 0.00, 0, '2025-11-18 12:53:53', '2025-11-18 13:08:05', ''),
-(249, 35, 'Mặc định', 'mac-inh', NULL, 50100.00, 1, 0, 2, 0.00, 0, '2025-11-21 12:52:03', '2025-11-22 08:55:45', ''),
-(250, 13, 'Thuộc tính', 'thuoc-tinh', NULL, 600.00, 1, 0, 6, 0.00, 0, '2025-11-21 13:02:29', '2025-11-22 08:55:41', ''),
-(253, 13, 'Demo Img', 'demo-img', NULL, 600.00, 1, 0, 14, 0.00, 0, '2025-11-21 13:59:12', '2025-11-22 08:55:48', ''),
-(257, 13, 'ABD', 'abd', 'aa', 20000.00, 1, 0, 40, 0.00, 0, '2025-11-22 05:42:02', '2025-11-22 12:17:41', ''),
-(263, 2, 'DD', 'dd', 'aaaa', 200000.00, 1, 0, 180, 0.00, 0, '2025-11-22 07:21:36', '2025-11-24 04:32:47', '');
+(264, 13, 'Ổ Cứng HDD SEAGATE Barracuda 2TB 3.5 inch 7200RPM, SATA III, 256MB Cache (ST2000DM008)', 'o-cung-hdd-seagate-barracuda-2tb-3-5-inch-7200rpm-sata-iii-256mb-cache-st2000dm008', NULL, 2500000.00, 1, 0, 8, 0.00, 0, '2025-11-24 12:30:39', '2025-11-25 09:00:41', ''),
+(265, 1, 'Intel Core i5-13600K', 'intel-core-i5-13600k', NULL, 6000000.00, 1, 1, 8, 0.00, 0, '2025-11-24 05:32:43', '2025-11-25 07:51:39', ''),
+(266, 1, 'AMD Ryzen 5 7600X', 'amd-ryzen-5-7600x', NULL, 5200000.00, 1, 1, 0, 0.00, 0, '2025-11-24 05:32:43', '2025-11-24 12:41:46', ''),
+(267, 1, 'Intel Core i7-13700K', 'intel-core-i7-13700k', NULL, 9000000.00, 1, 1, 0, 0.00, 0, '2025-11-24 05:32:43', '2025-11-24 12:41:54', ''),
+(268, 2, 'MSI GeForce RTX 4060', 'msi-geforce-rtx-4060', NULL, 7500000.00, 1, 0, 0, 0.00, 0, '2025-11-24 05:32:43', '2025-11-24 05:32:43', ''),
+(269, 2, 'ASUS TUF RTX 4070', 'asus-tuf-rtx-4070', NULL, 16000000.00, 1, 0, 0, 0.00, 0, '2025-11-24 05:32:43', '2025-11-24 05:32:43', ''),
+(270, 2, 'Gigabyte RX 7800 XT', 'gigabyte-rx-7800-xt', NULL, 14000000.00, 1, 0, 0, 0.00, 0, '2025-11-24 05:32:43', '2025-11-24 05:32:43', ''),
+(271, 4, 'Samsung NVMe 1TB', 'samsung-nvme-1tb', NULL, 1800000.00, 1, 0, 0, 0.00, 0, '2025-11-24 05:32:43', '2025-11-24 05:32:43', ''),
+(272, 4, 'WD Blue NVMe 512GB', 'wd-blue-nvme-512gb', NULL, 900000.00, 1, 0, 0, 0.00, 0, '2025-11-24 05:32:43', '2025-11-24 05:32:43', ''),
+(273, 4, 'Crucial SATA 1TB', 'crucial-sata-1tb', NULL, 850000.00, 1, 0, 0, 0.00, 0, '2025-11-24 05:32:43', '2025-11-24 05:32:43', ''),
+(274, 5, 'ASUS Prime Z790-A', 'asus-prime-z790-a', NULL, 4200000.00, 1, 0, 0, 0.00, 0, '2025-11-24 05:32:43', '2025-11-24 05:32:43', ''),
+(275, 5, 'MSI MAG B650 Tomahawk', 'msi-mag-b650-tomahawk', NULL, 3200000.00, 1, 0, 0, 0.00, 0, '2025-11-24 05:32:43', '2025-11-24 05:32:43', ''),
+(276, 5, 'Gigabyte B660M DS3H', 'gigabyte-b660m-ds3h', NULL, 1500000.00, 1, 0, 0, 0.00, 0, '2025-11-24 05:32:43', '2025-11-24 05:32:43', ''),
+(277, 6, 'Corsair RM650x', 'corsair-rm650x', NULL, 2400000.00, 1, 0, 0, 0.00, 0, '2025-11-24 05:32:43', '2025-11-24 05:32:43', ''),
+(278, 6, 'Seasonic Focus GX-750', 'seasonic-focus-gx-750', NULL, 3000000.00, 1, 1, 0, 0.00, 0, '2025-11-24 05:32:43', '2025-11-24 12:42:01', ''),
+(279, 6, 'Cooler Master MWE 650', 'cooler-master-mwe-650', NULL, 1200000.00, 1, 0, 0, 0.00, 0, '2025-11-24 05:32:43', '2025-11-24 05:32:43', ''),
+(280, 7, 'Corsair 4000D', 'corsair-4000d', NULL, 1800000.00, 1, 0, 0, 0.00, 0, '2025-11-24 05:32:43', '2025-11-24 05:32:43', ''),
+(281, 7, 'Fractal Define 7 Compact', 'fractal-define-7-compact', NULL, 2500000.00, 1, 0, 0, 0.00, 0, '2025-11-24 05:32:43', '2025-11-24 05:32:43', ''),
+(282, 7, 'NZXT H510', 'nzxt-h510', NULL, 1200000.00, 1, 0, 0, 0.00, 0, '2025-11-24 05:32:43', '2025-11-24 05:32:43', ''),
+(283, 8, 'Corsair H100i AIO 240', 'corsair-h100i-aio-240', NULL, 2200000.00, 1, 0, 0, 0.00, 0, '2025-11-24 05:32:43', '2025-11-24 05:32:43', ''),
+(284, 8, 'Noctua NH-D15', 'noctua-nh-d15', NULL, 2000000.00, 1, 0, 0, 0.00, 0, '2025-11-24 05:32:43', '2025-11-24 05:32:43', ''),
+(285, 8, 'Deepcool LS520 AIO', 'deepcool-ls520-aio', NULL, 2100000.00, 1, 0, 2, 0.00, 0, '2025-11-24 05:32:43', '2025-11-25 04:53:56', ''),
+(286, 13, 'Seagate Barracuda 1TB 7200RPM', 'seagate-barracuda-1tb-7200', NULL, 1400000.00, 1, 0, 0, 0.00, 0, '2025-11-24 05:32:43', '2025-11-24 05:32:43', ''),
+(287, 13, 'WD Blue 4TB 5400RPM', 'wd-blue-4tb-5400', NULL, 2200000.00, 1, 0, 0, 0.00, 0, '2025-11-24 05:32:43', '2025-11-24 05:32:43', ''),
+(288, 13, 'Toshiba 8TB 7200RPM', 'toshiba-8tb-7200', NULL, 4800000.00, 1, 0, 0, 0.00, 0, '2025-11-24 05:32:43', '2025-11-24 05:32:43', ''),
+(289, 35, 'G.Skill Trident Z DDR4 16GB (2x8GB)', 'gskill-tridentz-ddr4-16gb', NULL, 900000.00, 1, 0, 0, 0.00, 0, '2025-11-24 05:32:43', '2025-11-24 05:32:43', ''),
+(290, 35, 'Corsair Vengeance DDR5 32GB (2x16GB)', 'corsair-vengeance-ddr5-32gb', NULL, 2200000.00, 1, 0, 0, 0.00, 0, '2025-11-24 05:32:43', '2025-11-24 05:32:43', ''),
+(291, 35, 'Kingston Fury DDR4 64GB (2x32GB)', 'kingston-fury-ddr4-64gb', NULL, 4200000.00, 1, 0, 0, 0.00, 0, '2025-11-24 05:32:43', '2025-11-24 05:32:43', ''),
+(292, 35, 'RR', 'rr', NULL, 100000.00, 1, 0, 2, 0.00, 0, '2025-11-25 06:01:36', '2025-11-25 07:52:21', ''),
+(300, 40, 'LG UltraGear 27GN800-B 27\" QHD 144Hz', 'lg-27gn800-qhd-144hz', 'Màn hình gaming IPS 27 inch QHD 144Hz G-Sync Compatible', 8490000.00, 1, 1, 2, 0.00, 0, '2025-11-25 08:58:13', '2025-11-25 09:00:33', ''),
+(301, 40, 'ASUS TUF VG27AQ 27\" WQHD 165Hz', 'asus-tuf-vg27aq-wqhd-165hz', 'Màn hình gaming IPS 27 inch WQHD 165Hz G-Sync', 9990000.00, 1, 1, 0, 0.00, 0, '2025-11-25 08:58:13', '2025-11-25 08:58:13', ''),
+(302, 40, 'Samsung Odyssey G5 32\" QHD 144Hz', 'samsung-odyssey-g5-32-qhd-144hz', 'Màn hình gaming cong VA 32 inch QHD 144Hz', 7990000.00, 1, 0, 0, 0.00, 0, '2025-11-25 08:58:13', '2025-11-25 08:58:13', ''),
+(310, 41, 'Logitech G Pro X Mechanical Gaming Keyboard', 'logitech-g-pro-x-mechanical', 'Bàn phím cơ gaming với switch GX Blue', 3290000.00, 1, 1, 0, 0.00, 0, '2025-11-25 08:58:13', '2025-11-25 08:58:13', ''),
+(311, 41, 'Corsair K70 RGB MK.2 Cherry MX Red', 'corsair-k70-rgb-mk2-red', 'Bàn phím cơ full-size RGB Cherry MX Red', 3890000.00, 1, 1, 0, 0.00, 0, '2025-11-25 08:58:13', '2025-11-25 08:58:13', ''),
+(312, 41, 'Keychron K2 V2 Wireless Mechanical', 'keychron-k2-v2-wireless', 'Bàn phím cơ 75% không dây Gateron Brown', 2190000.00, 1, 0, 0, 0.00, 0, '2025-11-25 08:58:13', '2025-11-25 08:58:13', ''),
+(320, 42, 'Logitech G304 Lightspeed Wireless', 'logitech-g304-lightspeed', 'Chuột gaming không dây HERO 12K DPI', 990000.00, 1, 1, 0, 0.00, 0, '2025-11-25 08:58:13', '2025-11-25 08:58:13', ''),
+(321, 42, 'Razer Viper Ultimate Wireless', 'razer-viper-ultimate-wireless', 'Chuột gaming không dây Focus+ 20K DPI', 2990000.00, 1, 1, 0, 0.00, 0, '2025-11-25 08:58:13', '2025-11-25 08:58:13', ''),
+(322, 42, 'SteelSeries Rival 3 Wireless', 'steelseries-rival-3-wireless', 'Chuột gaming không dây TrueMove Air 18K DPI', 1490000.00, 1, 0, 0, 0.00, 0, '2025-11-25 08:58:13', '2025-11-25 08:58:13', ''),
+(330, 43, 'HyperX Cloud II Gaming Headset', 'hyperx-cloud-ii-gaming', 'Tai nghe gaming 7.1 surround sound', 2390000.00, 1, 1, 2, 0.00, 0, '2025-11-25 08:58:13', '2025-11-25 09:00:08', ''),
+(331, 43, 'Razer BlackShark V2 Pro Wireless', 'razer-blackshark-v2-pro', 'Tai nghe gaming không dây THX Spatial Audio', 3990000.00, 1, 1, 0, 0.00, 0, '2025-11-25 08:58:13', '2025-11-25 08:58:13', ''),
+(332, 43, 'SteelSeries Arctis 7 Wireless', 'steelseries-arctis-7-wireless', 'Tai nghe gaming không dây DTS Headphone:X v2.0', 3290000.00, 1, 0, 0, 0.00, 0, '2025-11-25 08:58:13', '2025-11-25 08:58:13', ''),
+(340, 44, 'Logitech Z906 5.1 Surround Sound', 'logitech-z906-51-surround', 'Loa 5.1 THX certified 500W RMS', 6590000.00, 1, 1, 0, 0.00, 0, '2025-11-25 08:58:13', '2025-11-25 08:58:13', ''),
+(341, 44, 'Creative Pebble V3 2.0', 'creative-pebble-v3-20', 'Loa 2.0 USB-C RGB 8W RMS', 690000.00, 1, 0, 0, 0.00, 0, '2025-11-25 08:58:13', '2025-11-25 08:58:13', ''),
+(342, 44, 'Edifier R1280T 2.0 Bookshelf', 'edifier-r1280t-20-bookshelf', 'Loa bookshelf 2.0 42W RMS', 1990000.00, 1, 0, 0, 0.00, 0, '2025-11-25 08:58:13', '2025-11-25 08:58:13', ''),
+(350, 45, 'Secretlab TITAN Evo 2022', 'secretlab-titan-evo-2022', 'Ghế gaming cao cấp NEO Hybrid Leatherette', 13490000.00, 1, 1, 0, 0.00, 0, '2025-11-25 08:58:13', '2025-11-25 08:58:13', ''),
+(351, 45, 'Herman Miller X Logitech G Embody', 'herman-miller-embody-gaming', 'Ghế gaming công thái học cao cấp', 37990000.00, 1, 1, 0, 0.00, 0, '2025-11-25 08:58:13', '2025-11-25 08:58:13', ''),
+(352, 45, 'Razer Iskur Gaming Chair', 'razer-iskur-gaming-chair', 'Ghế gaming hỗ trợ lưng tích hợp', 8990000.00, 1, 0, 0, 0.00, 0, '2025-11-25 08:58:13', '2025-11-25 08:58:13', ''),
+(360, 46, 'Lian Li UNI FAN SL120 V2 3-Pack', 'lianli-uni-fan-sl120-v2-3pack', 'Bộ 3 quạt 120mm ARGB modular', 2290000.00, 1, 1, 0, 0.00, 0, '2025-11-25 08:58:13', '2025-11-25 08:58:13', ''),
+(361, 46, 'Corsair iCUE SP120 RGB ELITE 3-Pack', 'corsair-sp120-rgb-elite-3pack', 'Bộ 3 quạt 120mm RGB PWM', 1690000.00, 1, 0, 0, 0.00, 0, '2025-11-25 08:58:13', '2025-11-25 08:58:13', ''),
+(362, 46, 'Noctua NF-A12x25 PWM', 'noctua-nf-a12x25-pwm', 'Quạt 120mm PWM cao cấp', 790000.00, 1, 0, 0, 0.00, 0, '2025-11-25 08:58:13', '2025-11-25 08:58:13', '');
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `product_variants`
+-- Cấu trúc bảng cho bảng `product_variants`
 --
 
 CREATE TABLE `product_variants` (
@@ -901,27 +823,92 @@ CREATE TABLE `product_variants` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data for table `product_variants`
+-- Đang đổ dữ liệu cho bảng `product_variants`
 --
 
 INSERT INTO `product_variants` (`variant_id`, `product_id`, `sku`, `variant_name`, `price`, `stock_quantity`, `is_active`, `is_default`, `created_at`, `updated_at`) VALUES
-(336, 239, 'intel-core-i5-14600kf-default', 'Intel Core i5 14600kf', 450000.00, 34, 1, 1, '2025-11-15 15:03:12', '2025-11-24 09:18:38'),
-(337, 240, 'asus-rtx-5060ti-default', 'Asus RTX 5060Ti', 8000000.00, 588, 1, 1, '2025-11-15 15:10:15', '2025-11-24 08:54:04'),
-(338, 241, 'asus-b760m-e-tuf-default', 'Asus B760M-E Tuf', 6999000.00, 998, 1, 1, '2025-11-16 02:14:13', '2025-11-16 13:31:06'),
-(347, 242, 'gskill-trident-z-default', 'Gskill Trident Z', 800000.00, 20, 1, 1, '2025-11-16 13:14:54', '2025-11-16 13:37:22'),
-(349, 243, 'asus-rtx-5070-default', 'Asus RTX 5070', 600000.00, 5, 1, 1, '2025-11-18 12:53:53', '2025-11-18 12:53:53'),
-(351, 243, 'NVIDIA-RTX 4060-8GB-ASUS', NULL, 7.00, 7, 1, 0, '2025-11-18 13:16:26', '2025-11-18 13:16:26'),
-(358, 249, 'mac-inh-default', 'Mặc định', 50100.00, 5, 1, 1, '2025-11-21 12:52:03', '2025-11-21 12:52:03'),
-(361, 250, 'Seagate', 'Seagate', 600.00, 0, 1, 1, '2025-11-21 13:02:29', '2025-11-21 13:02:29'),
-(363, 253, 'Seagate-1TB', 'Seagate-1TB', 600.00, 0, 1, 1, '2025-11-21 13:59:12', '2025-11-21 13:59:12'),
-(368, 257, 'Seagate-1TB-5400RPM', 'Seagate-1TB-5400RPM', 20000.00, 6, 1, 1, '2025-11-22 05:42:02', '2025-11-24 09:04:43'),
-(372, 263, 'AMD-RTX 4070-12GB-Gigabyte', 'AMD-RTX 4070-12GB-Gigabyte', 200000.00, -8, 1, 1, '2025-11-22 07:21:36', '2025-11-24 08:54:04'),
-(373, 263, 'NVIDIA-RX 7600-8GB-XFX', NULL, 980000.00, 27, 1, 0, '2025-11-23 02:33:49', '2025-11-24 09:04:43');
+(374, 264, 'Seagate-2TB-7200RPM', 'Seagate-2TB-7200RPM', 2500000.00, 30, 1, 1, '2025-11-24 12:30:39', '2025-11-24 12:30:39'),
+(375, 265, 'INTEL-13600K-BOX', 'Box', 6000000.00, 15, 1, 1, '2025-11-24 05:32:43', '2025-11-24 05:32:43'),
+(376, 265, 'INTEL-13600K-DELUXE', 'Deluxe', 6500000.00, 10, 1, 0, '2025-11-24 05:32:43', '2025-11-24 05:32:43'),
+(377, 266, 'AMD-7600X-BOX', 'Box', 5200000.00, 20, 1, 1, '2025-11-24 05:32:43', '2025-11-24 05:32:43'),
+(378, 266, 'AMD-7600X-OC', 'OC', 5600000.00, 8, 1, 0, '2025-11-24 05:32:43', '2025-11-24 05:32:43'),
+(379, 267, 'INTEL-13700K-BOX', 'Box', 9000000.00, 5, 1, 1, '2025-11-24 05:32:43', '2025-11-24 14:41:59'),
+(380, 267, 'INTEL-13700K-DELUXE', 'Deluxe', 9700000.00, 4, 1, 0, '2025-11-24 05:32:43', '2025-11-24 05:32:43'),
+(381, 268, 'MSI-RTX4060-1', 'Standard', 7500000.00, 12, 1, 1, '2025-11-24 05:32:43', '2025-11-24 05:32:43'),
+(382, 268, 'MSI-RTX4060-OC', 'OC Edition', 7900000.00, 5, 1, 0, '2025-11-24 05:32:43', '2025-11-24 05:32:43'),
+(383, 269, 'ASUS-RTX4070-1', 'Standard', 16000000.00, 6, 1, 1, '2025-11-24 05:32:43', '2025-11-24 05:32:43'),
+(384, 269, 'ASUS-RTX4070-OC', 'OC Edition', 16700000.00, 3, 1, 0, '2025-11-24 05:32:43', '2025-11-24 05:32:43'),
+(385, 270, 'GIG-RX7800XT-1', 'Standard', 14000000.00, 9, 1, 1, '2025-11-24 05:32:43', '2025-11-24 05:32:43'),
+(386, 270, 'GIG-RX7800XT-OC', 'OC Edition', 14600000.00, 4, 1, 0, '2025-11-24 05:32:43', '2025-11-24 05:32:43'),
+(387, 271, 'SAM-NVME-1TB', '1TB', 1800000.00, 30, 1, 1, '2025-11-24 05:32:43', '2025-11-24 05:32:43'),
+(388, 271, 'SAM-NVME-1TB-PRO', 'Pro', 2100000.00, 10, 1, 0, '2025-11-24 05:32:43', '2025-11-24 05:32:43'),
+(389, 272, 'WD-NVME-512GB', '512GB', 900000.00, 40, 1, 1, '2025-11-24 05:32:43', '2025-11-24 05:32:43'),
+(390, 272, 'WD-NVME-512GB-PRO', '512GB Pro', 1050000.00, 20, 1, 0, '2025-11-24 05:32:43', '2025-11-24 05:32:43'),
+(391, 273, 'CRU-SATA-1TB', '1TB', 850000.00, 25, 1, 1, '2025-11-24 05:32:43', '2025-11-24 05:32:43'),
+(392, 273, 'CRU-SATA-1TB-BUDGET', 'Budget', 780000.00, 18, 1, 0, '2025-11-24 05:32:43', '2025-11-24 05:32:43'),
+(393, 274, 'ASUS-Z790A-ATX', 'ATX', 4200000.00, 8, 1, 1, '2025-11-24 05:32:43', '2025-11-24 05:32:43'),
+(394, 274, 'ASUS-Z790A-PRO', 'Pro', 4500000.00, 3, 1, 0, '2025-11-24 05:32:43', '2025-11-24 05:32:43'),
+(395, 275, 'MSI-B650-TOMAHAWK', 'Standard', 3200000.00, 12, 1, 1, '2025-11-24 05:32:43', '2025-11-24 05:32:43'),
+(396, 275, 'MSI-B650-TOMAHAWK-MINI', 'mATX', 3400000.00, 6, 1, 0, '2025-11-24 05:32:43', '2025-11-24 05:32:43'),
+(397, 276, 'GIG-B660M-DS3H', 'Standard', 1500000.00, 20, 1, 1, '2025-11-24 05:32:43', '2025-11-24 05:32:43'),
+(398, 276, 'GIG-B660M-DS3H-LOW', 'Low Price', 1350000.00, 10, 1, 0, '2025-11-24 05:32:43', '2025-11-24 05:32:43'),
+(399, 277, 'CRS-RM650X', '650W Gold', 2400000.00, 18, 1, 1, '2025-11-24 05:32:43', '2025-11-24 05:32:43'),
+(400, 278, 'SSN-GX750', '750W Gold', 3000000.00, 10, 1, 1, '2025-11-24 05:32:43', '2025-11-24 14:41:59'),
+(401, 279, 'CM-MWE650', '650W', 1200000.00, 22, 1, 1, '2025-11-24 05:32:43', '2025-11-24 05:32:43'),
+(402, 277, 'CRS-RM650X-LTD', 'Limited', 2600000.00, 6, 1, 0, '2025-11-24 05:32:43', '2025-11-24 05:32:43'),
+(403, 278, 'SSN-GX750-PL', 'Platinum', 3400000.00, 4, 1, 0, '2025-11-24 05:32:43', '2025-11-24 05:32:43'),
+(404, 279, 'CM-MWE650-BUD', 'Budget', 1050000.00, 15, 1, 0, '2025-11-24 05:32:43', '2025-11-24 05:32:43'),
+(405, 280, 'CRS-4000D-BL', 'Black', 1800000.00, 14, 1, 1, '2025-11-24 05:32:43', '2025-11-24 05:32:43'),
+(406, 280, 'CRS-4000D-WT', 'White', 1850000.00, 6, 1, 0, '2025-11-24 05:32:43', '2025-11-24 05:32:43'),
+(407, 281, 'FRA-DEFINE7-C', 'Compact', 2500000.00, 5, 1, 1, '2025-11-24 05:32:43', '2025-11-24 05:32:43'),
+(408, 282, 'NZXT-H510', 'Standard', 1200000.00, 20, 1, 1, '2025-11-24 05:32:43', '2025-11-24 05:32:43'),
+(409, 281, 'FRA-DEFINE7-MIN', 'Mini', 2300000.00, 3, 1, 0, '2025-11-24 05:32:43', '2025-11-24 05:32:43'),
+(410, 282, 'NZXT-H510-LTD', 'Limited', 1350000.00, 4, 1, 0, '2025-11-24 05:32:43', '2025-11-24 05:32:43'),
+(411, 283, 'CRS-H100I-240', '240mm', 2200000.00, 11, 1, 1, '2025-11-24 05:32:43', '2025-11-24 05:32:43'),
+(412, 283, 'CRS-H100I-240-ELITE', 'Elite', 2600000.00, 5, 1, 0, '2025-11-24 05:32:43', '2025-11-24 05:32:43'),
+(413, 284, 'NOCTUA-NH-D15', 'Dual Tower', 2000000.00, 7, 1, 1, '2025-11-24 05:32:43', '2025-11-24 05:32:43'),
+(414, 284, 'NOCTUA-NH-D15-LTD', 'Limited', 2300000.00, 2, 1, 0, '2025-11-24 05:32:43', '2025-11-24 05:32:43'),
+(415, 285, 'DEEP-LS520-240', '240mm', 2100000.00, 9, 1, 1, '2025-11-24 05:32:43', '2025-11-24 05:32:43'),
+(416, 285, 'DEEP-LS520-AIR', 'Air', 1600000.00, 13, 1, 0, '2025-11-24 05:32:43', '2025-11-24 05:32:43'),
+(417, 286, 'ST-1TB-7200', '1TB 7200RPM', 1400000.00, 25, 1, 1, '2025-11-24 05:32:43', '2025-11-24 05:32:43'),
+(418, 286, 'ST-1TB-7200-BUD', '1TB Budget', 1300000.00, 12, 1, 0, '2025-11-24 05:32:43', '2025-11-24 05:32:43'),
+(419, 287, 'WD-4TB-5400', '4TB 5400RPM', 2200000.00, 10, 1, 1, '2025-11-24 05:32:43', '2025-11-24 05:32:43'),
+(420, 287, 'WD-4TB-5400-B', '4TB Budget', 2050000.00, 6, 1, 0, '2025-11-24 05:32:43', '2025-11-24 05:32:43'),
+(421, 288, 'TOSH-8TB-7200', '8TB 7200RPM', 4800000.00, 3, 1, 1, '2025-11-24 05:32:43', '2025-11-24 05:32:43'),
+(422, 288, 'TOSH-8TB-7200-PRO', 'Pro', 5100000.00, 1, 1, 0, '2025-11-24 05:32:43', '2025-11-24 05:32:43'),
+(423, 289, 'GSK-TRIDENTZ-DDR4-16-1', '2x8GB Kit', 900000.00, 30, 1, 1, '2025-11-24 05:32:43', '2025-11-24 05:32:43'),
+(424, 289, 'GSK-TRIDENTZ-DDR4-16-2', 'RGB Kit', 980000.00, 12, 1, 0, '2025-11-24 05:32:43', '2025-11-24 05:32:43'),
+(425, 290, 'CRS-VENGE-DDR5-32-1', '2x16GB', 2200000.00, 10, 1, 1, '2025-11-24 05:32:43', '2025-11-24 05:32:43'),
+(426, 290, 'CRS-VENGE-DDR5-32-2', '2x16GB RGB', 2350000.00, 4, 1, 0, '2025-11-24 05:32:43', '2025-11-24 05:32:43'),
+(427, 291, 'KNG-FURY-DDR4-64-1', '2x32GB', 4200000.00, 5, 1, 1, '2025-11-24 05:32:43', '2025-11-24 05:32:43'),
+(428, 291, 'KNG-FURY-DDR4-64-2', '2x32GB RGB', 4400000.00, 2, 1, 0, '2025-11-24 05:32:43', '2025-11-24 05:32:43'),
+(429, 292, '3600-Intel', '3600-Intel', 100000.00, 80, 1, 1, '2025-11-25 06:01:36', '2025-11-25 06:01:36'),
+(500, 300, 'LG-27GN800-STD', 'Standard', 8490000.00, 25, 1, 1, '2025-11-25 08:58:13', '2025-11-25 08:58:13'),
+(501, 301, 'ASUS-VG27AQ-STD', 'Standard', 9990000.00, 18, 1, 1, '2025-11-25 08:58:13', '2025-11-25 08:58:13'),
+(502, 302, 'SAM-G5-32-STD', 'Standard', 7990000.00, 30, 1, 1, '2025-11-25 08:58:13', '2025-11-25 08:58:13'),
+(510, 310, 'LOGI-GPROX-STD', 'GX Blue Switch', 3290000.00, 40, 1, 1, '2025-11-25 08:58:13', '2025-11-25 08:58:13'),
+(511, 311, 'CORS-K70-RED', 'Cherry MX Red', 3890000.00, 25, 1, 1, '2025-11-25 08:58:13', '2025-11-25 08:58:13'),
+(512, 312, 'KEY-K2-BROWN', 'Gateron Brown', 2190000.00, 50, 1, 1, '2025-11-25 08:58:13', '2025-11-25 08:58:13'),
+(520, 320, 'LOGI-G304-BLK', 'Black', 990000.00, 60, 1, 1, '2025-11-25 08:58:13', '2025-11-25 08:58:13'),
+(521, 321, 'RAZER-VIPER-ULT', 'Ultimate', 2990000.00, 30, 1, 1, '2025-11-25 08:58:13', '2025-11-25 08:58:13'),
+(522, 322, 'SS-RIVAL3-WL', 'Wireless', 1490000.00, 45, 1, 1, '2025-11-25 08:58:13', '2025-11-25 08:58:13'),
+(530, 330, 'HX-CLOUD2-RED', 'Red', 2390000.00, 35, 1, 1, '2025-11-25 08:58:13', '2025-11-25 08:58:13'),
+(531, 331, 'RAZER-BS-V2-PRO', 'Pro', 3990000.00, 20, 1, 1, '2025-11-25 08:58:13', '2025-11-25 08:58:13'),
+(532, 332, 'SS-ARCTIS7-BLK', 'Black', 3290000.00, 28, 1, 1, '2025-11-25 08:58:13', '2025-11-25 08:58:13'),
+(540, 340, 'LOGI-Z906-51', '5.1 System', 6590000.00, 15, 1, 1, '2025-11-25 08:58:13', '2025-11-25 08:58:13'),
+(541, 341, 'CREA-PEB-V3', 'RGB', 690000.00, 80, 1, 1, '2025-11-25 08:58:13', '2025-11-25 08:58:13'),
+(542, 342, 'EDI-R1280T-BLK', 'Black', 1990000.00, 50, 1, 1, '2025-11-25 08:58:13', '2025-11-25 08:58:13'),
+(550, 350, 'SEC-TITAN-2022-M', 'Medium', 13490000.00, 10, 1, 1, '2025-11-25 08:58:13', '2025-11-25 08:58:13'),
+(551, 351, 'HM-EMBODY-GM', 'Gaming Edition', 37990000.00, 5, 1, 1, '2025-11-25 08:58:13', '2025-11-25 08:58:13'),
+(552, 352, 'RAZER-ISKUR-BLK', 'Black', 8990000.00, 15, 1, 1, '2025-11-25 08:58:13', '2025-11-25 08:58:13'),
+(560, 360, 'LL-UNIFAN-SL120-3P', '3-Pack', 2290000.00, 40, 1, 1, '2025-11-25 08:58:13', '2025-11-25 08:58:13'),
+(561, 361, 'CORS-SP120-ELITE-3P', '3-Pack', 1690000.00, 50, 1, 1, '2025-11-25 08:58:13', '2025-11-25 08:58:13'),
+(562, 362, 'NOCT-NF-A12-SGL', 'Single', 790000.00, 100, 1, 1, '2025-11-25 08:58:13', '2025-11-25 08:58:13');
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `recent_views`
+-- Cấu trúc bảng cho bảng `recent_views`
 --
 
 CREATE TABLE `recent_views` (
@@ -934,7 +921,7 @@ CREATE TABLE `recent_views` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `reports`
+-- Cấu trúc bảng cho bảng `reports`
 --
 
 CREATE TABLE `reports` (
@@ -953,7 +940,7 @@ CREATE TABLE `reports` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `reviews`
+-- Cấu trúc bảng cho bảng `reviews`
 --
 
 CREATE TABLE `reviews` (
@@ -974,7 +961,7 @@ CREATE TABLE `reviews` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `service_requests`
+-- Cấu trúc bảng cho bảng `service_requests`
 --
 
 CREATE TABLE `service_requests` (
@@ -995,7 +982,7 @@ CREATE TABLE `service_requests` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `users`
+-- Cấu trúc bảng cho bảng `users`
 --
 
 CREATE TABLE `users` (
@@ -1016,33 +1003,21 @@ CREATE TABLE `users` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Dumping data for table `users`
+-- Đang đổ dữ liệu cho bảng `users`
 --
 
 INSERT INTO `users` (`user_id`, `username`, `email`, `password_hash`, `full_name`, `phone`, `role`, `is_active`, `created_at`, `updated_at`, `last_login`, `session_token`, `admin_session_token`, `user_session_token`) VALUES
-(1, 'user1', 'user1@gmail.com', '$2b$10$EF5wE/PMLkT5GMjYAe4yi.DcP3MQed7.P4JxubFIdJvuqKtJB4Uea', NULL, NULL, 0, 1, '2025-10-31 15:52:20', '2025-11-22 15:31:16', NULL, NULL, NULL, NULL),
-(2, 'user2', 'user2@gmail.com', '$2b$10$sgscek75SEoXGWwZHmFfMuXSHZW0JLHE3pgLAEqCPe7pGimDqo3gS', NULL, NULL, 0, 1, '2025-11-01 01:07:16', '2025-11-01 01:07:16', NULL, NULL, NULL, NULL),
-(3, 'abcdef', 'abc@gmail.com', '$2b$10$M8uNkONltbbKsY8y9DdqUeF3IFn1CeH9B0S6SBQzNB5QyVinKZ37.', NULL, NULL, 0, 1, '2025-11-01 10:27:03', '2025-11-01 10:27:03', NULL, NULL, NULL, NULL),
-(4, 'bao', 'bao@gmail.com', '$2b$10$zPJUT/20Y4wiZUXjELb0QuDSWVxSkubIKLIpNIfYkVQuJY7E92J.e', 'bao', '0965656565', 0, 1, '2025-11-03 15:09:28', '2025-11-07 03:26:14', NULL, NULL, NULL, NULL),
 (5, 'admin1', 'admin1@gmail.com', '$2b$10$b9lCzWVznD4ZMQ1Y6/bOc.Jn6efXZS1Us.ZjYVv2PFgHkqKr1PD1.', 'aaa', '0123456789', 2, 0, '2025-11-05 09:18:39', '2025-11-23 11:21:43', NULL, NULL, NULL, NULL),
-(6, 'admin', 'admin@gmail.com', '$2b$10$84e9xqnTc50CPaf5pOldT.Ob9zW9/RVK.G3Whr.TdAncfRdE.UivG', 'admin', '0123456788', 2, 1, '2025-11-05 09:33:52', '2025-11-24 08:57:29', NULL, 'b69bfdf666d4c6d6db8a38aa39ce0aaf32bc8b812d7545f03399bdc9593ffa76', NULL, NULL),
-(7, 'bao1', 'bao1@gmail.com', '$2b$10$sVY/zhJ2cKlwydAjQ090e.bMn1eFJKudObM.yOZiR06XPanyUgaFW', 'bao1', '0975846352', 0, 0, '2025-11-05 10:09:19', '2025-11-05 10:09:38', NULL, NULL, NULL, NULL),
-(8, 'bb', 'bb@gmail.com', '$2b$10$i/dzC6SfHsM.5cHiYaS89ed4rg4SAoLtZz1/O2mA6eagocIogJoL6', NULL, NULL, 0, 1, '2025-11-07 03:26:38', '2025-11-07 08:05:59', NULL, NULL, NULL, NULL),
-(9, 'ccc', 'cc@gmail.com', '$2b$10$zdMHGgXEqVXcvRmaoymJceZdwLmNnViMKR.Gss2KmhtlJzm9k8pp.', 'bao', '0987676765', 0, 1, '2025-11-07 08:06:49', '2025-11-23 11:21:43', NULL, NULL, NULL, NULL),
-(10, 'dddd', 'dd@gmail.com', '$2b$10$VOQn9zNNzcmwyWhyaGBHt.XROz23EkcPmj2Gzo8GEr3I07ARid5gq', 'dd', '0123456788', 0, 1, '2025-11-07 08:24:07', '2025-11-23 11:21:43', NULL, NULL, NULL, NULL),
-(11, 'nguyenvana', 'nguyenvana@example.com', 'hashedpassword1', 'Nguyễn Văn A', '0912345678', 0, 1, '2025-11-20 06:17:00', '2025-11-20 06:17:00', NULL, NULL, NULL, NULL),
-(12, 'lethib', 'lethib@example.com', 'hashedpassword2', 'Lê Thị B', '0987654321', 0, 1, '2025-11-20 06:17:00', '2025-11-20 06:17:00', NULL, NULL, NULL, NULL),
-(14, 'nguyenvana561', 'vana@gmail.com', '$2b$10$0jlQsiiH5sdXf2XIoWIYB.lRKQwt5tUwJOeVlTMnknSknSkJUsi3i', 'Nguyễn Văn A', '0908786561', 0, 1, '2025-11-22 15:32:12', '2025-11-22 15:51:54', NULL, NULL, NULL, NULL),
-(15, 'tranthib671d', 'thib@gmail.com', '$2b$10$wDdwM3aIYCD.rNA.eT53N.r89OYZyI7o3vb1qLvQvV0Rc0etwSXAu', 'Trần Thị B', '0908787671', 0, 1, '2025-11-22 15:53:20', '2025-11-24 09:31:40', NULL, NULL, NULL, NULL),
-(16, 'nd1', 'nd1@gmail.com', '$2b$10$JOVbyAdir.3O0YMvF64COOEdFv2cw77rfW10QImXe9jQH3mZtS9dC', 'nd1', '0123456788', 0, 1, '2025-11-23 11:15:09', '2025-11-24 05:03:02', NULL, '45220622faa6f9cacf3ee5d5b32341cba82a7ed4eed51f740e7a64931cc9d62f', NULL, '45220622faa6f9cacf3ee5d5b32341cba82a7ed4eed51f740e7a64931cc9d62f'),
-(17, 'ad1', 'ad1@gmail.com', '$2b$10$zE.RfZEcYf/th.S7Krdkmu/l0jDW7Nq3Ge9eP4lU78KVlVJzXCUwG', 'ad1', '0987676765', 2, 1, '2025-11-23 11:15:30', '2025-11-24 08:57:36', NULL, NULL, '19a7e7c71d0986c7a17d4e6ebddde7edd7770c258ba78bb68affae057208fddc', NULL),
-(18, 'phamvantin661', 'vantin@gmail.com', '$2b$10$A/20MaNHCtkpwDWN97H8iO/dUvWL1NSdvOzqjvtk2ydi6ZGIVsil2', 'Phạm Văn Tín', '0908987661', 0, 1, '2025-11-24 04:34:05', '2025-11-24 05:03:33', NULL, 'b91ae88ccbbf4f641072bf3d5c48a1fb4b789ff09149333f7ea4c58aac96840b', NULL, NULL),
-(19, 'demo777', 'demo@gmail.com', '$2b$10$Py8wH9vwQK9GsP9miP9v5uiIffIY0sqI68lL4N28rPIS38lPlsBSq', 'Demo', '0908887777', 0, 1, '2025-11-24 09:04:43', '2025-11-24 09:32:00', NULL, NULL, NULL, 'b738a105581859ff8bbed05c270e29ad32b8089f8c8081e49e56c7e156fb7a85');
+(6, 'admin', 'admin@gmail.com', '$2b$10$84e9xqnTc50CPaf5pOldT.Ob9zW9/RVK.G3Whr.TdAncfRdE.UivG', 'admin', '0123456788', 2, 1, '2025-11-05 09:33:52', '2025-11-24 14:32:17', NULL, 'b69bfdf666d4c6d6db8a38aa39ce0aaf32bc8b812d7545f03399bdc9593ffa76', 'd018d2747ca149bbac36a5f5b3423a3880a671c2c758341337c0e8f92de73207', NULL),
+(17, 'ad1', 'ad1@gmail.com', '$2b$10$zE.RfZEcYf/th.S7Krdkmu/l0jDW7Nq3Ge9eP4lU78KVlVJzXCUwG', 'ad1', '0987676765', 2, 1, '2025-11-23 11:15:30', '2025-11-25 09:05:36', NULL, NULL, 'e5770a861273d29663ef4c6d20902fa4f370fc43a57b97c96014fd00bf9e8fc5', NULL),
+(20, 'tranthib671', 'thib@gmail.com', '$2b$10$KQc2staSc5WX/9OIkHi3reX8XJO8L51YDjK.N5YP5XpPaghoLS.rK', 'Trần Thị B', '0908787671', 0, 1, '2025-11-24 12:44:44', '2025-11-24 14:37:07', NULL, NULL, NULL, NULL),
+(21, 'nguyenvana561', 'vana@gmail.com', '$2b$10$AUdU1V0dW6n0Eh1tJ1Nw6.vvvjGnlWOCVmHPXSMuuDCFolwPwXrLO', 'Nguyễn Văn A', '0908786561', 0, 1, '2025-11-24 14:41:59', '2025-11-24 14:44:15', NULL, NULL, NULL, '1f6760867b1d28a485e386f364b7f9e4fe3498d6bace8650e6285242443d33ff'),
+(22, 'a', 'a@gmail.com', '$2b$10$VjJ5iRg7oZrR1NGGUr61muIe/mSd1OQxP7ic2akApHitC3XH14cK6', NULL, NULL, 0, 1, '2025-11-25 05:07:22', '2025-11-25 05:07:28', NULL, NULL, NULL, 'beb07304249a617ff8d169d1d778d5493e72513a5a7fde987f62c9314905cdeb');
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `variant_attributes`
+-- Cấu trúc bảng cho bảng `variant_attributes`
 --
 
 CREATE TABLE `variant_attributes` (
@@ -1051,33 +1026,130 @@ CREATE TABLE `variant_attributes` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Dumping data for table `variant_attributes`
+-- Đang đổ dữ liệu cho bảng `variant_attributes`
 --
 
 INSERT INTO `variant_attributes` (`variant_id`, `attribute_value_id`) VALUES
-(351, 14),
-(351, 16),
-(351, 21),
-(351, 24),
-(361, 115),
-(363, 115),
-(363, 118),
-(368, 115),
-(368, 118),
-(368, 123),
-(372, 15),
-(372, 17),
-(372, 22),
-(372, 26),
-(373, 14),
-(373, 19),
-(373, 21),
-(373, 28);
+(374, 115),
+(374, 119),
+(374, 124),
+(375, 1),
+(375, 3),
+(376, 1),
+(376, 6),
+(377, 2),
+(377, 4),
+(378, 2),
+(378, 9),
+(379, 1),
+(379, 7),
+(380, 1),
+(380, 8),
+(381, 14),
+(381, 16),
+(382, 16),
+(382, 25),
+(383, 14),
+(383, 17),
+(384, 17),
+(384, 24),
+(385, 15),
+(385, 19),
+(386, 20),
+(386, 26),
+(387, 49),
+(387, 54),
+(388, 49),
+(388, 58),
+(389, 50),
+(389, 54),
+(390, 50),
+(390, 57),
+(391, 51),
+(391, 55),
+(392, 51),
+(392, 59),
+(393, 62),
+(393, 66),
+(394, 62),
+(394, 69),
+(395, 63),
+(395, 67),
+(396, 63),
+(396, 70),
+(397, 64),
+(397, 68),
+(398, 64),
+(398, 71),
+(399, 75),
+(399, 80),
+(400, 76),
+(400, 81),
+(401, 77),
+(401, 82),
+(402, 75),
+(402, 81),
+(403, 76),
+(403, 83),
+(404, 77),
+(404, 84),
+(405, 89),
+(405, 94),
+(406, 89),
+(406, 97),
+(407, 90),
+(407, 95),
+(408, 91),
+(408, 96),
+(409, 92),
+(409, 97),
+(410, 93),
+(410, 98),
+(411, 101),
+(411, 106),
+(412, 101),
+(412, 108),
+(413, 102),
+(413, 107),
+(414, 102),
+(414, 112),
+(415, 103),
+(415, 106),
+(416, 103),
+(416, 110),
+(417, 115),
+(417, 119),
+(417, 124),
+(418, 115),
+(418, 118),
+(419, 116),
+(419, 121),
+(419, 123),
+(420, 116),
+(420, 120),
+(421, 117),
+(421, 122),
+(422, 117),
+(422, 119),
+(423, 32),
+(423, 36),
+(424, 32),
+(424, 37),
+(425, 31),
+(425, 38),
+(426, 31),
+(426, 39),
+(427, 33),
+(427, 36),
+(428, 33),
+(428, 40),
+(429, 1),
+(429, 126);
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `variant_images`
+-- Cấu trúc bảng cho bảng `variant_images`
 --
 
 CREATE TABLE `variant_images` (
@@ -1090,24 +1162,10 @@ CREATE TABLE `variant_images` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
---
--- Dumping data for table `variant_images`
---
-
-INSERT INTO `variant_images` (`image_id`, `variant_id`, `image_url`, `alt_text`, `is_primary`, `display_order`, `created_at`) VALUES
-(55, 368, '/uploads/variants/368/1_De_Student-1763790123002-349823583.png', 'Image 1', 1, 0, '2025-11-22 07:06:29'),
-(56, 368, '/uploads/variants/368/2_De_Outlook-1763790123008-42161979.png', 'Image 2', 0, 1, '2025-11-22 07:06:29'),
-(57, 368, '/uploads/variants/368/3_De_Time-1763790123009-292304051.png', 'Image 3', 0, 2, '2025-11-22 07:06:29'),
-(58, 368, '/uploads/variants/368/4_De_Bus-1763790123011-744248151.png', 'Image 4', 0, 3, '2025-11-22 07:06:29'),
-(59, 368, '/uploads/variants/368/5_De_Where-1763790123012-381444524.png', 'Image 5', 0, 4, '2025-11-22 07:06:29'),
-(60, 372, '/uploads/variants/372/Screenshot2025-04-26092223-1763796096478-56263565.png', NULL, 1, 0, '2025-11-22 07:21:36'),
-(61, 372, '/uploads/variants/372/Screenshot2025-04-26092235-1763796096484-743370840.png', NULL, 0, 1, '2025-11-22 07:21:36'),
-(62, 372, '/uploads/variants/372/Screenshot2025-04-26092251-1763796096489-283203241.png', NULL, 0, 2, '2025-11-22 07:21:36');
-
 -- --------------------------------------------------------
 
 --
--- Table structure for table `warranty`
+-- Cấu trúc bảng cho bảng `warranty`
 --
 
 CREATE TABLE `warranty` (
@@ -1127,7 +1185,7 @@ CREATE TABLE `warranty` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `wishlists`
+-- Cấu trúc bảng cho bảng `wishlists`
 --
 
 CREATE TABLE `wishlists` (
@@ -1143,7 +1201,7 @@ CREATE TABLE `wishlists` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `wishlist_items`
+-- Cấu trúc bảng cho bảng `wishlist_items`
 --
 
 CREATE TABLE `wishlist_items` (
@@ -1153,11 +1211,11 @@ CREATE TABLE `wishlist_items` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Indexes for dumped tables
+-- Chỉ mục cho các bảng đã đổ
 --
 
 --
--- Indexes for table `addresses`
+-- Chỉ mục cho bảng `addresses`
 --
 ALTER TABLE `addresses`
   ADD PRIMARY KEY (`address_id`),
@@ -1165,7 +1223,7 @@ ALTER TABLE `addresses`
   ADD KEY `idx_is_default` (`is_default`);
 
 --
--- Indexes for table `articles`
+-- Chỉ mục cho bảng `articles`
 --
 ALTER TABLE `articles`
   ADD PRIMARY KEY (`article_id`),
@@ -1174,20 +1232,20 @@ ALTER TABLE `articles`
   ADD KEY `idx_category_id` (`category_id`);
 
 --
--- Indexes for table `attributes`
+-- Chỉ mục cho bảng `attributes`
 --
 ALTER TABLE `attributes`
   ADD PRIMARY KEY (`attribute_id`),
   ADD KEY `idx_attribute_type` (`attribute_type`);
 
 --
--- Indexes for table `attribute_categories`
+-- Chỉ mục cho bảng `attribute_categories`
 --
 ALTER TABLE `attribute_categories`
   ADD PRIMARY KEY (`attribute_category_id`);
 
 --
--- Indexes for table `attribute_values`
+-- Chỉ mục cho bảng `attribute_values`
 --
 ALTER TABLE `attribute_values`
   ADD PRIMARY KEY (`attribute_value_id`),
@@ -1195,7 +1253,7 @@ ALTER TABLE `attribute_values`
   ADD KEY `idx_attribute_id` (`attribute_id`);
 
 --
--- Indexes for table `builds`
+-- Chỉ mục cho bảng `builds`
 --
 ALTER TABLE `builds`
   ADD PRIMARY KEY (`build_id`),
@@ -1204,7 +1262,7 @@ ALTER TABLE `builds`
   ADD KEY `idx_created_at` (`created_at`);
 
 --
--- Indexes for table `build_items`
+-- Chỉ mục cho bảng `build_items`
 --
 ALTER TABLE `build_items`
   ADD PRIMARY KEY (`build_item_id`),
@@ -1212,7 +1270,7 @@ ALTER TABLE `build_items`
   ADD KEY `idx_variant_id` (`variant_id`);
 
 --
--- Indexes for table `carts`
+-- Chỉ mục cho bảng `carts`
 --
 ALTER TABLE `carts`
   ADD PRIMARY KEY (`cart_id`),
@@ -1220,7 +1278,7 @@ ALTER TABLE `carts`
   ADD KEY `idx_session_id` (`session_id`);
 
 --
--- Indexes for table `cart_items`
+-- Chỉ mục cho bảng `cart_items`
 --
 ALTER TABLE `cart_items`
   ADD PRIMARY KEY (`cart_item_id`),
@@ -1229,7 +1287,7 @@ ALTER TABLE `cart_items`
   ADD KEY `idx_variant_id` (`variant_id`);
 
 --
--- Indexes for table `categories`
+-- Chỉ mục cho bảng `categories`
 --
 ALTER TABLE `categories`
   ADD PRIMARY KEY (`category_id`),
@@ -1239,7 +1297,7 @@ ALTER TABLE `categories`
   ADD KEY `idx_is_active` (`is_active`);
 
 --
--- Indexes for table `coupons`
+-- Chỉ mục cho bảng `coupons`
 --
 ALTER TABLE `coupons`
   ADD PRIMARY KEY (`coupon_id`),
@@ -1249,7 +1307,7 @@ ALTER TABLE `coupons`
   ADD KEY `idx_valid_dates` (`valid_from`,`valid_until`);
 
 --
--- Indexes for table `installments`
+-- Chỉ mục cho bảng `installments`
 --
 ALTER TABLE `installments`
   ADD PRIMARY KEY (`installment_id`),
@@ -1257,14 +1315,14 @@ ALTER TABLE `installments`
   ADD KEY `idx_down_payment_status` (`down_payment_status`);
 
 --
--- Indexes for table `installment_payments`
+-- Chỉ mục cho bảng `installment_payments`
 --
 ALTER TABLE `installment_payments`
   ADD PRIMARY KEY (`payment_id`),
   ADD KEY `fk_payment_installment` (`installment_id`);
 
 --
--- Indexes for table `notifications`
+-- Chỉ mục cho bảng `notifications`
 --
 ALTER TABLE `notifications`
   ADD PRIMARY KEY (`notification_id`),
@@ -1273,7 +1331,7 @@ ALTER TABLE `notifications`
   ADD KEY `idx_created_at` (`created_at`);
 
 --
--- Indexes for table `orders`
+-- Chỉ mục cho bảng `orders`
 --
 ALTER TABLE `orders`
   ADD PRIMARY KEY (`order_id`),
@@ -1287,7 +1345,7 @@ ALTER TABLE `orders`
   ADD KEY `idx_created_at` (`created_at`);
 
 --
--- Indexes for table `order_items`
+-- Chỉ mục cho bảng `order_items`
 --
 ALTER TABLE `order_items`
   ADD PRIMARY KEY (`order_item_id`),
@@ -1295,7 +1353,7 @@ ALTER TABLE `order_items`
   ADD KEY `idx_variant_id` (`variant_id`);
 
 --
--- Indexes for table `payments`
+-- Chỉ mục cho bảng `payments`
 --
 ALTER TABLE `payments`
   ADD PRIMARY KEY (`payment_id`),
@@ -1304,7 +1362,7 @@ ALTER TABLE `payments`
   ADD KEY `idx_transaction_id` (`transaction_id`);
 
 --
--- Indexes for table `posts`
+-- Chỉ mục cho bảng `posts`
 --
 ALTER TABLE `posts`
   ADD PRIMARY KEY (`post_id`),
@@ -1316,7 +1374,7 @@ ALTER TABLE `posts`
 ALTER TABLE `posts` ADD FULLTEXT KEY `idx_search` (`title`,`content`);
 
 --
--- Indexes for table `products`
+-- Chỉ mục cho bảng `products`
 --
 ALTER TABLE `products`
   ADD PRIMARY KEY (`product_id`),
@@ -1328,7 +1386,7 @@ ALTER TABLE `products`
 ALTER TABLE `products` ADD FULLTEXT KEY `idx_search` (`product_name`,`description`);
 
 --
--- Indexes for table `product_variants`
+-- Chỉ mục cho bảng `product_variants`
 --
 ALTER TABLE `product_variants`
   ADD PRIMARY KEY (`variant_id`),
@@ -1338,7 +1396,7 @@ ALTER TABLE `product_variants`
   ADD KEY `idx_is_active` (`is_active`);
 
 --
--- Indexes for table `recent_views`
+-- Chỉ mục cho bảng `recent_views`
 --
 ALTER TABLE `recent_views`
   ADD PRIMARY KEY (`view_id`),
@@ -1347,7 +1405,7 @@ ALTER TABLE `recent_views`
   ADD KEY `idx_viewed_at` (`viewed_at`);
 
 --
--- Indexes for table `reports`
+-- Chỉ mục cho bảng `reports`
 --
 ALTER TABLE `reports`
   ADD PRIMARY KEY (`report_id`),
@@ -1356,7 +1414,7 @@ ALTER TABLE `reports`
   ADD KEY `idx_status` (`status`);
 
 --
--- Indexes for table `reviews`
+-- Chỉ mục cho bảng `reviews`
 --
 ALTER TABLE `reviews`
   ADD PRIMARY KEY (`review_id`),
@@ -1367,7 +1425,7 @@ ALTER TABLE `reviews`
   ADD KEY `idx_is_approved` (`is_approved`);
 
 --
--- Indexes for table `service_requests`
+-- Chỉ mục cho bảng `service_requests`
 --
 ALTER TABLE `service_requests`
   ADD PRIMARY KEY (`service_request_id`),
@@ -1378,7 +1436,7 @@ ALTER TABLE `service_requests`
   ADD KEY `idx_priority` (`priority`);
 
 --
--- Indexes for table `users`
+-- Chỉ mục cho bảng `users`
 --
 ALTER TABLE `users`
   ADD PRIMARY KEY (`user_id`),
@@ -1391,7 +1449,7 @@ ALTER TABLE `users`
   ADD KEY `idx_user_session` (`user_session_token`);
 
 --
--- Indexes for table `variant_attributes`
+-- Chỉ mục cho bảng `variant_attributes`
 --
 ALTER TABLE `variant_attributes`
   ADD PRIMARY KEY (`variant_id`,`attribute_value_id`),
@@ -1399,7 +1457,7 @@ ALTER TABLE `variant_attributes`
   ADD KEY `idx_attribute_value_id` (`attribute_value_id`);
 
 --
--- Indexes for table `variant_images`
+-- Chỉ mục cho bảng `variant_images`
 --
 ALTER TABLE `variant_images`
   ADD PRIMARY KEY (`image_id`),
@@ -1407,7 +1465,7 @@ ALTER TABLE `variant_images`
   ADD KEY `idx_is_primary` (`is_primary`);
 
 --
--- Indexes for table `warranty`
+-- Chỉ mục cho bảng `warranty`
 --
 ALTER TABLE `warranty`
   ADD PRIMARY KEY (`warranty_id`),
@@ -1417,14 +1475,14 @@ ALTER TABLE `warranty`
   ADD KEY `fk_warranty_service_request` (`service_request_id`);
 
 --
--- Indexes for table `wishlists`
+-- Chỉ mục cho bảng `wishlists`
 --
 ALTER TABLE `wishlists`
   ADD PRIMARY KEY (`wishlist_id`),
   ADD KEY `idx_user_id` (`user_id`);
 
 --
--- Indexes for table `wishlist_items`
+-- Chỉ mục cho bảng `wishlist_items`
 --
 ALTER TABLE `wishlist_items`
   ADD PRIMARY KEY (`wishlist_id`,`variant_id`),
@@ -1432,252 +1490,252 @@ ALTER TABLE `wishlist_items`
   ADD KEY `idx_variant_id` (`variant_id`);
 
 --
--- AUTO_INCREMENT for dumped tables
+-- AUTO_INCREMENT cho các bảng đã đổ
 --
 
 --
--- AUTO_INCREMENT for table `addresses`
+-- AUTO_INCREMENT cho bảng `addresses`
 --
 ALTER TABLE `addresses`
-  MODIFY `address_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=52;
+  MODIFY `address_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=54;
 
 --
--- AUTO_INCREMENT for table `articles`
+-- AUTO_INCREMENT cho bảng `articles`
 --
 ALTER TABLE `articles`
   MODIFY `article_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT for table `attributes`
+-- AUTO_INCREMENT cho bảng `attributes`
 --
 ALTER TABLE `attributes`
-  MODIFY `attribute_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=36;
+  MODIFY `attribute_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=42;
 
 --
--- AUTO_INCREMENT for table `attribute_categories`
+-- AUTO_INCREMENT cho bảng `attribute_categories`
 --
 ALTER TABLE `attribute_categories`
-  MODIFY `attribute_category_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=37;
+  MODIFY `attribute_category_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=43;
 
 --
--- AUTO_INCREMENT for table `attribute_values`
+-- AUTO_INCREMENT cho bảng `attribute_values`
 --
 ALTER TABLE `attribute_values`
-  MODIFY `attribute_value_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=127;
+  MODIFY `attribute_value_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=136;
 
 --
--- AUTO_INCREMENT for table `builds`
+-- AUTO_INCREMENT cho bảng `builds`
 --
 ALTER TABLE `builds`
   MODIFY `build_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT for table `build_items`
+-- AUTO_INCREMENT cho bảng `build_items`
 --
 ALTER TABLE `build_items`
   MODIFY `build_item_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT for table `carts`
+-- AUTO_INCREMENT cho bảng `carts`
 --
 ALTER TABLE `carts`
-  MODIFY `cart_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+  MODIFY `cart_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
--- AUTO_INCREMENT for table `cart_items`
+-- AUTO_INCREMENT cho bảng `cart_items`
 --
 ALTER TABLE `cart_items`
-  MODIFY `cart_item_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=63;
+  MODIFY `cart_item_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=69;
 
 --
--- AUTO_INCREMENT for table `categories`
+-- AUTO_INCREMENT cho bảng `categories`
 --
 ALTER TABLE `categories`
-  MODIFY `category_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=36;
+  MODIFY `category_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=50;
 
 --
--- AUTO_INCREMENT for table `coupons`
+-- AUTO_INCREMENT cho bảng `coupons`
 --
 ALTER TABLE `coupons`
   MODIFY `coupon_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
--- AUTO_INCREMENT for table `installments`
+-- AUTO_INCREMENT cho bảng `installments`
 --
 ALTER TABLE `installments`
-  MODIFY `installment_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=25;
+  MODIFY `installment_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=27;
 
 --
--- AUTO_INCREMENT for table `installment_payments`
+-- AUTO_INCREMENT cho bảng `installment_payments`
 --
 ALTER TABLE `installment_payments`
-  MODIFY `payment_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=25;
+  MODIFY `payment_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=46;
 
 --
--- AUTO_INCREMENT for table `notifications`
+-- AUTO_INCREMENT cho bảng `notifications`
 --
 ALTER TABLE `notifications`
   MODIFY `notification_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT for table `orders`
+-- AUTO_INCREMENT cho bảng `orders`
 --
 ALTER TABLE `orders`
-  MODIFY `order_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=46;
+  MODIFY `order_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=48;
 
 --
--- AUTO_INCREMENT for table `order_items`
+-- AUTO_INCREMENT cho bảng `order_items`
 --
 ALTER TABLE `order_items`
-  MODIFY `order_item_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=67;
+  MODIFY `order_item_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=71;
 
 --
--- AUTO_INCREMENT for table `payments`
+-- AUTO_INCREMENT cho bảng `payments`
 --
 ALTER TABLE `payments`
   MODIFY `payment_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT for table `posts`
+-- AUTO_INCREMENT cho bảng `posts`
 --
 ALTER TABLE `posts`
   MODIFY `post_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT for table `products`
+-- AUTO_INCREMENT cho bảng `products`
 --
 ALTER TABLE `products`
-  MODIFY `product_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=264;
+  MODIFY `product_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=363;
 
 --
--- AUTO_INCREMENT for table `product_variants`
+-- AUTO_INCREMENT cho bảng `product_variants`
 --
 ALTER TABLE `product_variants`
-  MODIFY `variant_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=374;
+  MODIFY `variant_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=563;
 
 --
--- AUTO_INCREMENT for table `recent_views`
+-- AUTO_INCREMENT cho bảng `recent_views`
 --
 ALTER TABLE `recent_views`
   MODIFY `view_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT for table `reports`
+-- AUTO_INCREMENT cho bảng `reports`
 --
 ALTER TABLE `reports`
   MODIFY `report_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT for table `reviews`
+-- AUTO_INCREMENT cho bảng `reviews`
 --
 ALTER TABLE `reviews`
   MODIFY `review_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT for table `service_requests`
+-- AUTO_INCREMENT cho bảng `service_requests`
 --
 ALTER TABLE `service_requests`
   MODIFY `service_request_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT for table `users`
+-- AUTO_INCREMENT cho bảng `users`
 --
 ALTER TABLE `users`
-  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=20;
+  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
 
 --
--- AUTO_INCREMENT for table `variant_images`
+-- AUTO_INCREMENT cho bảng `variant_images`
 --
 ALTER TABLE `variant_images`
   MODIFY `image_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=63;
 
 --
--- AUTO_INCREMENT for table `warranty`
+-- AUTO_INCREMENT cho bảng `warranty`
 --
 ALTER TABLE `warranty`
   MODIFY `warranty_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT for table `wishlists`
+-- AUTO_INCREMENT cho bảng `wishlists`
 --
 ALTER TABLE `wishlists`
   MODIFY `wishlist_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- Constraints for dumped tables
+-- Các ràng buộc cho các bảng đã đổ
 --
 
 --
--- Constraints for table `addresses`
+-- Các ràng buộc cho bảng `addresses`
 --
 ALTER TABLE `addresses`
   ADD CONSTRAINT `addresses_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE;
 
 --
--- Constraints for table `articles`
+-- Các ràng buộc cho bảng `articles`
 --
 ALTER TABLE `articles`
   ADD CONSTRAINT `articles_ibfk_1` FOREIGN KEY (`post_id`) REFERENCES `posts` (`post_id`) ON DELETE CASCADE,
   ADD CONSTRAINT `articles_ibfk_2` FOREIGN KEY (`category_id`) REFERENCES `categories` (`category_id`) ON DELETE SET NULL;
 
 --
--- Constraints for table `attribute_values`
+-- Các ràng buộc cho bảng `attribute_values`
 --
 ALTER TABLE `attribute_values`
   ADD CONSTRAINT `attribute_values_ibfk_1` FOREIGN KEY (`attribute_id`) REFERENCES `attributes` (`attribute_id`) ON DELETE CASCADE;
 
 --
--- Constraints for table `builds`
+-- Các ràng buộc cho bảng `builds`
 --
 ALTER TABLE `builds`
   ADD CONSTRAINT `builds_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE;
 
 --
--- Constraints for table `build_items`
+-- Các ràng buộc cho bảng `build_items`
 --
 ALTER TABLE `build_items`
   ADD CONSTRAINT `build_items_ibfk_1` FOREIGN KEY (`build_id`) REFERENCES `builds` (`build_id`) ON DELETE CASCADE,
   ADD CONSTRAINT `build_items_ibfk_2` FOREIGN KEY (`variant_id`) REFERENCES `product_variants` (`variant_id`) ON DELETE CASCADE;
 
 --
--- Constraints for table `carts`
+-- Các ràng buộc cho bảng `carts`
 --
 ALTER TABLE `carts`
   ADD CONSTRAINT `carts_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE;
 
 --
--- Constraints for table `cart_items`
+-- Các ràng buộc cho bảng `cart_items`
 --
 ALTER TABLE `cart_items`
   ADD CONSTRAINT `cart_items_ibfk_1` FOREIGN KEY (`cart_id`) REFERENCES `carts` (`cart_id`) ON DELETE CASCADE,
   ADD CONSTRAINT `cart_items_ibfk_2` FOREIGN KEY (`variant_id`) REFERENCES `product_variants` (`variant_id`) ON DELETE CASCADE;
 
 --
--- Constraints for table `categories`
+-- Các ràng buộc cho bảng `categories`
 --
 ALTER TABLE `categories`
   ADD CONSTRAINT `categories_ibfk_1` FOREIGN KEY (`parent_category_id`) REFERENCES `categories` (`category_id`) ON DELETE SET NULL;
 
 --
--- Constraints for table `installments`
+-- Các ràng buộc cho bảng `installments`
 --
 ALTER TABLE `installments`
   ADD CONSTRAINT `fk_installment_order` FOREIGN KEY (`order_id`) REFERENCES `orders` (`order_id`);
 
 --
--- Constraints for table `installment_payments`
+-- Các ràng buộc cho bảng `installment_payments`
 --
 ALTER TABLE `installment_payments`
   ADD CONSTRAINT `fk_payment_installment` FOREIGN KEY (`installment_id`) REFERENCES `installments` (`installment_id`);
 
 --
--- Constraints for table `notifications`
+-- Các ràng buộc cho bảng `notifications`
 --
 ALTER TABLE `notifications`
   ADD CONSTRAINT `notifications_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE;
 
 --
--- Constraints for table `orders`
+-- Các ràng buộc cho bảng `orders`
 --
 ALTER TABLE `orders`
   ADD CONSTRAINT `orders_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`),
@@ -1685,52 +1743,52 @@ ALTER TABLE `orders`
   ADD CONSTRAINT `orders_ibfk_3` FOREIGN KEY (`coupon_id`) REFERENCES `coupons` (`coupon_id`) ON DELETE SET NULL;
 
 --
--- Constraints for table `order_items`
+-- Các ràng buộc cho bảng `order_items`
 --
 ALTER TABLE `order_items`
   ADD CONSTRAINT `order_items_ibfk_1` FOREIGN KEY (`order_id`) REFERENCES `orders` (`order_id`) ON DELETE CASCADE,
   ADD CONSTRAINT `order_items_ibfk_2` FOREIGN KEY (`variant_id`) REFERENCES `product_variants` (`variant_id`);
 
 --
--- Constraints for table `payments`
+-- Các ràng buộc cho bảng `payments`
 --
 ALTER TABLE `payments`
   ADD CONSTRAINT `payments_ibfk_1` FOREIGN KEY (`order_id`) REFERENCES `orders` (`order_id`) ON DELETE CASCADE;
 
 --
--- Constraints for table `posts`
+-- Các ràng buộc cho bảng `posts`
 --
 ALTER TABLE `posts`
   ADD CONSTRAINT `posts_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`);
 
 --
--- Constraints for table `products`
+-- Các ràng buộc cho bảng `products`
 --
 ALTER TABLE `products`
   ADD CONSTRAINT `products_ibfk_1` FOREIGN KEY (`category_id`) REFERENCES `categories` (`category_id`);
 
 --
--- Constraints for table `product_variants`
+-- Các ràng buộc cho bảng `product_variants`
 --
 ALTER TABLE `product_variants`
   ADD CONSTRAINT `product_variants_ibfk_1` FOREIGN KEY (`product_id`) REFERENCES `products` (`product_id`) ON DELETE CASCADE;
 
 --
--- Constraints for table `recent_views`
+-- Các ràng buộc cho bảng `recent_views`
 --
 ALTER TABLE `recent_views`
   ADD CONSTRAINT `recent_views_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE,
   ADD CONSTRAINT `recent_views_ibfk_2` FOREIGN KEY (`variant_id`) REFERENCES `product_variants` (`variant_id`) ON DELETE CASCADE;
 
 --
--- Constraints for table `reports`
+-- Các ràng buộc cho bảng `reports`
 --
 ALTER TABLE `reports`
   ADD CONSTRAINT `reports_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE,
   ADD CONSTRAINT `reports_ibfk_2` FOREIGN KEY (`variant_id`) REFERENCES `product_variants` (`variant_id`) ON DELETE CASCADE;
 
 --
--- Constraints for table `reviews`
+-- Các ràng buộc cho bảng `reviews`
 --
 ALTER TABLE `reviews`
   ADD CONSTRAINT `reviews_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE,
@@ -1738,40 +1796,40 @@ ALTER TABLE `reviews`
   ADD CONSTRAINT `reviews_ibfk_3` FOREIGN KEY (`order_id`) REFERENCES `orders` (`order_id`) ON DELETE SET NULL;
 
 --
--- Constraints for table `service_requests`
+-- Các ràng buộc cho bảng `service_requests`
 --
 ALTER TABLE `service_requests`
   ADD CONSTRAINT `service_requests_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE,
   ADD CONSTRAINT `service_requests_ibfk_2` FOREIGN KEY (`assigned_to`) REFERENCES `users` (`user_id`) ON DELETE SET NULL;
 
 --
--- Constraints for table `variant_attributes`
+-- Các ràng buộc cho bảng `variant_attributes`
 --
 ALTER TABLE `variant_attributes`
   ADD CONSTRAINT `variant_attributes_ibfk_1` FOREIGN KEY (`variant_id`) REFERENCES `product_variants` (`variant_id`) ON DELETE CASCADE,
   ADD CONSTRAINT `variant_attributes_ibfk_2` FOREIGN KEY (`attribute_value_id`) REFERENCES `attribute_values` (`attribute_value_id`) ON DELETE CASCADE;
 
 --
--- Constraints for table `variant_images`
+-- Các ràng buộc cho bảng `variant_images`
 --
 ALTER TABLE `variant_images`
   ADD CONSTRAINT `variant_images_ibfk_1` FOREIGN KEY (`variant_id`) REFERENCES `product_variants` (`variant_id`) ON DELETE CASCADE;
 
 --
--- Constraints for table `warranty`
+-- Các ràng buộc cho bảng `warranty`
 --
 ALTER TABLE `warranty`
   ADD CONSTRAINT `fk_warranty_service_request` FOREIGN KEY (`service_request_id`) REFERENCES `service_requests` (`service_request_id`) ON DELETE SET NULL,
   ADD CONSTRAINT `warranty_ibfk_1` FOREIGN KEY (`order_item_id`) REFERENCES `order_items` (`order_item_id`) ON DELETE CASCADE;
 
 --
--- Constraints for table `wishlists`
+-- Các ràng buộc cho bảng `wishlists`
 --
 ALTER TABLE `wishlists`
   ADD CONSTRAINT `wishlists_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE;
 
 --
--- Constraints for table `wishlist_items`
+-- Các ràng buộc cho bảng `wishlist_items`
 --
 ALTER TABLE `wishlist_items`
   ADD CONSTRAINT `wishlist_items_ibfk_1` FOREIGN KEY (`wishlist_id`) REFERENCES `wishlists` (`wishlist_id`) ON DELETE CASCADE,

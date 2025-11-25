@@ -15,11 +15,11 @@ export const useCategoryStore = create((set, get) => ({
     fetchCategories: async (params = {}) => {
         set({ loading: true, error: null });
         try {
-            // Mặc định chỉ lấy categories đang active (is_active = 1)
-            // Trừ khi có yêu cầu cụ thể khác
+            // Lấy tất cả categories (không filter theo is_active) để Admin có thể quản lý
+            // Nếu cần filter, truyền params.is_active từ component
             const fetchParams = {
+                limit: 100, // Tăng limit để lấy nhiều categories hơn
                 ...params,
-                is_active: params.is_active !== undefined ? params.is_active : 'true'
             };
             const response = await categoryService.listCategories(fetchParams);
             set({ 

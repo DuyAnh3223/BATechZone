@@ -1,6 +1,6 @@
 import Product from '../models/Product.js';
 import Variant from '../models/Variant.js';
-import { db } from '../libs/db.js';
+import { db, query } from '../libs/db.js';
 
 // Lấy danh sách sản phẩm
 export const listProducts = async (req, res) => {
@@ -300,6 +300,170 @@ export const increaseProductView = async (req, res) => {
       success: false,
       message: 'Error increasing product view count',
       error: error.message
+    });
+  }
+};
+
+// Get filter options for a category
+export const getFilterOptions = async (req, res) => {
+  try {
+    const { category_id } = req.query;
+    
+    if (!category_id) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'category_id is required' 
+      });
+    }
+
+    const filterOptions = await Product.getFilterOptions(category_id);
+    
+    res.json({ 
+      success: true, 
+      data: filterOptions 
+    });
+  } catch (error) {
+    console.error('Error getting filter options:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Error retrieving filter options', 
+      error: error.message 
+    });
+  }
+};
+
+// Lấy products cho Build PC (bao gồm variants và attributes)
+export const getProductsForBuildPC = async (req, res) => {
+  try {
+    console.log('🔵 Build PC API called with category_id:', req.query.category_id);
+    
+    const { category_id } = req.query;
+    
+    if (!category_id) {
+      console.log('❌ Missing category_id');
+      return res.status(400).json({ 
+        success: false, 
+        message: 'category_id is required' 
+      });
+    }
+
+    console.log('🔍 Fetching products for category:', category_id);
+    
+    // Lấy products theo category với variants
+    let products = [];
+    try {
+      products = await query(`
+        SELECT 
+          p.product_id,
+          p.product_name,
+          p.slug,
+          p.description,
+          p.base_price,
+          p.img_path,
+          c.category_name,
+          c.slug as category_slug
+        FROM products p
+        LEFT JOIN categories c ON p.category_id = c.category_id
+        WHERE p.category_id = ? AND p.is_active = 1
+        ORDER BY p.is_featured DESC, p.product_name ASC
+      `, [category_id]);
+      
+      console.log(`✅ Found ${products.length} products`);
+    } catch (queryError) {
+      console.error('❌ Error in products query:', queryError);
+      throw queryError;
+    }
+
+    if (!Array.isArray(products)) {
+      console.error('❌ Products is not an array:', typeof products);
+      throw new Error('Query did not return an array');
+    }
+
+    // Lấy variants và attributes cho mỗi product
+    const productsWithVariants = await Promise.all(products.map(async (product) => {
+      console.log(`  📦 Processing product: ${product.product_name}`);
+      
+      // Get variants
+      let variants = [];
+      try {
+        variants = await query(`
+          SELECT 
+            v.variant_id,
+            v.sku,
+            v.variant_name,
+            v.price,
+            v.stock_quantity as stock
+          FROM product_variants v
+          WHERE v.product_id = ?
+          ORDER BY v.is_default DESC, v.price ASC
+        `, [product.product_id]);
+        
+        console.log(`    ➡️ Found ${variants.length} variants`);
+      } catch (variantError) {
+        console.error(`    ❌ Error fetching variants:`, variantError);
+        variants = [];
+      }
+
+      // Get attributes for this product
+      let attributes = [];
+      try {
+        if (variants.length > 0) {
+          const variantIds = variants.map(v => v.variant_id);
+          const placeholders = variantIds.map(() => '?').join(',');
+          
+          attributes = await query(`
+            SELECT 
+              a.attribute_name,
+              av.value_name as attribute_value,
+              va.variant_id
+            FROM variant_attributes va
+            JOIN attribute_values av ON va.attribute_value_id = av.attribute_value_id
+            JOIN attributes a ON av.attribute_id = a.attribute_id
+            WHERE va.variant_id IN (${placeholders})
+          `, variantIds);
+        }
+        
+        console.log(`    ➡️ Found ${attributes.length} attributes`);
+      } catch (attrError) {
+        console.error(`    ❌ Error fetching attributes:`, attrError);
+        attributes = [];
+      }
+
+      // Group attributes by variant
+      const variantsWithAttributes = variants.map(variant => {
+        const variantAttributes = attributes
+          .filter(attr => attr.variant_id === variant.variant_id)
+          .reduce((acc, attr) => {
+            acc[attr.attribute_name] = attr.attribute_value;
+            return acc;
+          }, {});
+
+        return {
+          ...variant,
+          attributes: variantAttributes
+        };
+      });
+
+      return {
+        ...product,
+        variants: variantsWithAttributes
+      };
+    }));
+
+    console.log('✅ Returning data with variants and attributes');
+
+    res.json({ 
+      success: true, 
+      data: productsWithVariants 
+    });
+  } catch (error) {
+    console.error('❌ Error getting products for Build PC:', error);
+    console.error('Stack:', error.stack);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Error retrieving products for Build PC', 
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 };

@@ -43,6 +43,30 @@ import {
   X,
   ChevronRight,
 } from "lucide-react";
+import { productService } from "@/services/productService";
+
+// Map category IDs từ database
+const CATEGORY_MAP = {
+  cpu: 1,           // CPU
+  vga: 2,           // VGA
+  ssd: 4,           // SSD
+  mainboard: 5,     // Mainboard
+  psu: 6,           // PSU
+  case: 7,          // Case
+  cooling: 8,       // Cooling
+  hdd: 13,          // HDD
+  ram: 35,          // RAM
+  monitor: 40,      // Monitor
+  keyboard: 41,     // Keyboard
+  mouse: 42,        // Mouse
+  headphone: 43,    // Headphone
+  speaker: 44,      // Speaker
+  gamingChair: 45,  // Gaming Chair
+  caseFan: 46,      // Case Fan
+  airCooler: 47,    // Air Cooler (sub của Cooling)
+  aioCooler: 48,    // AIO Cooler (sub của Cooling)
+  customWater: 49,  // Custom Water (sub của Cooling)
+};
 
 const mockCatalog = {
   cpu: [
@@ -650,7 +674,10 @@ const BuildPC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [priceRange, setPriceRange] = useState([0, 0]);
   const [brandFilters, setBrandFilters] = useState([]);
-  const [seriesFilters, setSeriesFilters] = useState([]);
+  const [attributeFilters, setAttributeFilters] = useState({}); // Dynamic attribute filters
+  const [filterOptions, setFilterOptions] = useState(null); // Available filter options from API
+  const [productCatalog, setProductCatalog] = useState({}); // Dữ liệu thật từ API
+  const [loading, setLoading] = useState(false);
   const pageSize = 6;
   const sortTabs = [
     { value: "default", label: "Khuyến mãi tốt nhất" },
@@ -658,24 +685,117 @@ const BuildPC = () => {
     { value: "asc", label: "Giá tăng dần" },
   ];
 
-  const initializeFilterState = useCallback(
-    (typeId) => {
-      const items = mockCatalog[typeId] || [];
-      if (!items.length) {
-        setPriceRange([0, 0]);
-        setBrandFilters([]);
-        setSeriesFilters([]);
-        return;
+  // Fetch filter options when opening picker
+  const fetchFilterOptions = useCallback(async (typeId) => {
+    const categoryId = CATEGORY_MAP[typeId];
+    if (!categoryId) {
+      console.warn(`No category mapping for type: ${typeId}`);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const response = await productService.getFilterOptions(categoryId);
+      
+      if (response.success && response.data) {
+        setFilterOptions(response.data);
+        
+        // Initialize price range from 0 to max price
+        if (response.data.priceRange) {
+          setPriceRange([0, response.data.priceRange.max]);
+        }
+        
+        console.log('✅ Filter options loaded:', response.data);
       }
-      const prices = items.map((item) => item.price || 0);
-      const min = Math.min(...prices);
-      const max = Math.max(...prices);
-      setPriceRange([min, max]);
-      setBrandFilters([]);
-      setSeriesFilters([]);
-    },
-    []
-  );
+    } catch (error) {
+      console.error(`Error fetching filter options for ${typeId}:`, error);
+      setFilterOptions({ priceRange: { min: 0, max: 0 }, brands: [], attributes: [] });
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Fetch products từ API khi mở picker
+  const fetchProductsForType = useCallback(async (typeId) => {
+    const categoryId = CATEGORY_MAP[typeId];
+    if (!categoryId) {
+      console.warn(`No category mapping for type: ${typeId}`);
+      return;
+    }
+
+    // Nếu đã có data trong cache, không fetch lại
+    if (productCatalog[typeId]?.length > 0) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const response = await productService.getProductsForBuildPC(categoryId);
+      
+      if (response.success && response.data) {
+        // Transform API data to match mock format - SHOW ALL VARIANTS
+        const transformedProducts = response.data.flatMap(product => {
+          // Nếu có variants, tạo entry cho mỗi variant
+          if (product.variants?.length > 0) {
+            return product.variants.map(variant => {
+              const attrs = variant.attributes || {};
+              const brand = attrs['Hãng'] || attrs['Nhà sản xuất'] || attrs['Thương hiệu'] || 'N/A';
+              
+              return {
+                id: `${product.slug}-${variant.variant_id}`,
+                variantId: variant.variant_id,
+                productId: product.product_id,
+                sku: variant.sku,
+                // Hiển thị tên sản phẩm + variant name để phân biệt
+                name: `${product.product_name}${variant.variant_name ? ` - ${variant.variant_name}` : ''}`,
+                brand,
+                socket: attrs['Socket'],
+                chipset: attrs['Chipset'],
+                generation: attrs['Dòng sản phẩm'],
+                series: attrs['Dòng card'] || attrs['Dòng sản phẩm'],
+                price: parseFloat(variant.price) || parseFloat(product.base_price) || 0,
+                stock: variant.stock || 0,
+                warranty: '12 tháng', // Default warranty
+                image: product.img_path || 'https://via.placeholder.com/80',
+                description: product.description || '',
+                highlights: [],
+                attributes: attrs,
+              };
+            });
+          } else {
+            // Nếu không có variants, dùng thông tin product
+            return [{
+              id: product.slug,
+              productId: product.product_id,
+              sku: product.slug,
+              name: product.product_name,
+              brand: 'N/A',
+              price: parseFloat(product.base_price) || 0,
+              stock: 0,
+              warranty: 'N/A',
+              image: product.img_path || 'https://via.placeholder.com/80',
+              description: product.description || '',
+              highlights: [],
+            }];
+          }
+        });
+
+        setProductCatalog(prev => ({
+          ...prev,
+          [typeId]: transformedProducts
+        }));
+      }
+    } catch (error) {
+      console.error(`Error fetching products for ${typeId}:`, error);
+      // Fallback to empty array
+      setProductCatalog(prev => ({
+        ...prev,
+        [typeId]: []
+      }));
+    } finally {
+      setLoading(false);
+    }
+  }, [productCatalog]);
 
   const handleBrandToggle = (brand) => {
     setBrandFilters((prev) =>
@@ -683,20 +803,33 @@ const BuildPC = () => {
     );
   };
 
-  const handleSeriesToggle = (value) => {
-    setSeriesFilters((prev) =>
-      prev.includes(value) ? prev.filter((item) => item !== value) : [...prev, value]
-    );
+  const handleAttributeToggle = (attributeName, valueId) => {
+    setAttributeFilters((prev) => {
+      const current = prev[attributeName] || [];
+      const newValues = current.includes(valueId)
+        ? current.filter((v) => v !== valueId)
+        : [...current, valueId];
+      
+      if (newValues.length === 0) {
+        const { [attributeName]: _, ...rest } = prev;
+        return rest;
+      }
+      
+      return {
+        ...prev,
+        [attributeName]: newValues
+      };
+    });
   };
 
   const handleResetFilters = () => {
-    if (pickerState.type) {
-      initializeFilterState(pickerState.type);
+    if (filterOptions?.priceRange) {
+      setPriceRange([filterOptions.priceRange.min, filterOptions.priceRange.max]);
     } else {
       setPriceRange([0, 0]);
-      setBrandFilters([]);
-      setSeriesFilters([]);
     }
+    setBrandFilters([]);
+    setAttributeFilters({});
   };
 
   const formatPrice = (price) =>
@@ -715,12 +848,11 @@ const BuildPC = () => {
     [selectedComponents, quantities]
   );
 
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [pickerState.search, pickerState.brand, pickerState.price, pickerState.sort, pickerState.type]);
-
-  const openPicker = (type) => {
-    initializeFilterState(type);
+  const openPicker = async (type) => {
+    // Fetch filter options and products when opening picker
+    await fetchFilterOptions(type);
+    await fetchProductsForType(type);
+    
     setPickerState({
       ...defaultPickerState,
       open: true,
@@ -734,14 +866,9 @@ const BuildPC = () => {
     setCurrentPage(1);
     setPriceRange([0, 0]);
     setBrandFilters([]);
-    setSeriesFilters([]);
+    setAttributeFilters({});
+    setFilterOptions(null);
   };
-
-  useEffect(() => {
-    if (pickerState.open && pickerState.type) {
-      initializeFilterState(pickerState.type);
-    }
-  }, [pickerState.open, pickerState.type, initializeFilterState]);
 
   const handleAddComponent = (component) => {
     if (!pickerState.type) return;
@@ -788,20 +915,23 @@ const BuildPC = () => {
   };
 
   const catalogItems = useMemo(
-    () => (pickerState.type ? mockCatalog[pickerState.type] || [] : []),
-    [pickerState.type]
+    () => {
+      if (!pickerState.type) return [];
+      // Ưu tiên dùng productCatalog (dữ liệu thật), fallback về mockCatalog
+      return productCatalog[pickerState.type] || mockCatalog[pickerState.type] || [];
+    },
+    [pickerState.type, productCatalog]
   );
 
   const priceBounds = useMemo(() => {
-    if (!catalogItems.length) {
+    if (!filterOptions?.priceRange) {
       return { min: 0, max: 0 };
     }
-    const prices = catalogItems.map((item) => item.price || 0);
     return {
-      min: Math.min(...prices),
-      max: Math.max(...prices),
+      min: 0,
+      max: filterOptions.priceRange.max,
     };
-  }, [catalogItems]);
+  }, [filterOptions]);
 
   const filteredComponents = useMemo(() => {
     if (!pickerState.type) return [];
@@ -827,10 +957,23 @@ const BuildPC = () => {
       items = items.filter((item) => brandFilters.includes(item.brand));
     }
 
-    if (seriesFilters.length) {
+    // Filter by dynamic attributes
+    if (Object.keys(attributeFilters).length > 0) {
       items = items.filter((item) => {
-        const descriptors = [item.chipset, item.type, item.generation].filter(Boolean);
-        return seriesFilters.some((value) => descriptors.includes(value));
+        return Object.entries(attributeFilters).every(([attrName, valueIds]) => {
+          if (!valueIds || valueIds.length === 0) return true;
+          
+          // Check if item has any of the selected values for this attribute
+          const itemAttrValue = item.attributes?.[attrName];
+          if (!itemAttrValue) return false;
+          
+          // Match by value name (since we display value names in UI)
+          const matchingValue = filterOptions?.attributes
+            ?.find(a => a.attributeName === attrName)
+            ?.values.find(v => valueIds.includes(v.valueId) && v.valueName === itemAttrValue);
+          
+          return !!matchingValue;
+        });
       });
     }
 
@@ -843,22 +986,11 @@ const BuildPC = () => {
     }
 
     return items;
-  }, [catalogItems, pickerState.search, pickerState.sort, priceRange, brandFilters, seriesFilters]);
+  }, [catalogItems, pickerState.search, pickerState.sort, priceRange, brandFilters, attributeFilters, filterOptions]);
 
   const brandOptions = useMemo(() => {
-    if (!pickerState.type) return [];
-    const set = new Set(catalogItems.map((item) => item.brand));
-    return Array.from(set);
-  }, [catalogItems, pickerState.type]);
-
-  const seriesOptions = useMemo(() => {
-    const set = new Set();
-    catalogItems.forEach((item) => {
-      if (item.chipset) set.add(item.chipset);
-      if (item.type && item.type.length <= 15) set.add(item.type);
-    });
-    return Array.from(set);
-  }, [catalogItems]);
+    return filterOptions?.brands || [];
+  }, [filterOptions]);
 
   const totalPages = Math.max(
     1,
@@ -1071,6 +1203,7 @@ const BuildPC = () => {
               </div>
               <ScrollArea className="flex-1 px-3 py-3">
                 <div className="space-y-4 pr-2 w-full">
+                  {/* Price Range Filter */}
                   <section className="space-y-3">
                     <div className="flex items-center justify-between text-xs text-muted-foreground">
                       <span>Khoảng giá</span>
@@ -1092,48 +1225,47 @@ const BuildPC = () => {
                     </div>
                   </section>
 
-                  <section className="space-y-3">
-                    <p className="text-sm font-semibold">Thương hiệu</p>
-                    <div className="space-y-2">
-                      {brandOptions.length === 0 && (
-                        <p className="text-xs text-muted-foreground">Không có dữ liệu</p>
-                      )}
-                      {brandOptions.map((brand) => (
-                        <label
-                          key={brand}
-                          className="flex items-center gap-2 text-sm font-medium text-slate-700 cursor-pointer"
-                        >
-                          <Checkbox
-                            checked={brandFilters.includes(brand)}
-                            onCheckedChange={() => handleBrandToggle(brand)}
-                          />
-                          {brand}
-                        </label>
-                      ))}
-                    </div>
-                  </section>
-
-                  {seriesOptions.length > 0 && (
+                  {/* Brand Filter */}
+                  {brandOptions.length > 0 && (
                     <section className="space-y-3">
-                      <p className="text-sm font-semibold">
-                        {pickerState.type === "cpu" ? "Dòng CPU" : "Thuộc tính nổi bật"}
-                      </p>
+                      <p className="text-sm font-semibold">Thương hiệu</p>
                       <div className="space-y-2">
-                        {seriesOptions.map((value) => (
+                        {brandOptions.map((brand) => (
                           <label
-                            key={value}
+                            key={brand}
                             className="flex items-center gap-2 text-sm font-medium text-slate-700 cursor-pointer"
                           >
                             <Checkbox
-                              checked={seriesFilters.includes(value)}
-                              onCheckedChange={() => handleSeriesToggle(value)}
+                              checked={brandFilters.includes(brand)}
+                              onCheckedChange={() => handleBrandToggle(brand)}
                             />
-                            {value}
+                            {brand}
                           </label>
                         ))}
                       </div>
                     </section>
                   )}
+
+                  {/* Dynamic Attribute Filters */}
+                  {filterOptions?.attributes && filterOptions.attributes.map((attr) => (
+                    <section key={attr.attributeId} className="space-y-3">
+                      <p className="text-sm font-semibold">{attr.attributeName}</p>
+                      <div className="space-y-2">
+                        {attr.values.map((value) => (
+                          <label
+                            key={value.valueId}
+                            className="flex items-center gap-2 text-sm font-medium text-slate-700 cursor-pointer"
+                          >
+                            <Checkbox
+                              checked={attributeFilters[attr.attributeName]?.includes(value.valueId) || false}
+                              onCheckedChange={() => handleAttributeToggle(attr.attributeName, value.valueId)}
+                            />
+                            {value.valueName}
+                          </label>
+                        ))}
+                      </div>
+                    </section>
+                  ))}
 
                   <Button variant="outline" size="sm" onClick={handleResetFilters} className="w-full">
                     Đặt lại bộ lọc
@@ -1184,7 +1316,16 @@ const BuildPC = () => {
 
               <ScrollArea className="flex-1 min-h-0">
                 <div className="p-3 space-y-2">
-                  {paginatedComponents.length === 0 ? (
+                  {loading ? (
+                    <Card>
+                      <CardContent className="py-10 text-center">
+                        <div className="flex flex-col items-center gap-3">
+                          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+                          <p className="text-sm text-muted-foreground">Đang tải sản phẩm...</p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ) : paginatedComponents.length === 0 ? (
                     <Card>
                       <CardContent className="py-6 text-center text-xs text-muted-foreground">
                         Không có sản phẩm phù hợp.

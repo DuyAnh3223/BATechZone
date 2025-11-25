@@ -1,5 +1,5 @@
 import express from 'express';
-import { createProduct,getProduct,updateProduct, deleteProduct,listProducts,increaseProductView} from '../controllers/productController.js';
+import { createProduct,getProduct,updateProduct, deleteProduct,listProducts,increaseProductView, getProductsForBuildPC, getFilterOptions} from '../controllers/productController.js';
 import { getVariantsByProduct, createVariantForProduct, getProductAttributes, getProductVariantMappings, updateVariantMappings, getVariantImages, addVariantImage, uploadVariantImages, deleteVariantImage } from '../controllers/variantController.js';
 import { getAttributeValuesByProductCategory } from '../controllers/attributeValueController.js';
 
@@ -7,6 +7,8 @@ const router = express.Router();
 
 
 router.get('/', listProducts);
+router.get('/build-pc', getProductsForBuildPC); // Endpoint mới cho Build PC
+router.get('/filters/options', getFilterOptions); // Get filter options for a category
 
 // Product variants routes 
 router.get('/:productId/variants', getVariantsByProduct);
