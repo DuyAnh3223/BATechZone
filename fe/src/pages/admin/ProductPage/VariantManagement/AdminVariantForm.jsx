@@ -1,8 +1,23 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { attributeService } from '@/services/attributeService';
 import { useVariantStore } from '@/stores/useVariantStore';
-
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { X, Plus, Info, Settings2, ChevronDown, Sparkles, ImageIcon } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
+import { Checkbox } from '@/components/ui/checkbox';
 // Helper: cartesian product of arrays
 function cartesianProduct(arrays) {
   if (!arrays.length) return [];
@@ -34,6 +49,14 @@ const AdminVariantForm = ({ product, existingVariants = [], onCancel, onSuccess 
   // generated variants
   const [variants, setVariants] = useState([]);
   const [saving, setSaving] = useState(false);
+
+  // Bulk update states
+  const [bulkPrice, setBulkPrice] = useState('');
+  const [bulkStock, setBulkStock] = useState('');
+
+  // UI state
+  const [isAttributeDrawerOpen, setIsAttributeDrawerOpen] = useState(false);
+  const [selectedVariantForImages, setSelectedVariantForImages] = useState(null);
 
   // Load attributes when component mounts
   useEffect(() => {
@@ -132,6 +155,65 @@ const AdminVariantForm = ({ product, existingVariants = [], onCancel, onSuccess 
       }
       return { ...copy };
     });
+  }
+
+  function removeValue(attribute_id, attribute_value_id) {
+    setSelectedValues((prev) => {
+      const copy = { ...prev };
+      if (copy[attribute_id]) {
+        const normalizedValueId = Number(attribute_value_id);
+        const normalizedSet = new Set(Array.from(copy[attribute_id]).map(id => Number(id)));
+        normalizedSet.delete(normalizedValueId);
+        copy[attribute_id] = normalizedSet;
+      }
+      return { ...copy };
+    });
+  }
+
+  // Calculate predicted variant count
+  const predictedVariantCount = useMemo(() => {
+    const counts = variantAttributes.map(attrId => {
+      const valuesSet = selectedValues[attrId];
+      return valuesSet ? valuesSet.size : 0;
+    }).filter(count => count > 0);
+    
+    if (counts.length === 0) return 0;
+    return counts.reduce((acc, count) => acc * count, 1);
+  }, [variantAttributes, selectedValues]);
+
+  // Get selected values for display
+  function getSelectedValuesForAttribute(attribute_id) {
+    const attr = attributes.find(a => a.attribute_id === attribute_id);
+    if (!attr || !selectedValues[attribute_id]) return [];
+    
+    return Array.from(selectedValues[attribute_id])
+      .map(valueId => {
+        const normalizedValueId = Number(valueId);
+        const value = attr.values.find(v => Number(v.attribute_value_id) === normalizedValueId);
+        return value ? { ...value, attribute_value_id: normalizedValueId } : null;
+      })
+      .filter(Boolean);
+  }
+
+  // Bulk update functions
+  function applyBulkPrice() {
+    if (bulkPrice === '' || isNaN(Number(bulkPrice))) {
+      alert('Vui lòng nhập giá hợp lệ');
+      return;
+    }
+    const price = Number(bulkPrice);
+    setVariants(prev => prev.map(v => ({ ...v, price })));
+    setBulkPrice('');
+  }
+
+  function applyBulkStock() {
+    if (bulkStock === '' || isNaN(Number(bulkStock))) {
+      alert('Vui lòng nhập số lượng hợp lệ');
+      return;
+    }
+    const stock = Number(bulkStock);
+    setVariants(prev => prev.map(v => ({ ...v, stock })));
+    setBulkStock('');
   }
 
   // compute arrays used for cartesian product in the order of variantAttributes
@@ -285,136 +367,608 @@ const AdminVariantForm = ({ product, existingVariants = [], onCancel, onSuccess 
 
   return (
     <div>
-    <form onSubmit={handleSubmit} className="space-y-6 p-4 bg-white rounded-md">
-      <div className="border-b pb-3">
+    <form onSubmit={handleSubmit} className="bg-white rounded-md">
+      {/* Header */}
+      <div className="border-b p-4">
         <h4 className="font-medium text-lg">Thêm biến thể cho: {product.product_name}</h4>
       </div>
 
-      <div className="border-t pt-4">
-        <h4 className="font-medium mb-2">Chọn thuộc tính </h4>
-                {loadingAttributes && (
-                  <div className="text-sm text-gray-500 py-2">Đang tải thuộc tính...</div>
-                )}
-                {!loadingAttributes && attributes.length === 0 && categoryId && (
-                  <div className="text-sm text-gray-500 py-2">Danh mục này chưa có thuộc tính nào.</div>
-                )}
-                {!categoryId && (
-                  <div className="text-sm text-gray-500 py-2">Sản phẩm chưa có danh mục.</div>
-                )}
-                <div className="space-y-4">
-                  {attributes.map((attr) => (
-                    <div key={attr.attribute_id} className="p-4 border rounded-lg bg-gray-50">
-                      <div className="flex items-center gap-3 mb-3">
-                        <label className="flex items-center gap-2 cursor-pointer">
-                          <input 
-                            type="checkbox" 
-                            checked={variantAttributes.includes(attr.attribute_id)} 
-                            onChange={() => toggleVariantAttribute(attr.attribute_id)}
-                            className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                          />
-                          <span className="font-medium text-gray-900">{attr.attribute_name}</span>
-                        </label>
-                        <span className="text-xs text-gray-500 px-2 py-0.5 bg-white border border-gray-200 rounded">
-                          {attr.attribute_type}
-                        </span>
-                      </div>
+      {/* Two Column Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-4">
         
-                      {variantAttributes.includes(attr.attribute_id) && (
-                        <div>
-                          <Select
-                            onValueChange={(value) => {
-                              if (value) {
-                                toggleValue(attr.attribute_id, value);
-                              }
-                            }}
-                          >
-                            <SelectTrigger className="w-full bg-white">
-                              <SelectValue placeholder="-- Chọn giá trị --" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {(attr.values || []).map((v) => {
-                                const valueId = Number(v.attribute_value_id);
-                                const isSelected = selectedValues[attr.attribute_id] 
-                                  ? Array.from(selectedValues[attr.attribute_id]).some(id => Number(id) === valueId)
-                                  : false;
-                                
-                                return (
-                                  <SelectItem 
-                                    key={v.attribute_value_id} 
-                                    value={String(v.attribute_value_id)}
-                                    disabled={isSelected}
-                                  >
-                                    <div className="flex items-center justify-between w-full">
-                                      <span>{v.value_name}</span>
-                                      {isSelected && (
-                                        <span className="ml-2 text-indigo-600 text-xs">✓ Đã chọn</span>
-                                      )}
-                                    </div>
-                                  </SelectItem>
-                                );
-                              })}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      )}
+        {/* LEFT COLUMN - Attribute Selection */}
+        <div className="lg:col-span-2 space-y-4">
+          
+          {/* Attribute Drawer Trigger */}
+          <div>
+            <Sheet open={isAttributeDrawerOpen} onOpenChange={setIsAttributeDrawerOpen}>
+              <SheetTrigger asChild>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  className="w-full justify-between h-auto py-3 border-2 border-dashed hover:border-indigo-400 hover:bg-indigo-50"
+                >
+                  <div className="flex items-center gap-2">
+                    <Settings2 className="h-5 w-5 text-indigo-600" />
+                    <div className="text-left">
+                      <div className="font-medium text-gray-900">Chọn thuộc tính để tạo biến thể</div>
+                      <div className="text-xs text-gray-500 mt-0.5">
+                        {variantAttributes.length > 0 
+                          ? `Đã chọn ${variantAttributes.length} thuộc tính`
+                          : 'Click để chọn thuộc tính'}
+                      </div>
                     </div>
-                  ))}
+                  </div>
+                  <ChevronDown className="h-5 w-5 text-gray-400" />
+                </Button>
+              </SheetTrigger>
+              
+              <SheetContent side="left" className="w-full sm:max-w-md overflow-y-auto">
+                <SheetHeader>
+                  <SheetTitle>Chọn thuộc tính</SheetTitle>
+                  <SheetDescription>
+                    Chọn các thuộc tính để tạo biến thể sản phẩm
+                  </SheetDescription>
+                </SheetHeader>
+
+                <div className="mt-6 space-y-3">
+                  {loadingAttributes && (
+                    <div className="text-sm text-gray-500 py-4 text-center">Đang tải thuộc tính...</div>
+                  )}
+                  {!loadingAttributes && attributes.length === 0 && categoryId && (
+                    <div className="text-sm text-gray-500 py-4 text-center">Danh mục này chưa có thuộc tính nào.</div>
+                  )}
+                  {!categoryId && (
+                    <div className="text-sm text-gray-500 py-4 text-center">Sản phẩm chưa có danh mục.</div>
+                  )}
+                  
+                  {attributes.map((attr) => {
+                    const isSelected = variantAttributes.includes(attr.attribute_id);
+                    const valueCount = attr.values?.length || 0;
+                    
+                    return (
+                      <label
+                        key={attr.attribute_id}
+                        className={`flex items-center justify-between p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                          isSelected 
+                            ? 'border-indigo-500 bg-indigo-50' 
+                            : 'border-gray-200 hover:border-gray-300'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3 flex-1">
+                          <Checkbox
+                            checked={isSelected}
+                            onCheckedChange={() => toggleVariantAttribute(attr.attribute_id)}
+                          />
+                          <div className="flex-1">
+                            <div className="font-medium text-gray-900">{attr.attribute_name}</div>
+                            <div className="text-xs text-gray-500 mt-0.5">
+                              {valueCount} giá trị • {attr.attribute_type}
+                            </div>
+                          </div>
+                        </div>
+                        {isSelected && (
+                          <Badge className="bg-indigo-600">Đã chọn</Badge>
+                        )}
+                      </label>
+                    );
+                  })}
                 </div>
 
-        <div className="mt-4 flex items-center gap-3">
-          <button type="button" onClick={generateVariants} className="px-4 py-2 rounded-md bg-green-600 text-white hover:bg-green-700">
-            Tạo biến thể
-          </button>
-          <span className="text-sm text-gray-600">Tổng: <span className="font-medium">{variants.length}</span> biến thể</span>
-          {variants.length > 0 && (
-            <button 
-              type="button" 
-              onClick={() => {
-                if (confirm('Xóa tất cả biến thể đã tạo?')) {
-                  setVariants([]);
-                  setVariantAttributes([]);
-                  setSelectedValues({});
-                }
-              }} 
-              className="px-3 py-1.5 rounded-md bg-red-100 text-red-800 text-sm hover:bg-red-200"
-            >
-              Xóa tất cả
-            </button>
+                <div className="mt-6 flex gap-2">
+                  <Button
+                    type="button"
+                    onClick={() => setIsAttributeDrawerOpen(false)}
+                    className="flex-1"
+                  >
+                    Xong
+                  </Button>
+                </div>
+              </SheetContent>
+            </Sheet>
+          </div>
+
+          {/* Selected Attributes - Compact Display */}
+          {variantAttributes.length > 0 && (
+            <div className="space-y-3">{attributes
+                  .filter(attr => variantAttributes.includes(attr.attribute_id))
+                  .map((attr) => {
+                    const selectedValuesForAttr = getSelectedValuesForAttribute(attr.attribute_id);
+                    
+                    return (
+                      <div key={attr.attribute_id} className="p-4 border rounded-lg bg-white shadow-sm">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-gray-900">{attr.attribute_name}</span>
+                            <Badge variant="outline" className="text-xs">
+                              {selectedValuesForAttr.length}/{attr.values?.length || 0}
+                            </Badge>
+                          </div>
+                          
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button 
+                                type="button" 
+                                variant="ghost" 
+                                size="sm"
+                                className="h-7 px-2"
+                              >
+                                <ChevronDown className="h-4 w-4" />
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-80 p-0" align="end">
+                              <div className="p-2 border-b bg-gray-50">
+                                <p className="text-sm font-medium text-gray-700">
+                                  Chọn giá trị cho {attr.attribute_name}
+                                </p>
+                              </div>
+                              <div className="max-h-64 overflow-y-auto p-2">
+                                {(attr.values || []).length === 0 ? (
+                                  <div className="text-sm text-gray-500 text-center py-4">
+                                    Chưa có giá trị nào
+                                  </div>
+                                ) : (
+                                  <div className="space-y-1">
+                                    {attr.values.map((v) => {
+                                      const valueId = Number(v.attribute_value_id);
+                                      const isSelected = selectedValues[attr.attribute_id] 
+                                        ? Array.from(selectedValues[attr.attribute_id]).some(id => Number(id) === valueId)
+                                        : false;
+                                      
+                                      return (
+                                        <label
+                                          key={v.attribute_value_id}
+                                          className="flex items-center gap-2 p-2 rounded hover:bg-gray-100 cursor-pointer"
+                                        >
+                                          <Checkbox
+                                            checked={isSelected}
+                                            onCheckedChange={() => toggleValue(attr.attribute_id, valueId)}
+                                          />
+                                          <span className="text-sm flex-1">{v.value_name}</span>
+                                          {isSelected && (
+                                            <span className="text-xs text-indigo-600 font-medium">✓</span>
+                                          )}
+                                        </label>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+                              </div>
+                            </PopoverContent>
+                          </Popover>
+                        </div>
+
+                        {/* Selected values badges */}
+                        <div className="flex flex-wrap gap-2">
+                          {selectedValuesForAttr.map((v) => (
+                            <Badge 
+                              key={v.attribute_value_id} 
+                              variant="secondary"
+                              className="flex items-center gap-1 px-3 py-1 bg-indigo-100 text-indigo-800 hover:bg-indigo-200"
+                            >
+                              <span>{v.value_name}</span>
+                              <button
+                                type="button"
+                                onClick={() => removeValue(attr.attribute_id, v.attribute_value_id)}
+                                className="ml-1 hover:text-indigo-900"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </Badge>
+                          ))}
+                          
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Badge 
+                                variant="outline" 
+                                className="cursor-pointer hover:bg-gray-100 border-dashed"
+                              >
+                                <Plus className="h-3 w-3 mr-1" />
+                                Thêm
+                              </Badge>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-80 p-0" align="start">
+                              <div className="p-2 border-b bg-gray-50">
+                                <p className="text-sm font-medium text-gray-700">
+                                  Thêm giá trị
+                                </p>
+                              </div>
+                              <div className="max-h-64 overflow-y-auto p-2">
+                                {(attr.values || []).length === 0 ? (
+                                  <div className="text-sm text-gray-500 text-center py-4">
+                                    Chưa có giá trị nào
+                                  </div>
+                                ) : (
+                                  <div className="space-y-1">
+                                    {attr.values.map((v) => {
+                                      const valueId = Number(v.attribute_value_id);
+                                      const isSelected = selectedValues[attr.attribute_id] 
+                                        ? Array.from(selectedValues[attr.attribute_id]).some(id => Number(id) === valueId)
+                                        : false;
+                                      
+                                      return (
+                                        <label
+                                          key={v.attribute_value_id}
+                                          className="flex items-center gap-2 p-2 rounded hover:bg-gray-100 cursor-pointer"
+                                        >
+                                          <Checkbox
+                                            checked={isSelected}
+                                            onCheckedChange={() => toggleValue(attr.attribute_id, valueId)}
+                                          />
+                                          <span className="text-sm flex-1">{v.value_name}</span>
+                                          {isSelected && (
+                                            <span className="text-xs text-indigo-600 font-medium">✓</span>
+                                          )}
+                                        </label>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+                              </div>
+                            </PopoverContent>
+                          </Popover>
+                        </div>
+                      </div>
+                    );
+                  })}
+            </div>
+          )}
+
+          {/* Empty state when no attributes selected */}
+          {variantAttributes.length === 0 && (
+            <div className="text-center py-12 text-gray-400 border-2 border-dashed rounded-lg">
+              <Settings2 className="h-12 w-12 mx-auto mb-3 opacity-50" />
+              <p className="text-sm">Chưa chọn thuộc tính nào</p>
+              <p className="text-xs mt-1">Click nút trên để bắt đầu</p>
+            </div>
           )}
         </div>
-      </div>
 
-      <div className="border-t pt-4">
-        <h4 className="font-medium mb-2">Biến thể</h4>
-        <div className="space-y-3">
-          {variants.length === 0 && <div className="text-sm text-gray-500">Chưa có biến thể nào.</div>}
-          {variants.map((v, idx) => (
-            <div key={v.id} className="p-3 border rounded-md bg-white">
-              <div className="flex items-center justify-between mb-2">
-                <div className="text-sm font-medium">#{v.id} — {v.attribute_values.map((av) => av.value_name).join(' / ')}</div>
-                <div className="flex items-center gap-2">
-                  <button type="button" onClick={() => removeVariant(idx)} className="px-2 py-1 rounded-md bg-red-100 text-red-800 text-sm">Xóa</button>
+        {/* RIGHT COLUMN - Sticky Sidebar */}
+        <div className="lg:col-span-1">
+          <div className="sticky top-4 space-y-4">
+            
+            {/* Prediction Panel */}
+            <div className="p-4 bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-lg">
+              <div className="flex items-center gap-2 mb-3">
+                <Sparkles className="h-5 w-5 text-indigo-600" />
+                <h5 className="font-semibold text-gray-900">Dự đoán</h5>
+              </div>
+              
+              {predictedVariantCount > 0 ? (
+                <div>
+                  <div className="text-center mb-3">
+                    <div className="text-4xl font-bold text-indigo-600 mb-1">
+                      {predictedVariantCount}
+                    </div>
+                    <div className="text-sm text-gray-600">biến thể sẽ được tạo</div>
+                  </div>
+                  
+                  <div className="text-xs text-gray-600 bg-white/50 rounded p-2 mb-3">
+                    {variantAttributes.map((attrId, idx) => {
+                      const attr = attributes.find(a => a.attribute_id === attrId);
+                      const count = selectedValues[attrId]?.size || 0;
+                      return (
+                        <div key={attrId} className="flex items-center justify-between py-1">
+                          <span>{attr?.attribute_name}:</span>
+                          <span className="font-medium">{count}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <Button 
+                    type="button" 
+                    onClick={generateVariants} 
+                    className="w-full bg-green-600 hover:bg-green-700"
+                    size="lg"
+                  >
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    Tạo {predictedVariantCount} biến thể
+                  </Button>
+                </div>
+              ) : (
+                <div className="text-center py-6 text-gray-400">
+                  <Info className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">Chọn thuộc tính và giá trị để xem dự đoán</p>
+                </div>
+              )}
+            </div>
+
+            {/* Variants Summary */}
+            <div className="p-4 bg-white border rounded-lg shadow-sm">
+              <h5 className="font-semibold text-gray-900 mb-3">Tổng quan</h5>
+              
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Đã tạo:</span>
+                  <span className="font-semibold text-gray-900">{variants.length} biến thể</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Thuộc tính:</span>
+                  <span className="font-semibold text-gray-900">{variantAttributes.length}</span>
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
+              {variants.length > 0 && (
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  className="w-full mt-3"
+                  onClick={() => {
+                    if (confirm('Xóa tất cả biến thể đã tạo?')) {
+                      setVariants([]);
+                      setVariantAttributes([]);
+                      setSelectedValues({});
+                    }
+                  }}
+                >
+                  <X className="h-4 w-4 mr-2" />
+                  Xóa tất cả biến thể
+                </Button>
+              )}
+            </div>
+
+            {/* Quick Actions */}
+            {variants.length > 0 && (
+              <div className="p-4 bg-white border rounded-lg shadow-sm">
+                <h5 className="font-semibold text-gray-900 mb-3">Chỉnh hàng loạt</h5>
+                
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-xs text-gray-600 mb-1 block">Giá chung (₫)</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="number"
+                        placeholder="0"
+                        value={bulkPrice}
+                        onChange={(e) => setBulkPrice(e.target.value)}
+                        className="flex-1 px-2 py-1.5 text-sm border rounded"
+                      />
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={applyBulkPrice}
+                        disabled={!bulkPrice}
+                      >
+                        Áp dụng
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <label className="text-xs text-gray-600 mb-1 block">Tồn kho chung</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="number"
+                        placeholder="0"
+                        value={bulkStock}
+                        onChange={(e) => setBulkStock(e.target.value)}
+                        className="flex-1 px-2 py-1.5 text-sm border rounded"
+                      />
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={applyBulkStock}
+                        disabled={!bulkStock}
+                      >
+                        Áp dụng
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Variants List */}
+      <div className="border-t p-4">
+        <h4 className="font-medium mb-4">Danh sách biến thể ({variants.length})</h4>
+
+        <div className="space-y-3">
+          {variants.length === 0 && (
+            <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-lg border-2 border-dashed">
+              <p className="text-sm">Chưa có biến thể nào.</p>
+              <p className="text-xs mt-1">Chọn thuộc tính và giá trị, sau đó bấm "Tạo biến thể"</p>
+            </div>
+          )}
+          {variants.map((v, idx) => (
+            <div key={v.id} className="p-4 border rounded-lg bg-white shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-medium text-gray-500">#{v.id}</span>
+                  <div className="flex flex-wrap gap-1">
+                    {v.attribute_values.map((av, avIdx) => (
+                      <Badge key={avIdx} variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                        {av.value_name}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+                <button 
+                  type="button" 
+                  onClick={() => removeVariant(idx)} 
+                  className="px-2 py-1 rounded-md bg-red-100 text-red-800 text-sm hover:bg-red-200 flex items-center gap-1"
+                >
+                  <X className="h-3 w-3" />
+                  Xóa
+                </button>
+              </div>
+
+              <div className="grid grid-cols-4 gap-3">
                 <div>
-                  <label className="block text-xs text-gray-600 mb-1">SKU</label>
-                  <input className="w-full px-3 py-2 border rounded-md text-sm" value={v.sku} onChange={(e) => updateVariant(idx, { sku: e.target.value })} />
+                  <label className="block text-xs font-medium text-gray-700 mb-1">SKU</label>
+                  <input 
+                    className="w-full px-3 py-2 border rounded-md text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" 
+                    value={v.sku} 
+                    onChange={(e) => updateVariant(idx, { sku: e.target.value })} 
+                    placeholder="Mã SKU"
+                  />
                 </div>
                 <div>
-                  <label className="block text-xs text-gray-600 mb-1">Giá (₫)</label>
-                  <input type="number" className="w-full px-3 py-2 border rounded-md text-sm" value={v.price} onChange={(e) => updateVariant(idx, { price: Number(e.target.value) })} />
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Giá (₫)</label>
+                  <input 
+                    type="number" 
+                    className="w-full px-3 py-2 border rounded-md text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" 
+                    value={v.price} 
+                    onChange={(e) => updateVariant(idx, { price: Number(e.target.value) })} 
+                    placeholder="0"
+                  />
                 </div>
                 <div>
-                  <label className="block text-xs text-gray-600 mb-1">Tồn kho</label>
-                  <input type="number" className="w-full px-3 py-2 border rounded-md text-sm" value={v.stock} onChange={(e) => updateVariant(idx, { stock: Number(e.target.value) })} min="0" />
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Tồn kho</label>
+                  <input 
+                    type="number" 
+                    className="w-full px-3 py-2 border rounded-md text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" 
+                    value={v.stock} 
+                    onChange={(e) => updateVariant(idx, { stock: Number(e.target.value) })} 
+                    min="0" 
+                    placeholder="0"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Hành động</label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSelectedVariantForImages(v)}
+                    className="w-full px-3 py-2 border rounded-md text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  >
+                    <ImageIcon className="h-4 w-4" />
+                    Quản lý ảnh
+                  </Button>
                 </div>
               </div>
             </div>
           ))}
         </div>
       </div>
+
+      {/* Image Management Dialog */}
+      {selectedVariantForImages && (
+        <div className="fixed inset-0 bg-gray bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">Quản lý hình ảnh biến thể</h3>
+                  <div className="flex gap-2 mt-2">
+                    {selectedVariantForImages.attribute_values.map((av, idx) => (
+                      <Badge key={idx} variant="outline" className="bg-blue-50 text-blue-700">
+                        {av.value_name}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+                <button
+                  onClick={() => setSelectedVariantForImages(null)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {/* Upload Area */}
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-indigo-400 transition-colors">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={(e) => {
+                      const files = Array.from(e.target.files);
+                      console.log('Selected files:', files);
+                      // TODO: Handle file upload
+                      alert(`Chức năng upload đang được phát triển. Đã chọn ${files.length} ảnh.`);
+                    }}
+                    className="hidden"
+                    id="variant-image-upload"
+                  />
+                  <label
+                    htmlFor="variant-image-upload"
+                    className="cursor-pointer flex flex-col items-center"
+                  >
+                    <ImageIcon className="h-12 w-12 text-gray-400 mb-3" />
+                    <p className="text-sm font-medium text-gray-700">Click để chọn ảnh</p>
+                    <p className="text-xs text-gray-500 mt-1">hoặc kéo thả ảnh vào đây</p>
+                    <p className="text-xs text-gray-400 mt-2">PNG, JPG, WEBP (tối đa 10MB)</p>
+                  </label>
+                </div>
+
+                {/* Image Grid */}
+                <div>
+                  <h4 className="text-sm font-medium text-gray-700 mb-3">Danh sách ảnh ({selectedVariantForImages.images?.length || 0})</h4>
+                  
+                  {(!selectedVariantForImages.images || selectedVariantForImages.images.length === 0) ? (
+                    <div className="text-center py-8 text-gray-400 bg-gray-50 rounded-lg border">
+                      <ImageIcon className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                      <p className="text-sm">Chưa có ảnh nào</p>
+                      <p className="text-xs mt-1">Thêm ảnh để hiển thị cho biến thể này</p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-4 gap-4">
+                      {selectedVariantForImages.images.map((img, idx) => (
+                        <div key={idx} className="relative group border rounded-lg overflow-hidden aspect-square">
+                          <img
+                            src={img.url || img}
+                            alt={`Variant image ${idx + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                          
+                          {/* Overlay Actions */}
+                          <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
+                            <button
+                              onClick={() => {
+                                console.log('Set as primary:', img);
+                                alert('Chức năng đặt ảnh chính đang được phát triển');
+                              }}
+                              className="px-3 py-1.5 bg-indigo-600 text-white text-xs rounded-md hover:bg-indigo-700"
+                            >
+                              Đặt làm chính
+                            </button>
+                            <button
+                              onClick={() => {
+                                if (confirm('Xóa ảnh này?')) {
+                                  console.log('Delete image:', img);
+                                  alert('Chức năng xóa ảnh đang được phát triển');
+                                }
+                              }}
+                              className="px-3 py-1.5 bg-red-600 text-white text-xs rounded-md hover:bg-red-700"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </div>
+
+                          {/* Primary Badge */}
+                          {img.is_primary && (
+                            <div className="absolute top-2 left-2">
+                              <Badge className="bg-green-600 text-white">Ảnh chính</Badge>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setSelectedVariantForImages(null)}
+                >
+                  Đóng
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="flex items-center gap-3 border-t pt-4">
         <button type="submit" disabled={saving || variants.length === 0} className="px-4 py-2 rounded-md bg-indigo-600 text-white disabled:bg-gray-400 disabled:cursor-not-allowed">
