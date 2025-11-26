@@ -44,6 +44,11 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { productService } from "@/services/productService";
+import { useCartStore } from "@/stores/useCartStore";
+import { useCartItemStore } from "@/stores/useCartItemStore";
+import { useUserAuthStore } from "@/stores/useUserAuthStore";
+import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 // Map category IDs từ database
 const CATEGORY_MAP = {
@@ -668,6 +673,11 @@ const defaultPickerState = {
 };
 
 const BuildPC = () => {
+  const navigate = useNavigate();
+  const { user } = useUserAuthStore();
+  const { getOrCreateCart } = useCartStore();
+  const { addToCart } = useCartItemStore();
+  
   const [selectedComponents, setSelectedComponents] = useState({});
   const [pickerState, setPickerState] = useState(defaultPickerState);
   const [quantities, setQuantities] = useState({});
@@ -914,6 +924,70 @@ const BuildPC = () => {
     });
   };
 
+  const handleAddToCart = async () => {
+    if (calculateTotal === 0) {
+      toast.error('Vui lòng chọn ít nhất một linh kiện');
+      return;
+    }
+
+    try {
+      // 1. Get or create cart
+      let cartData = {};
+      if (user) {
+        cartData.userId = user.user_id;
+      } else {
+        let sessionId = localStorage.getItem('guest_session_id');
+        if (!sessionId) {
+          sessionId = `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+          localStorage.setItem('guest_session_id', sessionId);
+        }
+        cartData.sessionId = sessionId;
+      }
+
+      const cartResponse = await getOrCreateCart(cartData);
+      const cart = cartResponse?.data || cartResponse;
+      const cartId = cart?.cart_id || cart?.cartId;
+
+      if (!cartId) {
+        throw new Error('Không thể tạo giỏ hàng');
+      }
+
+      // 2. Add all selected components to cart
+      const addPromises = Object.entries(selectedComponents).map(async ([type, component]) => {
+        const quantity = quantities[type] || 1;
+        const variantId = component.variantId;
+
+        if (!variantId) {
+          console.warn(`Component ${type} không có variantId:`, component);
+          return;
+        }
+
+        return addToCart({
+          cartId,
+          variantId,
+          quantity,
+        });
+      });
+
+      await Promise.all(addPromises);
+
+      toast.success('Đã thêm tất cả linh kiện vào giỏ hàng!');
+      
+      // Clear selected components
+      setSelectedComponents({});
+      setQuantities({});
+
+      // Navigate to cart
+      setTimeout(() => {
+        navigate('/cart');
+      }, 500);
+
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+      toast.error(error.response?.data?.message || 'Không thể thêm vào giỏ hàng');
+    }
+  };
+
   const catalogItems = useMemo(
     () => {
       if (!pickerState.type) return [];
@@ -1130,21 +1204,12 @@ const BuildPC = () => {
           </CardContent>
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-t p-6">
             <div>
-              <p className="text-sm text-muted-foreground">Tổng giá trị tạm tính</p>
-              <p className="text-2xl font-bold text-red-600">{formatPrice(calculateTotal)}</p>
+              <p className="text-base text-muted-foreground font-medium">Tổng giá trị tạm tính</p>
+              <p className="text-3xl font-bold text-red-600">{formatPrice(calculateTotal)}</p>
             </div>
-            <div className="flex gap-3">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setSelectedComponents({});
-                  setQuantities({});
-                }}
-              >
-                Xóa tất cả
-              </Button>
+            {/* <div className="flex gap-3">
               <Button disabled={calculateTotal === 0}>Thêm vào giỏ hàng</Button>
-            </div>
+            </div> */}
           </div>
         </Card>
 
@@ -1170,16 +1235,16 @@ const BuildPC = () => {
               ))
             )}
 
-            <div className="flex flex-col gap-1 border-t pt-2">
-              <div className="flex items-center justify-between text-base font-semibold">
+            <div className="flex flex-col gap-2 border-t pt-3">
+              <div className="flex items-center justify-between text-xl font-bold">
                 <span>Tổng cộng</span>
                 <span className="text-red-600">{formatPrice(calculateTotal)}</span>
               </div>
-              <div className="flex gap-1">
-                <Button variant="outline" size="sm" className="flex-1 h-8 text-xs" onClick={() => { setSelectedComponents({}); setQuantities({}); }}>
+              <div className="flex gap-2">
+                <Button variant="outline" size="lg" className="flex-1" onClick={() => { setSelectedComponents({}); setQuantities({}); }}>
                   Xóa cấu hình
                 </Button>
-                <Button size="sm" className="flex-1 h-8 text-xs" disabled={calculateTotal === 0}>
+                <Button size="lg" className="flex-1" disabled={calculateTotal === 0} onClick={handleAddToCart}>
                   Thêm vào giỏ
                 </Button>
               </div>
