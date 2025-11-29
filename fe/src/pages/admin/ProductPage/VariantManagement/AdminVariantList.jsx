@@ -164,7 +164,9 @@ const AdminVariantList = ({ variants: initial = [], product, onUpdate, onDelete 
     setShowImageManager(true);
   }
 
-  function handleCloseImageManager() {
+  function handleCloseImageManager(force = false) {
+    // Chỉ đóng nếu force=true hoặc không có lý do để giữ mở
+    // VariantImageManager sẽ quản lý việc ngăn đóng khi đang upload
     setShowImageManager(false);
     setManagingImagesVariant(null);
   }

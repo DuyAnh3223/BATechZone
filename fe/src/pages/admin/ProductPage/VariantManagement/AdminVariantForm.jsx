@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { attributeService } from '@/services/attributeService';
 import { useVariantStore } from '@/stores/useVariantStore';
-import { X, Plus, Info, Settings2, ChevronDown, Sparkles, ImageIcon } from 'lucide-react';
+import { X, Plus, Info, Settings2, ChevronDown, Sparkles } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -18,6 +18,8 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet';
 import { Checkbox } from '@/components/ui/checkbox';
+import LocalVariantImageManager from '../VariantImageManagement/LocalVariantImageManager';
+
 // Helper: cartesian product of arrays
 function cartesianProduct(arrays) {
   if (!arrays.length) return [];
@@ -830,15 +832,14 @@ const AdminVariantForm = ({ product, existingVariants = [], onCancel, onSuccess 
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Hành động</label>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Hình ảnh ({v.images?.length || 0})</label>
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
                     onClick={() => setSelectedVariantForImages(v)}
-                    className="w-full px-3 py-2 border rounded-md text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    className="w-full"
                   >
-                    <ImageIcon className="h-4 w-4" />
                     Quản lý ảnh
                   </Button>
                 </div>
@@ -848,9 +849,9 @@ const AdminVariantForm = ({ product, existingVariants = [], onCancel, onSuccess 
         </div>
       </div>
 
-      {/* Image Management Dialog */}
+      {/* Local Image Manager Modal */}
       {selectedVariantForImages && (
-        <div className="fixed inset-0 bg-gray bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex items-center justify-between mb-4">
@@ -872,97 +873,26 @@ const AdminVariantForm = ({ product, existingVariants = [], onCancel, onSuccess 
                 </button>
               </div>
 
-              <div className="space-y-4">
-                {/* Upload Area */}
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-indigo-400 transition-colors">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    onChange={(e) => {
-                      const files = Array.from(e.target.files);
-                      console.log('Selected files:', files);
-                      // TODO: Handle file upload
-                      alert(`Chức năng upload đang được phát triển. Đã chọn ${files.length} ảnh.`);
-                    }}
-                    className="hidden"
-                    id="variant-image-upload"
-                  />
-                  <label
-                    htmlFor="variant-image-upload"
-                    className="cursor-pointer flex flex-col items-center"
-                  >
-                    <ImageIcon className="h-12 w-12 text-gray-400 mb-3" />
-                    <p className="text-sm font-medium text-gray-700">Click để chọn ảnh</p>
-                    <p className="text-xs text-gray-500 mt-1">hoặc kéo thả ảnh vào đây</p>
-                    <p className="text-xs text-gray-400 mt-2">PNG, JPG, WEBP (tối đa 10MB)</p>
-                  </label>
-                </div>
-
-                {/* Image Grid */}
-                <div>
-                  <h4 className="text-sm font-medium text-gray-700 mb-3">Danh sách ảnh ({selectedVariantForImages.images?.length || 0})</h4>
-                  
-                  {(!selectedVariantForImages.images || selectedVariantForImages.images.length === 0) ? (
-                    <div className="text-center py-8 text-gray-400 bg-gray-50 rounded-lg border">
-                      <ImageIcon className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                      <p className="text-sm">Chưa có ảnh nào</p>
-                      <p className="text-xs mt-1">Thêm ảnh để hiển thị cho biến thể này</p>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-4 gap-4">
-                      {selectedVariantForImages.images.map((img, idx) => (
-                        <div key={idx} className="relative group border rounded-lg overflow-hidden aspect-square">
-                          <img
-                            src={img.url || img}
-                            alt={`Variant image ${idx + 1}`}
-                            className="w-full h-full object-cover"
-                          />
-                          
-                          {/* Overlay Actions */}
-                          <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
-                            <button
-                              onClick={() => {
-                                console.log('Set as primary:', img);
-                                alert('Chức năng đặt ảnh chính đang được phát triển');
-                              }}
-                              className="px-3 py-1.5 bg-indigo-600 text-white text-xs rounded-md hover:bg-indigo-700"
-                            >
-                              Đặt làm chính
-                            </button>
-                            <button
-                              onClick={() => {
-                                if (confirm('Xóa ảnh này?')) {
-                                  console.log('Delete image:', img);
-                                  alert('Chức năng xóa ảnh đang được phát triển');
-                                }
-                              }}
-                              className="px-3 py-1.5 bg-red-600 text-white text-xs rounded-md hover:bg-red-700"
-                            >
-                              <X className="h-3 w-3" />
-                            </button>
-                          </div>
-
-                          {/* Primary Badge */}
-                          {img.is_primary && (
-                            <div className="absolute top-2 left-2">
-                              <Badge className="bg-green-600 text-white">Ảnh chính</Badge>
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
+              <LocalVariantImageManager
+                initialImages={selectedVariantForImages.images || []}
+                onChange={(newImages) => {
+                  // Update the variant's images in the variants array
+                  setVariants(prev => prev.map(v => 
+                    v.id === selectedVariantForImages.id 
+                      ? { ...v, images: newImages }
+                      : v
+                  ));
+                  // Update the selected variant reference
+                  setSelectedVariantForImages(prev => ({ ...prev, images: newImages }));
+                }}
+              />
 
               <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
                 <Button
                   type="button"
-                  variant="outline"
                   onClick={() => setSelectedVariantForImages(null)}
                 >
-                  Đóng
+                  Xong
                 </Button>
               </div>
             </div>

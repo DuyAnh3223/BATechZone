@@ -28,12 +28,14 @@ import {
   ShoppingCart, 
   TrendingUp,
   AlertCircle,
-  CheckCircle2  
+  CheckCircle2,
+  Info  
 } from 'lucide-react';
 import { useCartItemStore } from '@/stores/useCartItemStore';
 import { useCartStore } from '@/stores/useCartStore';
 import { useOrderStore } from '@/stores/useOrderStore';
 import { useUserAuthStore } from '@/stores/useUserAuthStore';
+import { useInstallmentPolicyStore } from '@/stores/useInstallmentPolicyStore';
 import { toast } from 'sonner';
 
 // Base URL for serving uploads
@@ -45,22 +47,6 @@ const toAbsoluteUrl = (url) => {
   if (url.startsWith('/uploads')) return `${BASE_API_URL}${url}`;
   return url;
 };
-
-const installmentPolicies = [
-  { months: 6, interest_rate: 2.2, min_down_payment: 20, name: 'Trả góp 6 tháng' },
-  { months: 8, interest_rate: 1.9, min_down_payment: 20, name: 'Trả góp 8 tháng' },
-  { months: 9, interest_rate: 1.9, min_down_payment: 20, name: 'Trả góp 9 tháng' },
-  { months: 12, interest_rate: 1.9, min_down_payment: 20, name: 'Trả góp 12 tháng' },
-  { months: 15, interest_rate: 1.9, min_down_payment: 20, name: 'Trả góp 15 tháng' },
-  { months: 18, interest_rate: 1.9, min_down_payment: 20, name: 'Trả góp 18 tháng' },
-];
-
-const downPaymentOptions = [
-  { value: 20, label: '20%' },
-  { value: 30, label: '30%' },
-  { value: 40, label: '40%' },
-  { value: 50, label: '50%' },
-];
 
 // Provinces and districts
 const provinces = [
@@ -98,14 +84,39 @@ const Installment = () => {
   const { user } = useUserAuthStore();
   const { cartItems, reset: resetCartItems } = useCartItemStore();
   const { cart } = useCartStore();
+  const { activePolicies, loading: policiesLoading, fetchActivePolicies } = useInstallmentPolicyStore();
 
-  const [selectedMonths, setSelectedMonths] = useState(6);
-  const [selectedDownPaymentPercent, setSelectedDownPaymentPercent] = useState(20);
+  const [selectedPolicyId, setSelectedPolicyId] = useState(null);
+  const [selectedDownPaymentPercent, setSelectedDownPaymentPercent] = useState(30);
   const [calculation, setCalculation] = useState(null);
   const { createOrder, loading: orderLoading } = useOrderStore();
 
+  // Fetch active policies on mount
+  useEffect(() => {
+    fetchActivePolicies();
+  }, [fetchActivePolicies]);
+
+  // Set default selected policy when policies load
+  useEffect(() => {
+    if (activePolicies.length > 0 && !selectedPolicyId) {
+      setSelectedPolicyId(activePolicies[0].policy_id);
+      setSelectedDownPaymentPercent(activePolicies[0].min_down_payment);
+    }
+  }, [activePolicies, selectedPolicyId]);
+
   // Get selected policy
-  const selectedPolicy = installmentPolicies.find(p => p.months === selectedMonths);
+  const selectedPolicy = activePolicies.find(p => p.policy_id === selectedPolicyId);
+
+  // Generate down payment options based on min_down_payment
+  const downPaymentOptions = React.useMemo(() => {
+    if (!selectedPolicy) return [];
+    const minDown = selectedPolicy.min_down_payment;
+    const options = [20, 30, 40, 50, 60, 70, 80, 90, 100];
+    return options.filter(opt => opt >= minDown).map(opt => ({
+      value: opt,
+      label: `${opt}%`
+    }));
+  }, [selectedPolicy]);
 
   // Calculate total from cart items
   const calculateCartTotal = () => {
@@ -129,6 +140,7 @@ const Installment = () => {
     
     // Calculate monthly payment with interest
     const monthlyInterestRate = selectedPolicy.interest_rate / 100 / 12;
+    const selectedMonths = selectedPolicy.terms;
     let monthlyPayment;
     
     // P*r*(1+r)^n / ((1+r)^n -1)
@@ -139,8 +151,14 @@ const Installment = () => {
       monthlyPayment = remainingAmount / selectedMonths;
     }
 
-    const totalPayment = downPaymentAmount + (monthlyPayment * selectedMonths);
-    const totalInterest = totalPayment - totalAmount;
+    // Calculate installment fee
+    const feePercent = selectedPolicy.installment_fee_percent || 0;
+    const totalFee = (totalAmount * feePercent) / 100;
+    const monthlyFee = totalFee / selectedMonths;
+    const monthlyPaymentWithFee = monthlyPayment + monthlyFee;
+
+    const totalPayment = downPaymentAmount + (monthlyPaymentWithFee * selectedMonths);
+    const totalInterest = (monthlyPayment * selectedMonths) - remainingAmount;
     const difference = totalPayment - totalAmount;
 
     setCalculation({
@@ -148,12 +166,17 @@ const Installment = () => {
       downPaymentAmount,
       remainingAmount,
       monthlyPayment,
+      monthlyFee,
+      monthlyPaymentWithFee,
+      totalFee,
       totalPayment,
       totalInterest,
       difference,
-      interestRate: selectedPolicy.interest_rate
+      interestRate: selectedPolicy.interest_rate,
+      feePercent,
+      terms: selectedMonths
     });
-  }, [selectedMonths, selectedDownPaymentPercent, cartTotal, selectedPolicy]);
+  }, [selectedPolicyId, selectedDownPaymentPercent, cartTotal, selectedPolicy]);
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('vi-VN', {
@@ -262,23 +285,74 @@ const Installment = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              {/* Month Selection */}
+              {/* Policy Selection */}
               <div>
                 <label className="text-sm font-medium text-gray-700 mb-3 block">
-                  Chọn số tháng trả góp
+                  Chọn chính sách trả góp
                 </label>
-                <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
-                  {installmentPolicies.map((policy) => (
-                    <Button
-                      key={policy.months}
-                      variant={selectedMonths === policy.months ? 'default' : 'outline'}
-                      className={`h-12 ${selectedMonths === policy.months ? 'border-2 border-blue-600' : ''}`}
-                      onClick={() => setSelectedMonths(policy.months)}
-                    >
-                      {policy.months} tháng
-                    </Button>
-                  ))}
-                </div>
+                {policiesLoading ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+                    <p className="mt-2 text-sm">Đang tải chính sách...</p>
+                  </div>
+                ) : activePolicies.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <Info className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                    <p>Hiện chưa có chính sách trả góp nào</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {activePolicies.map((policy) => (
+                      <div
+                        key={policy.policy_id}
+                        className={`p-4 border-2 rounded-lg cursor-pointer transition-all hover:shadow-md ${
+                          selectedPolicyId === policy.policy_id
+                            ? 'border-blue-600 bg-blue-50'
+                            : 'border-gray-200 hover:border-blue-300'
+                        }`}
+                        onClick={() => {
+                          setSelectedPolicyId(policy.policy_id);
+                          // Reset down payment to min when changing policy
+                          if (selectedDownPaymentPercent < policy.min_down_payment) {
+                            setSelectedDownPaymentPercent(policy.min_down_payment);
+                          }
+                        }}
+                      >
+                        <div className="flex items-start justify-between mb-2">
+                          <h3 className="font-semibold text-gray-900">{policy.name}</h3>
+                          {selectedPolicyId === policy.policy_id && (
+                            <CheckCircle2 className="w-5 h-5 text-blue-600" />
+                          )}
+                        </div>
+                        <div className="space-y-1 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Kỳ hạn:</span>
+                            <span className="font-medium">{policy.terms} tháng</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Lãi suất:</span>
+                            <span className="font-medium text-green-600">{policy.interest_rate}%/năm</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Trả trước tối thiểu:</span>
+                            <span className="font-medium text-orange-600">≥{policy.min_down_payment}%</span>
+                          </div>
+                          {policy.installment_fee_percent > 0 && (
+                            <div className="flex justify-between">
+                              <span className="text-gray-600">Phí trả góp:</span>
+                              <span className="font-medium text-red-600">{policy.installment_fee_percent}%</span>
+                            </div>
+                          )}
+                        </div>
+                        {policy.description && (
+                          <p className="mt-2 text-xs text-gray-500 line-clamp-2">
+                            {policy.description}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <Separator />
@@ -286,17 +360,30 @@ const Installment = () => {
             
 
               {/* Calculation Details */}
-              {calculation && (
+              {selectedPolicy && calculation && (
                 <div className="space-y-4">
+                  {/* Policy Description */}
+                  {selectedPolicy.description && (
+                    <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                      <div className="flex items-start gap-2">
+                        <Info className="w-5 h-5 text-blue-600 mt-0.5 shrink-0" />
+                        <div>
+                          <p className="text-sm font-medium text-blue-900 mb-1">Thông tin chính sách</p>
+                          <p className="text-sm text-blue-800">{selectedPolicy.description}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <label className="text-sm text-gray-600">Giá sản phẩm</label>
                       <p className="text-lg font-semibold">{formatCurrency(calculation.totalAmount)}</p>
                     </div>
                     <div className="space-y-2">
-                      <label className="text-sm text-gray-600">Giá mua trả góp</label>
+                      <label className="text-sm text-gray-600">Tổng phải trả</label>
                       <p className="text-lg font-semibold text-red-600">
-                        {formatCurrency(calculation.totalAmount)}
+                        {formatCurrency(calculation.totalPayment)}
                       </p>
                     </div>
                   </div>
@@ -319,19 +406,19 @@ const Installment = () => {
                         ))}
                       </SelectContent>
                     </Select>
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <div className="flex items-center gap-2 text-sm">
                       {selectedDownPaymentPercent < selectedPolicy.min_down_payment ? (
                         <>
                           <AlertCircle className="w-4 h-4 text-orange-500" />
-                          <span className="text-orange-600">
-                            Trả trước tối thiểu: {selectedPolicy.min_down_payment}%
+                          <span className="text-orange-600 font-medium">
+                            Không đủ điều kiện: Trả trước tối thiểu là {selectedPolicy.min_down_payment}%
                           </span>   
                         </>
                       ) : (
                         <>
                           <CheckCircle2 className="w-4 h-4 text-green-500" />
-                          <span className="text-green-600">
-                            Đủ điều kiện trả góp
+                          <span className="text-green-600 font-medium">
+                            ✓ Đủ điều kiện trả góp
                           </span>
                         </>
                       )}
@@ -342,33 +429,75 @@ const Installment = () => {
 
                   {/* Payment Details */}
                   <div className="space-y-3">
-                  
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-gray-600">Kỳ hạn</span>
+                      <span className="text-sm font-semibold">
+                        {calculation.terms} tháng
+                      </span>
+                    </div>
 
                     <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Lãi suất thực</span>
+                      <span className="text-sm text-gray-600">Lãi suất</span>
+                      <span className="text-sm font-semibold text-green-600">
+                        {calculation.interestRate}%/năm
+                      </span>
+                    </div>
+
+                    {calculation.feePercent > 0 && (
+                      <>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-gray-600">Phí trả góp</span>
+                          <span className="text-sm font-semibold text-orange-600">
+                            {calculation.feePercent}% ({formatCurrency(calculation.totalFee)})
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-gray-600">Phí mỗi tháng</span>
+                          <span className="text-sm font-semibold text-orange-600">
+                            {formatCurrency(calculation.monthlyFee)}
+                          </span>
+                        </div>
+                      </>
+                    )}
+
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-gray-600">Trả trước</span>
+                      <span className="text-sm font-semibold">
+                        {formatCurrency(calculation.downPaymentAmount)}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-gray-600">Còn lại phải trả góp</span>
+                      <span className="text-sm font-semibold">
+                        {formatCurrency(calculation.remainingAmount)}
+                      </span>
+                    </div>
+
+                    <Separator />
+
+                    <div className="flex justify-between items-center py-2 bg-red-50 px-3 rounded-lg">
+                      <span className="text-sm font-medium text-gray-900">Góp mỗi tháng</span>
+                      <span className="text-xl font-bold text-red-600">
+                        {formatCurrency(calculation.monthlyPaymentWithFee)}
+                      </span>
+                    </div>
+
+                    {calculation.feePercent > 0 && (
+                      <p className="text-xs text-gray-500 text-center">
+                        (Bao gồm: {formatCurrency(calculation.monthlyPayment)} gốc + lãi + {formatCurrency(calculation.monthlyFee)} phí)
+                      </p>
+                    )}
+
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-gray-600">Tổng lãi phải trả</span>
                       <span className="text-sm font-semibold text-blue-600">
-                        {calculation.interestRate}%
+                        {formatCurrency(calculation.totalInterest)}
                       </span>
                     </div>
 
                     <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Góp mỗi tháng</span>
-                      <span className="text-lg font-bold text-red-600">
-                        {formatCurrency(calculation.monthlyPayment)}
-                      </span>
-                    </div>
-
-              
-
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Tổng tiền phải trả</span>
-                      <span className="text-lg font-bold">
-                        {formatCurrency(calculation.totalPayment)}
-                      </span>
-                    </div>
-
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Chênh lệch với mua trả tháng</span>
+                      <span className="text-sm text-gray-600">Chênh lệch so với mua thẳng</span>
                       <span className={`text-sm font-semibold ${calculation.difference > 0 ? 'text-red-600' : 'text-green-600'}`}>
                         {calculation.difference > 0 ? '+' : ''}{formatCurrency(calculation.difference)}
                       </span>
@@ -376,7 +505,6 @@ const Installment = () => {
                   </div>
 
                   <Separator />
-
 
                   {/* Action Buttons */}
                   <div className="grid grid-cols-2 gap-4 pt-4">
@@ -391,20 +519,25 @@ const Installment = () => {
                     <Button 
                       size="lg"
                       onClick={() => {
+                        if (selectedDownPaymentPercent < selectedPolicy.min_down_payment) {
+                          toast.error(`Vui lòng chọn trả trước tối thiểu ${selectedPolicy.min_down_payment}%`);
+                          return;
+                        }
                         navigate('/installment/checkout', {
                           state: {
                             cartTotal,
-                            selectedMonths,
                             selectedDownPaymentPercent,
                             calculation,
                             selectedPolicy
                           }
                         });
                       }}
-                      disabled={selectedDownPaymentPercent < selectedPolicy.min_down_payment}
-                      className="bg-red-600 hover:bg-red-700"
+                      disabled={selectedDownPaymentPercent < selectedPolicy.min_down_payment || policiesLoading}
+                      className="bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Đặt mua
+                      {selectedDownPaymentPercent < selectedPolicy.min_down_payment 
+                        ? 'Chưa đủ điều kiện' 
+                        : 'Đặt mua trả góp'}
                     </Button>
                   </div>
                 </div>
