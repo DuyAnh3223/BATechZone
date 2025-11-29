@@ -1,4 +1,4 @@
-import { Outlet, useNavigate } from 'react-router-dom';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import { useState, useEffect, useCallback } from 'react';
 import { ShoppingCart, Cpu, User, Menu, X, Search, LogIn, LogOut, ChevronRight, Bell, Tag, Copy, Check } from "lucide-react";
@@ -34,6 +34,7 @@ import {
 const UserLayout = () => {
   const { user, loading: authLoading, checkAuth, signOut } = useUserAuthStore();
   const navigate = useNavigate();
+  const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isCategoryMenuOpen, setIsCategoryMenuOpen] = useState(false);
@@ -49,6 +50,22 @@ const UserLayout = () => {
   // Coupon dialog state
   const [isCouponDialogOpen, setIsCouponDialogOpen] = useState(false);
   const [copiedCouponCode, setCopiedCouponCode] = useState(null);
+  
+  // Side banners visibility state
+  const [showSideBanners, setShowSideBanners] = useState(true);
+  
+  // Scroll position state for sticky banners
+  const [scrollY, setScrollY] = useState(0);
+
+  // Handle scroll for sticky banners
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrollY(window.scrollY);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // Check auth khi mount
   useEffect(() => {
@@ -186,9 +203,95 @@ const UserLayout = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col w-full">
+    <div className="min-h-screen flex flex-col w-full relative">
+      {/* Left Side Banner - Sticky - Only show on home page */}
+      {showSideBanners && location.pathname === '/' && (
+        <div 
+          className="hidden xl:block z-40"
+          style={{
+            position: scrollY > 600 ? 'fixed' : 'absolute',
+            top: scrollY > 600 ? '160px' : '800px',
+            left: '1rem',
+            width: '160px',
+            maxHeight: '600px',
+            transition: 'all 0.3s ease-out'
+          }}
+        >
+          <div className="relative">
+            <a 
+              href="#" 
+              className="block"
+              onClick={(e) => {
+                e.preventDefault();
+                // Add link to promotional page if needed
+              }}
+            >
+              <img 
+                src={`${import.meta.env.VITE_API_URL || 'http://localhost:5001'}/uploads/banner_header_top_left_right/banners_left.jpg`}
+                alt="Left Banner"
+                className="w-full h-auto object-cover rounded-lg shadow-lg"
+              />
+            </a>
+          </div>
+        </div>
+      )}
+
+      {/* Right Side Banner - Sticky - Only show on home page */}
+      {showSideBanners && location.pathname === '/' && (
+        <div 
+          className="hidden xl:block z-40"
+          style={{
+            position: scrollY > 600 ? 'fixed' : 'absolute',
+            top: scrollY > 600 ? '160px' : '800px',
+            right: '1rem',
+            width: '160px',
+            maxHeight: '600px',
+            transition: 'all 0.3s ease-out'
+          }}
+        >
+          <div className="relative">
+            <a 
+              href="#" 
+              className="block"
+              onClick={(e) => {
+                e.preventDefault();
+                // Add link to promotional page if needed
+              }}
+            >
+              <img 
+                src={`${import.meta.env.VITE_API_URL || 'http://localhost:5001'}/uploads/banner_header_top_left_right/banners_right.jpg`}
+                alt="Right Banner"
+                className="w-full h-auto object-cover rounded-lg shadow-lg"
+              />
+            </a>
+          </div>
+        </div>
+      )}
+
+      {/* Promotional Header Banner */}
+      <div className="w-full bg-gray-900">
+        <div className="w-full max-w-[1920px] mx-auto">
+          <a 
+            href="#" 
+            className="block w-full"
+            onClick={(e) => {
+              e.preventDefault();
+              // Add link to promotional page if needed
+              // navigate('/promotions');
+            }}
+          >
+            <img 
+              src={`${import.meta.env.VITE_API_URL || 'http://localhost:5001'}/uploads/banner_header_top_left_right/banners_header_top.gif`}
+              alt="Promotional Banner"
+              className="w-full h-auto object-cover"
+              style={{ maxHeight: '120px' }}
+            />
+          </a>
+        </div>
+      </div>
+
       {/* Top Navigation */}
-      <nav className="bg-blue-600 w-full">
+      <nav className="bg-blue-600 w-full sticky top-0 z-50">
         <div className="w-full max-w-[1920px] mx-auto px-4">
           <div className="flex items-center justify-between h-20">
             {/* Logo */}
@@ -597,7 +700,7 @@ const UserLayout = () => {
       </nav>
 
       {/* Categories Navigation */}
-      <div className="bg-gray-100 shadow-md w-full">
+      <div className="bg-gray-100 shadow-md w-full sticky top-20 z-50">
         <div className="w-full max-w-[1920px] mx-auto px-4">
           <div className="flex items-center py-3">
             {/* Category Menu Button */}
@@ -810,7 +913,7 @@ const UserLayout = () => {
 
       {/* Footer */}
       <footer className="bg-gray-800 text-white w-full">
-        <div className="w-full max-w-[1920px] mx-auto px-4 py-8">
+        <div className="w-full max-w-[1920px] mx-auto px-4 xl:px-48 py-8">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div>
               <h3 className="text-lg font-bold mb-4">Về chúng tôi</h3>
