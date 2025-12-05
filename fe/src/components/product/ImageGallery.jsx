@@ -18,7 +18,7 @@ const PLACEHOLDER_MAIN = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/
 const PLACEHOLDER_THUMB = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80'><rect width='100%25' height='100%25' fill='%23eeeeee'/><text x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%23888888' font-family='Arial' font-size='12'>No%20Image</text></svg>";
 
 const ImageGallery = ({ mainImage, productName, variantImages = [], isActive, isFeatured, onImageChange }) => {
-  const [selectedImage, setSelectedImage] = useState(toAbsoluteUrl(mainImage) || PLACEHOLDER_MAIN);
+  const [selectedImage, setSelectedImage] = useState(PLACEHOLDER_MAIN);
   const [selectedImageObj, setSelectedImageObj] = useState(null);
   
   // Lấy ảnh chính (primary) hoặc ảnh đầu tiên
@@ -38,16 +38,36 @@ const ImageGallery = ({ mainImage, productName, variantImages = [], isActive, is
                           toAbsoluteUrl(displayImages.length > 0 ? displayImages[0]?.image_url : mainImage) ||
                           PLACEHOLDER_MAIN;
 
-  // Tự động hiển thị ảnh chính khi variantImages thay đổi (click vào biến thể khác)
+  // Reset và hiển thị ảnh chính khi variantImages thay đổi
   useEffect(() => {
-    if (primaryImage) {
-      setSelectedImage(toAbsoluteUrl(primaryImage.image_url));
-      setSelectedImageObj(primaryImage);
-    } else if (displayImages.length > 0) {
-      setSelectedImage(toAbsoluteUrl(displayImages[0].image_url));
-      setSelectedImageObj(displayImages[0]);
+    console.log('🎨 ImageGallery: variantImages changed:', variantImages);
+    console.log('🎨 ImageGallery: mainImage:', mainImage);
+    
+    // Reset state khi variantImages thay đổi
+    if (variantImages && variantImages.length > 0) {
+      const primary = variantImages.find(img => img.is_primary);
+      const sorted = [...variantImages].sort((a, b) => {
+        if (a.is_primary && !b.is_primary) return -1;
+        if (!a.is_primary && b.is_primary) return 1;
+        return (a.display_order || 0) - (b.display_order || 0);
+      });
+      
+      if (primary) {
+        console.log('🎨 ImageGallery: Using primary image:', primary.image_url);
+        setSelectedImage(toAbsoluteUrl(primary.image_url));
+        setSelectedImageObj(primary);
+      } else if (sorted.length > 0) {
+        console.log('🎨 ImageGallery: Using first image:', sorted[0].image_url);
+        setSelectedImage(toAbsoluteUrl(sorted[0].image_url));
+        setSelectedImageObj(sorted[0]);
+      }
+    } else {
+      // No variant images, use main image or placeholder
+      console.log('🎨 ImageGallery: No variant images, using mainImage or placeholder');
+      setSelectedImage(toAbsoluteUrl(mainImage) || PLACEHOLDER_MAIN);
+      setSelectedImageObj(null);
     }
-  }, [variantImages]);
+  }, [variantImages, mainImage]);
 
   const handleThumbnailClick = (imageUrl, index, imageObj) => {
     const abs = toAbsoluteUrl(imageUrl);

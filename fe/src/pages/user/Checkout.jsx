@@ -46,7 +46,7 @@ import { useOrderStore } from "@/stores/useOrderStore";
 import { couponService } from "@/services/couponService";
 import { toast } from "sonner";
 import { useEffect } from "react";
-import { X, Tag } from "lucide-react";
+import { X, Tag, Wallet } from "lucide-react";
 
 const Checkout = () => {
   const navigate = useNavigate();
@@ -260,7 +260,80 @@ const Checkout = () => {
         discountAmount: 0
       }));
 
-      // Gọi API tạo đơn hàng
+      // Nếu chọn Momo, tạo payment link
+      if (formData.paymentMethod === 'momo') {
+        const amount = calculateTotal();
+        const description = `Thanh toán đơn hàng BATechZone - ${formData.fullName}`;
+        const buyerName = formData.fullName;
+        const buyerEmail = formData.email || `user_${Date.now()}@batechzone.com`;
+        const buyerPhone = formData.phone;
+        const buyerAddress = `${formData.address}, ${formData.district}, ${formData.province}`;
+        
+        // Cập nhật payment_method, payment_status và order_status cho online payment
+        const momoOrderData = {
+          ...orderData,
+          payment_method: 'momo',
+          payment_status: 'paid', // Thanh toán online thành công = đã thanh toán
+          order_status: 'shipping' // Đã thanh toán online -> Đang giao hàng
+        };
+        
+        // Lưu thông tin order vào localStorage để tạo sau khi thanh toán
+        localStorage.setItem('pending_order', JSON.stringify({
+          orderData: momoOrderData,
+          shippingAddress,
+          items
+        }));
+
+        try {
+          const paymentResponse = await fetch('http://localhost:5001/api/payments/create-payment-link', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            credentials: 'include',
+            body: JSON.stringify({
+              amount,
+              description,
+              buyerName,
+              buyerEmail,
+              buyerPhone,
+              buyerAddress,
+              paymentType: 'wallet' // Momo sẽ hiển thị QR và ATM options
+            })
+          });
+
+          const result = await paymentResponse.json();
+
+          if (result.success && result.data?.checkoutUrl) {
+            // Lưu orderId từ Momo vào momoOrderData để dùng làm transaction_id
+            const momoOrderDataWithTxn = {
+              ...momoOrderData,
+              transaction_id: result.data.orderId // Lấy orderId từ Momo
+            };
+            
+            // Cập nhật lại localStorage với transaction_id
+            localStorage.setItem('pending_order', JSON.stringify({
+              orderData: momoOrderDataWithTxn,
+              shippingAddress,
+              items
+            }));
+            
+            toast.success('Đang chuyển đến trang thanh toán Momo...');
+            // Chuyển hướng đến trang thanh toán Momo
+            window.location.href = result.data.checkoutUrl;
+            return; // Dừng thực thi
+          } else {
+            throw new Error(result.message || 'Không thể tạo link thanh toán Momo');
+          }
+        } catch (error) {
+          console.error('Momo payment error:', error);
+          toast.error(error.message || 'Không thể tạo link thanh toán Momo');
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
+      // Gọi API tạo đơn hàng (chỉ cho COD và các phương thức khác)
       const response = await createOrder({
         orderData,
         shippingAddress,
@@ -507,29 +580,20 @@ const Checkout = () => {
                                 </label>
                               </div>
                               <div className="flex items-center space-x-2 border rounded-lg p-4">
-                                <RadioGroupItem value="banking" id="banking" />
-                                <label
-                                  htmlFor="banking"
-                                  className="flex flex-col cursor-pointer"
-                                >
-                                  <span className="font-medium">
-                                    Chuyển khoản ngân hàng
-                                  </span>
-                                  <span className="text-sm text-gray-500">
-                                    Thanh toán qua tài khoản ngân hàng
-                                  </span>
-                                </label>
-                              </div>
-                              <div className="flex items-center space-x-2 border rounded-lg p-4">
                                 <RadioGroupItem value="momo" id="momo" />
                                 <label
                                   htmlFor="momo"
-                                  className="flex flex-col cursor-pointer"
+                                  className="flex items-center gap-2 cursor-pointer w-full"
                                 >
-                                  <span className="font-medium">Ví Momo</span>
-                                  <span className="text-sm text-gray-500">
-                                    Thanh toán qua ví điện tử Momo
-                                  </span>
+                                  <Wallet className="h-5 w-5 text-pink-600" />
+                                  <div className="flex flex-col">
+                                    <span className="font-medium">
+                                      Thanh toán qua Ví Momo
+                                    </span>
+                                    <span className="text-sm text-gray-500">
+                                      Quét mã QR hoặc thanh toán bằng thẻ ATM
+                                    </span>
+                                  </div>
                                 </label>
                               </div>
                             </RadioGroup>

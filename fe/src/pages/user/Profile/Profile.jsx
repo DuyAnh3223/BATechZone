@@ -1322,6 +1322,43 @@ const Profile = () => {
 
                 <Separator />
 
+                {/* Payment Information */}
+                {selectedOrder.payments && selectedOrder.payments.length > 0 && (
+                  <>
+                    <div>
+                      <h3 className="font-semibold mb-3">Thông tin thanh toán</h3>
+                      <div className="space-y-2">
+                        {selectedOrder.payments.map((payment, index) => {
+                          const paymentMethod = payment.paymentMethod || payment.payment_method;
+                          const transactionId = payment.transactionId || payment.transaction_id;
+                          
+                          return (
+                            <div key={index} className="p-3 bg-gray-50 rounded-lg">
+                              <div>
+                                <p className="text-sm text-gray-600">Phương thức thanh toán</p>
+                                <p className="font-medium">
+                                  {paymentMethod === 'momo' ? '💳 Ví Momo' : 
+                                   paymentMethod === 'cod' ? '💵 Thanh toán khi nhận hàng' : 
+                                   paymentMethod || 'N/A'}
+                                </p>
+                              </div>
+                              {transactionId && (
+                                <div className="mt-2 pt-2 border-t">
+                                  <p className="text-xs text-gray-500">Mã giao dịch</p>
+                                  <p className="text-sm font-mono bg-white px-2 py-1 rounded mt-1">
+                                    {transactionId}
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    <Separator />
+                  </>
+                )}
+
                 {/* Order Items */}
                 <div>
                   <h3 className="font-semibold mb-3">Sản phẩm</h3>
@@ -1391,30 +1428,30 @@ const Profile = () => {
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600">Tạm tính</span>
-                      <span>{formatPrice(selectedOrder.subtotalAmount || selectedOrder.subtotal_amount || selectedOrder.totalAmount || selectedOrder.total_amount)}</span>
+                      <span>{formatPrice(parseFloat(selectedOrder.subtotal || selectedOrder.subtotalAmount || selectedOrder.subtotal_amount || 0))}</span>
                     </div>
-                    {(selectedOrder.discountAmount || selectedOrder.discount_amount) > 0 && (
+                    {parseFloat(selectedOrder.discountAmount || selectedOrder.discount_amount || 0) > 0 && (
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-600">Giảm giá</span>
-                        <span className="text-green-600">-{formatPrice(selectedOrder.discountAmount || selectedOrder.discount_amount)}</span>
+                        <span className="text-green-600">-{formatPrice(parseFloat(selectedOrder.discountAmount || selectedOrder.discount_amount || 0))}</span>
                       </div>
                     )}
-                    {(selectedOrder.shippingFee || selectedOrder.shipping_fee) > 0 && (
+                    {parseFloat(selectedOrder.shippingFee || selectedOrder.shipping_fee || 0) > 0 && (
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-600">Phí vận chuyển</span>
-                        <span>{formatPrice(selectedOrder.shippingFee || selectedOrder.shipping_fee)}</span>
+                        <span>{formatPrice(parseFloat(selectedOrder.shippingFee || selectedOrder.shipping_fee || 0))}</span>
                       </div>
                     )}
-                    {(selectedOrder.taxAmount || selectedOrder.tax_amount) > 0 && (
+                    {parseFloat(selectedOrder.taxAmount || selectedOrder.tax_amount || 0) > 0 && (
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-600">Thuế</span>
-                        <span>{formatPrice(selectedOrder.taxAmount || selectedOrder.tax_amount)}</span>
+                        <span>{formatPrice(parseFloat(selectedOrder.taxAmount || selectedOrder.tax_amount || 0))}</span>
                       </div>
                     )}
                     <Separator />
                     <div className="flex justify-between font-semibold text-lg">
                       <span>Tổng cộng</span>
-                      <span className="text-red-600">{formatPrice(selectedOrder.totalAmount || selectedOrder.total_amount)}</span>
+                      <span className="text-red-600">{formatPrice(parseFloat(selectedOrder.totalAmount || selectedOrder.total_amount || 0))}</span>
                     </div>
                   </div>
                 </div>

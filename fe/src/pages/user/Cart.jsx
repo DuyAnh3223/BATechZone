@@ -11,14 +11,13 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { MinusIcon, PlusIcon, Trash2Icon, ShoppingCart } from "lucide-react";
+import { MinusIcon, PlusIcon, Trash2Icon, ShoppingCart, X, Tag } from "lucide-react";
 import { Link } from "react-router";
 import { useCartStore } from "@/stores/useCartStore";
 import { useCartItemStore } from "@/stores/useCartItemStore";
 import { useUserAuthStore } from "@/stores/useUserAuthStore";
 import { couponService } from "@/services/couponService";
 import { toast } from "sonner";
-import { X, Tag } from "lucide-react";
 
 // Base URL for serving uploads
 const BASE_API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
@@ -219,11 +218,9 @@ const Cart = () => {
   const handleRemoveCoupon = () => {
     setAppliedCoupon(null);
     setDiscountAmount(0);
-    setCouponCode("");
-    // Xóa coupon khỏi localStorage
     localStorage.removeItem('applied_coupon');
     localStorage.removeItem('discount_amount');
-    toast.success("Đã xóa mã giảm giá");
+    toast.success("Đã hủy mã giảm giá");
   };
 
   const formatPrice = (price) => {
