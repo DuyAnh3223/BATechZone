@@ -153,26 +153,34 @@ class Order {
         const details = orderData.installmentDetails;
         
         try {
-          // Calculate interest rate based on customer type
-          const interestRate = details.customerType === 'customer' ? 2.2 : 1.9;
+          // Lấy interest_rate từ policy đã chọn (không hardcode theo customerType)
+          const interestRate = details.interestRate || 0;
           
           // Use totalWithInterest from frontend calculation (includes interest)
           const totalWithInterest = details.totalWithInterest || totalAmount;
+          const downPayment = details.downPayment || 0;
           
-          // Insert installment record with status 'pending' (waiting for admin approval)
+          // Auto-active if down_payment = 0, otherwise set to 'approved' (waiting for down payment)
+          const installmentStatus = downPayment === 0 ? 'active' : 'approved';
+          const downPaymentStatus = downPayment === 0 ? 'not_required' : 'pending';
+          
+          // Insert installment record
           const [installmentResult] = await conn.query(
             `INSERT INTO installments (
-              order_id, user_id, total_amount, down_payment, num_terms, 
-              monthly_payment, interest_rate, status, start_date, end_date
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', NOW(), DATE_ADD(NOW(), INTERVAL ? MONTH))`,
+              order_id, user_id, total_amount, down_payment, down_payment_status, num_terms, 
+              monthly_payment, interest_rate, policy_id, status, start_date, end_date
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), DATE_ADD(NOW(), INTERVAL ? MONTH))`,
             [
               orderId,
               orderData.userId || null,
               totalWithInterest,
-              details.downPayment || 0,
+              downPayment,
+              downPaymentStatus,
               details.months || 12,
               details.monthlyPayment || 0,
               interestRate,
+              details.policyId || null,
+              installmentStatus,
               details.months || 12
             ]
           );
@@ -181,11 +189,43 @@ class Order {
             installmentId: installmentResult.insertId,
             orderId,
             totalWithInterest,
-            downPayment: details.downPayment,
+            downPayment: downPayment,
+            downPaymentStatus: downPaymentStatus,
             monthlyPayment: details.monthlyPayment,
-            interestRate,
-            status: 'pending'
+            interestRate: interestRate,
+            installmentFeePercent: details.installmentFeePercent || 0,
+            policyId: details.policyId,
+            status: installmentStatus
           });
+
+          // Nếu status = 'active' (down_payment = 0), tạo luôn các kỳ thanh toán
+          if (installmentStatus === 'active') {
+            const installmentId = installmentResult.insertId;
+            const numTerms = details.months || 12;
+            const monthlyPayment = details.monthlyPayment || 0;
+            const startDate = new Date();
+
+            console.log('Creating installment payments for auto-active installment...');
+
+            for (let i = 1; i <= numTerms; i++) {
+              const dueDate = new Date(startDate);
+              dueDate.setMonth(dueDate.getMonth() + i);
+
+              await conn.query(
+                `INSERT INTO installment_payments (
+                  installment_id, payment_no, due_date, amount, status
+                ) VALUES (?, ?, ?, ?, 'pending')`,
+                [
+                  installmentId,
+                  i,
+                  dueDate,
+                  monthlyPayment
+                ]
+              );
+            }
+
+            console.log(`Created ${numTerms} installment payments for installment #${installmentId}`);
+          }
         } catch (error) {
           console.error('Failed to create installment record:', error.message);
           // Don't fail the order creation if installment record fails
@@ -331,7 +371,8 @@ class Order {
       `SELECT 
         o.*,
         u.username, u.email,
-        (SELECT COUNT(*) FROM order_items WHERE order_id = o.order_id) as item_count
+        (SELECT COUNT(*) FROM order_items WHERE order_id = o.order_id) as item_count,
+        (SELECT payment_method FROM payments WHERE order_id = o.order_id LIMIT 1) as payment_method
       FROM orders o
       LEFT JOIN users u ON o.user_id = u.user_id
       WHERE ${conditions.join(' AND ')}

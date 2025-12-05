@@ -111,10 +111,18 @@ const InstallmentList = ({
                     {formatPrice(installment.total_amount)}
                   </TableCell>
                   <TableCell>
-                    {formatPrice(installment.down_payment)}
-                    <span className="text-xs text-gray-500 ml-1">
-                      ({Math.round((installment.down_payment / installment.total_amount) * 100)}%)
-                    </span>
+                    {installment.down_payment > 0 ? (
+                      <>
+                        {formatPrice(installment.down_payment)}
+                        <span className="text-xs text-gray-500 ml-1">
+                          ({Math.round((installment.down_payment / installment.total_amount) * 100)}%)
+                        </span>
+                      </>
+                    ) : (
+                      <Badge variant="outline" className="text-xs">
+                        Không yêu cầu
+                      </Badge>
+                    )}
                   </TableCell>
                   <TableCell className="font-semibold text-blue-600">
                     {formatPrice(installment.monthly_payment)}

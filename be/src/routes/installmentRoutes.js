@@ -3,6 +3,7 @@ import {
   createInstallment,
   getInstallmentById,
   getInstallmentsByUserId,
+  getInstallmentByOrderId,
   makeDownPayment,
   makePayment,
   checkOverduePayments,
@@ -39,6 +40,9 @@ router.get('/me/list', requireUserAuth, getMyInstallments);
 
 // Lấy tất cả khoản trả góp của một user (admin)
 router.get('/user/:userId', getInstallmentsByUserId);
+
+// Lấy thông tin trả góp theo order_id (admin)
+router.get('/order/:orderId', getInstallmentByOrderId);
 
 // ====================
 // GENERAL ROUTES

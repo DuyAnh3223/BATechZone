@@ -117,6 +117,43 @@ export const getInstallmentById = async (req, res) => {
 };
 
 /**
+ * Lấy thông tin trả góp theo order_id
+ */
+export const getInstallmentByOrderId = async (req, res) => {
+    try {
+        const { orderId } = req.params;
+
+        if (!orderId) {
+            return res.status(400).json({
+                success: false,
+                message: 'Thiếu order_id'
+            });
+        }
+
+        const installment = await InstallmentService.getInstallmentByOrderId(parseInt(orderId));
+        
+        if (!installment) {
+            return res.status(404).json({
+                success: false,
+                message: 'Không tìm thấy hợp đồng trả góp cho đơn hàng này'
+            });
+        }
+
+        res.json({
+            success: true,
+            data: installment
+        });
+    } catch (error) {
+        console.error('CONTROLLER Error getting installment by order_id:', error);
+        res.status(500).json({
+            success: false,
+            message: error.message || 'Lỗi khi lấy thông tin trả góp',
+            error: error.message
+        });
+    }
+};
+
+/**
  * Lấy tất cả khoản trả góp của user
  */
 export const getInstallmentsByUserId = async (req, res) => {

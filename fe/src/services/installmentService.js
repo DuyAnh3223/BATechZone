@@ -64,6 +64,17 @@ export const installmentService = {
     },
 
     /**
+     * Lấy thông tin trả góp theo order_id (admin only)
+     * @param {number} orderId 
+     */
+    getInstallmentByOrderId: async (orderId) => {
+        const response = await api.get(`/installments/order/${orderId}`, {
+            withCredentials: true
+        });
+        return response.data;
+    },
+
+    /**
      * Lấy danh sách khoản trả góp của user hiện tại (từ session)
      */
     getMyInstallments: async () => {

@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Nov 30, 2025 at 01:38 AM
+-- Generation Time: Dec 05, 2025 at 02:33 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -52,7 +52,20 @@ CREATE TABLE `addresses` (
 INSERT INTO `addresses` (`address_id`, `user_id`, `recipient_name`, `phone`, `address_line1`, `address_line2`, `city`, `district`, `ward`, `postal_code`, `country`, `is_default`, `address_type`, `created_at`, `updated_at`) VALUES
 (52, 20, 'Trần Thị B', '0908787671', '32 Bùi Ngọ', NULL, 'hcm', 'Quận 1', NULL, NULL, 'Vietnam', 0, 'other', '2025-11-24 12:44:44', '2025-11-24 12:44:44'),
 (53, 21, 'Nguyễn Văn A', '0908786561', '123 Thạch Lãm', NULL, 'hcm', 'Quận 1', NULL, NULL, 'Vietnam', 0, 'other', '2025-11-24 14:41:59', '2025-11-24 14:41:59'),
-(54, 20, 'tranthib671', '0908787671', '32 Bùi Ngọ', NULL, 'hcm', 'Quận 2', NULL, NULL, 'Vietnam', 0, 'other', '2025-11-29 12:02:28', '2025-11-29 12:02:28');
+(54, 20, 'tranthib671', '0908787671', '32 Bùi Ngọ', NULL, 'hcm', 'Quận 2', NULL, NULL, 'Vietnam', 0, 'other', '2025-11-29 12:02:28', '2025-11-29 12:02:28'),
+(55, 20, 'dddd', '0123456788', '123. dsa', NULL, 'hcm', 'q1', NULL, NULL, 'Vietnam', 0, 'other', '2025-12-05 03:04:16', '2025-12-05 03:04:16'),
+(56, 20, 'nguyen van a', '0123456788', 'abc,123', NULL, 'hcm', 'q1', NULL, NULL, 'Vietnam', 0, 'other', '2025-12-05 03:09:03', '2025-12-05 03:09:03'),
+(57, 20, 'nguyen van a', '0123456788', 'abcd', NULL, 'hcm', 'q1', NULL, NULL, 'Vietnam', 0, 'other', '2025-12-05 03:30:19', '2025-12-05 03:30:19'),
+(58, 20, 'nguyen van a', '0123456788', '123, dsa', NULL, 'hcm', 'q1', NULL, NULL, 'Vietnam', 0, 'other', '2025-12-05 04:28:59', '2025-12-05 04:28:59'),
+(59, 20, 'nguyen van a', '0123456788', '321,uu', NULL, 'hcm', 'q1', NULL, NULL, 'Vietnam', 0, 'other', '2025-12-05 05:58:27', '2025-12-05 05:58:27'),
+(60, 20, 'nguyen van a', '0123456788', 'abc', NULL, 'hcm', 'q1', NULL, NULL, 'Vietnam', 0, 'other', '2025-12-05 07:52:57', '2025-12-05 07:52:57'),
+(61, 20, 'tranthib671', '0123456788', 'abcd', NULL, 'hcm', 'Quận Bình Tân', NULL, NULL, 'Vietnam', 0, 'other', '2025-12-05 07:58:48', '2025-12-05 07:58:48'),
+(62, 20, 'tranthib671', '0123456788', '123, dsa', NULL, 'hcm', 'Quận Bình Tân', NULL, NULL, 'Vietnam', 0, 'other', '2025-12-05 08:02:24', '2025-12-05 08:02:24'),
+(63, 20, 'Trần Thị B', '0908787671', '32 Bùi Ngọ', NULL, 'hcm', 'Quận 8', NULL, NULL, 'Vietnam', 0, 'other', '2025-12-05 11:23:46', '2025-12-05 11:23:46'),
+(64, 20, 'Trần Thị B', '0908787671', '32 Bùi Ngọ', NULL, 'hcm', 'Quận 7', NULL, NULL, 'Vietnam', 0, 'other', '2025-12-05 11:30:06', '2025-12-05 11:30:06'),
+(65, 20, 'Trần Thị B', '0908787671', '32 Bùi Ngọ', NULL, 'hanoi', 'Ba Đình', NULL, NULL, 'Vietnam', 0, 'other', '2025-12-05 11:50:25', '2025-12-05 11:50:25'),
+(66, 20, 'tranthib671', '0908787671', '32 Bùi Ngọ', NULL, 'hcm', 'Quận Bình Thạnh', NULL, NULL, 'Vietnam', 0, 'other', '2025-12-05 12:07:58', '2025-12-05 12:07:58'),
+(67, 20, 'Trần Thị B', '0908787671', '32 Bùi Ngọ', NULL, 'hcm', 'q1', NULL, NULL, 'Vietnam', 0, 'other', '2025-12-05 12:24:41', '2025-12-05 12:24:41');
 
 -- --------------------------------------------------------
 
@@ -754,7 +767,9 @@ INSERT INTO `carts` (`cart_id`, `user_id`, `session_id`, `created_at`, `updated_
 (5, NULL, 'guest_1763273048440_dxnpt7o32', '2025-11-16 06:04:08', '2025-11-16 06:04:08', '2025-12-16 06:04:08'),
 (6, NULL, 'guest_1763273048440_dxnpt7o32', '2025-11-16 06:04:08', '2025-11-16 06:04:08', '2025-12-16 06:04:08'),
 (10, 20, NULL, '2025-11-24 13:26:23', '2025-11-24 13:26:23', '2025-12-24 13:26:23'),
-(11, NULL, 'guest_1764417657819_1l2bl5eju', '2025-11-29 12:00:57', '2025-11-29 12:00:57', '2025-12-29 12:00:57');
+(11, NULL, 'guest_1764417657819_1l2bl5eju', '2025-11-29 12:00:57', '2025-11-29 12:00:57', '2025-12-29 12:00:57'),
+(12, NULL, 'guest_1764904178852_7r4onzqri', '2025-12-05 03:09:38', '2025-12-05 03:09:38', '2026-01-04 03:09:38'),
+(13, NULL, 'guest_1764904178852_7r4onzqri', '2025-12-05 03:09:38', '2025-12-05 03:09:38', '2026-01-04 03:09:38');
 
 -- --------------------------------------------------------
 
@@ -777,12 +792,8 @@ CREATE TABLE `cart_items` (
 
 INSERT INTO `cart_items` (`cart_item_id`, `cart_id`, `variant_id`, `quantity`, `added_at`, `updated_at`) VALUES
 (69, 11, 501, 1, '2025-11-29 12:00:57', '2025-11-29 12:00:57'),
-(70, 10, 500, 1, '2025-11-29 12:08:15', '2025-11-29 12:08:15'),
-(72, 1, 500, 2, '2025-11-29 12:43:22', '2025-11-29 12:43:23'),
-(73, 1, 562, 1, '2025-11-29 13:46:07', '2025-11-29 13:46:07'),
-(74, 1, 561, 2, '2025-11-29 13:46:16', '2025-11-29 13:46:16'),
-(75, 1, 560, 1, '2025-11-29 13:46:18', '2025-11-29 13:46:18'),
-(76, 1, 520, 1, '2025-11-29 14:27:13', '2025-11-29 14:27:13');
+(112, 1, 374, 1, '2025-12-05 11:29:20', '2025-12-05 11:29:20'),
+(117, 10, 510, 2, '2025-12-05 13:03:48', '2025-12-05 13:18:05');
 
 -- --------------------------------------------------------
 
@@ -878,7 +889,7 @@ CREATE TABLE `installments` (
   `user_id` int(11) NOT NULL,
   `total_amount` decimal(12,2) NOT NULL,
   `down_payment` decimal(12,2) DEFAULT 0.00,
-  `down_payment_status` enum('pending','paid','cancelled') DEFAULT 'pending',
+  `down_payment_status` enum('pending','paid','not_required') DEFAULT 'pending' COMMENT 'pending: chờ thanh toán, paid: đã thanh toán, not_required: không yêu cầu (trả trước 0%)',
   `down_payment_date` datetime DEFAULT NULL,
   `down_payment_note` text DEFAULT NULL,
   `num_terms` int(11) NOT NULL,
@@ -886,7 +897,7 @@ CREATE TABLE `installments` (
   `interest_rate` decimal(5,2) DEFAULT 0.00,
   `start_date` date NOT NULL,
   `end_date` date NOT NULL,
-  `status` enum('pending','approved','active','completed','overdue','cancelled') DEFAULT 'pending',
+  `status` enum('pending','approved','active','completed','overdue','cancelled') DEFAULT 'approved',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `policy_id` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -898,7 +909,19 @@ CREATE TABLE `installments` (
 INSERT INTO `installments` (`installment_id`, `order_id`, `user_id`, `total_amount`, `down_payment`, `down_payment_status`, `down_payment_date`, `down_payment_note`, `num_terms`, `monthly_payment`, `interest_rate`, `start_date`, `end_date`, `status`, `created_at`, `policy_id`) VALUES
 (25, 46, 20, 12099086.57, 2400000.00, 'paid', '2025-11-24 12:49:52', 'Thanh toán trả trước qua Chuyển khoản', 12, 808257.21, 2.20, '2025-11-24', '2026-11-24', 'active', '2025-11-24 12:44:44', NULL),
 (26, 47, 21, 12076160.32, 2400000.00, 'paid', '2025-11-24 14:44:46', 'Thanh toán trả trước qua Chuyển khoản', 9, 1075128.92, 2.20, '2025-11-24', '2026-08-24', 'active', '2025-11-24 14:41:59', NULL),
-(27, 48, 20, 9036801.00, 2700000.00, 'pending', NULL, NULL, 6, 1056133.50, 2.20, '2025-11-29', '2026-05-29', 'pending', '2025-11-29 12:02:28', NULL);
+(27, 48, 20, 9036801.00, 2700000.00, 'pending', NULL, NULL, 6, 1056133.50, 2.20, '2025-11-29', '2026-05-29', 'pending', '2025-11-29 12:02:28', NULL),
+(28, 68, 20, 13607659.34, 2656000.00, 'paid', '2025-12-05 08:03:35', 'Thanh toán trả trước qua Ví điện tử', 6, 1781009.89, 2.20, '2025-12-05', '2026-06-05', 'active', '2025-12-05 07:58:48', NULL),
+(29, 69, 20, 23813594.23, 11640000.00, 'pending', NULL, NULL, 6, 1951332.37, 2.20, '2025-12-05', '2026-06-05', 'pending', '2025-12-05 08:02:24', NULL),
+(30, 71, 20, 1014426.41, 198000.00, 'pending', NULL, NULL, 6, 132771.07, 2.20, '2025-12-05', '2026-06-05', 'pending', '2025-12-05 11:23:46', NULL),
+(31, 72, 20, 2561682.86, 500000.00, 'pending', NULL, NULL, 6, 335280.48, 2.20, '2025-12-05', '2026-06-05', 'pending', '2025-12-05 11:30:06', NULL),
+(32, 73, 20, 2561682.86, 500000.00, 'paid', '2025-12-05 12:00:06', 'Thanh toán trả trước qua Chuyển khoản', 6, 335280.48, 2.20, '2025-12-05', '2026-06-05', 'active', '2025-12-05 11:50:25', NULL),
+(33, 74, 20, 10236484.70, 1998000.00, 'paid', '2025-12-05 12:09:03', 'Thanh toán trả trước qua Ví điện tử', 6, 1339780.78, 2.20, '2025-12-05', '2026-06-05', 'active', '2025-12-05 12:07:58', NULL),
+(34, 75, 20, 20472969.39, 3996000.00, 'paid', '2025-12-05 12:20:17', 'Thanh toán trả trước qua Ví điện tử', 6, 2679561.57, 2.20, '2025-12-05', '2026-06-05', 'active', '2025-12-05 12:19:10', NULL),
+(35, 77, 20, 20096711.74, 0.00, 'not_required', NULL, NULL, 6, 3349451.96, 2.20, '2025-12-05', '2026-06-05', 'active', '2025-12-05 12:41:42', NULL),
+(36, 78, 20, 30127560.85, 2997000.00, 'pending', NULL, NULL, 6, 4521760.14, 2.20, '2025-12-05', '2026-06-05', 'approved', '2025-12-05 12:43:07', NULL),
+(37, 79, 20, 45419790.71, 7992000.00, 'pending', NULL, NULL, 6, 6131405.12, 2.20, '2025-12-05', '2026-06-05', 'approved', '2025-12-05 13:02:20', NULL),
+(38, 80, 20, 3739517.30, 658000.00, 'pending', NULL, NULL, 6, 504812.88, 3.00, '2025-12-05', '2026-06-05', 'approved', '2025-12-05 13:04:15', NULL),
+(39, 81, 20, 7141896.63, 3290000.00, 'paid', '2025-12-05 13:32:26', 'Thanh toán trả trước qua Chuyển khoản', 6, 641982.77, 50.00, '2025-12-05', '2026-06-05', 'active', '2025-12-05 13:18:29', 1);
 
 -- --------------------------------------------------------
 
@@ -942,7 +965,43 @@ INSERT INTO `installment_payments` (`payment_id`, `installment_id`, `payment_no`
 (42, 26, 6, '2026-05-24', NULL, 1075128.92, 'pending', NULL),
 (43, 26, 7, '2026-06-24', NULL, 1075128.92, 'pending', NULL),
 (44, 26, 8, '2026-07-24', NULL, 1075128.92, 'pending', NULL),
-(45, 26, 9, '2026-08-24', NULL, 1075128.92, 'pending', NULL);
+(45, 26, 9, '2026-08-24', NULL, 1075128.92, 'pending', NULL),
+(46, 28, 1, '2026-01-05', NULL, 1781009.89, 'pending', NULL),
+(47, 28, 2, '2026-02-05', NULL, 1781009.89, 'pending', NULL),
+(48, 28, 3, '2026-03-05', NULL, 1781009.89, 'pending', NULL),
+(49, 28, 4, '2026-04-05', NULL, 1781009.89, 'pending', NULL),
+(50, 28, 5, '2026-05-05', NULL, 1781009.89, 'pending', NULL),
+(51, 28, 6, '2026-06-05', NULL, 1781009.89, 'pending', NULL),
+(52, 32, 1, '2026-01-05', NULL, 335280.48, 'pending', NULL),
+(53, 32, 2, '2026-02-05', NULL, 335280.48, 'pending', NULL),
+(54, 32, 3, '2026-03-05', NULL, 335280.48, 'pending', NULL),
+(55, 32, 4, '2026-04-05', NULL, 335280.48, 'pending', NULL),
+(56, 32, 5, '2026-05-05', NULL, 335280.48, 'pending', NULL),
+(57, 32, 6, '2026-06-05', NULL, 335280.48, 'pending', NULL),
+(58, 33, 1, '2026-01-05', NULL, 1339780.78, 'pending', NULL),
+(59, 33, 2, '2026-02-05', NULL, 1339780.78, 'pending', NULL),
+(60, 33, 3, '2026-03-05', NULL, 1339780.78, 'pending', NULL),
+(61, 33, 4, '2026-04-05', NULL, 1339780.78, 'pending', NULL),
+(62, 33, 5, '2026-05-05', NULL, 1339780.78, 'pending', NULL),
+(63, 33, 6, '2026-06-05', NULL, 1339780.78, 'pending', NULL),
+(64, 34, 1, '2026-01-05', '2025-12-05', 2679561.57, 'paid', 'Thanh toán qua Ví điện tử'),
+(65, 34, 2, '2026-02-05', NULL, 2679561.57, 'pending', NULL),
+(66, 34, 3, '2026-03-05', NULL, 2679561.57, 'pending', NULL),
+(67, 34, 4, '2026-04-05', NULL, 2679561.57, 'pending', NULL),
+(68, 34, 5, '2026-05-05', NULL, 2679561.57, 'pending', NULL),
+(69, 34, 6, '2026-06-05', NULL, 2679561.57, 'pending', NULL),
+(70, 35, 1, '2026-01-05', '2025-12-05', 3349451.96, 'paid', 'Thanh toán qua Chuyển khoản'),
+(71, 35, 2, '2026-02-05', NULL, 3349451.96, 'pending', NULL),
+(72, 35, 3, '2026-03-05', NULL, 3349451.96, 'pending', NULL),
+(73, 35, 4, '2026-04-05', NULL, 3349451.96, 'pending', NULL),
+(74, 35, 5, '2026-05-05', NULL, 3349451.96, 'pending', NULL),
+(75, 35, 6, '2026-06-05', NULL, 3349451.96, 'pending', NULL),
+(76, 39, 1, '2026-01-05', NULL, 641982.77, 'pending', NULL),
+(77, 39, 2, '2026-02-05', NULL, 641982.77, 'pending', NULL),
+(78, 39, 3, '2026-03-05', NULL, 641982.77, 'pending', NULL),
+(79, 39, 4, '2026-04-05', NULL, 641982.77, 'pending', NULL),
+(80, 39, 5, '2026-05-05', NULL, 641982.77, 'pending', NULL),
+(81, 39, 6, '2026-06-05', NULL, 641982.77, 'pending', NULL);
 
 -- --------------------------------------------------------
 
@@ -968,8 +1027,8 @@ CREATE TABLE `installment_policies` (
 --
 
 INSERT INTO `installment_policies` (`policy_id`, `name`, `terms`, `interest_rate`, `min_down_payment`, `description`, `is_active`, `created_at`, `updated_at`, `installment_fee_percent`) VALUES
-(1, 'Trả góp 6 tháng', 6, 2.00, 20.00, NULL, 1, '2025-11-29 11:47:36', '2025-11-29 12:07:44', 2.00),
-(2, 'Trả góp 6 tháng 0%', 6, 0.00, 30.00, 'Trả trong 6 tháng, không phát sinh lãi và phí.', 1, '2025-11-29 12:10:17', '2025-11-29 12:10:17', 0.00),
+(1, 'Trả góp 6 tháng', 6, 50.00, 20.00, NULL, 1, '2025-11-29 11:47:36', '2025-12-05 12:49:26', 2.00),
+(2, 'Trả góp 6 tháng 0%', 6, 2.00, 0.00, 'Trả trong 6 tháng, không phát sinh lãi và phí.', 1, '2025-11-29 12:10:17', '2025-12-05 12:41:00', 0.00),
 (3, 'Trả góp 12 tháng lãi 3%', 12, 3.00, 20.00, 'Gói trả góp 12 tháng, lãi suất 3%/năm, phí hợp đồng 5%.', 1, '2025-11-29 12:10:17', '2025-11-29 12:10:17', 5.00),
 (4, 'Trả góp 18 tháng lãi 6%', 18, 6.00, 15.00, 'Trả góp 18 tháng, lãi suất 6%/năm, phí trả góp 8%.', 1, '2025-11-29 12:10:17', '2025-11-29 12:10:17', 8.00),
 (5, 'Trả góp 24 tháng', 24, 7.50, 10.00, 'Kỳ hạn dài nhất, lãi suất 7.5%/năm, phí hợp đồng 10%.', 1, '2025-11-29 12:10:17', '2025-11-29 12:10:17', 10.00),
@@ -1030,7 +1089,40 @@ CREATE TABLE `orders` (
 INSERT INTO `orders` (`order_id`, `user_id`, `order_number`, `address_id`, `coupon_id`, `order_status`, `payment_status`, `subtotal`, `discount_amount`, `shipping_fee`, `tax_amount`, `total_amount`, `notes`, `cancelled_reason`, `created_at`, `updated_at`, `confirmed_at`, `shipped_at`, `delivered_at`, `cancelled_at`) VALUES
 (46, 20, 'ORD88284166267', 52, NULL, 'shipping', 'unpaid', 12000000.00, 0.00, 0.00, 0.00, 12000000.00, NULL, NULL, '2025-11-24 12:44:44', '2025-11-24 12:49:52', NULL, NULL, NULL, NULL),
 (47, 21, 'ORD95319130334', 53, NULL, 'shipping', 'unpaid', 12000000.00, 0.00, 0.00, 0.00, 12000000.00, NULL, NULL, '2025-11-24 14:41:59', '2025-11-24 14:44:46', '2025-11-24 14:43:33', NULL, NULL, NULL),
-(48, 20, 'ORD17748211898', 54, NULL, 'pending', 'unpaid', 9000000.00, 0.00, 0.00, 0.00, 9000000.00, NULL, NULL, '2025-11-29 12:02:28', '2025-11-29 12:02:28', NULL, NULL, NULL, NULL);
+(48, 20, 'ORD17748211898', 54, NULL, 'pending', 'unpaid', 9000000.00, 0.00, 0.00, 0.00, 9000000.00, NULL, NULL, '2025-11-29 12:02:28', '2025-11-29 12:02:28', NULL, NULL, NULL, NULL),
+(49, 20, 'ORD03856953127', 55, NULL, 'pending', 'unpaid', 3290000.00, 0.00, 50000.00, 0.00, 3340000.00, NULL, NULL, '2025-12-05 03:04:16', '2025-12-05 03:04:16', NULL, NULL, NULL, NULL),
+(50, 20, 'ORD04143586718', 56, NULL, 'pending', 'unpaid', 9990000.00, 0.00, 50000.00, 0.00, 10040000.00, NULL, NULL, '2025-12-05 03:09:03', '2025-12-05 03:09:03', NULL, NULL, NULL, NULL),
+(51, 20, 'ORD05419530689', 57, NULL, 'pending', 'unpaid', 22660000.00, 0.00, 50000.00, 0.00, 22710000.00, NULL, NULL, '2025-12-05 03:30:19', '2025-12-05 03:30:19', NULL, NULL, NULL, NULL),
+(52, 20, 'ORD08939750540', 58, NULL, 'pending', 'unpaid', 2390000.00, 0.00, 50000.00, 0.00, 2440000.00, NULL, NULL, '2025-12-05 04:28:59', '2025-12-05 04:28:59', NULL, NULL, NULL, NULL),
+(53, 20, 'ORD13429806332', 55, NULL, 'pending', 'unpaid', 30000.00, 0.00, 50000.00, 0.00, 80000.00, NULL, NULL, '2025-12-05 05:43:49', '2025-12-05 05:43:49', NULL, NULL, NULL, NULL),
+(54, 20, 'ORD13429810266', 55, NULL, 'pending', 'unpaid', 30000.00, 0.00, 50000.00, 0.00, 80000.00, NULL, NULL, '2025-12-05 05:43:49', '2025-12-05 05:43:49', NULL, NULL, NULL, NULL),
+(55, 20, 'ORD13475694198', 55, NULL, 'pending', 'unpaid', 30000.00, 0.00, 50000.00, 0.00, 80000.00, NULL, NULL, '2025-12-05 05:44:35', '2025-12-05 05:44:35', NULL, NULL, NULL, NULL),
+(56, 20, 'ORD13689538444', 56, NULL, 'pending', 'unpaid', 3990000.00, 0.00, 50000.00, 0.00, 4040000.00, NULL, NULL, '2025-12-05 05:48:09', '2025-12-05 05:48:09', NULL, NULL, NULL, NULL),
+(57, 20, 'ORD13689544225', 56, NULL, 'pending', 'unpaid', 3990000.00, 0.00, 50000.00, 0.00, 4040000.00, NULL, NULL, '2025-12-05 05:48:09', '2025-12-05 05:48:09', NULL, NULL, NULL, NULL),
+(58, 20, 'ORD13827679073', 57, NULL, 'pending', 'unpaid', 990000.00, 0.00, 50000.00, 0.00, 1040000.00, NULL, NULL, '2025-12-05 05:50:27', '2025-12-05 05:50:27', NULL, NULL, NULL, NULL),
+(59, 20, 'ORD13827683230', 57, NULL, 'pending', 'unpaid', 990000.00, 0.00, 50000.00, 0.00, 1040000.00, NULL, NULL, '2025-12-05 05:50:27', '2025-12-05 05:50:27', NULL, NULL, NULL, NULL),
+(60, 20, 'ORD14307217077', 59, NULL, 'pending', 'unpaid', 3290000.00, 0.00, 50000.00, 0.00, 3340000.00, NULL, NULL, '2025-12-05 05:58:27', '2025-12-05 05:58:27', NULL, NULL, NULL, NULL),
+(61, 20, 'ORD14850252370', 55, NULL, 'pending', 'unpaid', 10000.00, 0.00, 50000.00, 0.00, 60000.00, NULL, NULL, '2025-12-05 06:07:30', '2025-12-05 06:07:30', NULL, NULL, NULL, NULL),
+(62, 20, 'ORD15247269621', 56, NULL, 'pending', 'unpaid', 20000.00, 0.00, 50000.00, 0.00, 70000.00, NULL, NULL, '2025-12-05 06:14:07', '2025-12-05 06:14:07', NULL, NULL, NULL, NULL),
+(63, 20, 'ORD15653022528', 59, NULL, 'pending', 'paid', 50000.00, 0.00, 50000.00, 0.00, 100000.00, NULL, NULL, '2025-12-05 06:20:53', '2025-12-05 06:20:53', NULL, NULL, NULL, NULL),
+(64, 20, 'ORD16642084760', 55, NULL, 'shipping', 'paid', 20000.00, 0.00, 50000.00, 0.00, 70000.00, NULL, NULL, '2025-12-05 06:37:22', '2025-12-05 06:37:22', NULL, NULL, NULL, NULL),
+(65, 20, 'ORD17351702937', 57, NULL, 'shipping', 'paid', 3290000.00, 0.00, 50000.00, 0.00, 3340000.00, NULL, NULL, '2025-12-05 06:49:11', '2025-12-05 06:49:11', NULL, NULL, NULL, NULL),
+(66, 20, 'ORD19667478628', 57, NULL, 'shipping', 'paid', 8490000.00, 0.00, 50000.00, 0.00, 8540000.00, NULL, NULL, '2025-12-05 07:27:47', '2025-12-05 07:27:47', NULL, NULL, NULL, NULL),
+(67, 20, 'ORD21177096571', 60, NULL, 'shipping', 'paid', 3990000.00, 0.00, 50000.00, 0.00, 4040000.00, NULL, NULL, '2025-12-05 07:52:57', '2025-12-05 07:52:57', NULL, NULL, NULL, NULL),
+(68, 20, 'ORD21528536675', 61, NULL, 'shipping', 'unpaid', 13280000.00, 0.00, 0.00, 0.00, 13280000.00, NULL, NULL, '2025-12-05 07:58:48', '2025-12-05 08:03:35', '2025-12-05 08:00:30', NULL, NULL, NULL),
+(69, 20, 'ORD21744010559', 62, NULL, 'pending', 'unpaid', 23280000.00, 0.00, 0.00, 0.00, 23280000.00, NULL, NULL, '2025-12-05 08:02:24', '2025-12-05 08:02:24', NULL, NULL, NULL, NULL),
+(70, 20, 'ORD22032091503', 59, NULL, 'shipping', 'paid', 70000.00, 0.00, 50000.00, 0.00, 120000.00, NULL, NULL, '2025-12-05 08:07:12', '2025-12-05 08:07:12', NULL, NULL, NULL, NULL),
+(71, 20, 'ORD33826605110', 63, NULL, 'pending', 'unpaid', 990000.00, 0.00, 0.00, 0.00, 990000.00, NULL, NULL, '2025-12-05 11:23:46', '2025-12-05 11:23:46', NULL, NULL, NULL, NULL),
+(72, 20, 'ORD34206694276', 64, NULL, 'pending', 'unpaid', 2500000.00, 0.00, 0.00, 0.00, 2500000.00, NULL, NULL, '2025-12-05 11:30:06', '2025-12-05 11:30:06', NULL, NULL, NULL, NULL),
+(73, 20, 'ORD35425067017', 65, NULL, 'shipping', 'unpaid', 2500000.00, 0.00, 0.00, 0.00, 2500000.00, NULL, NULL, '2025-12-05 11:50:25', '2025-12-05 12:00:06', NULL, NULL, NULL, NULL),
+(74, 20, 'ORD36478055670', 66, NULL, 'shipping', 'unpaid', 9990000.00, 0.00, 0.00, 0.00, 9990000.00, NULL, NULL, '2025-12-05 12:07:58', '2025-12-05 12:09:03', NULL, NULL, NULL, NULL),
+(75, 20, 'ORD37150962125', 52, NULL, 'shipping', 'unpaid', 19980000.00, 0.00, 0.00, 0.00, 19980000.00, NULL, NULL, '2025-12-05 12:19:10', '2025-12-05 12:20:17', NULL, NULL, NULL, NULL),
+(76, 20, 'ORD37481094803', 67, NULL, 'shipping', 'paid', 9990000.00, 0.00, 50000.00, 0.00, 10040000.00, NULL, NULL, '2025-12-05 12:24:41', '2025-12-05 12:24:41', NULL, NULL, NULL, NULL),
+(77, 20, 'ORD38502917646', 52, NULL, 'pending', 'unpaid', 19980000.00, 0.00, 0.00, 0.00, 19980000.00, NULL, NULL, '2025-12-05 12:41:42', '2025-12-05 12:41:42', NULL, NULL, NULL, NULL),
+(78, 20, 'ORD38587363879', 52, NULL, 'pending', 'unpaid', 29970000.00, 0.00, 0.00, 0.00, 29970000.00, NULL, NULL, '2025-12-05 12:43:07', '2025-12-05 12:43:07', NULL, NULL, NULL, NULL),
+(79, 20, 'ORD39740387554', 52, NULL, 'pending', 'unpaid', 39960000.00, 0.00, 0.00, 0.00, 39960000.00, NULL, NULL, '2025-12-05 13:02:20', '2025-12-05 13:02:20', NULL, NULL, NULL, NULL),
+(80, 20, 'ORD39855467379', 52, NULL, 'pending', 'unpaid', 3290000.00, 0.00, 0.00, 0.00, 3290000.00, NULL, NULL, '2025-12-05 13:04:15', '2025-12-05 13:04:15', NULL, NULL, NULL, NULL),
+(81, 20, 'ORD40709129049', 52, NULL, 'shipping', 'unpaid', 6580000.00, 0.00, 0.00, 0.00, 6580000.00, NULL, NULL, '2025-12-05 13:18:29', '2025-12-05 13:32:26', NULL, NULL, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -1061,7 +1153,45 @@ INSERT INTO `order_items` (`order_item_id`, `order_id`, `variant_id`, `product_n
 (68, 46, 400, 'Seasonic Focus GX-750', '750W Gold', 'SSN-GX750', 1, 3000000.00, 0.00, 3000000.00, '2025-11-24 12:44:44'),
 (69, 47, 379, 'Intel Core i7-13700K', 'Box', 'INTEL-13700K-BOX', 1, 9000000.00, 0.00, 9000000.00, '2025-11-24 14:41:59'),
 (70, 47, 400, 'Seasonic Focus GX-750', '750W Gold', 'SSN-GX750', 1, 3000000.00, 0.00, 3000000.00, '2025-11-24 14:41:59'),
-(71, 48, 379, 'Intel Core i7-13700K', 'Box', 'INTEL-13700K-BOX', 1, 9000000.00, 0.00, 9000000.00, '2025-11-29 12:02:28');
+(71, 48, 379, 'Intel Core i7-13700K', 'Box', 'INTEL-13700K-BOX', 1, 9000000.00, 0.00, 9000000.00, '2025-11-29 12:02:28'),
+(72, 49, 510, 'Logitech G Pro X Mechanical Gaming Keyboard', 'GX Blue Switch', 'LOGI-GPROX-STD', 1, 3290000.00, 0.00, 3290000.00, '2025-12-05 03:04:16'),
+(73, 50, 501, 'ASUS TUF VG27AQ 27\" WQHD 165Hz', 'Standard', 'ASUS-VG27AQ-STD', 1, 9990000.00, 0.00, 9990000.00, '2025-12-05 03:09:03'),
+(74, 51, 530, 'HyperX Cloud II Gaming Headset', 'Red', 'HX-CLOUD2-RED', 1, 2390000.00, 0.00, 2390000.00, '2025-12-05 03:30:19'),
+(75, 51, 510, 'Logitech G Pro X Mechanical Gaming Keyboard', 'GX Blue Switch', 'LOGI-GPROX-STD', 1, 3290000.00, 0.00, 3290000.00, '2025-12-05 03:30:19'),
+(76, 51, 500, 'LG UltraGear 27GN800-B 27\" QHD 144Hz', 'Standard', 'LG-27GN800-STD', 2, 8490000.00, 0.00, 16980000.00, '2025-12-05 03:30:19'),
+(77, 52, 530, 'HyperX Cloud II Gaming Headset', 'Red', 'HX-CLOUD2-RED', 1, 2390000.00, 0.00, 2390000.00, '2025-12-05 04:28:59'),
+(78, 53, 511, 'Corsair K70 RGB MK.2 Cherry MX Red', 'Cherry MX Red', 'CORS-K70-RED', 3, 10000.00, 0.00, 30000.00, '2025-12-05 05:43:49'),
+(79, 54, 511, 'Corsair K70 RGB MK.2 Cherry MX Red', 'Cherry MX Red', 'CORS-K70-RED', 3, 10000.00, 0.00, 30000.00, '2025-12-05 05:43:49'),
+(80, 55, 511, 'Corsair K70 RGB MK.2 Cherry MX Red', 'Cherry MX Red', 'CORS-K70-RED', 3, 10000.00, 0.00, 30000.00, '2025-12-05 05:44:35'),
+(81, 56, 531, 'Razer BlackShark V2 Pro Wireless', 'Pro', 'RAZER-BS-V2-PRO', 1, 3990000.00, 0.00, 3990000.00, '2025-12-05 05:48:09'),
+(82, 57, 531, 'Razer BlackShark V2 Pro Wireless', 'Pro', 'RAZER-BS-V2-PRO', 1, 3990000.00, 0.00, 3990000.00, '2025-12-05 05:48:09'),
+(83, 58, 520, 'Logitech G304 Lightspeed Wireless', 'Black', 'LOGI-G304-BLK', 1, 990000.00, 0.00, 990000.00, '2025-12-05 05:50:27'),
+(84, 59, 520, 'Logitech G304 Lightspeed Wireless', 'Black', 'LOGI-G304-BLK', 1, 990000.00, 0.00, 990000.00, '2025-12-05 05:50:27'),
+(85, 60, 510, 'Logitech G Pro X Mechanical Gaming Keyboard', 'GX Blue Switch', 'LOGI-GPROX-STD', 1, 3290000.00, 0.00, 3290000.00, '2025-12-05 05:58:27'),
+(86, 61, 511, 'Corsair K70 RGB MK.2 Cherry MX Red', 'Cherry MX Red', 'CORS-K70-RED', 1, 10000.00, 0.00, 10000.00, '2025-12-05 06:07:30'),
+(87, 62, 511, 'Corsair K70 RGB MK.2 Cherry MX Red', 'Cherry MX Red', 'CORS-K70-RED', 2, 10000.00, 0.00, 20000.00, '2025-12-05 06:14:07'),
+(88, 63, 511, 'Corsair K70 RGB MK.2 Cherry MX Red', 'Cherry MX Red', 'CORS-K70-RED', 5, 10000.00, 0.00, 50000.00, '2025-12-05 06:20:53'),
+(89, 64, 511, 'Corsair K70 RGB MK.2 Cherry MX Red', 'Cherry MX Red', 'CORS-K70-RED', 2, 10000.00, 0.00, 20000.00, '2025-12-05 06:37:22'),
+(90, 65, 510, 'Logitech G Pro X Mechanical Gaming Keyboard', 'GX Blue Switch', 'LOGI-GPROX-STD', 1, 3290000.00, 0.00, 3290000.00, '2025-12-05 06:49:11'),
+(91, 66, 500, 'LG UltraGear 27GN800-B 27\" QHD 144Hz', 'Standard', 'LG-27GN800-STD', 1, 8490000.00, 0.00, 8490000.00, '2025-12-05 07:27:47'),
+(92, 67, 531, 'Razer BlackShark V2 Pro Wireless', 'Pro', 'RAZER-BS-V2-PRO', 1, 3990000.00, 0.00, 3990000.00, '2025-12-05 07:52:57'),
+(93, 68, 510, 'Logitech G Pro X Mechanical Gaming Keyboard', 'GX Blue Switch', 'LOGI-GPROX-STD', 1, 3290000.00, 0.00, 3290000.00, '2025-12-05 07:58:48'),
+(94, 68, 501, 'ASUS TUF VG27AQ 27\" WQHD 165Hz', 'Standard', 'ASUS-VG27AQ-STD', 1, 9990000.00, 0.00, 9990000.00, '2025-12-05 07:58:48'),
+(95, 69, 511, 'Corsair K70 RGB MK.2 Cherry MX Red', 'Cherry MX Red', 'CORS-K70-RED', 1, 10000.00, 0.00, 10000.00, '2025-12-05 08:02:24'),
+(96, 69, 510, 'Logitech G Pro X Mechanical Gaming Keyboard', 'GX Blue Switch', 'LOGI-GPROX-STD', 1, 3290000.00, 0.00, 3290000.00, '2025-12-05 08:02:24'),
+(97, 69, 501, 'ASUS TUF VG27AQ 27\" WQHD 165Hz', 'Standard', 'ASUS-VG27AQ-STD', 2, 9990000.00, 0.00, 19980000.00, '2025-12-05 08:02:24'),
+(98, 70, 511, 'Corsair K70 RGB MK.2 Cherry MX Red', 'Cherry MX Red', 'CORS-K70-RED', 7, 10000.00, 0.00, 70000.00, '2025-12-05 08:07:12'),
+(99, 71, 520, 'Logitech G304 Lightspeed Wireless', 'Black', 'LOGI-G304-BLK', 1, 990000.00, 0.00, 990000.00, '2025-12-05 11:23:46'),
+(100, 72, 374, 'Ổ Cứng HDD SEAGATE Barracuda 2TB 3.5 inch 7200RPM, SATA III, 256MB Cache (ST2000DM008)', 'Seagate-2TB-7200RPM', 'Seagate-2TB-7200RPM', 1, 2500000.00, 0.00, 2500000.00, '2025-12-05 11:30:06'),
+(101, 73, 374, 'Ổ Cứng HDD SEAGATE Barracuda 2TB 3.5 inch 7200RPM, SATA III, 256MB Cache (ST2000DM008)', 'Seagate-2TB-7200RPM', 'Seagate-2TB-7200RPM', 1, 2500000.00, 0.00, 2500000.00, '2025-12-05 11:50:25'),
+(102, 74, 501, 'ASUS TUF VG27AQ 27\" WQHD 165Hz', 'Standard', 'ASUS-VG27AQ-STD', 1, 9990000.00, 0.00, 9990000.00, '2025-12-05 12:07:58'),
+(103, 75, 501, 'ASUS TUF VG27AQ 27\" WQHD 165Hz', 'Standard', 'ASUS-VG27AQ-STD', 2, 9990000.00, 0.00, 19980000.00, '2025-12-05 12:19:10'),
+(104, 76, 501, 'ASUS TUF VG27AQ 27\" WQHD 165Hz', 'Standard', 'ASUS-VG27AQ-STD', 1, 9990000.00, 0.00, 9990000.00, '2025-12-05 12:24:41'),
+(105, 77, 501, 'ASUS TUF VG27AQ 27\" WQHD 165Hz', 'Standard', 'ASUS-VG27AQ-STD', 2, 9990000.00, 0.00, 19980000.00, '2025-12-05 12:41:42'),
+(106, 78, 501, 'ASUS TUF VG27AQ 27\" WQHD 165Hz', 'Standard', 'ASUS-VG27AQ-STD', 3, 9990000.00, 0.00, 29970000.00, '2025-12-05 12:43:07'),
+(107, 79, 501, 'ASUS TUF VG27AQ 27\" WQHD 165Hz', 'Standard', 'ASUS-VG27AQ-STD', 4, 9990000.00, 0.00, 39960000.00, '2025-12-05 13:02:20'),
+(108, 80, 510, 'Logitech G Pro X Mechanical Gaming Keyboard', 'GX Blue Switch', 'LOGI-GPROX-STD', 1, 3290000.00, 0.00, 3290000.00, '2025-12-05 13:04:15'),
+(109, 81, 510, 'Logitech G Pro X Mechanical Gaming Keyboard', 'GX Blue Switch', 'LOGI-GPROX-STD', 2, 3290000.00, 0.00, 6580000.00, '2025-12-05 13:18:29');
 
 -- --------------------------------------------------------
 
@@ -1072,8 +1202,8 @@ INSERT INTO `order_items` (`order_item_id`, `order_id`, `variant_id`, `product_n
 CREATE TABLE `payments` (
   `payment_id` int(11) NOT NULL,
   `order_id` int(11) NOT NULL,
-  `payment_method` enum('cod','bank_transfer','credit_card','e_wallet','installment') NOT NULL,
-  `payment_status` enum('pending','completed','failed','refunded') DEFAULT 'pending',
+  `payment_method` enum('cod','installment','momo') NOT NULL,
+  `payment_status` enum('pending','completed','failed','refunded','cancelled','paid') DEFAULT 'pending',
   `amount` decimal(12,2) NOT NULL,
   `transaction_id` varchar(100) DEFAULT NULL,
   `payment_gateway` varchar(50) DEFAULT NULL,
@@ -1082,6 +1212,29 @@ CREATE TABLE `payments` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `payments`
+--
+
+INSERT INTO `payments` (`payment_id`, `order_id`, `payment_method`, `payment_status`, `amount`, `transaction_id`, `payment_gateway`, `payment_details`, `paid_at`, `created_at`, `updated_at`) VALUES
+(17, 65, 'momo', 'paid', 3340000.00, NULL, 'momo', NULL, '2025-12-05 06:49:11', '2025-12-05 06:49:11', '2025-12-05 06:49:11'),
+(20, 66, 'momo', 'paid', 8540000.00, 'BATECH_1764919624272', 'momo', NULL, '2025-12-05 07:27:47', '2025-12-05 07:27:47', '2025-12-05 07:27:47'),
+(22, 67, 'momo', 'paid', 4040000.00, 'BATECH_1764921138073', 'momo', NULL, '2025-12-05 07:52:57', '2025-12-05 07:52:57', '2025-12-05 07:52:57'),
+(23, 68, 'installment', 'pending', 13280000.00, 'TXN1764921528538897', NULL, NULL, NULL, '2025-12-05 07:58:48', '2025-12-05 07:58:48'),
+(24, 69, 'installment', 'pending', 23280000.00, 'TXN1764921744013568', NULL, NULL, NULL, '2025-12-05 08:02:24', '2025-12-05 08:02:24'),
+(26, 70, 'momo', 'paid', 120000.00, 'BATECH_1764921889136', 'momo', NULL, '2025-12-05 08:07:12', '2025-12-05 08:07:12', '2025-12-05 08:07:12'),
+(28, 71, 'installment', 'pending', 990000.00, 'TXN1764933826608618', NULL, NULL, NULL, '2025-12-05 11:23:46', '2025-12-05 11:23:46'),
+(29, 72, 'installment', 'pending', 2500000.00, 'TXN1764934206695947', NULL, NULL, NULL, '2025-12-05 11:30:06', '2025-12-05 11:30:06'),
+(30, 73, 'installment', 'pending', 2500000.00, 'TXN1764935425069817', NULL, NULL, NULL, '2025-12-05 11:50:25', '2025-12-05 11:50:25'),
+(32, 74, 'installment', 'pending', 9990000.00, 'TXN176493647805661', NULL, NULL, NULL, '2025-12-05 12:07:58', '2025-12-05 12:07:58'),
+(33, 75, 'installment', 'pending', 19980000.00, 'TXN1764937150965119', NULL, NULL, NULL, '2025-12-05 12:19:10', '2025-12-05 12:19:10'),
+(35, 76, 'momo', 'paid', 10040000.00, 'BATECH_1764937406052', 'momo', NULL, '2025-12-05 12:24:41', '2025-12-05 12:24:41', '2025-12-05 12:24:41'),
+(36, 77, 'installment', 'pending', 19980000.00, 'TXN1764938502920835', NULL, NULL, NULL, '2025-12-05 12:41:42', '2025-12-05 12:41:42'),
+(37, 78, 'installment', 'pending', 29970000.00, 'TXN1764938587364484', NULL, NULL, NULL, '2025-12-05 12:43:07', '2025-12-05 12:43:07'),
+(38, 79, 'installment', 'pending', 39960000.00, 'TXN176493974038886', NULL, NULL, NULL, '2025-12-05 13:02:20', '2025-12-05 13:02:20'),
+(39, 80, 'installment', 'pending', 3290000.00, 'TXN176493985546828', NULL, NULL, NULL, '2025-12-05 13:04:15', '2025-12-05 13:04:15'),
+(40, 81, 'installment', 'pending', 6580000.00, 'TXN1764940709135361', NULL, NULL, NULL, '2025-12-05 13:18:29', '2025-12-05 13:18:29');
 
 -- --------------------------------------------------------
 
@@ -1163,17 +1316,17 @@ INSERT INTO `products` (`product_id`, `category_id`, `product_name`, `slug`, `de
 (289, 35, 'G.Skill Trident Z DDR4 16GB (2x8GB)', 'gskill-tridentz-ddr4-16gb', NULL, 900000.00, 1, 0, 0, 0.00, 0, '2025-11-24 05:32:43', '2025-11-24 05:32:43', ''),
 (290, 35, 'Corsair Vengeance DDR5 32GB (2x16GB)', 'corsair-vengeance-ddr5-32gb', NULL, 2200000.00, 1, 0, 0, 0.00, 0, '2025-11-24 05:32:43', '2025-11-24 05:32:43', ''),
 (291, 35, 'Kingston Fury DDR4 64GB (2x32GB)', 'kingston-fury-ddr4-64gb', NULL, 4200000.00, 1, 0, 0, 0.00, 0, '2025-11-24 05:32:43', '2025-11-24 05:32:43', ''),
-(300, 40, 'LG UltraGear 27GN800-B 27\" QHD 144Hz', 'lg-27gn800-qhd-144hz', 'Màn hình gaming IPS 27 inch QHD 144Hz G-Sync Compatible', 8490000.00, 1, 1, 10, 0.00, 0, '2025-11-25 08:58:13', '2025-11-29 12:35:58', ''),
-(301, 40, 'ASUS TUF VG27AQ 27\" WQHD 165Hz', 'asus-tuf-vg27aq-wqhd-165hz', 'Màn hình gaming IPS 27 inch WQHD 165Hz G-Sync', 9990000.00, 1, 1, 0, 0.00, 0, '2025-11-25 08:58:13', '2025-11-25 08:58:13', ''),
-(302, 40, 'Samsung Odyssey G5 32\" QHD 144Hz', 'samsung-odyssey-g5-32-qhd-144hz', 'Màn hình gaming cong VA 32 inch QHD 144Hz', 7990000.00, 1, 0, 0, 0.00, 0, '2025-11-25 08:58:13', '2025-11-25 08:58:13', ''),
-(310, 41, 'Logitech G Pro X Mechanical Gaming Keyboard', 'logitech-g-pro-x-mechanical', 'Bàn phím cơ gaming với switch GX Blue', 3290000.00, 1, 1, 4, 0.00, 0, '2025-11-25 08:58:13', '2025-11-29 14:37:32', ''),
-(311, 41, 'Corsair K70 RGB MK.2 Cherry MX Red', 'corsair-k70-rgb-mk2-red', 'Bàn phím cơ full-size RGB Cherry MX Red', 3890000.00, 1, 1, 0, 0.00, 0, '2025-11-25 08:58:13', '2025-11-25 08:58:13', ''),
-(312, 41, 'Keychron K2 V2 Wireless Mechanical', 'keychron-k2-v2-wireless', 'Bàn phím cơ 75% không dây Gateron Brown', 2190000.00, 1, 0, 0, 0.00, 0, '2025-11-25 08:58:13', '2025-11-25 08:58:13', ''),
-(320, 42, 'Logitech G304 Lightspeed Wireless', 'logitech-g304-lightspeed', 'Chuột gaming không dây HERO 12K DPI', 990000.00, 1, 1, 4, 0.00, 0, '2025-11-25 08:58:13', '2025-11-29 14:37:43', ''),
-(321, 42, 'Razer Viper Ultimate Wireless', 'razer-viper-ultimate-wireless', 'Chuột gaming không dây Focus+ 20K DPI', 2990000.00, 1, 1, 2, 0.00, 0, '2025-11-25 08:58:13', '2025-11-29 14:37:50', ''),
-(322, 42, 'SteelSeries Rival 3 Wireless', 'steelseries-rival-3-wireless', 'Chuột gaming không dây TrueMove Air 18K DPI', 1490000.00, 1, 0, 0, 0.00, 0, '2025-11-25 08:58:13', '2025-11-25 08:58:13', ''),
-(330, 43, 'HyperX Cloud II Gaming Headset', 'hyperx-cloud-ii-gaming', 'Tai nghe gaming 7.1 surround sound', 2390000.00, 1, 1, 6, 0.00, 0, '2025-11-25 08:58:13', '2025-11-25 10:19:22', ''),
-(331, 43, 'Razer BlackShark V2 Pro Wireless', 'razer-blackshark-v2-pro', 'Tai nghe gaming không dây THX Spatial Audio', 3990000.00, 1, 1, 0, 0.00, 0, '2025-11-25 08:58:13', '2025-11-25 08:58:13', ''),
+(300, 40, 'LG UltraGear 27GN800-B 27\" QHD 144Hz', 'lg-27gn800-qhd-144hz', 'Màn hình gaming IPS 27 inch QHD 144Hz G-Sync Compatible', 8490000.00, 1, 1, 40, 0.00, 0, '2025-11-25 08:58:13', '2025-12-03 04:28:48', ''),
+(301, 40, 'ASUS TUF VG27AQ 27\" WQHD 165Hz', 'asus-tuf-vg27aq-wqhd-165hz', 'Màn hình gaming IPS 27 inch WQHD 165Hz G-Sync', 9990000.00, 1, 1, 53, 0.00, 0, '2025-11-25 08:58:13', '2025-12-03 05:07:11', ''),
+(302, 40, 'Samsung Odyssey G5 32\" QHD 144Hz', 'samsung-odyssey-g5-32-qhd-144hz', 'Màn hình gaming cong VA 32 inch QHD 144Hz', 7990000.00, 1, 0, 18, 0.00, 0, '2025-11-25 08:58:13', '2025-12-03 05:07:26', ''),
+(310, 41, 'Logitech G Pro X Mechanical Gaming Keyboard', 'logitech-g-pro-x-mechanical', 'Bàn phím cơ gaming với switch GX Blue', 3290000.00, 1, 1, 28, 0.00, 0, '2025-11-25 08:58:13', '2025-12-03 04:27:16', ''),
+(311, 41, 'Corsair K70 RGB MK.2 Cherry MX Red', 'corsair-k70-rgb-mk2-red', 'Bàn phím cơ full-size RGB Cherry MX Red', 3000.00, 1, 1, 22, 0.00, 0, '2025-11-25 08:58:13', '2025-12-05 06:13:08', ''),
+(312, 41, 'Keychron K2 V2 Wireless Mechanical', 'keychron-k2-v2-wireless', 'Bàn phím cơ 75% không dây Gateron Brown', 2190000.00, 1, 0, 4, 0.00, 0, '2025-11-25 08:58:13', '2025-12-03 04:05:26', ''),
+(320, 42, 'Logitech G304 Lightspeed Wireless', 'logitech-g304-lightspeed', 'Chuột gaming không dây HERO 12K DPI', 990000.00, 1, 1, 18, 0.00, 0, '2025-11-25 08:58:13', '2025-12-03 04:20:22', ''),
+(321, 42, 'Razer Viper Ultimate Wireless', 'razer-viper-ultimate-wireless', 'Chuột gaming không dây Focus+ 20K DPI', 2990000.00, 1, 1, 32, 0.00, 0, '2025-11-25 08:58:13', '2025-12-05 04:55:38', ''),
+(322, 42, 'SteelSeries Rival 3 Wireless', 'steelseries-rival-3-wireless', 'Chuột gaming không dây TrueMove Air 18K DPI', 1490000.00, 1, 0, 2, 0.00, 0, '2025-11-25 08:58:13', '2025-12-03 04:29:34', ''),
+(330, 43, 'HyperX Cloud II Gaming Headset', 'hyperx-cloud-ii-gaming', 'Tai nghe gaming 7.1 surround sound', 2390000.00, 1, 1, 35, 0.00, 0, '2025-11-25 08:58:13', '2025-12-05 04:55:35', ''),
+(331, 43, 'Razer BlackShark V2 Pro Wireless', 'razer-blackshark-v2-pro', 'Tai nghe gaming không dây THX Spatial Audio', 3990000.00, 1, 1, 12, 0.00, 0, '2025-11-25 08:58:13', '2025-12-03 04:20:28', ''),
 (332, 43, 'SteelSeries Arctis 7 Wireless', 'steelseries-arctis-7-wireless', 'Tai nghe gaming không dây DTS Headphone:X v2.0', 3290000.00, 1, 0, 0, 0.00, 0, '2025-11-25 08:58:13', '2025-11-25 08:58:13', ''),
 (340, 44, 'Logitech Z906 5.1 Surround Sound', 'logitech-z906-51-surround', 'Loa 5.1 THX certified 500W RMS', 6590000.00, 1, 1, 0, 0.00, 0, '2025-11-25 08:58:13', '2025-11-25 08:58:13', ''),
 (341, 44, 'Creative Pebble V3 2.0', 'creative-pebble-v3-20', 'Loa 2.0 USB-C RGB 8W RMS', 690000.00, 1, 0, 0, 0.00, 0, '2025-11-25 08:58:13', '2025-11-25 08:58:13', ''),
@@ -1209,7 +1362,7 @@ CREATE TABLE `product_variants` (
 --
 
 INSERT INTO `product_variants` (`variant_id`, `product_id`, `sku`, `variant_name`, `price`, `stock_quantity`, `is_active`, `is_default`, `created_at`, `updated_at`) VALUES
-(374, 264, 'Seagate-2TB-7200RPM', 'Seagate-2TB-7200RPM', 2500000.00, 30, 1, 1, '2025-11-24 12:30:39', '2025-11-24 12:30:39'),
+(374, 264, 'Seagate-2TB-7200RPM', 'Seagate-2TB-7200RPM', 2500000.00, 28, 1, 1, '2025-11-24 12:30:39', '2025-12-05 11:50:25'),
 (375, 265, 'INTEL-13600K-BOX', 'Box', 6000000.00, 15, 1, 1, '2025-11-24 05:32:43', '2025-11-24 05:32:43'),
 (376, 265, 'INTEL-13600K-DELUXE', 'Deluxe', 6500000.00, 10, 1, 0, '2025-11-24 05:32:43', '2025-11-24 05:32:43'),
 (377, 266, 'AMD-7600X-BOX', 'Box', 5200000.00, 20, 1, 1, '2025-11-24 05:32:43', '2025-11-24 05:32:43'),
@@ -1264,17 +1417,17 @@ INSERT INTO `product_variants` (`variant_id`, `product_id`, `sku`, `variant_name
 (426, 290, 'CRS-VENGE-DDR5-32-2', '2x16GB RGB', 2350000.00, 4, 1, 0, '2025-11-24 05:32:43', '2025-11-24 05:32:43'),
 (427, 291, 'KNG-FURY-DDR4-64-1', '2x32GB', 4200000.00, 5, 1, 1, '2025-11-24 05:32:43', '2025-11-24 05:32:43'),
 (428, 291, 'KNG-FURY-DDR4-64-2', '2x32GB RGB', 4400000.00, 2, 1, 0, '2025-11-24 05:32:43', '2025-11-24 05:32:43'),
-(500, 300, 'LG-27GN800-STD', 'Standard', 8490000.00, 25, 1, 1, '2025-11-25 08:58:13', '2025-11-25 08:58:13'),
-(501, 301, 'ASUS-VG27AQ-STD', 'Standard', 9990000.00, 18, 1, 1, '2025-11-25 08:58:13', '2025-11-25 08:58:13'),
+(500, 300, 'LG-27GN800-STD', 'Standard', 8490000.00, 22, 1, 1, '2025-11-25 08:58:13', '2025-12-05 07:27:47'),
+(501, 301, 'ASUS-VG27AQ-STD', 'Standard', 9990000.00, 1, 1, 1, '2025-11-25 08:58:13', '2025-12-05 13:02:20'),
 (502, 302, 'SAM-G5-32-STD', 'Standard', 7990000.00, 30, 1, 1, '2025-11-25 08:58:13', '2025-11-25 08:58:13'),
-(510, 310, 'LOGI-GPROX-STD', 'GX Blue Switch', 3290000.00, 40, 1, 1, '2025-11-25 08:58:13', '2025-11-25 08:58:13'),
-(511, 311, 'CORS-K70-RED', 'Cherry MX Red', 3890000.00, 25, 1, 1, '2025-11-25 08:58:13', '2025-11-25 08:58:13'),
+(510, 310, 'LOGI-GPROX-STD', 'GX Blue Switch', 3290000.00, 31, 1, 1, '2025-11-25 08:58:13', '2025-12-05 13:18:29'),
+(511, 311, 'CORS-K70-RED', 'Cherry MX Red', 10000.00, 228, 1, 1, '2025-11-25 08:58:13', '2025-12-05 08:07:12'),
 (512, 312, 'KEY-K2-BROWN', 'Gateron Brown', 2190000.00, 50, 1, 1, '2025-11-25 08:58:13', '2025-11-25 08:58:13'),
-(520, 320, 'LOGI-G304-BLK', 'Black', 990000.00, 60, 1, 1, '2025-11-25 08:58:13', '2025-11-25 08:58:13'),
+(520, 320, 'LOGI-G304-BLK', 'Black', 990000.00, 57, 1, 1, '2025-11-25 08:58:13', '2025-12-05 11:23:46'),
 (521, 321, 'RAZER-VIPER-ULT', 'Ultimate', 2990000.00, 30, 1, 1, '2025-11-25 08:58:13', '2025-11-25 08:58:13'),
 (522, 322, 'SS-RIVAL3-WL', 'Wireless', 1490000.00, 45, 1, 1, '2025-11-25 08:58:13', '2025-11-25 08:58:13'),
-(530, 330, 'HX-CLOUD2-RED', 'Red', 2390000.00, 35, 1, 1, '2025-11-25 08:58:13', '2025-11-25 08:58:13'),
-(531, 331, 'RAZER-BS-V2-PRO', 'Pro', 3990000.00, 20, 1, 1, '2025-11-25 08:58:13', '2025-11-25 08:58:13'),
+(530, 330, 'HX-CLOUD2-RED', 'Red', 2390000.00, 33, 1, 1, '2025-11-25 08:58:13', '2025-12-05 04:28:59'),
+(531, 331, 'RAZER-BS-V2-PRO', 'Pro', 3990000.00, 17, 1, 1, '2025-11-25 08:58:13', '2025-12-05 07:52:57'),
 (532, 332, 'SS-ARCTIS7-BLK', 'Black', 3290000.00, 28, 1, 1, '2025-11-25 08:58:13', '2025-11-25 08:58:13'),
 (540, 340, 'LOGI-Z906-51', '5.1 System', 6590000.00, 15, 1, 1, '2025-11-25 08:58:13', '2025-11-25 08:58:13'),
 (541, 341, 'CREA-PEB-V3', 'RGB', 690000.00, 80, 1, 1, '2025-11-25 08:58:13', '2025-11-25 08:58:13'),
@@ -1389,9 +1542,9 @@ CREATE TABLE `users` (
 
 INSERT INTO `users` (`user_id`, `username`, `email`, `password_hash`, `full_name`, `phone`, `role`, `is_active`, `created_at`, `updated_at`, `last_login`, `session_token`, `admin_session_token`, `user_session_token`) VALUES
 (5, 'admin1', 'admin1@gmail.com', '$2b$10$b9lCzWVznD4ZMQ1Y6/bOc.Jn6efXZS1Us.ZjYVv2PFgHkqKr1PD1.', 'aaa', '0123456789', 2, 0, '2025-11-05 09:18:39', '2025-11-23 11:21:43', NULL, NULL, NULL, NULL),
-(6, 'admin', 'admin@gmail.com', '$2b$10$84e9xqnTc50CPaf5pOldT.Ob9zW9/RVK.G3Whr.TdAncfRdE.UivG', 'admin', '0123456788', 2, 1, '2025-11-05 09:33:52', '2025-11-29 11:37:58', NULL, 'b69bfdf666d4c6d6db8a38aa39ce0aaf32bc8b812d7545f03399bdc9593ffa76', 'd1046f9362373bb36afea1ea74fe188942eee33c16ae1222475c077d1c126faf', NULL),
+(6, 'admin', 'admin@gmail.com', '$2b$10$84e9xqnTc50CPaf5pOldT.Ob9zW9/RVK.G3Whr.TdAncfRdE.UivG', 'admin', '0123456788', 2, 1, '2025-11-05 09:33:52', '2025-12-05 13:31:32', NULL, 'b69bfdf666d4c6d6db8a38aa39ce0aaf32bc8b812d7545f03399bdc9593ffa76', 'b9a238f65d7a564b6956f8f6b2933f76e2f1bcc44fe0842ba49e9e3d076f81d1', NULL),
 (17, 'ad1', 'ad1@gmail.com', '$2b$10$zE.RfZEcYf/th.S7Krdkmu/l0jDW7Nq3Ge9eP4lU78KVlVJzXCUwG', 'ad1', '0987676765', 2, 1, '2025-11-23 11:15:30', '2025-11-25 09:05:36', NULL, NULL, 'e5770a861273d29663ef4c6d20902fa4f370fc43a57b97c96014fd00bf9e8fc5', NULL),
-(20, 'tranthib671', 'thib@gmail.com', '$2b$10$KQc2staSc5WX/9OIkHi3reX8XJO8L51YDjK.N5YP5XpPaghoLS.rK', 'Trần Thị B', '0908787671', 0, 1, '2025-11-24 12:44:44', '2025-11-29 12:01:31', NULL, NULL, NULL, 'f7afbc249be0e5fb55144af81ec5ea2d68da3232886a488e8b5d247d60c50a81'),
+(20, 'tranthib671', 'thib@gmail.com', '$2b$10$KQc2staSc5WX/9OIkHi3reX8XJO8L51YDjK.N5YP5XpPaghoLS.rK', 'Trần Thị B', '0908787671', 0, 1, '2025-11-24 12:44:44', '2025-12-05 13:32:17', NULL, NULL, NULL, 'c3ac6df9e359d3fe014431231cfb4a9be06cf280bf6399acf1d6f8bef27e8679'),
 (21, 'nguyenvana561', 'vana@gmail.com', '$2b$10$AUdU1V0dW6n0Eh1tJ1Nw6.vvvjGnlWOCVmHPXSMuuDCFolwPwXrLO', 'Nguyễn Văn A', '0908786561', 0, 1, '2025-11-24 14:41:59', '2025-11-24 14:44:15', NULL, NULL, NULL, '1f6760867b1d28a485e386f364b7f9e4fe3498d6bace8650e6285242443d33ff'),
 (22, 'a', 'a@gmail.com', '$2b$10$VjJ5iRg7oZrR1NGGUr61muIe/mSd1OQxP7ic2akApHitC3XH14cK6', NULL, NULL, 0, 1, '2025-11-25 05:07:22', '2025-11-25 05:07:28', NULL, NULL, NULL, 'beb07304249a617ff8d169d1d778d5493e72513a5a7fde987f62c9314905cdeb');
 
@@ -1651,69 +1804,69 @@ CREATE TABLE `variant_images` (
 --
 
 INSERT INTO `variant_images` (`image_id`, `variant_id`, `image_url`, `alt_text`, `is_primary`, `display_order`, `created_at`) VALUES
-(66, 500, '/uploads/variants/500/27GN800-B-S-01.avif', NULL, 1, 1, '2025-11-29 12:35:44'),
-(67, 500, '/uploads/variants/500/27GN800-B-S-02.avif', NULL, 0, 2, '2025-11-29 12:35:44'),
-(68, 500, '/uploads/variants/500/27GN800-B-S-03.avif', NULL, 0, 3, '2025-11-29 12:35:44'),
-(69, 500, '/uploads/variants/500/27GN800-B-S-04.avif', NULL, 0, 4, '2025-11-29 12:35:44'),
-(70, 500, '/uploads/variants/500/27GN800-B-S-05.avif', NULL, 0, 5, '2025-11-29 12:35:44'),
-(71, 500, '/uploads/variants/500/27GN800-B-S-06.jpg', NULL, 0, 6, '2025-11-29 12:35:44'),
-(72, 500, '/uploads/variants/500/27GN800-B-S-07.avif', NULL, 0, 7, '2025-11-29 12:35:44'),
-(73, 502, '/uploads/variants/502/1.jpg', NULL, 1, 1, '2025-11-29 13:41:29'),
-(74, 502, '/uploads/variants/502/2.png', NULL, 0, 2, '2025-11-29 13:41:29'),
-(75, 502, '/uploads/variants/502/3.png', NULL, 0, 3, '2025-11-29 13:41:29'),
-(76, 502, '/uploads/variants/502/4.png', NULL, 0, 4, '2025-11-29 13:41:29'),
-(77, 502, '/uploads/variants/502/5.png', NULL, 0, 5, '2025-11-29 13:41:29'),
-(78, 502, '/uploads/variants/502/6.png', NULL, 0, 6, '2025-11-29 13:41:29'),
-(79, 502, '/uploads/variants/502/7.png', NULL, 0, 7, '2025-11-29 13:41:29'),
-(80, 512, '/uploads/variants/512/1.avif', NULL, 1, 1, '2025-11-29 13:42:10'),
-(81, 512, '/uploads/variants/512/2.avif', NULL, 0, 2, '2025-11-29 13:42:10'),
-(82, 512, '/uploads/variants/512/3.webp', NULL, 0, 3, '2025-11-29 13:42:10'),
-(83, 522, '/uploads/variants/522/1.webp', NULL, 1, 1, '2025-11-29 13:43:03'),
-(84, 522, '/uploads/variants/522/2.webp', NULL, 0, 2, '2025-11-29 13:43:03'),
-(85, 522, '/uploads/variants/522/3.webp', NULL, 0, 3, '2025-11-29 13:43:03'),
-(86, 522, '/uploads/variants/522/4.webp', NULL, 0, 4, '2025-11-29 13:43:03'),
-(87, 522, '/uploads/variants/522/5.webp', NULL, 0, 5, '2025-11-29 13:43:03'),
-(88, 532, '/uploads/variants/532/1.webp', NULL, 1, 1, '2025-11-29 13:43:22'),
-(89, 532, '/uploads/variants/532/2.webp', NULL, 0, 2, '2025-11-29 13:43:22'),
-(90, 532, '/uploads/variants/532/3.webp', NULL, 0, 3, '2025-11-29 13:43:22'),
-(91, 541, '/uploads/variants/541/1.jpg', NULL, 1, 1, '2025-11-29 13:43:53'),
-(92, 541, '/uploads/variants/541/2.jpg', NULL, 0, 2, '2025-11-29 13:43:53'),
-(93, 541, '/uploads/variants/541/3.jpg', NULL, 0, 3, '2025-11-29 13:43:53'),
-(94, 542, '/uploads/variants/542/1.webp', NULL, 1, 1, '2025-11-29 13:44:16'),
-(95, 542, '/uploads/variants/542/2.jpg', NULL, 0, 2, '2025-11-29 13:44:16'),
-(96, 542, '/uploads/variants/542/3.jpg', NULL, 0, 3, '2025-11-29 13:44:16'),
-(97, 552, '/uploads/variants/552/1.png', NULL, 1, 1, '2025-11-29 13:44:44'),
-(98, 552, '/uploads/variants/552/2.png', NULL, 0, 2, '2025-11-29 13:44:44'),
-(99, 552, '/uploads/variants/552/3.png', NULL, 0, 3, '2025-11-29 13:44:44'),
-(100, 561, '/uploads/variants/561/1.avif', NULL, 1, 1, '2025-11-29 13:45:14'),
-(101, 561, '/uploads/variants/561/2.avif', NULL, 0, 2, '2025-11-29 13:45:14'),
-(102, 561, '/uploads/variants/561/3.avif', NULL, 0, 3, '2025-11-29 13:45:14'),
-(103, 562, '/uploads/variants/562/1.avif', NULL, 1, 1, '2025-11-29 13:45:23'),
-(104, 501, '/uploads/variants/501/1.jpg', NULL, 1, 1, '2025-11-29 14:22:51'),
-(105, 501, '/uploads/variants/501/2.jpg', NULL, 0, 2, '2025-11-29 14:22:51'),
-(106, 501, '/uploads/variants/501/3.jpg', NULL, 0, 3, '2025-11-29 14:22:51'),
-(107, 510, '/uploads/variants/510/1.jpg', NULL, 1, 1, '2025-11-29 14:23:26'),
-(108, 510, '/uploads/variants/510/2.jpg', NULL, 0, 2, '2025-11-29 14:23:26'),
-(109, 510, '/uploads/variants/510/3.jpg', NULL, 0, 3, '2025-11-29 14:23:26'),
-(110, 511, '/uploads/variants/511/1.jpg', NULL, 1, 1, '2025-11-29 14:23:58'),
-(111, 511, '/uploads/variants/511/2.jpg', NULL, 0, 2, '2025-11-29 14:23:58'),
-(112, 511, '/uploads/variants/511/3.jpg', NULL, 0, 3, '2025-11-29 14:23:58'),
-(113, 511, '/uploads/variants/511/4.jpg', NULL, 0, 4, '2025-11-29 14:23:58'),
-(114, 520, '/uploads/variants/520/1.jpg', NULL, 1, 1, '2025-11-29 14:24:22'),
-(115, 520, '/uploads/variants/520/2.jpg', NULL, 0, 2, '2025-11-29 14:24:22'),
-(116, 520, '/uploads/variants/520/3.jpg', NULL, 0, 3, '2025-11-29 14:24:22'),
-(117, 520, '/uploads/variants/520/4.jpg', NULL, 0, 4, '2025-11-29 14:24:22'),
-(118, 521, '/uploads/variants/521/1.jpg', NULL, 1, 1, '2025-11-29 14:24:36'),
-(119, 521, '/uploads/variants/521/2.jpg', NULL, 0, 2, '2025-11-29 14:24:36'),
-(120, 521, '/uploads/variants/521/3.jpg', NULL, 0, 3, '2025-11-29 14:24:36'),
-(121, 521, '/uploads/variants/521/4.jpg', NULL, 0, 4, '2025-11-29 14:24:36'),
-(122, 530, '/uploads/variants/530/1.jpg', NULL, 1, 1, '2025-11-29 14:26:07'),
-(123, 530, '/uploads/variants/530/2.jpg', NULL, 0, 2, '2025-11-29 14:26:07'),
-(124, 530, '/uploads/variants/530/3.jpg', NULL, 0, 3, '2025-11-29 14:26:07'),
-(125, 530, '/uploads/variants/530/4.jpg', NULL, 0, 4, '2025-11-29 14:26:07'),
-(126, 531, '/uploads/variants/531/1.jpg', NULL, 1, 1, '2025-11-29 14:26:22'),
-(127, 531, '/uploads/variants/531/2.jpg', NULL, 0, 2, '2025-11-29 14:26:22'),
-(128, 531, '/uploads/variants/531/3.jpg', NULL, 0, 3, '2025-11-29 14:26:22');
+(134, 500, '/uploads/variants/500/27GN800-B-S-01.jpg', 'LG 27GN800 Front View', 1, 1, '2025-12-03 03:50:42'),
+(135, 500, '/uploads/variants/500/27GN800-B-S-02.jpg', 'LG 27GN800 Side View', 0, 2, '2025-12-03 03:50:42'),
+(136, 500, '/uploads/variants/500/27GN800-B-S-03.jpg', 'LG 27GN800 Back View', 0, 3, '2025-12-03 03:50:42'),
+(137, 500, '/uploads/variants/500/27GN800-B-S-04.jpg', 'LG 27GN800 Detail', 0, 4, '2025-12-03 03:50:42'),
+(138, 500, '/uploads/variants/500/27GN800-B-S-05.jpg', 'LG 27GN800 Stand', 0, 5, '2025-12-03 03:50:42'),
+(139, 500, '/uploads/variants/500/27GN800-B-S-07.jpg', 'LG 27GN800 Port', 0, 6, '2025-12-03 03:50:42'),
+(140, 500, '/uploads/variants/500/27GN800-B-S-08.jpg', 'LG 27GN800 Display', 0, 7, '2025-12-03 03:50:42'),
+(141, 501, '/uploads/variants/501/1.jpg', 'Image 1', 1, 1, '2025-12-03 03:50:42'),
+(142, 501, '/uploads/variants/501/2.jpg', 'Image 2', 0, 2, '2025-12-03 03:50:42'),
+(143, 501, '/uploads/variants/501/3.jpg', 'Image 3', 0, 3, '2025-12-03 03:50:42'),
+(144, 502, '/uploads/variants/502/1.jpg', 'Image 1', 1, 1, '2025-12-03 03:50:42'),
+(145, 502, '/uploads/variants/502/2.png', 'Image 2', 0, 2, '2025-12-03 03:50:42'),
+(146, 502, '/uploads/variants/502/3.png', 'Image 3', 0, 3, '2025-12-03 03:50:42'),
+(147, 502, '/uploads/variants/502/4.png', 'Image 4', 0, 4, '2025-12-03 03:50:42'),
+(148, 502, '/uploads/variants/502/5.png', 'Image 5', 0, 5, '2025-12-03 03:50:42'),
+(149, 502, '/uploads/variants/502/6.png', 'Image 6', 0, 6, '2025-12-03 03:50:42'),
+(150, 502, '/uploads/variants/502/7.png', 'Image 7', 0, 7, '2025-12-03 03:50:42'),
+(151, 510, '/uploads/variants/510/1.png', 'Image 1', 1, 1, '2025-12-03 03:50:43'),
+(152, 510, '/uploads/variants/510/2.jpg', 'Image 2', 0, 2, '2025-12-03 03:50:43'),
+(153, 510, '/uploads/variants/510/3.jpg', 'Image 3', 0, 3, '2025-12-03 03:50:43'),
+(154, 511, '/uploads/variants/511/1.jpg', 'Image 1', 1, 1, '2025-12-03 03:50:43'),
+(155, 511, '/uploads/variants/511/2.jpg', 'Image 2', 0, 2, '2025-12-03 03:50:43'),
+(156, 511, '/uploads/variants/511/3.jpg', 'Image 3', 0, 3, '2025-12-03 03:50:43'),
+(157, 511, '/uploads/variants/511/4.jpg', 'Image 4', 0, 4, '2025-12-03 03:50:43'),
+(158, 512, '/uploads/variants/512/1.jpg', 'Image 1', 1, 1, '2025-12-03 03:50:43'),
+(159, 512, '/uploads/variants/512/2.jpg', 'Image 2', 0, 2, '2025-12-03 03:50:43'),
+(160, 512, '/uploads/variants/512/3.jpg', 'Image 3', 0, 3, '2025-12-03 03:50:43'),
+(161, 520, '/uploads/variants/520/1.png', 'Image 1', 1, 1, '2025-12-03 03:50:43'),
+(162, 520, '/uploads/variants/520/2.png', 'Image 2', 0, 2, '2025-12-03 03:50:43'),
+(163, 520, '/uploads/variants/520/3.png', 'Image 3', 0, 3, '2025-12-03 03:50:43'),
+(164, 520, '/uploads/variants/520/4.png', 'Image 4', 0, 4, '2025-12-03 03:50:43'),
+(165, 521, '/uploads/variants/521/1.jpg', 'Image 1', 1, 1, '2025-12-03 03:50:43'),
+(166, 521, '/uploads/variants/521/2.jpg', 'Image 2', 0, 2, '2025-12-03 03:50:43'),
+(167, 521, '/uploads/variants/521/3.jpg', 'Image 3', 0, 3, '2025-12-03 03:50:43'),
+(168, 521, '/uploads/variants/521/4.jpg', 'Image 4', 0, 4, '2025-12-03 03:50:43'),
+(169, 522, '/uploads/variants/522/1.jpg', 'Image 1', 1, 1, '2025-12-03 03:50:43'),
+(170, 522, '/uploads/variants/522/2.jpg', 'Image 2', 0, 2, '2025-12-03 03:50:43'),
+(171, 522, '/uploads/variants/522/3.jpg', 'Image 3', 0, 3, '2025-12-03 03:50:43'),
+(172, 522, '/uploads/variants/522/4.jpg', 'Image 4', 0, 4, '2025-12-03 03:50:43'),
+(173, 522, '/uploads/variants/522/5.jpg', 'Image 5', 0, 5, '2025-12-03 03:50:43'),
+(174, 530, '/uploads/variants/530/1.jpg', 'Image 1', 1, 1, '2025-12-03 03:50:43'),
+(175, 530, '/uploads/variants/530/2.jpg', 'Image 2', 0, 2, '2025-12-03 03:50:43'),
+(176, 530, '/uploads/variants/530/3.jpg', 'Image 3', 0, 3, '2025-12-03 03:50:43'),
+(177, 530, '/uploads/variants/530/4.jpg', 'Image 4', 0, 4, '2025-12-03 03:50:43'),
+(178, 531, '/uploads/variants/531/1.jpg', 'Image 1', 1, 1, '2025-12-03 03:50:43'),
+(179, 531, '/uploads/variants/531/2.jpg', 'Image 2', 0, 2, '2025-12-03 03:50:43'),
+(180, 531, '/uploads/variants/531/3.jpg', 'Image 3', 0, 3, '2025-12-03 03:50:43'),
+(181, 532, '/uploads/variants/532/1.jpg', 'Image 1', 1, 1, '2025-12-03 03:50:43'),
+(182, 532, '/uploads/variants/532/2.jpg', 'Image 2', 0, 2, '2025-12-03 03:50:43'),
+(183, 532, '/uploads/variants/532/3.jpg', 'Image 3', 0, 3, '2025-12-03 03:50:43'),
+(184, 541, '/uploads/variants/541/1.jpg', 'Image 1', 1, 1, '2025-12-03 03:50:43'),
+(185, 541, '/uploads/variants/541/2.jpg', 'Image 2', 0, 2, '2025-12-03 03:50:43'),
+(186, 541, '/uploads/variants/541/3.jpg', 'Image 3', 0, 3, '2025-12-03 03:50:43'),
+(187, 542, '/uploads/variants/542/1.jpg', 'Image 1', 1, 1, '2025-12-03 03:50:43'),
+(188, 542, '/uploads/variants/542/2.jpg', 'Image 2', 0, 2, '2025-12-03 03:50:43'),
+(189, 542, '/uploads/variants/542/3.jpg', 'Image 3', 0, 3, '2025-12-03 03:50:43'),
+(190, 552, '/uploads/variants/552/1.png', 'Image 1', 1, 1, '2025-12-03 03:50:43'),
+(191, 552, '/uploads/variants/552/2.png', 'Image 2', 0, 2, '2025-12-03 03:50:43'),
+(192, 552, '/uploads/variants/552/3.png', 'Image 3', 0, 3, '2025-12-03 03:50:43'),
+(193, 561, '/uploads/variants/561/1.jpg', 'Image 1', 1, 1, '2025-12-03 03:50:43'),
+(194, 561, '/uploads/variants/561/2.jpg', 'Image 2', 0, 2, '2025-12-03 03:50:43'),
+(195, 561, '/uploads/variants/561/3.jpg', 'Image 3', 0, 3, '2025-12-03 03:50:43'),
+(196, 562, '/uploads/variants/562/1.jpg', 'Image 1', 1, 1, '2025-12-03 03:50:43');
 
 -- --------------------------------------------------------
 
@@ -2057,7 +2210,7 @@ ALTER TABLE `wishlist_items`
 -- AUTO_INCREMENT for table `addresses`
 --
 ALTER TABLE `addresses`
-  MODIFY `address_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=55;
+  MODIFY `address_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=68;
 
 --
 -- AUTO_INCREMENT for table `articles`
@@ -2099,13 +2252,13 @@ ALTER TABLE `build_items`
 -- AUTO_INCREMENT for table `carts`
 --
 ALTER TABLE `carts`
-  MODIFY `cart_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
+  MODIFY `cart_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
 
 --
 -- AUTO_INCREMENT for table `cart_items`
 --
 ALTER TABLE `cart_items`
-  MODIFY `cart_item_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=77;
+  MODIFY `cart_item_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=118;
 
 --
 -- AUTO_INCREMENT for table `categories`
@@ -2123,13 +2276,13 @@ ALTER TABLE `coupons`
 -- AUTO_INCREMENT for table `installments`
 --
 ALTER TABLE `installments`
-  MODIFY `installment_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=28;
+  MODIFY `installment_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=40;
 
 --
 -- AUTO_INCREMENT for table `installment_payments`
 --
 ALTER TABLE `installment_payments`
-  MODIFY `payment_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=46;
+  MODIFY `payment_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=82;
 
 --
 -- AUTO_INCREMENT for table `installment_policies`
@@ -2147,19 +2300,19 @@ ALTER TABLE `notifications`
 -- AUTO_INCREMENT for table `orders`
 --
 ALTER TABLE `orders`
-  MODIFY `order_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=49;
+  MODIFY `order_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=82;
 
 --
 -- AUTO_INCREMENT for table `order_items`
 --
 ALTER TABLE `order_items`
-  MODIFY `order_item_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=72;
+  MODIFY `order_item_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=110;
 
 --
 -- AUTO_INCREMENT for table `payments`
 --
 ALTER TABLE `payments`
-  MODIFY `payment_id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `payment_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=41;
 
 --
 -- AUTO_INCREMENT for table `posts`
@@ -2213,7 +2366,7 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `variant_images`
 --
 ALTER TABLE `variant_images`
-  MODIFY `image_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=129;
+  MODIFY `image_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=197;
 
 --
 -- AUTO_INCREMENT for table `warranty`

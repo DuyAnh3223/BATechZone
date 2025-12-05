@@ -66,10 +66,10 @@ const InstallmentPendingPage = () => {
           </div>
         </div>
         <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          Đơn hàng đang chờ xét duyệt
+          Đơn hàng đã được duyệt
         </h1>
         <p className="text-gray-600">
-          Hợp đồng trả góp của bạn đang được xem xét bởi quản trị viên
+          Hợp đồng trả góp của bạn đã được duyệt
         </p>
         <p className="text-sm text-gray-500 mt-2">
           Mã đơn hàng: <span className="font-semibold">#{orderId}</span>
@@ -255,7 +255,7 @@ const InstallmentPendingPage = () => {
           </Card>
 
           {/* Status Card */}
-          <Card className="bg-yellow-50 border-yellow-200">
+          {/* <Card className="bg-yellow-50 border-yellow-200">
             <CardContent className="pt-6">
               <div className="text-center space-y-4">
                 <div className="flex justify-center">
@@ -285,7 +285,7 @@ const InstallmentPendingPage = () => {
                 </div>
               </div>
             </CardContent>
-          </Card>
+          </Card> */}
 
           {/* Action Buttons */}
           <div className="space-y-3">

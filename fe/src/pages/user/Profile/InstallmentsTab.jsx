@@ -159,9 +159,10 @@ const InstallmentsTab = () => {
   
   const canPayDownPayment = (installment) => {
     if (!installment) return false;
-    // Chỉ cho phép thanh toán trả trước khi status = 'approved'
+    // Chỉ cho phép thanh toán trả trước khi status = 'approved', có down_payment > 0 và chưa thanh toán
     return installment.status === 'approved' && 
            installment.down_payment_status !== 'paid' &&
+           installment.down_payment_status !== 'not_required' &&
            installment.down_payment > 0;
   };
 
@@ -179,6 +180,10 @@ const InstallmentsTab = () => {
     if (installment.status === 'pending') {
       return 'Hợp đồng đang chờ admin duyệt. Bạn chưa thể thanh toán.';
     } else if (installment.status === 'approved') {
+      // Kiểm tra nếu không yêu cầu trả trước (down_payment = 0)
+      if (installment.down_payment_status === 'not_required' || installment.down_payment === 0) {
+        return 'Hợp đồng đã được duyệt và tự động kích hoạt (trả trước 0%). Bạn có thể thanh toán các kỳ theo lịch.';
+      }
       return 'Hợp đồng đã được duyệt. Vui lòng thanh toán trả trước để kích hoạt hợp đồng.';
     } else if (installment.status === 'rejected') {
       return 'Hợp đồng đã bị từ chối. Vui lòng liên hệ admin để biết thêm chi tiết.';

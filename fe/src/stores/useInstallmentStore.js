@@ -127,6 +127,30 @@ export const useInstallmentStore = create((set, get) => ({
         }
     },
 
+    // Lấy thông tin trả góp theo order_id (admin)
+    fetchInstallmentByOrderId: async (orderId) => {
+        set({ loading: true, error: null });
+        try {
+            const response = await installmentService.getInstallmentByOrderId(orderId);
+            const installmentData = response.data || response;
+            
+            set({ 
+                currentInstallment: installmentData,
+                loading: false 
+            });
+            
+            return response;
+        } catch (error) {
+            console.error('Error fetching installment by order_id:', error);
+            set({ error: error.message, loading: false });
+            // Don't show toast for 404 as it might be a normal case (non-installment order)
+            if (error.response?.status !== 404) {
+                toast.error(error.response?.data?.message || 'Lỗi khi lấy thông tin trả góp');
+            }
+            throw error;
+        }
+    },
+
     // Lấy danh sách trả góp của user hiện tại
     fetchMyInstallments: async () => {
         set({ loading: true, error: null });

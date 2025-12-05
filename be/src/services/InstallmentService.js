@@ -62,7 +62,7 @@ class InstallmentService {
                 interest_rate,
                 start_date,
                 end_date: endDateObj,
-                status: 'pending' // pending, approved, active, completed, cancelled
+                status: 'approved' // pending, approved, active, completed, cancelled
             });
 
             // Create installment payments
@@ -170,6 +170,49 @@ class InstallmentService {
             return installmentsWithPayments;
         } catch (error) {
             throw new Error(`SERVICELỗi lấy danh sách trả góp: ${error.message}`);
+        }
+    }
+
+    /**
+     * Lấy thông tin trả góp theo order_id
+     * @param {number} orderId 
+     * @returns {Object} Installment với danh sách payments
+     */
+    async getInstallmentByOrderId(orderId) {
+        try {
+            const rows = await query(
+                'SELECT * FROM installments WHERE order_id = ? LIMIT 1',
+                [orderId]
+            );
+            
+            if (rows.length === 0) {
+                return null;
+            }
+            
+            const installment = rows[0];
+            const payments = await InstallmentPayment.findAllPaymentsByInstallmentId(installment.installment_id);
+
+            // Calculate total amount paid
+            const totalPaidFromPayments = payments
+                .filter(p => p.status === 'paid')
+                .reduce((sum, p) => sum + parseFloat(p.amount || 0), 0);
+            
+            // Add down payment if paid
+            const downPaymentPaid = installment.down_payment_status === 'paid' 
+                ? parseFloat(installment.down_payment || 0) 
+                : 0;
+            
+            const totalPaid = totalPaidFromPayments + downPaymentPaid;
+            const outstandingPrincipal = parseFloat(installment.total_amount || 0) - totalPaid;
+
+            return {
+                ...installment,
+                payments,
+                total_paid: totalPaid,
+                outstanding_principal: Math.max(0, outstandingPrincipal)
+            };
+        } catch (error) {
+            throw new Error(`SERVICE Lỗi lấy thông tin trả góp theo order_id: ${error.message}`);
         }
     }
 
