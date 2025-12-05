@@ -127,7 +127,7 @@ const AdminOrder = () => {
 
   const sumPayments = (payments) => {
     if (!payments || !Array.isArray(payments)) return 0;
-    return payments.reduce((t, r) => t + (r.amount || 0), 0);
+    return payments.reduce((t, r) => t + parseFloat(r.amount || 0), 0);
   };
 
   const handleStatusChange = async (status) => {
@@ -591,15 +591,16 @@ const AdminOrder = () => {
                     <table className="min-w-[700px] w-full text-left">
                       <thead className="bg-gray-50">
                         <tr>
+                          <th className="px-4 py-2">Mã giao dịch</th>
                           <th className="px-4 py-2">Phương thức</th>
                           <th className="px-4 py-2">Trạng thái</th>
                           <th className="px-4 py-2 text-right">Số tiền</th>
-                          <th className="px-4 py-2">Mã giao dịch</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y">
                         {orderDetail.payments.map((p, index) => (
                           <tr key={p.payment_id || p.paymentId || `payment-${index}`}>
+                            <td className="px-4 py-2 font-mono text-sm">{p.transaction_id || p.transactionId || '-'}</td>
                             <td className="px-4 py-2">
                               {translatePaymentMethod(p.payment_method || p.paymentMethod)}
                             </td>
@@ -607,19 +608,17 @@ const AdminOrder = () => {
                               {translatePaymentStatus(p.payment_status || p.paymentStatus)}
                             </td>
                             <td className="px-4 py-2 text-right">
-                              {(p.amount || 0).toLocaleString('vi-VN')} ₫
+                              {parseFloat(p.amount || 0).toLocaleString('vi-VN')} ₫
                             </td>
-                            <td className="px-4 py-2">{p.transaction_id || p.transactionId || '-'}</td>
                           </tr>
                         ))}
-                        <tr>
-                          <td className="px-4 py-2" colSpan={2}>
-                            <span className="font-semibold">Tổng đã thanh toán</span>
+                        <tr className="bg-red-50">
+                          <td className="px-4 py-3" colSpan={3}>
+                            <span className="text-lg font-bold text-red-600">Tổng đã thanh toán</span>
                           </td>
-                          <td className="px-4 py-2 text-right font-semibold">
+                          <td className="px-4 py-3 text-right text-lg font-bold text-red-600">
                             {sumPayments(orderDetail.payments).toLocaleString('vi-VN')} ₫
                           </td>
-                          <td className="px-4 py-2"></td>
                         </tr>
                       </tbody>
                     </table>

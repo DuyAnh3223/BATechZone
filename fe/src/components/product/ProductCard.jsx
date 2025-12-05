@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import { useCartStore } from '@/stores/useCartStore';
 import { useCartItemStore } from '@/stores/useCartItemStore';
 import { useUserAuthStore } from '@/stores/useUserAuthStore';
-import { useVariantStore } from '@/stores/useVariantStore';
+import { variantService } from '@/services/variantService';
 import { useState, useEffect } from 'react';
 
 // Base URL for serving uploads
@@ -23,7 +23,7 @@ const ProductCard = ({ product }) => {
   const { getOrCreateCart } = useCartStore();
   const { addToCart } = useCartItemStore();
   const { user } = useUserAuthStore();
-  const { fetchVariantsByProductId, fetchVariantImages } = useVariantStore();
+  // Use local state instead of global store to avoid conflicts
   const [variantImages, setVariantImages] = useState([]);
   const [loadingImages, setLoadingImages] = useState(false);
 
@@ -60,7 +60,8 @@ const ProductCard = ({ product }) => {
     const loadVariantImages = async () => {
       try {
         setLoadingImages(true);
-        const variantsResponse = await fetchVariantsByProductId(productId);
+        // Call API directly instead of using global store
+        const variantsResponse = await variantService.getVariantsByProductId(productId);
         const variants = variantsResponse?.data || variantsResponse || [];
         
         if (variants && variants.length > 0) {
@@ -68,7 +69,7 @@ const ProductCard = ({ product }) => {
           if (firstVariant?.variant_id) {
             // Fetch images for the first variant
             try {
-              const imagesResponse = await fetchVariantImages(firstVariant.variant_id);
+              const imagesResponse = await variantService.getVariantImages(firstVariant.variant_id);
               const images = imagesResponse?.data || imagesResponse || [];
               setVariantImages(images);
             } catch (error) {
@@ -85,7 +86,7 @@ const ProductCard = ({ product }) => {
     };
 
     loadVariantImages();
-  }, [productId, fetchVariantsByProductId, fetchVariantImages]);
+  }, [productId]);
 
   const handleAddToCart = async (e) => {
     e.preventDefault();
@@ -95,10 +96,9 @@ const ProductCard = ({ product }) => {
       toast.error('Sản phẩm hiện đang hết hàng');
       return;
     }
-
     try {
-      // 1. Lấy variants của sản phẩm để tìm default variant
-      const variantsResponse = await fetchVariantsByProductId(productId);
+      // 1. Lấy variants của sản phẩm để tìm default variant - call API directly
+      const variantsResponse = await variantService.getVariantsByProductId(productId);
       const variants = variantsResponse?.data || variantsResponse || [];
       
       if (!variants || variants.length === 0) {

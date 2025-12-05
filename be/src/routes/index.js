@@ -16,6 +16,7 @@ import profileRoutes from './profileRoutes.js';
 import userRoutes from './userRoutes.js';
 import variantRoutes from './variantRoutes.js';
 import variantImageRoutes from './variantImageRoutes.js';
+import paymentRoutes from './paymentRoutes.js';
 
 
 
@@ -37,6 +38,7 @@ router.use('/user/profile', profileRoutes);
 router.use('/users', userRoutes);
 router.use('/variants', variantRoutes);
 router.use('/variant-images', variantImageRoutes);
+router.use('/payments', paymentRoutes);
 
 
 

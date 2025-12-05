@@ -23,12 +23,25 @@ const ProductDetail = () => {
   const { productId } = useParams();
   const navigate = useNavigate();
   const { currentProduct, loading, fetchProduct, increaseView } = useProductStore();
-  const { variants, loading: loadingVariants, fetchVariantsByProductId, fetchVariantImages, variantImages } = useVariantStore();
+  const { variants, loading: loadingVariants, fetchVariantsByProductId, fetchVariantImages, variantImages, clearVariantImages, clearVariants } = useVariantStore();
   const { getOrCreateCart } = useCartStore();
   const { addToCart } = useCartItemStore();
   const { user } = useUserAuthStore();
   const [quantity, setQuantity] = useState(1);
   const [selectedVariant, setSelectedVariant] = useState(null);
+
+  // Clear all data when product changes
+  useEffect(() => {
+    // Clear previous product's data
+    if (clearVariantImages) {
+      clearVariantImages();
+    }
+    if (clearVariants) {
+      clearVariants();
+    }
+    setSelectedVariant(null);
+    setQuantity(1);
+  }, [productId, clearVariantImages, clearVariants]);
 
   // Fetch product data
   useEffect(() => {
@@ -42,18 +55,22 @@ const ProductDetail = () => {
 
   // Set default variant when variants are loaded
   useEffect(() => {
-    if (variants && variants.length > 0 && !selectedVariant) {
+    if (variants && variants.length > 0) {
       const defaultVariant = variants.find(v => v.is_default) || variants[0];
+      // Always set default variant when variants change (new product loaded)
       setSelectedVariant(defaultVariant);
     }
-  }, [variants, selectedVariant]);
+  }, [variants]);
 
   // Fetch variant images when selected variant changes
   useEffect(() => {
     if (selectedVariant?.variant_id) {
+      console.log('🔍 ProductDetail: Fetching images for variant_id:', selectedVariant.variant_id);
+      console.log('🔍 ProductDetail: Product ID:', productId);
+      console.log('🔍 ProductDetail: Selected Variant:', selectedVariant);
       fetchVariantImages(selectedVariant.variant_id).catch(err => console.error('Error loading variant images:', err));
     }
-  }, [selectedVariant?.variant_id, fetchVariantImages]);
+  }, [selectedVariant?.variant_id, fetchVariantImages, productId]);
 
   const handleQuantityChange = (type) => {
     if (type === "increase") {
@@ -209,6 +226,7 @@ const ProductDetail = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Product Images */}
         <ProductImage
+          key={productId}
           imageUrl={productImage}
           productName={currentProduct.product_name}
           isActive={isActive}

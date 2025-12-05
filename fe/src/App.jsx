@@ -42,6 +42,8 @@ import AdminInstallmentPage from './pages/admin/InstallmentPage/AdminInstallment
 import Installment from './pages/user/InstallmentPage/Installment';
 import InstallmentCheckoutPage from './pages/user/InstallmentPage/InstallmentCheckoutPage';
 import InstallmentPendingPage from './pages/user/InstallmentPage/InstallmentPendingPage';
+import PaymentSuccess from './pages/user/PaymentSuccess';
+import PaymentCancel from './pages/user/PaymentCancel';
 
 function App() {
   return (
@@ -59,6 +61,8 @@ function App() {
             <Route path="installment" element={<Installment />} />
             <Route path="/installment/checkout" element={<InstallmentCheckoutPage />} />
             <Route path="/installment/pending" element={<InstallmentPendingPage />} />
+            <Route path="payment/success" element={<PaymentSuccess />} />
+            <Route path="payment/cancel" element={<PaymentCancel />} />
             <Route path="payment/:orderId" element={<Payment />} />
             <Route path="order-success/:orderId" element={<OrderSuccess />} />
             <Route path="orders" element={<Orders />} />

@@ -214,20 +214,33 @@ export const useVariantStore = create((set) => ({
 
     // Lấy images theo variant ID
     fetchVariantImages: async (variantId) => {
+        console.log('🖼️ Store: Fetching variant images for variant_id:', variantId);
         set({ loadingImages: true, error: null });
         try {
             const response = await variantService.getVariantImages(variantId);
             
             // API returns { success: true, data: [...] }
             const images = response.data || [];
+            console.log('🖼️ Store: Received', images.length, 'images:', images);
             
             set({ variantImages: images, loadingImages: false });
             return response;
         } catch (error) {
             const message = error.response?.data?.message || 'Không tải được ảnh biến thể';
+            console.error('🖼️ Store: Error fetching images:', error);
             set({ error: message, loadingImages: false });
             throw error;
         }
+    },
+
+    // Clear variant images
+    clearVariantImages: () => {
+        set({ variantImages: [], loadingImages: false });
+    },
+
+    // Clear variants
+    clearVariants: () => {
+        set({ variants: [], currentVariant: null, loading: false });
     },
 
     // Thêm image cho variant

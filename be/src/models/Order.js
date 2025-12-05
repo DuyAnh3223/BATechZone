@@ -71,8 +71,8 @@ class Order {
           orderNumber,
           orderData.addressId,
           orderData.couponId || null,
-          'pending',
-          'unpaid',
+          orderData.order_status || 'pending', // Sử dụng order_status từ orderData
+          orderData.payment_status || 'unpaid', // Sử dụng payment_status từ orderData
           subtotal,
           orderData.discountAmount || 0,
           orderData.shippingFee || 0,
@@ -122,6 +122,31 @@ class Order {
           [orderData.couponId]
         );
       }
+
+      // Tạo bản ghi payment
+      const paymentMethod = orderData.payment_method || orderData.paymentMethod || 'cod';
+      const paymentStatus = orderData.payment_status || 'pending';
+      const paymentGateway = paymentMethod === 'momo' ? 'momo' : null;
+      const paidAt = paymentStatus === 'paid' ? new Date() : null;
+      
+      // Tạo transaction_id tự động
+      const transactionId = orderData.transaction_id || `TXN${Date.now()}${Math.floor(Math.random() * 1000)}`;
+
+      await conn.query(
+        `INSERT INTO payments (
+          order_id, payment_method, payment_status, amount,
+          payment_gateway, transaction_id, paid_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [
+          orderId,
+          paymentMethod,
+          paymentStatus,
+          totalAmount,
+          paymentGateway,
+          transactionId,
+          paidAt
+        ]
+      );
 
       // Handle installment if payment method is installment
       if (orderData.paymentMethod === 'installment' && orderData.installmentDetails) {

@@ -12,16 +12,6 @@ import {
   DialogFooter,
   DialogDescription,
 } from '@/components/ui/dialog';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
 import { Plus, Edit, Trash2, Settings, AlertCircle, Info } from 'lucide-react';
 import { useInstallmentPolicyStore } from '@/stores/useInstallmentPolicyStore';
 import { toast } from 'sonner';
@@ -247,7 +237,7 @@ const InstallmentPolicies = () => {
                           </p>
                         )}
                         
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
+                        <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 text-sm">
                           <div className="flex items-center gap-2 p-2 bg-blue-50 rounded">
                             <span className="text-gray-600">Kỳ hạn:</span>
                             <span className="font-semibold text-blue-900">{policy.terms} tháng</span>
@@ -259,6 +249,10 @@ const InstallmentPolicies = () => {
                           <div className="flex items-center gap-2 p-2 bg-purple-50 rounded">
                             <span className="text-gray-600">Trả trước:</span>
                             <span className="font-semibold text-purple-900">≥ {policy.min_down_payment}%</span>
+                          </div>
+                          <div className="flex items-center gap-2 p-2 bg-purple-50 rounded">
+                            <span className="text-gray-600">Phí:</span>
+                            <span className="font-semibold text-purple-900"> {policy.installment_fee_percent}%</span>
                           </div>
                         </div>
                       </div>
@@ -494,57 +488,69 @@ const InstallmentPolicies = () => {
       </Dialog>
 
       {/* Confirmation Dialog for Save */}
-      <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Xác nhận {editingPolicy ? 'cập nhật' : 'tạo mới'}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {editingPolicy 
-                ? `Bạn có chắc chắn muốn cập nhật chính sách "${formData.name}"? Thay đổi này sẽ ảnh hưởng đến tất cả đơn hàng trả góp mới.`
-                : `Bạn có chắc chắn muốn tạo chính sách "${formData.name}"? Chính sách mới sẽ có sẵn cho khách hàng ngay lập tức.`
-              }
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Hủy</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmSave}>
-              Xác nhận {editingPolicy ? 'cập nhật' : 'tạo mới'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {showConfirmDialog && (
+        <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Xác nhận {editingPolicy ? 'cập nhật' : 'tạo mới'}</DialogTitle>
+              <DialogDescription>
+                {editingPolicy 
+                  ? `Bạn có chắc chắn muốn cập nhật chính sách "${formData.name}"? Thay đổi này sẽ ảnh hưởng đến tất cả đơn hàng trả góp mới.`
+                  : `Bạn có chắc chắn muốn tạo chính sách "${formData.name}"? Chính sách mới sẽ có sẵn cho khách hàng ngay lập tức.`
+                }
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="gap-2">
+              <Button variant="outline" onClick={() => setShowConfirmDialog(false)}>
+                Hủy
+              </Button>
+              <Button onClick={confirmSave}>
+                Xác nhận {editingPolicy ? 'cập nhật' : 'tạo mới'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
 
       {/* Confirmation Dialog for Delete */}
-      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2 text-red-600">
-              <AlertCircle className="w-5 h-5" />
-              Xác nhận xóa chính sách
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              Bạn có chắc chắn muốn xóa chính sách này? Hành động này không thể hoàn tác.
-              {deletingPolicyId && (
-                <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded">
-                  <p className="text-sm text-red-800 font-medium">
-                    Chính sách: {policies.find(p => p.policy_id === deletingPolicyId)?.name}
-                  </p>
-                </div>
-              )}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={loading}>Hủy</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={confirmDelete}
-              className="bg-red-600 hover:bg-red-700"
-              disabled={loading}
-            >
-              {loading ? 'Đang xóa...' : 'Xác nhận xóa'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {showDeleteDialog && (
+        <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-red-600">
+                <AlertCircle className="w-5 h-5" />
+                Xác nhận xóa chính sách
+              </DialogTitle>
+              <DialogDescription>
+                Bạn có chắc chắn muốn xóa chính sách này? Hành động này không thể hoàn tác.
+                {deletingPolicyId && (
+                  <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded">
+                    <p className="text-sm text-red-800 font-medium">
+                      Chính sách: {policies.find(p => p.policy_id === deletingPolicyId)?.name}
+                    </p>
+                  </div>
+                )}
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="gap-2">
+              <Button 
+                variant="outline" 
+                onClick={() => setShowDeleteDialog(false)}
+                disabled={loading}
+              >
+                Hủy
+              </Button>
+              <Button 
+                onClick={confirmDelete}
+                variant="destructive"
+                disabled={loading}
+              >
+                {loading ? 'Đang xóa...' : 'Xác nhận xóa'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 };

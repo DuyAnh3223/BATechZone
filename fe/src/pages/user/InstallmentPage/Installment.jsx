@@ -111,7 +111,7 @@ const Installment = () => {
   const downPaymentOptions = React.useMemo(() => {
     if (!selectedPolicy) return [];
     const minDown = selectedPolicy.min_down_payment;
-    const options = [20, 30, 40, 50, 60, 70, 80, 90, 100];
+    const options = [0,10,20, 30, 40, 50, 60, 70, 80];
     return options.filter(opt => opt >= minDown).map(opt => ({
       value: opt,
       label: `${opt}%`
