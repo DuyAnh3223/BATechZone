@@ -4,12 +4,14 @@ import { vi } from 'date-fns/locale';
 import { toast } from 'sonner';
 
 import { useInstallmentStore } from '@/stores/useInstallmentStore';
+import { useUserAuthStore } from '@/stores/useUserAuthStore';
 import InstallmentList from './components/InstallmentList';
 import InstallmentDetailDialog from './components/InstallmentDetailDialog';
 import PaymentDialog from './components/PaymentDialog';
 import DownPaymentDialog from './components/DownPaymentDialog';
 
 const InstallmentsTab = () => {
+  const { user } = useUserAuthStore();
   const { 
     installments, 
     loading, 
@@ -85,6 +87,59 @@ const InstallmentsTab = () => {
 
     setIsProcessing(true);
     try {
+      // Nếu chọn Momo (e_wallet), tạo payment link
+      if (paymentMethod === 'e_wallet') {
+        const amount = selectedInstallment.down_payment;
+        const description = `Thanh toán trả trước hợp đồng #${selectedInstallment.installment_id}`;
+        const buyerName = user?.full_name || user?.fullName || user?.username || 'Khách hàng';
+        const buyerEmail = user?.email || `user_${Date.now()}@batechzone.com`;
+        const buyerPhone = user?.phone || '0000000000';
+        const buyerAddress = 'BATechZone';
+        
+        // Lưu thông tin installment vào localStorage để xử lý sau khi thanh toán
+        localStorage.setItem('pending_installment_payment', JSON.stringify({
+          installmentId: selectedInstallment.installment_id,
+          type: 'down_payment',
+          amount: amount
+        }));
+
+        try {
+          const paymentResponse = await fetch('http://localhost:5001/api/payments/create-payment-link', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            credentials: 'include',
+            body: JSON.stringify({
+              amount,
+              description,
+              buyerName,
+              buyerEmail,
+              buyerPhone,
+              buyerAddress,
+              paymentType: 'wallet'
+            })
+          });
+
+          const result = await paymentResponse.json();
+
+          if (result.success && result.data?.checkoutUrl) {
+            toast.success('Đang chuyển đến trang thanh toán Momo...');
+            // Chuyển hướng đến trang thanh toán Momo
+            window.location.href = result.data.checkoutUrl;
+            return;
+          } else {
+            throw new Error(result.message || 'Không thể tạo link thanh toán Momo');
+          }
+        } catch (error) {
+          console.error('Momo payment error:', error);
+          toast.error(error.message || 'Không thể tạo link thanh toán Momo');
+          setIsProcessing(false);
+          return;
+        }
+      }
+
+      // Thanh toán bằng phương thức khác (bank_transfer, cod)
       const paymentNote = `Thanh toán trả trước qua ${paymentMethod === 'bank_transfer' ? 'Chuyển khoản' : paymentMethod === 'e_wallet' ? 'Ví điện tử' : 'Tiền mặt'}`;
       
       await makeDownPayment(selectedInstallment.installment_id, {
@@ -115,6 +170,67 @@ const InstallmentsTab = () => {
 
     setIsProcessing(true);
     try {
+      // Nếu chọn Momo (e_wallet), tạo payment link
+      if (paymentMethod === 'e_wallet') {
+        const amount = selectedPayment.payment_amount || selectedPayment.amount;
+        
+        // Validate amount
+        if (!amount || parseFloat(amount) <= 0) {
+          toast.error('Số tiền thanh toán không hợp lệ');
+          setIsProcessing(false);
+          return;
+        }
+        
+        const description = `Thanh toán kỳ ${selectedPayment.payment_no} - Hợp đồng #${selectedInstallment.installment_id}`;
+        const buyerName = user?.full_name || user?.fullName || user?.username || 'Khách hàng';
+        const buyerEmail = user?.email || `user_${Date.now()}@batechzone.com`;
+        const buyerPhone = user?.phone || '0000000000';
+        const buyerAddress = 'BATechZone';
+        
+        // Lưu thông tin installment payment vào localStorage
+        localStorage.setItem('pending_installment_payment', JSON.stringify({
+          installmentId: selectedInstallment.installment_id,
+          paymentId: selectedPayment.payment_id,
+          type: 'installment',
+          amount: amount
+        }));
+
+        try {
+          const paymentResponse = await fetch('http://localhost:5001/api/payments/create-payment-link', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            credentials: 'include',
+            body: JSON.stringify({
+              amount,
+              description,
+              buyerName,
+              buyerEmail,
+              buyerPhone,
+              buyerAddress,
+              paymentType: 'wallet'
+            })
+          });
+
+          const result = await paymentResponse.json();
+
+          if (result.success && result.data?.checkoutUrl) {
+            toast.success('Đang chuyển đến trang thanh toán Momo...');
+            window.location.href = result.data.checkoutUrl;
+            return;
+          } else {
+            throw new Error(result.message || 'Không thể tạo link thanh toán Momo');
+          }
+        } catch (error) {
+          console.error('Momo payment error:', error);
+          toast.error(error.message || 'Không thể tạo link thanh toán Momo');
+          setIsProcessing(false);
+          return;
+        }
+      }
+
+      // Thanh toán bằng phương thức khác (bank_transfer, cod)
       const paymentNote = `Thanh toán qua ${paymentMethod === 'bank_transfer' ? 'Chuyển khoản' : paymentMethod === 'e_wallet' ? 'Ví điện tử' : 'Tiền mặt'}`;
       
       await makePayment(selectedPayment.payment_id, {

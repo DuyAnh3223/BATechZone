@@ -33,6 +33,18 @@ export const createPaymentLink = async (req, res) => {
       });
     }
 
+    // Parse amount to integer (Momo chỉ nhận số nguyên)
+    const parsedAmount = Math.round(parseFloat(amount));
+    
+    if (isNaN(parsedAmount) || parsedAmount <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Số tiền không hợp lệ'
+      });
+    }
+
+    console.log('📊 Creating payment link with amount:', parsedAmount);
+
     // Tạo orderId và requestId unique
     const orderId = `BATECH_${Date.now()}`;
     const requestId = `REQ_${Date.now()}`;
@@ -49,7 +61,7 @@ export const createPaymentLink = async (req, res) => {
     })).toString('base64');
 
     // Tạo signature
-    const rawSignature = `accessKey=${MOMO_CONFIG.accessKey}&amount=${amount}&extraData=${extraData}&ipnUrl=${MOMO_CONFIG.ipnUrl}&orderId=${orderId}&orderInfo=${orderInfo}&partnerCode=${MOMO_CONFIG.partnerCode}&redirectUrl=${MOMO_CONFIG.redirectUrl}&requestId=${requestId}&requestType=${requestType}`;
+    const rawSignature = `accessKey=${MOMO_CONFIG.accessKey}&amount=${parsedAmount}&extraData=${extraData}&ipnUrl=${MOMO_CONFIG.ipnUrl}&orderId=${orderId}&orderInfo=${orderInfo}&partnerCode=${MOMO_CONFIG.partnerCode}&redirectUrl=${MOMO_CONFIG.redirectUrl}&requestId=${requestId}&requestType=${requestType}`;
     
     const signature = createMomoSignature(rawSignature);
 
@@ -58,7 +70,7 @@ export const createPaymentLink = async (req, res) => {
       partnerCode: MOMO_CONFIG.partnerCode,
       accessKey: MOMO_CONFIG.accessKey,
       requestId: requestId,
-      amount: amount.toString(),
+      amount: parsedAmount.toString(),
       orderId: orderId,
       orderInfo: orderInfo,
       redirectUrl: MOMO_CONFIG.redirectUrl,
@@ -90,7 +102,7 @@ export const createPaymentLink = async (req, res) => {
         await db.query(
           `INSERT INTO payments (order_id, payment_method, amount, payment_status, transaction_id) 
            VALUES (?, ?, ?, ?, ?)`,
-          [orderId, 'e_wallet', amount, 'pending', requestId]
+          [orderId, 'e_wallet', parsedAmount, 'pending', requestId]
         );
       } catch (dbError) {
         console.warn('Failed to save payment to database:', dbError.message);
@@ -108,10 +120,12 @@ export const createPaymentLink = async (req, res) => {
         }
       });
     } else {
-      throw new Error(momoResponse.message || 'Lỗi khi tạo thanh toán Momo');
+      console.error('❌ Momo API Error:', momoResponse);
+      throw new Error(momoResponse.message || momoResponse.localMessage || 'Lỗi khi tạo thanh toán Momo');
     }
   } catch (error) {
-    console.error('Error creating Momo payment:', error);
+    console.error('💥 Error creating Momo payment:', error);
+    console.error('Stack:', error.stack);
     res.status(500).json({
       success: false,
       message: 'Không thể tạo link thanh toán Momo',

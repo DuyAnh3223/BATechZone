@@ -29,7 +29,70 @@ const PaymentSuccess = () => {
       processedRef.current = true;
 
       try {
-        // Lấy thông tin pending order từ localStorage
+        // Kiểm tra xem có phải thanh toán trả góp không
+        const pendingInstallmentStr = localStorage.getItem('pending_installment_payment');
+        
+        if (pendingInstallmentStr) {
+          // Xử lý thanh toán trả góp
+          const pendingInstallment = JSON.parse(pendingInstallmentStr);
+          localStorage.removeItem('pending_installment_payment');
+          
+          try {
+            if (pendingInstallment.type === 'down_payment') {
+              // Thanh toán trả trước
+              const response = await fetch(`http://localhost:5001/api/installments/${pendingInstallment.installmentId}/pay-down-payment`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json'
+                },
+                credentials: 'include',
+                body: JSON.stringify({
+                  paid_date: new Date().toISOString(),
+                  note: 'Thanh toán trả trước qua Momo'
+                })
+              });
+              
+              if (!response.ok) throw new Error('Thanh toán trả trước thất bại');
+              
+              toast.success('Thanh toán trả trước thành công!');
+              setPaymentInfo({
+                orderCode: `Hợp đồng #${pendingInstallment.installmentId}`,
+                amount: pendingInstallment.amount,
+                type: 'down_payment'
+              });
+            } else if (pendingInstallment.type === 'installment') {
+              // Thanh toán từng kỳ
+              const response = await fetch(`http://localhost:5001/api/installments/payments/${pendingInstallment.paymentId}/pay`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json'
+                },
+                credentials: 'include',
+                body: JSON.stringify({
+                  paid_date: new Date().toISOString(),
+                  note: 'Thanh toán qua Momo'
+                })
+              });
+              
+              if (!response.ok) throw new Error('Thanh toán thất bại');
+              
+              toast.success('Thanh toán kỳ trả góp thành công!');
+              setPaymentInfo({
+                orderCode: `Hợp đồng #${pendingInstallment.installmentId}`,
+                amount: pendingInstallment.amount,
+                type: 'installment'
+              });
+            }
+          } catch (err) {
+            console.error('Error processing installment payment:', err);
+            setError('Không thể xử lý thanh toán trả góp. Vui lòng liên hệ hỗ trợ.');
+            toast.error('Lỗi khi xử lý thanh toán');
+          }
+          setLoading(false);
+          return;
+        }
+
+        // Xử lý thanh toán đơn hàng thông thường
         const pendingOrderStr = localStorage.getItem('pending_order');
         
         if (!pendingOrderStr) {
@@ -65,7 +128,8 @@ const PaymentSuccess = () => {
 
         setPaymentInfo({
           orderCode: response?.data?.orderId || response?.data?.order_id,
-          amount: pendingOrder.orderData.totalAmount
+          amount: pendingOrder.orderData.totalAmount,
+          type: 'order'
         });
         
         toast.success('Đơn hàng đã được tạo thành công!');
@@ -140,13 +204,21 @@ const PaymentSuccess = () => {
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-center text-gray-600">
-            Cảm ơn bạn đã thanh toán. Đơn hàng của bạn đang được xử lý.
+            {paymentInfo?.type === 'down_payment' 
+              ? 'Cảm ơn bạn đã thanh toán trả trước. Hợp đồng của bạn đã được kích hoạt.' 
+              : paymentInfo?.type === 'installment'
+              ? 'Cảm ơn bạn đã thanh toán. Kỳ trả góp đã được ghi nhận.'
+              : 'Cảm ơn bạn đã thanh toán. Đơn hàng của bạn đang được xử lý.'}
           </p>
           
           {paymentInfo && (
             <div className="bg-gray-50 p-4 rounded-lg space-y-2">
               <div className="flex justify-between">
-                <span className="text-gray-600">Mã đơn hàng:</span>
+                <span className="text-gray-600">
+                  {paymentInfo.type === 'down_payment' || paymentInfo.type === 'installment' 
+                    ? 'Hợp đồng:' 
+                    : 'Mã đơn hàng:'}
+                </span>
                 <span className="font-semibold">#{paymentInfo.orderCode}</span>
               </div>
               {paymentInfo.amount && (
@@ -172,7 +244,9 @@ const PaymentSuccess = () => {
               className="flex-1" 
               onClick={() => navigate('/profile')}
             >
-              Xem đơn hàng
+              {paymentInfo?.type === 'down_payment' || paymentInfo?.type === 'installment'
+                ? 'Xem hợp đồng'
+                : 'Xem đơn hàng'}
             </Button>
             <Button 
               variant="outline" 
