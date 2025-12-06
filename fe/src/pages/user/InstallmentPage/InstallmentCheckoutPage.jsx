@@ -121,16 +121,14 @@ const InstallmentCheckoutPage = () => {
         notes: formData.note || null,
         paymentMethod: 'installment',
         installmentDetails: {
-          months: selectedMonths,
+          months: selectedPolicy?.terms || selectedMonths,
           downPayment: calculation.downPaymentAmount,
-          monthlyPayment: calculation.monthlyPayment,
+          monthlyPayment: calculation.monthlyPaymentWithFee || calculation.monthlyPayment,
           totalWithInterest: calculation.totalPayment,
-          customerType: 'customer',
+          interestRate: selectedPolicy?.interest_rate || 0, // Lấy từ policy đã chọn
+          installmentFeePercent: selectedPolicy?.installment_fee_percent || 0, // Phí trả góp
+          policyId: selectedPolicy?.policy_id || null, // ID policy để tracking
           idNumber: formData.idNumber,
-          jobTitle: '',
-          salary: 0,
-          company: '',
-          taxId: '',
         },
       };
 

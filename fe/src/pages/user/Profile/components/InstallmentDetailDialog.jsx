@@ -90,42 +90,45 @@ const InstallmentDetailDialog = ({
                       <p className="text-xs text-gray-600 mb-1">Kỳ hạn</p>
                       <p className="font-bold text-lg">{installment.num_terms} tháng</p>
                     </div>
-                    <div className={`p-3 rounded-lg ${installment.down_payment_status === 'paid' ? 'bg-green-50 border-green-200' : 'bg-yellow-50 border-yellow-200'} border-2`}>
-                      <p className="text-xs text-gray-600 mb-1">Trả trước</p>
-                      <p className="font-bold text-lg text-green-600">
-                        {formatPrice(installment.down_payment)}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        ({Math.round((installment.down_payment / installment.total_amount) * 100)}%)
-                      </p>
-                      {installment.down_payment_status === 'paid' ? (
-                        <div className="mt-2">
-                          <Badge className="bg-green-100 text-green-800">Đã thanh toán</Badge>
-                          {installment.down_payment_date && (
-                            <p className="text-xs text-gray-600 mt-1">
-                              {formatDate(installment.down_payment_date)}
-                            </p>
-                          )}
-                        </div>
-                      ) : canPayDownPayment(installment) ? (
-                        <Button
-                          size="sm"
-                          onClick={onDownPaymentClick}
-                          className="mt-2 w-full bg-green-600 hover:bg-green-700"
-                        >
-                          <CreditCard className="h-4 w-4 mr-1" />
-                          Thanh toán trả trước
-                        </Button>
-                      ) : (
-                        <div className="mt-2">
-                          <Badge variant="outline" className="text-xs">
-                            {installment.status === 'pending' ? 'Chờ duyệt' : 
-                             installment.status === 'rejected' ? 'Đã từ chối' :
-                             installment.status === 'cancelled' ? 'Đã hủy' : 'Không khả dụng'}
-                          </Badge>
-                        </div>
-                      )}
-                    </div>
+                    {/* Chỉ hiển thị thẻ Trả trước nếu down_payment > 0 */}
+                    {installment.down_payment > 0 && installment.down_payment_status !== 'not_required' && (
+                      <div className={`p-3 rounded-lg ${installment.down_payment_status === 'paid' ? 'bg-green-50 border-green-200' : 'bg-yellow-50 border-yellow-200'} border-2`}>
+                        <p className="text-xs text-gray-600 mb-1">Trả trước</p>
+                        <p className="font-bold text-lg text-green-600">
+                          {formatPrice(installment.down_payment)}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          ({installment.interest_rate}%)
+                        </p>
+                        {installment.down_payment_status === 'paid' ? (
+                          <div className="mt-2">
+                            <Badge className="bg-green-100 text-green-800">Đã thanh toán</Badge>
+                            {installment.down_payment_date && (
+                              <p className="text-xs text-gray-600 mt-1">
+                                {formatDate(installment.down_payment_date)}
+                              </p>
+                            )}
+                          </div>
+                        ) : canPayDownPayment(installment) ? (
+                          <Button
+                            size="sm"
+                            onClick={onDownPaymentClick}
+                            className="mt-2 w-full bg-green-600 hover:bg-green-700"
+                          >
+                            <CreditCard className="h-4 w-4 mr-1" />
+                            Thanh toán trả trước
+                          </Button>
+                        ) : (
+                          <div className="mt-2">
+                            <Badge variant="outline" className="text-xs">
+                              {installment.status === 'pending' ? 'Chờ duyệt' : 
+                               installment.status === 'rejected' ? 'Đã từ chối' :
+                               installment.status === 'cancelled' ? 'Đã hủy' : 'Không khả dụng'}
+                            </Badge>
+                          </div>
+                        )}
+                      </div>
+                    )}
                     <div className="p-3 bg-purple-50 rounded-lg">
                       <p className="text-xs text-gray-600 mb-1">Góp mỗi tháng</p>
                       <p className="font-bold text-lg text-purple-600">

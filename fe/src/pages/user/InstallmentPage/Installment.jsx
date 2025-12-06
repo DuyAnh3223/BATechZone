@@ -111,7 +111,7 @@ const Installment = () => {
   const downPaymentOptions = React.useMemo(() => {
     if (!selectedPolicy) return [];
     const minDown = selectedPolicy.min_down_payment;
-    const options = [0,10,20, 30, 40, 50, 60, 70, 80];
+    const options = [0, 10, 20, 30, 40, 50, 60, 70, 80];
     return options.filter(opt => opt >= minDown).map(opt => ({
       value: opt,
       label: `${opt}%`
@@ -153,7 +153,7 @@ const Installment = () => {
 
     // Calculate installment fee
     const feePercent = selectedPolicy.installment_fee_percent || 0;
-    const totalFee = (totalAmount * feePercent) / 100;
+    const totalFee = (remainingAmount * feePercent) / 100;
     const monthlyFee = totalFee / selectedMonths;
     const monthlyPaymentWithFee = monthlyPayment + monthlyFee;
 

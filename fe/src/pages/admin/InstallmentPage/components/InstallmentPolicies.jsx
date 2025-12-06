@@ -138,7 +138,7 @@ const InstallmentPolicies = () => {
       errors.min_down_payment = 'Trả trước tối thiểu không được vượt quá 100%';
     }
 
-    // Phí trả góp (cho phép để trống, mặc định = 0)
+    // Phí trả góp ( mặc định = 0)
     if (formData.installment_fee_percent !== '') {
       const installmentFee = parseFloat(formData.installment_fee_percent);
       if (isNaN(installmentFee) || installmentFee < 0) {
