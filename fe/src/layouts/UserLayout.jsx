@@ -332,7 +332,19 @@ const UserLayout = () => {
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-4">
-            {/* Shopping Cart Icon - Circular with blue background */}
+              {/* News button (link to Blog) */}
+              <Button
+                variant="ghost"
+                size="sm"
+                asChild
+                className="hidden md:inline-flex items-center gap-2 px-3 py-2 rounded-md bg-white/90 text-gray-900 hover:bg-gray-100"
+              >
+                <Link to="/blog" className="flex items-center gap-2">
+                  <Tag className="w-4 h-4 text-gray-700" />
+                  <span className="text-sm font-medium">News</span>
+                </Link>
+              </Button>
+              {/* Shopping Cart Icon - Circular with blue background */}
               <CartDropdown cartItemsCount={cartItemsCount}>
                 <div
                   className="relative transition-all duration-300 ease-in-out inline-flex items-center justify-center cursor-pointer"

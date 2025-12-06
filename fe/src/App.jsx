@@ -4,6 +4,7 @@ import UserLayout from './layouts/UserLayout';
 import AdminLayout from './layouts/AdminLayout';
 import Home from './pages/user/Home';
 import Blog from './pages/user/Blog';
+import BlogDetail from './pages/user/BlogDetail';
 import BuildPC from './pages/user/BuildPC';
 import Cart from './pages/user/Cart';
 import Checkout from './pages/user/Checkout';
@@ -29,8 +30,8 @@ import AdminOrder from './pages/admin/AdminOrder';
 import AdminNotification from './pages/admin/AdminNotification';
 import AdminBuild from './pages/admin/AdminBuild';
 import AdminCategoryPage from './pages/admin/CategoryPage/AdminCategoryPage';
-import AdminPost from './pages/admin/AdminPost';
-import AdminPostDetail from './pages/admin/AdminPostDetail';
+import AdminPost from './pages/admin/AdminBlog';
+import AdminPostDetail from './pages/admin/AdminBlogDetail';
 import AdminWishlist from './pages/admin/AdminWishlist';
 import AdminPayment from './pages/admin/AdminPayment';
 import AdminServiceCenter from './pages/admin/AdminServiceCenter';
@@ -56,6 +57,7 @@ function App() {
             <Route index element={<Home />} />
             <Route path="build-pc" element={<BuildPC />} />
             <Route path="blog" element={<Blog />} />
+            <Route path="blog/:id" element={<BlogDetail />} />
             <Route path="cart" element={<Cart />} />
             <Route path="checkout" element={<Checkout />} />
             <Route path="installment" element={<Installment />} />

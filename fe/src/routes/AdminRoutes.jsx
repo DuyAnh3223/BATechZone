@@ -12,8 +12,9 @@ import AdminOrder from '../pages/admin/AdminOrder';
 import AdminNotification from '../pages/admin/AdminNotification';
 import AdminBuild from '../pages/admin/AdminBuild';
 import AdminCategory from '../pages/admin/AdminCategory_old';
-import AdminPost from '../pages/admin/AdminPost';
-import AdminPostDetail from '../pages/admin/AdminPostDetail';
+import AdminPost from '../pages/admin/AdminBlog';
+import AdminPostDetail from '../pages/admin/AdminBlogDetail';
+import AdminPostEditor from '../pages/admin/AdminPostEditor';
 import AdminWishlist from '../pages/admin/AdminWishlist';
 import AdminPayment from '../pages/admin/AdminPayment';
 import AdminRecentView from '../pages/admin/AdminRecentView';
@@ -36,6 +37,8 @@ const AdminRoutes = () => (
       <Route path="builds" element={<AdminBuild />} />
       <Route path="categories" element={<AdminCategory />} />
       <Route path="posts" element={<AdminPost />} />
+      <Route path="posts/new" element={<AdminPostEditor />} />
+      <Route path="posts/:postId/edit" element={<AdminPostEditor />} />
       <Route path="posts/:postId" element={<AdminPostDetail />} />
       <Route path="payments" element={<AdminPayment />} />
       <Route path="recent-views" element={<AdminRecentView />} />
