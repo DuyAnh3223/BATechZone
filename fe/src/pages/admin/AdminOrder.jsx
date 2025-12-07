@@ -326,6 +326,7 @@ const AdminOrder = () => {
               </thead>
               <tbody className="divide-y">
                 {orders.map((order, index) => {
+                  console.log("ORDER RAW:", order);
                   // Hỗ trợ cả camelCase và snake_case
                   const orderId = order.order_id || order.orderId;
                   const userId = order.user_id || order.userId;
@@ -335,7 +336,11 @@ const AdminOrder = () => {
                   const totalAmount = order.total_amount || order.totalAmount;
                   const createdAt = order.created_at || order.createdAt;
                   const updatedAt = order.updated_at || order.updatedAt;
+<<<<<<< HEAD
                   const isInstallment = order.isInstallment === 1 || order.isInstallment === true;
+=======
+                  const isInstallment = order.isInstallment;
+>>>>>>> 8116a3299d5da92996ee4efc30e718ea80d716b8
                   return (
                     <tr key={orderId || `order-${index}`} className="hover:bg-blue-50 transition">
                       <td className="px-4 py-3 font-medium text-gray-800">{orderId}</td>

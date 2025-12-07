@@ -41,6 +41,10 @@ class Order {
     this.coupon_code = data.coupon_code || null;
     this.discount_type = data.discount_type || null;
     this.discount_value = data.discount_value || null;
+    
+    // Check if order has installment (for list view) - EXISTS returns 0 or 1
+    this.isInstallment = Boolean(data.is_installment);
+    this.is_installment = Boolean(data.is_installment); // Keep snake_case for frontend compatibility
   }
 
   // ==================== STATIC METHODS (Factory & Queries) ====================
@@ -258,13 +262,11 @@ class Order {
         u.username, u.email, u.phone as user_phone,
         a.recipient_name, a.phone as recipient_phone, 
         a.address_line1, a.address_line2, a.city, a.district, a.ward,
-        c.coupon_code, c.discount_type, c.discount_value,
-        CASE WHEN i.installment_id IS NOT NULL THEN 1 ELSE 0 END as isInstallment
+        c.coupon_code, c.discount_type, c.discount_value
       FROM orders o
       LEFT JOIN users u ON o.user_id = u.user_id
       LEFT JOIN addresses a ON o.address_id = a.address_id
       LEFT JOIN coupons c ON o.coupon_id = c.coupon_id
-      LEFT JOIN installments i ON o.order_id = i.order_id
       WHERE o.order_id = ?`,
       [orderId]
     );
@@ -374,16 +376,23 @@ class Order {
         o.*,
         u.username, u.email,
         (SELECT COUNT(*) FROM order_items WHERE order_id = o.order_id) as item_count,
-        (SELECT payment_method FROM payments WHERE order_id = o.order_id LIMIT 1) as payment_method,
-        CASE WHEN i.installment_id IS NOT NULL THEN 1 ELSE 0 END as isInstallment
+        EXISTS(SELECT 1 FROM installments WHERE order_id = o.order_id) as is_installment
       FROM orders o
       LEFT JOIN users u ON o.user_id = u.user_id
-      LEFT JOIN installments i ON o.order_id = i.order_id
       WHERE ${conditions.join(' AND ')}
       ORDER BY o.${sortBy} ${sortOrder}
       LIMIT ? OFFSET ?`,
       values
     );
+    
+    // Debug: Log first order to check is_installment value
+    if (orders.length > 0) {
+      console.log('Sample order from query:', {
+        order_id: orders[0].order_id,
+        is_installment: orders[0].is_installment,
+        is_installment_type: typeof orders[0].is_installment
+      });
+    }
 
     const [count] = await db.query(
       `SELECT COUNT(*) as total

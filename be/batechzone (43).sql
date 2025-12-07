@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Dec 05, 2025 at 02:33 PM
+-- Generation Time: Dec 07, 2025 at 01:55 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -74,14 +74,12 @@ INSERT INTO `addresses` (`address_id`, `user_id`, `recipient_name`, `phone`, `ad
 --
 
 CREATE TABLE `articles` (
-  `article_id` int(11) NOT NULL,
-  `post_id` int(11) NOT NULL,
-  `category_id` int(11) DEFAULT NULL,
-  `tags` varchar(255) DEFAULT NULL,
-  `meta_title` varchar(255) DEFAULT NULL,
-  `meta_description` varchar(500) DEFAULT NULL,
-  `reading_time` int(11) DEFAULT NULL COMMENT 'Thời gian đọc (phút)',
-  `seo_keywords` varchar(255) DEFAULT NULL
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `slug` varchar(255) NOT NULL,
+  `description` text DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  `updated_at` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -1243,21 +1241,38 @@ INSERT INTO `payments` (`payment_id`, `order_id`, `payment_method`, `payment_sta
 --
 
 CREATE TABLE `posts` (
-  `post_id` int(11) NOT NULL,
-  `user_id` int(11) NOT NULL,
+  `id` bigint(20) UNSIGNED NOT NULL,
   `title` varchar(255) NOT NULL,
   `slug` varchar(255) NOT NULL,
-  `content` text NOT NULL,
   `excerpt` text DEFAULT NULL,
-  `featured_image` varchar(255) DEFAULT NULL,
-  `post_type` enum('blog','news','guide','review') DEFAULT 'blog',
-  `status` enum('draft','published','archived') DEFAULT 'draft',
-  `view_count` int(11) DEFAULT 0,
-  `like_count` int(11) DEFAULT 0,
-  `comment_count` int(11) DEFAULT 0,
-  `published_at` timestamp NULL DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `content_html` longtext NOT NULL,
+  `content_text` longtext DEFAULT NULL,
+  `author_id` bigint(20) UNSIGNED DEFAULT NULL,
+  `article_id` bigint(20) UNSIGNED DEFAULT NULL,
+  `status` enum('draft','published','archived') NOT NULL DEFAULT 'draft',
+  `featured_image_id` bigint(20) UNSIGNED DEFAULT NULL,
+  `view_count` int(10) UNSIGNED NOT NULL DEFAULT 0,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  `updated_at` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `post_images`
+--
+
+CREATE TABLE `post_images` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `post_id` bigint(20) UNSIGNED DEFAULT NULL,
+  `url` varchar(1024) NOT NULL,
+  `filename` varchar(512) NOT NULL,
+  `mime` varchar(100) DEFAULT NULL,
+  `size` int(10) UNSIGNED DEFAULT NULL,
+  `is_featured` tinyint(1) NOT NULL DEFAULT 0,
+  `sort_order` int(11) NOT NULL DEFAULT 0,
+  `uploaded_by` bigint(20) UNSIGNED DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -1542,7 +1557,7 @@ CREATE TABLE `users` (
 
 INSERT INTO `users` (`user_id`, `username`, `email`, `password_hash`, `full_name`, `phone`, `role`, `is_active`, `created_at`, `updated_at`, `last_login`, `session_token`, `admin_session_token`, `user_session_token`) VALUES
 (5, 'admin1', 'admin1@gmail.com', '$2b$10$b9lCzWVznD4ZMQ1Y6/bOc.Jn6efXZS1Us.ZjYVv2PFgHkqKr1PD1.', 'aaa', '0123456789', 2, 0, '2025-11-05 09:18:39', '2025-11-23 11:21:43', NULL, NULL, NULL, NULL),
-(6, 'admin', 'admin@gmail.com', '$2b$10$84e9xqnTc50CPaf5pOldT.Ob9zW9/RVK.G3Whr.TdAncfRdE.UivG', 'admin', '0123456788', 2, 1, '2025-11-05 09:33:52', '2025-12-05 13:31:32', NULL, 'b69bfdf666d4c6d6db8a38aa39ce0aaf32bc8b812d7545f03399bdc9593ffa76', 'b9a238f65d7a564b6956f8f6b2933f76e2f1bcc44fe0842ba49e9e3d076f81d1', NULL),
+(6, 'admin', 'admin@gmail.com', '$2b$10$84e9xqnTc50CPaf5pOldT.Ob9zW9/RVK.G3Whr.TdAncfRdE.UivG', 'admin', '0123456788', 2, 1, '2025-11-05 09:33:52', '2025-12-07 00:32:09', NULL, 'b69bfdf666d4c6d6db8a38aa39ce0aaf32bc8b812d7545f03399bdc9593ffa76', 'abbf406851b0c78e47b6ed538dbf700e3e2b06f28645d3eb453bce83e2d9e668', NULL),
 (17, 'ad1', 'ad1@gmail.com', '$2b$10$zE.RfZEcYf/th.S7Krdkmu/l0jDW7Nq3Ge9eP4lU78KVlVJzXCUwG', 'ad1', '0987676765', 2, 1, '2025-11-23 11:15:30', '2025-11-25 09:05:36', NULL, NULL, 'e5770a861273d29663ef4c6d20902fa4f370fc43a57b97c96014fd00bf9e8fc5', NULL),
 (20, 'tranthib671', 'thib@gmail.com', '$2b$10$KQc2staSc5WX/9OIkHi3reX8XJO8L51YDjK.N5YP5XpPaghoLS.rK', 'Trần Thị B', '0908787671', 0, 1, '2025-11-24 12:44:44', '2025-12-05 13:32:17', NULL, NULL, NULL, 'c3ac6df9e359d3fe014431231cfb4a9be06cf280bf6399acf1d6f8bef27e8679'),
 (21, 'nguyenvana561', 'vana@gmail.com', '$2b$10$AUdU1V0dW6n0Eh1tJ1Nw6.vvvjGnlWOCVmHPXSMuuDCFolwPwXrLO', 'Nguyễn Văn A', '0908786561', 0, 1, '2025-11-24 14:41:59', '2025-11-24 14:44:15', NULL, NULL, NULL, '1f6760867b1d28a485e386f364b7f9e4fe3498d6bace8650e6285242443d33ff'),
@@ -1932,10 +1947,9 @@ ALTER TABLE `addresses`
 -- Indexes for table `articles`
 --
 ALTER TABLE `articles`
-  ADD PRIMARY KEY (`article_id`),
-  ADD UNIQUE KEY `post_id` (`post_id`),
-  ADD KEY `idx_post_id` (`post_id`),
-  ADD KEY `idx_category_id` (`category_id`);
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uq_articles_slug` (`slug`),
+  ADD KEY `idx_articles_name` (`name`);
 
 --
 -- Indexes for table `attributes`
@@ -2078,13 +2092,17 @@ ALTER TABLE `payments`
 -- Indexes for table `posts`
 --
 ALTER TABLE `posts`
-  ADD PRIMARY KEY (`post_id`),
-  ADD UNIQUE KEY `slug` (`slug`),
-  ADD KEY `idx_user_id` (`user_id`),
-  ADD KEY `idx_slug` (`slug`),
-  ADD KEY `idx_status` (`status`),
-  ADD KEY `idx_post_type` (`post_type`);
-ALTER TABLE `posts` ADD FULLTEXT KEY `idx_search` (`title`,`content`);
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uq_posts_slug` (`slug`),
+  ADD KEY `idx_posts_article` (`article_id`),
+  ADD KEY `idx_posts_author` (`author_id`);
+
+--
+-- Indexes for table `post_images`
+--
+ALTER TABLE `post_images`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_post_images_post` (`post_id`);
 
 --
 -- Indexes for table `products`
@@ -2216,7 +2234,7 @@ ALTER TABLE `addresses`
 -- AUTO_INCREMENT for table `articles`
 --
 ALTER TABLE `articles`
-  MODIFY `article_id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `attributes`
@@ -2318,7 +2336,13 @@ ALTER TABLE `payments`
 -- AUTO_INCREMENT for table `posts`
 --
 ALTER TABLE `posts`
-  MODIFY `post_id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `post_images`
+--
+ALTER TABLE `post_images`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `products`
@@ -2389,13 +2413,6 @@ ALTER TABLE `wishlists`
 --
 ALTER TABLE `addresses`
   ADD CONSTRAINT `addresses_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE;
-
---
--- Constraints for table `articles`
---
-ALTER TABLE `articles`
-  ADD CONSTRAINT `articles_ibfk_1` FOREIGN KEY (`post_id`) REFERENCES `posts` (`post_id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `articles_ibfk_2` FOREIGN KEY (`category_id`) REFERENCES `categories` (`category_id`) ON DELETE SET NULL;
 
 --
 -- Constraints for table `attribute_values`
@@ -2479,7 +2496,13 @@ ALTER TABLE `payments`
 -- Constraints for table `posts`
 --
 ALTER TABLE `posts`
-  ADD CONSTRAINT `posts_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`);
+  ADD CONSTRAINT `fk_posts_article` FOREIGN KEY (`article_id`) REFERENCES `articles` (`id`) ON DELETE SET NULL;
+
+--
+-- Constraints for table `post_images`
+--
+ALTER TABLE `post_images`
+  ADD CONSTRAINT `fk_post_images_post` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `products`
