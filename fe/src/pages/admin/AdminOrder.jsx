@@ -326,6 +326,7 @@ const AdminOrder = () => {
               </thead>
               <tbody className="divide-y">
                 {orders.map((order, index) => {
+                  console.log("ORDER RAW:", order);
                   // Hỗ trợ cả camelCase và snake_case
                   const orderId = order.order_id || order.orderId;
                   const userId = order.user_id || order.userId;
@@ -335,14 +336,14 @@ const AdminOrder = () => {
                   const totalAmount = order.total_amount || order.totalAmount;
                   const createdAt = order.created_at || order.createdAt;
                   const updatedAt = order.updated_at || order.updatedAt;
-                  
+                  const isInstallment = order.isInstallment;
                   return (
                     <tr key={orderId || `order-${index}`} className="hover:bg-blue-50 transition">
                       <td className="px-4 py-3 font-medium text-gray-800">{orderId}</td>
                       <td className="px-4 py-3">{userId || '-'}</td>
                       <td className="px-4 py-3 font-semibold text-blue-800">{orderNumber}</td>
                       <td className="px-4 py-3">
-                        {order.payment_method === 'installment' || order.paymentMethod === 'installment' ? (
+                        {isInstallment ? (
                           <span className="px-2 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-700 flex items-center gap-1 w-fit">
                             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
