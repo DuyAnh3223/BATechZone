@@ -27,8 +27,20 @@ export const useOrderStore = create((set) => ({
         try {
             const response = await orderService.getOrders(params);
             
+            console.log('=== FETCH ORDERS DEBUG ===');
+            console.log('Full API Response:', response);
+            console.log('Response.data:', response.data);
+            if (response.data && response.data.length > 0) {
+                console.log('First order sample:', response.data[0]);
+                console.log('First order keys:', Object.keys(response.data[0]));
+                console.log('First order isInstallment:', response.data[0].isInstallment);
+                console.log('First order is_installment:', response.data[0].is_installment);
+            }
+            
             // API trả về camelCase (orderId, orderNumber, etc.)
             const ordersData = Array.isArray(response.data) ? response.data : [];
+            
+            console.log('Setting orders to store with length:', ordersData.length);
             
             set({ 
                 orders: ordersData, 
@@ -49,6 +61,15 @@ export const useOrderStore = create((set) => ({
         try {
             const response = await orderService.getOrderById(orderId);
             const orderData = response.data || response;
+            
+            console.log('=== FETCH ORDER BY ID DEBUG ===');
+            console.log('Order ID:', orderId);
+            console.log('Full response:', response);
+            console.log('Order data:', orderData);
+            console.log('Order data keys:', Object.keys(orderData));
+            console.log('isInstallment value:', orderData.isInstallment, 'type:', typeof orderData.isInstallment);
+            console.log('is_installment value:', orderData.is_installment, 'type:', typeof orderData.is_installment);
+            
             set({ currentOrder: orderData, loading: false });
             return orderData;
         } catch (error) {

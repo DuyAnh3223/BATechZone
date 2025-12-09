@@ -95,8 +95,8 @@ const AdminOrder = () => {
       };
       const response = await fetchOrders(params);
       console.log('Orders response:', response);
-      console.log('Orders in store:', orders);
-      console.log('Pagination:', pagination);
+      // Don't log orders here - it's still old value
+      // Orders will be updated by the store after this function
     } catch (error) {
       console.error('Error loading orders:', error);
     }
@@ -327,6 +327,10 @@ const AdminOrder = () => {
               <tbody className="divide-y">
                 {orders.map((order, index) => {
                   console.log("ORDER RAW:", order);
+                  console.log("ORDER KEYS:", Object.keys(order));
+                  console.log("is_installment value:", order.is_installment, "type:", typeof order.is_installment);
+                  console.log("isInstallment value:", order.isInstallment, "type:", typeof order.isInstallment);
+                  
                   // Hỗ trợ cả camelCase và snake_case
                   const orderId = order.order_id || order.orderId;
                   const userId = order.user_id || order.userId;
@@ -336,11 +340,10 @@ const AdminOrder = () => {
                   const totalAmount = order.total_amount || order.totalAmount;
                   const createdAt = order.created_at || order.createdAt;
                   const updatedAt = order.updated_at || order.updatedAt;
-<<<<<<< HEAD
-                  const isInstallment = order.isInstallment === 1 || order.isInstallment === true;
-=======
-                  const isInstallment = order.isInstallment;
->>>>>>> 8116a3299d5da92996ee4efc30e718ea80d716b8
+                  const isInstallment = order.is_installment === 1 || order.isInstallment === 1 || order.isInstallment === true;
+                  
+                  console.log("Calculated isInstallment:", isInstallment);
+                  
                   return (
                     <tr key={orderId || `order-${index}`} className="hover:bg-blue-50 transition">
                       <td className="px-4 py-3 font-medium text-gray-800">{orderId}</td>

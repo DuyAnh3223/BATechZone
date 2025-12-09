@@ -43,8 +43,10 @@ class Order {
     this.discount_value = data.discount_value || null;
     
     // Check if order has installment (for list view) - EXISTS returns 0 or 1
-    this.isInstallment = Boolean(data.is_installment);
-    this.is_installment = Boolean(data.is_installment); // Keep snake_case for frontend compatibility
+    console.log('Order constructor - data.is_installment:', data.is_installment, 'order_id:', data.order_id);
+    this.isInstallment = data.is_installment === 1 || data.is_installment === true ? 1 : 0;
+    this.is_installment = data.is_installment === 1 || data.is_installment === true ? 1 : 0;
+    console.log('Order constructor - this.isInstallment:', this.isInstallment, 'this.is_installment:', this.is_installment);
   }
 
   // ==================== STATIC METHODS (Factory & Queries) ====================
@@ -262,7 +264,8 @@ class Order {
         u.username, u.email, u.phone as user_phone,
         a.recipient_name, a.phone as recipient_phone, 
         a.address_line1, a.address_line2, a.city, a.district, a.ward,
-        c.coupon_code, c.discount_type, c.discount_value
+        c.coupon_code, c.discount_type, c.discount_value,
+        EXISTS(SELECT 1 FROM installments WHERE order_id = o.order_id) as is_installment
       FROM orders o
       LEFT JOIN users u ON o.user_id = u.user_id
       LEFT JOIN addresses a ON o.address_id = a.address_id
@@ -392,6 +395,14 @@ class Order {
         is_installment: orders[0].is_installment,
         is_installment_type: typeof orders[0].is_installment
       });
+      
+      // Test constructor
+      const testOrder = new Order(orders[0]);
+      console.log('After Order constructor:', {
+        orderId: testOrder.orderId,
+        isInstallment: testOrder.isInstallment,
+        is_installment: testOrder.is_installment
+      });
     }
 
     const [count] = await db.query(
@@ -403,7 +414,34 @@ class Order {
     );
 
     return {
-      data: orders.map(order => new Order(order)),
+      data: orders.map(order => {
+        const orderInstance = new Order(order);
+        // Convert to plain object to ensure all properties are serialized
+        return {
+          orderId: orderInstance.orderId,
+          userId: orderInstance.userId,
+          orderNumber: orderInstance.orderNumber,
+          addressId: orderInstance.addressId,
+          couponId: orderInstance.couponId,
+          orderStatus: orderInstance.orderStatus,
+          paymentStatus: orderInstance.paymentStatus,
+          subtotal: orderInstance.subtotal,
+          discountAmount: orderInstance.discountAmount,
+          shippingFee: orderInstance.shippingFee,
+          taxAmount: orderInstance.taxAmount,
+          totalAmount: orderInstance.totalAmount,
+          notes: orderInstance.notes,
+          cancelledReason: orderInstance.cancelledReason,
+          createdAt: orderInstance.createdAt,
+          updatedAt: orderInstance.updatedAt,
+          confirmedAt: orderInstance.confirmedAt,
+          shippedAt: orderInstance.shippedAt,
+          deliveredAt: orderInstance.deliveredAt,
+          cancelledAt: orderInstance.cancelledAt,
+          isInstallment: orderInstance.isInstallment,
+          is_installment: orderInstance.is_installment
+        };
+      }),
       pagination: {
         total: count[0].total,
         page: parseInt(page),
