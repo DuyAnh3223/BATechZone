@@ -38,7 +38,8 @@ const InstallmentPolicies = () => {
     interest_rate: '',
     min_down_payment: '',
     description: '',
-    installment_fee_percent: ''
+    installment_fee_percent: '',
+    overdue_fee_percent: ''
   });
   const [formErrors, setFormErrors] = useState({});
 
@@ -55,7 +56,8 @@ const InstallmentPolicies = () => {
       interest_rate: '',
       min_down_payment: '',
       description: '',
-      installment_fee_percent: ''
+      installment_fee_percent: '',
+      overdue_fee_percent: ''
     });
     setFormErrors({});
     setShowDialog(true);
@@ -69,7 +71,8 @@ const InstallmentPolicies = () => {
       interest_rate: policy.interest_rate.toString(),
       min_down_payment: policy.min_down_payment.toString(),
       description: policy.description || '',
-      installment_fee_percent: policy.installment_fee_percent?.toString() || '0'
+      installment_fee_percent: policy.installment_fee_percent?.toString() || '0',
+      overdue_fee_percent: policy.overdue_fee_percent?.toString() || '0'
     });
     setFormErrors({});
     setShowDialog(true);
@@ -148,6 +151,16 @@ const InstallmentPolicies = () => {
       }
     }
 
+    // Phí quá hạn (mặc định = 0)
+    if (formData.overdue_fee_percent !== '') {
+      const overdueFee = parseFloat(formData.overdue_fee_percent);
+      if (isNaN(overdueFee) || overdueFee < 0) {
+        errors.overdue_fee_percent = 'Phí quá hạn phải lớn hơn hoặc bằng 0';
+      } else if (overdueFee > 100) {
+        errors.overdue_fee_percent = 'Phí quá hạn không được vượt quá 100%';
+      }
+    }
+
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -168,7 +181,8 @@ const InstallmentPolicies = () => {
         interest_rate: parseFloat(formData.interest_rate),
         min_down_payment: parseFloat(formData.min_down_payment),
         description: formData.description.trim(),
-        installment_fee_percent: formData.installment_fee_percent ? parseFloat(formData.installment_fee_percent) : 0
+        installment_fee_percent: formData.installment_fee_percent ? parseFloat(formData.installment_fee_percent) : 0,
+        overdue_fee_percent: formData.overdue_fee_percent ? parseFloat(formData.overdue_fee_percent) : 0
       };
 
       if (editingPolicy) {
@@ -237,7 +251,7 @@ const InstallmentPolicies = () => {
                           </p>
                         )}
                         
-                        <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 text-sm">
+                        <div className="grid grid-cols-1 sm:grid-cols-5 gap-3 text-sm">
                           <div className="flex items-center gap-2 p-2 bg-blue-50 rounded">
                             <span className="text-gray-600">Kỳ hạn:</span>
                             <span className="font-semibold text-blue-900">{policy.terms} tháng</span>
@@ -253,6 +267,10 @@ const InstallmentPolicies = () => {
                           <div className="flex items-center gap-2 p-2 bg-purple-50 rounded">
                             <span className="text-gray-600">Phí:</span>
                             <span className="font-semibold text-purple-900"> {policy.installment_fee_percent}%</span>
+                          </div>
+                          <div className="flex items-center gap-2 p-2 bg-purple-50 rounded">
+                            <span className="text-gray-600">Phí quá hạn:</span>
+                            <span className="font-semibold text-red-900"> {policy.overdue_fee_percent}%</span>
                           </div>
                         </div>
                       </div>
@@ -405,6 +423,33 @@ const InstallmentPolicies = () => {
               
               </div>
               
+              <div>
+                <Label htmlFor="overdue_fee_percent" className="flex items-center gap-1">
+                  Phí quá hạn (%)
+                </Label>
+                <Input
+                  id="overdue_fee_percent"
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.1"
+                  value={formData.overdue_fee_percent}
+                  onChange={(e) => {
+                    setFormData({ ...formData, overdue_fee_percent: e.target.value });
+                    if (formErrors.overdue_fee_percent) setFormErrors({ ...formErrors, overdue_fee_percent: '' });
+                  }}
+                  placeholder="0 (Mặc định nếu để trống)"
+                  className={formErrors.overdue_fee_percent ? 'border-red-500' : ''}
+                />
+                {formErrors.overdue_fee_percent && (
+                  <p className="text-sm text-red-500 mt-1 flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" />
+                    {formErrors.overdue_fee_percent}
+                  </p>
+                )}
+                <p className="text-xs text-gray-500 mt-1">Phí phạt khi trễ hạn thanh toán (Tùy chọn, mặc định: 0%)</p>
+              </div>
+              
 
               <div>
                 <Label htmlFor="interest_rate" className="flex items-center gap-1">
@@ -472,6 +517,7 @@ const InstallmentPolicies = () => {
                 <p>• Lãi suất: <span className="font-semibold">{formData.interest_rate || '0'}% / năm</span></p>
                 <p>• Trả trước: <span className="font-semibold">≥ {formData.min_down_payment || '0'}%</span></p>
                 <p>• Phí trả góp: <span className="font-semibold">{formData.installment_fee_percent || '0'}%</span></p>
+                <p>• Phí quá hạn: <span className="font-semibold">{formData.overdue_fee_percent || '0'}%</span></p>
               </div>
             </div>
           </div>

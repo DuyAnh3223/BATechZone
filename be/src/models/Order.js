@@ -159,8 +159,20 @@ class Order {
         const details = orderData.installmentDetails;
         
         try {
-          // Lấy interest_rate từ policy đã chọn (không hardcode theo customerType)
+          // Lấy interest_rate và overdue_fee_percent từ policy đã chọn
           const interestRate = details.interestRate || 0;
+          let overdueFeePercent = 0;
+          
+          // Nếu có policyId, lấy overdue_fee_percent từ database
+          if (details.policyId) {
+            const [policyRows] = await conn.query(
+              `SELECT overdue_fee_percent FROM installment_policies WHERE policy_id = ?`,
+              [details.policyId]
+            );
+            if (policyRows.length > 0) {
+              overdueFeePercent = policyRows[0].overdue_fee_percent || 0;
+            }
+          }
           
           // Use totalWithInterest from frontend calculation (includes interest)
           const totalWithInterest = details.totalWithInterest || totalAmount;
@@ -173,9 +185,20 @@ class Order {
           // Insert installment record
           const [installmentResult] = await conn.query(
             `INSERT INTO installments (
-              order_id, user_id, total_amount, down_payment, down_payment_status, num_terms, 
-              monthly_payment, interest_rate, policy_id, status, start_date, end_date
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), DATE_ADD(NOW(), INTERVAL ? MONTH))`,
+              order_id, 
+              user_id, 
+              total_amount, 
+              down_payment, 
+              down_payment_status, 
+              num_terms, 
+              monthly_payment, 
+              overdue_fee_percent_per_day, 
+              interest_rate, 
+              policy_id, 
+              status, 
+              start_date, 
+              end_date
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), DATE_ADD(NOW(), INTERVAL ? MONTH))`,
             [
               orderId,
               orderData.userId || null,
@@ -184,6 +207,7 @@ class Order {
               downPaymentStatus,
               details.months || 12,
               details.monthlyPayment || 0,
+              overdueFeePercent,
               interestRate,
               details.policyId || null,
               installmentStatus,
@@ -199,6 +223,7 @@ class Order {
             downPaymentStatus: downPaymentStatus,
             monthlyPayment: details.monthlyPayment,
             interestRate: interestRate,
+            overdueFeePercent: overdueFeePercent,
             installmentFeePercent: details.installmentFeePercent || 0,
             policyId: details.policyId,
             status: installmentStatus

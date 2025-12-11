@@ -9,6 +9,8 @@ class InstallmentPayment {
         this.paid_date = data.paid_date;
         this.amount = data.amount;
         this.status = data.status;
+        this.overdue_days = data.overdue_days;
+        this.overdue_fee = data.overdue_fee;
         this.note = data.note;
     }
 

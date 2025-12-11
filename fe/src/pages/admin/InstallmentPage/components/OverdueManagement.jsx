@@ -264,6 +264,17 @@ const OverdueManagement = () => {
                             ({item.overdue_count} kỳ)
                           </p>
                         </div>
+                        {item.overdue_fee && item.overdue_fee > 0 && (
+                          <div className="pt-2 border-t border-red-200">
+                            <p className="text-xs text-red-700 font-medium">Phí trễ hạn</p>
+                            <p className="text-sm font-bold text-red-600">
+                              {formatCurrency(item.overdue_fee)}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              ({item.overdue_fee_percent_per_day || 0.05}%/ngày)
+                            </p>
+                          </div>
+                        )}
                       </div>
                       <div className="flex gap-2 mt-3">
                         <Button 

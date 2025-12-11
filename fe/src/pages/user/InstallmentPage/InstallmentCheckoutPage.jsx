@@ -152,7 +152,7 @@ const InstallmentCheckoutPage = () => {
 
       if (response.success) {
         resetCartItems();
-        toast.success('Hợp đồng trả góp đã được gửi, đang chờ xét duyệt!');
+        // toast.success('Hợp đồng trả góp đã được gửi, đang chờ xét duyệt!');
         
         // Navigate to pending page with all data
         navigate('/installment/pending', {

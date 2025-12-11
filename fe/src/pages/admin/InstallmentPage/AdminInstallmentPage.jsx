@@ -33,11 +33,11 @@ const AdminInstallmentPage = () => {
             <Settings className="w-4 h-4" />
             <span>Chính sách</span>
           </TabsTrigger>
-          {/* <TabsTrigger value="overdue" className="flex items-center gap-2">
+           <TabsTrigger value="overdue" className="flex items-center gap-2">
             <AlertTriangle className="w-4 h-4" />
-            <span>Cảnh báo</span>
+            <span>Hợp đồng quá hạn</span>
           </TabsTrigger>
-          <TabsTrigger value="reports" className="flex items-center gap-2">
+         {/* <TabsTrigger value="reports" className="flex items-center gap-2">
             <BarChart3 className="w-4 h-4" />
             <span>Báo cáo</span>
           </TabsTrigger> */}
@@ -51,13 +51,13 @@ const AdminInstallmentPage = () => {
           <InstallmentPolicies />
         </TabsContent>
 
-        {/* <TabsContent value="overdue" className="space-y-4">
+        <TabsContent value="overdue" className="space-y-4">
           <OverdueManagement />
         </TabsContent>
 
-        <TabsContent value="reports" className="space-y-4">
+        {/* <TabsContent value="reports" className="space-y-4">
           <InstallmentReports />
-        </TabsContent> */}
+        </TabsContent>  */}
       </Tabs>
     </div>
   );

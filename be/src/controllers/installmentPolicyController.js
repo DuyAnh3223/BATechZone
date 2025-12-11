@@ -48,7 +48,8 @@ export const createPolicy = async (req, res) => {
             min_down_payment,
             description,
             is_active,
-            installment_fee_percent
+            installment_fee_percent,
+            overdue_fee_percent
         } = req.body;
 
         // Validation
@@ -85,6 +86,12 @@ export const createPolicy = async (req, res) => {
                 message: 'Phí trả góp phải từ 0% đến 100%'
             });
         }
+        if (overdue_fee_percent === undefined || overdue_fee_percent < 0 || overdue_fee_percent > 100) {
+            return res.status(400).json({
+                success: false,
+                message: 'Phí quá hạn phải từ 0% đến 100%'
+            });
+        }
 
         const policyData = {
             name: name.trim(),
@@ -93,7 +100,8 @@ export const createPolicy = async (req, res) => {
             min_down_payment: parseFloat(min_down_payment),
             description: description ? description.trim() : null,
             is_active: is_active !== undefined ? is_active : 1,
-            installment_fee_percent: parseFloat(installment_fee_percent)
+            installment_fee_percent: parseFloat(installment_fee_percent),
+            overdue_fee_percent: parseFloat(overdue_fee_percent)
         };
 
         const newPolicy = await InstallmentPolicy.create(policyData);
@@ -124,7 +132,8 @@ export const updatePolicy = async (req, res) => {
             min_down_payment,
             description,
             is_active,
-            installment_fee_percent
+            installment_fee_percent,
+            overdue_fee_percent
         } = req.body;
 
         // Validation
@@ -186,6 +195,15 @@ export const updatePolicy = async (req, res) => {
                 });
             }
             updateData.installment_fee_percent = parseFloat(installment_fee_percent);
+        }
+        if (overdue_fee_percent !== undefined) {
+            if (overdue_fee_percent < 0 || overdue_fee_percent > 100) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Phí quá hạn phải từ 0% đến 100%'
+                });
+            }
+            updateData.overdue_fee_percent = parseFloat(overdue_fee_percent);
         }
 
         if (Object.keys(updateData).length === 0) {

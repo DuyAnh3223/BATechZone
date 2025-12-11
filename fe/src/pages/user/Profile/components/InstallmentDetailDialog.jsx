@@ -154,6 +154,17 @@ const InstallmentDetailDialog = ({
                         {formatPrice(installment.total_with_interest || installment.total_amount)}
                       </p>
                     </div>
+                    {installment.total_overdue_fee > 0 && (
+                      <div className="p-3 border-2 border-red-300 bg-red-50 rounded-lg">
+                        <p className="text-sm text-red-700 mb-1 font-medium">⚠️ Tổng phí trễ hạn</p>
+                        <p className="font-bold text-xl text-red-600">
+                          {formatPrice(installment.total_overdue_fee)}
+                        </p>
+                        <p className="text-xs text-red-600 mt-1">
+                          Đã tự động cộng vào kỳ cuối
+                        </p>
+                      </div>
+                    )}
                     <div className="p-3 border rounded-lg">
                       <p className="text-sm text-gray-600 mb-1">Còn lại</p>
                       <p className="font-semibold text-blue-600">
@@ -239,6 +250,7 @@ const InstallmentDetailDialog = ({
                           <TableHead className="w-[80px]">Kỳ</TableHead>
                           <TableHead className="w-[120px]">Ngày đến hạn</TableHead>
                           <TableHead className="w-[140px]">Số tiền trả góp</TableHead>
+                          <TableHead className="w-[100px]">Phí trễ</TableHead>
                           <TableHead className="w-[150px]">Đã trả</TableHead>
                           <TableHead className="w-[140px]">Trạng thái</TableHead>
                           <TableHead className="text-right w-[140px]">Thao tác</TableHead>
@@ -246,13 +258,39 @@ const InstallmentDetailDialog = ({
                       </TableHeader>
                       <TableBody>
                         {installment.payments.map((payment) => (
-                          <TableRow key={payment.payment_id}>
+                          <TableRow key={payment.payment_id} className={payment.overdue_fee > 0 ? 'bg-red-50' : ''}>
                             <TableCell className="font-medium">
                               Kỳ {payment.payment_no || payment.term_number}
                             </TableCell>
-                            <TableCell>{formatDate(payment.due_date)}</TableCell>
+                            <TableCell>
+                              {formatDate(payment.due_date)}
+                              {payment.overdue_days > 0 && (
+                                <p className="text-xs text-red-600 font-medium mt-1">
+                                  Trễ {payment.overdue_days} ngày
+                                </p>
+                              )}
+                            </TableCell>
                             <TableCell className="font-semibold">
                               {formatPrice(payment.amount)}
+                              {payment.note && payment.note.includes('Phí trễ hạn:') && (
+                                <p className="text-xs text-red-600 mt-1">
+                                  (Đã bao gồm phí trễ)
+                                </p>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {payment.overdue_fee > 0 ? (
+                                <div className="text-red-600">
+                                  <p className="font-semibold">
+                                    {formatPrice(payment.overdue_fee)}
+                                  </p>
+                                  <p className="text-xs">
+                                    {payment.overdue_days} ngày
+                                  </p>
+                                </div>
+                              ) : (
+                                <span className="text-gray-400">-</span>
+                              )}
                             </TableCell>
                             <TableCell>
                               {payment.paid_date ? (

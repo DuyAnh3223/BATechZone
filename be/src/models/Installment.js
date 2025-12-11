@@ -12,6 +12,8 @@ class Installment {
         this.down_payment_note = data.down_payment_note;
         this.num_terms = data.num_terms;
         this.monthly_payment = data.monthly_payment;
+        this.overdue_fee_percent_per_day = data.overdue_fee_percent_per_day;
+        this.total_overdue_fee = data.total_overdue_fee;
         this.interest_rate = data.interest_rate;
         this.start_date = data.start_date;
         this.end_date = data.end_date;
@@ -54,7 +56,8 @@ class Installment {
                 total_amount, 
                 down_payment, 
                 num_terms, 
-                monthly_payment, 
+                monthly_payment,
+                overdue_fee_percent_per_day, 
                 interest_rate, 
                 start_date, 
                 end_date, 
@@ -69,12 +72,13 @@ class Installment {
                 total_amount, 
                 down_payment, 
                 num_terms, 
-                monthly_payment, 
+                monthly_payment,
+                overdue_fee_percent_per_day, 
                 interest_rate, 
                 start_date, 
                 end_date, 
                 status)
-                 VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                 VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                  [
                     installment_id,
                     order_id,
@@ -83,6 +87,7 @@ class Installment {
                     down_payment,
                     num_terms,
                     monthly_payment,
+                    overdue_fee_percent_per_day,
                     interest_rate,
                     start_date,
                     end_date,

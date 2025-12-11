@@ -84,6 +84,7 @@ const InstallmentList = ({
                 <TableHead>Góp/tháng</TableHead>
                 <TableHead>Kỳ hạn</TableHead>
                 <TableHead>Kỳ tiếp</TableHead>
+                <TableHead>Phí trễ</TableHead>
                 <TableHead>Còn lại</TableHead>
                 <TableHead>Trạng thái</TableHead>
                 <TableHead className="text-right">Thao tác</TableHead>
@@ -139,6 +140,20 @@ const InstallmentList = ({
                             {formatPrice(installment.next_payment_amount)}
                           </p>
                         )}
+                      </div>
+                    ) : (
+                      <span className="text-gray-400">-</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {installment.total_overdue_fee > 0 ? (
+                      <div className="text-red-600">
+                        <p className="font-bold">
+                          {formatPrice(installment.total_overdue_fee)}
+                        </p>
+                        <Badge variant="destructive" className="text-xs mt-1">
+                          Quá hạn
+                        </Badge>
                       </div>
                     ) : (
                       <span className="text-gray-400">-</span>

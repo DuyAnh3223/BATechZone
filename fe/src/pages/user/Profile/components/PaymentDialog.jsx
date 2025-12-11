@@ -46,9 +46,32 @@ const PaymentDialog = ({
               <span className="text-gray-600">Ngày đến hạn:</span>
               <span className="font-medium">{formatDate(payment.due_date)}</span>
             </div>
+            {payment.overdue_days > 0 && (
+              <div className="flex justify-between items-center p-2 bg-red-100 rounded">
+                <span className="text-red-700 font-medium">Số ngày trễ hạn:</span>
+                <span className="font-bold text-red-600">{payment.overdue_days} ngày</span>
+              </div>
+            )}
             <Separator />
             <div className="flex justify-between">
-              <span className="text-gray-600">Số tiền:</span>
+              <span className="text-gray-600">Số tiền gốc:</span>
+              <span className="font-semibold">
+                {formatPrice(payment.amount - (payment.overdue_fee || 0))}
+              </span>
+            </div>
+            {payment.overdue_fee > 0 && (
+              <>
+                <div className="flex justify-between">
+                  <span className="text-red-600">Phí trễ hạn:</span>
+                  <span className="font-semibold text-red-600">
+                    {formatPrice(payment.overdue_fee)}
+                  </span>
+                </div>
+                <Separator className="bg-red-200" />
+              </>
+            )}
+            <div className="flex justify-between">
+              <span className="text-gray-800 font-medium">Tổng thanh toán:</span>
               <span className="font-bold text-xl text-red-600">
                 {formatPrice(payment.amount)}
               </span>

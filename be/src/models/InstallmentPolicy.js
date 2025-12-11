@@ -10,6 +10,7 @@ class InstallmentPolicy {
         this.description = data.description;
         this.is_active = data.is_active;
         this.installment_fee_percent = data.installment_fee_percent;
+        this.overdue_fee_percent = data.overdue_fee_percent || 0;
     }
     static async listAllPolicies()
     {
@@ -32,7 +33,8 @@ class InstallmentPolicy {
                 min_down_payment,
                 description,
                 is_active,
-                installment_fee_percent
+                installment_fee_percent,
+                overdue_fee_percent
             } = data;
 
             const result = await query(
@@ -43,9 +45,10 @@ class InstallmentPolicy {
                 min_down_payment,
                 description,
                 is_active,
-                installment_fee_percent)
-                    VALUES(?, ?, ?, ?, ?, ?, ?)`,
-            [name, terms, interest_rate, min_down_payment, description, is_active, installment_fee_percent]
+                installment_fee_percent,
+                overdue_fee_percent)
+                    VALUES(?, ?, ?, ?, ?, ?, ?, ?)`,
+            [name, terms, interest_rate, min_down_payment, description, is_active, installment_fee_percent, overdue_fee_percent]
             );
 
             const rows = await query(

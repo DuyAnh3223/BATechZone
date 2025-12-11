@@ -1,4 +1,5 @@
 import InstallmentService from '../services/InstallmentService.js';
+import { addOverdueFeeToLastPayment } from '../utils/overdueCalculator.js';
 
 /**
  * Tạo khoản trả góp mới
@@ -600,6 +601,41 @@ export const generatePayments = async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Lỗi khi tạo kỳ thanh toán',
+            error: error.message
+        });
+    }
+};
+
+/**
+ * Cộng phí trễ hạn vào kỳ thanh toán cuối cùng (Admin only)
+ */
+export const addOverdueFeeToLast = async (req, res) => {
+    try {
+        const { installmentId } = req.params;
+
+        if (!installmentId) {
+            return res.status(400).json({
+                success: false,
+                message: 'Thiếu installment_id'
+            });
+        }
+
+        const result = await addOverdueFeeToLastPayment(parseInt(installmentId));
+
+        res.json({
+            success: true,
+            message: result.message,
+            data: {
+                feeAdded: result.feeAdded,
+                lastPaymentId: result.lastPaymentId,
+                newAmount: result.newAmount
+            }
+        });
+    } catch (error) {
+        console.error('Error adding overdue fee to last payment:', error);
+        res.status(500).json({
+            success: false,
+            message: error.message || 'Lỗi khi cộng phí trễ hạn vào kỳ cuối',
             error: error.message
         });
     }

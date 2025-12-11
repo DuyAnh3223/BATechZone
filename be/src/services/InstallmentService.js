@@ -2,6 +2,7 @@ import Installment from '../models/Installment.js';
 import InstallmentPayment from '../models/InstallmentPayment.js';
 import Order from '../models/Order.js';
 import { query } from '../libs/db.js';
+import { calculateAndUpdateOverdueFees } from '../utils/overdueCalculator.js';
 class InstallmentService {
     /**
      * Tạo mới một khoản trả góp
@@ -24,7 +25,9 @@ class InstallmentService {
                 down_payment,
                 num_terms,
                 interest_rate,
-                start_date
+                start_date,
+                overdue_fee_percent_per_day,
+                policy_id
             } = installmentData;
 
             // Calculate remaining amount after down payment
@@ -51,6 +54,18 @@ class InstallmentService {
             const endDateObj = new Date(startDateObj);
             endDateObj.setMonth(endDateObj.getMonth() + num_terms);
 
+            // Get overdue_fee_percent from policy if policy_id is provided
+            let finalOverdueFeePercent = overdue_fee_percent_per_day || 0;
+            if (policy_id && !overdue_fee_percent_per_day) {
+                const policyRows = await query(
+                    'SELECT overdue_fee_percent FROM installment_policies WHERE policy_id = ?',
+                    [policy_id]
+                );
+                if (policyRows.length > 0) {
+                    finalOverdueFeePercent = policyRows[0].overdue_fee_percent || 0;
+                }
+            }
+
             // Create installment
             const installment = await Installment.create({
                 order_id,
@@ -59,10 +74,11 @@ class InstallmentService {
                 down_payment,
                 num_terms,
                 monthly_payment,
+                overdue_fee_percent_per_day: finalOverdueFeePercent,
                 interest_rate,
                 start_date,
                 end_date: endDateObj,
-                status: 'approved' // pending, approved, active, completed, cancelled
+                status: 'approved' // pending, approved, active, completed, cancelled,overdue
             });
 
             // Create installment payments
@@ -100,6 +116,9 @@ class InstallmentService {
      */
     async getInstallmentById(installmentId) {
         try {
+            // ✨ Tự động tính phí trễ hạn trước khi trả về dữ liệu
+            await calculateAndUpdateOverdueFees(installmentId);
+            
             const installment = await Installment.findInstallmentById(installmentId);
             if (!installment) {
                 throw new Error(' SERVICE Không tìm thấy khoản trả góp');
@@ -138,7 +157,13 @@ class InstallmentService {
      */
     async getInstallmentsByUserId(userId) {
         try {
+            // ✨ Tự động tính phí trễ hạn cho tất cả hợp đồng của user
             const installments = await Installment.findAllInstallmentsByUserId(userId);
+            
+            // Tính phí cho từng hợp đồng
+            await Promise.all(
+                installments.map(inst => calculateAndUpdateOverdueFees(inst.installment_id))
+            );
 
             // Get payments for each installment and calculate total_paid
             const installmentsWithPayments = await Promise.all(
@@ -190,6 +215,10 @@ class InstallmentService {
             }
             
             const installment = rows[0];
+            
+            // ✨ Tự động tính phí trễ hạn trước khi trả về
+            await calculateAndUpdateOverdueFees(installment.installment_id);
+            
             const payments = await InstallmentPayment.findAllPaymentsByInstallmentId(installment.installment_id);
 
             // Calculate total amount paid
@@ -304,6 +333,10 @@ class InstallmentService {
      */
     async makePayment(paymentId, paymentData = {}) {
         try {
+            // ✨ Tính phí trễ hạn trước khi thanh toán để đảm bảo số liệu chính xác
+            const { calculatePaymentOverdueFee } = await import('../utils/overdueCalculator.js');
+            const overdueInfo = await calculatePaymentOverdueFee(paymentId);
+            
             const payment = await InstallmentPayment.findPaymentById(paymentId);
             if (!payment) {
                 throw new Error('SERVICE Không tìm thấy kỳ thanh toán');

@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Dec 07, 2025 at 01:55 AM
+-- Generation Time: Dec 11, 2025 at 12:04 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -65,7 +65,8 @@ INSERT INTO `addresses` (`address_id`, `user_id`, `recipient_name`, `phone`, `ad
 (64, 20, 'Trần Thị B', '0908787671', '32 Bùi Ngọ', NULL, 'hcm', 'Quận 7', NULL, NULL, 'Vietnam', 0, 'other', '2025-12-05 11:30:06', '2025-12-05 11:30:06'),
 (65, 20, 'Trần Thị B', '0908787671', '32 Bùi Ngọ', NULL, 'hanoi', 'Ba Đình', NULL, NULL, 'Vietnam', 0, 'other', '2025-12-05 11:50:25', '2025-12-05 11:50:25'),
 (66, 20, 'tranthib671', '0908787671', '32 Bùi Ngọ', NULL, 'hcm', 'Quận Bình Thạnh', NULL, NULL, 'Vietnam', 0, 'other', '2025-12-05 12:07:58', '2025-12-05 12:07:58'),
-(67, 20, 'Trần Thị B', '0908787671', '32 Bùi Ngọ', NULL, 'hcm', 'q1', NULL, NULL, 'Vietnam', 0, 'other', '2025-12-05 12:24:41', '2025-12-05 12:24:41');
+(67, 20, 'Trần Thị B', '0908787671', '32 Bùi Ngọ', NULL, 'hcm', 'q1', NULL, NULL, 'Vietnam', 0, 'other', '2025-12-05 12:24:41', '2025-12-05 12:24:41'),
+(68, 20, 'Trần Thị B', '0908787671', '32 Bùi Ngọ', NULL, 'hcm', 'Quận 3', NULL, NULL, 'Vietnam', 0, 'other', '2025-12-11 09:18:53', '2025-12-11 09:18:53');
 
 -- --------------------------------------------------------
 
@@ -767,7 +768,8 @@ INSERT INTO `carts` (`cart_id`, `user_id`, `session_id`, `created_at`, `updated_
 (10, 20, NULL, '2025-11-24 13:26:23', '2025-11-24 13:26:23', '2025-12-24 13:26:23'),
 (11, NULL, 'guest_1764417657819_1l2bl5eju', '2025-11-29 12:00:57', '2025-11-29 12:00:57', '2025-12-29 12:00:57'),
 (12, NULL, 'guest_1764904178852_7r4onzqri', '2025-12-05 03:09:38', '2025-12-05 03:09:38', '2026-01-04 03:09:38'),
-(13, NULL, 'guest_1764904178852_7r4onzqri', '2025-12-05 03:09:38', '2025-12-05 03:09:38', '2026-01-04 03:09:38');
+(13, NULL, 'guest_1764904178852_7r4onzqri', '2025-12-05 03:09:38', '2025-12-05 03:09:38', '2026-01-04 03:09:38'),
+(14, NULL, 'guest_1765438362367_iykvwb2wy', '2025-12-11 07:32:42', '2025-12-11 07:32:42', '2026-01-10 07:32:42');
 
 -- --------------------------------------------------------
 
@@ -791,7 +793,8 @@ CREATE TABLE `cart_items` (
 INSERT INTO `cart_items` (`cart_item_id`, `cart_id`, `variant_id`, `quantity`, `added_at`, `updated_at`) VALUES
 (69, 11, 501, 1, '2025-11-29 12:00:57', '2025-11-29 12:00:57'),
 (112, 1, 374, 1, '2025-12-05 11:29:20', '2025-12-05 11:29:20'),
-(117, 10, 510, 2, '2025-12-05 13:03:48', '2025-12-05 13:18:05');
+(118, 14, 501, 1, '2025-12-11 07:32:42', '2025-12-11 07:32:42'),
+(119, 10, 511, 1, '2025-12-11 09:41:35', '2025-12-11 09:41:35');
 
 -- --------------------------------------------------------
 
@@ -892,6 +895,8 @@ CREATE TABLE `installments` (
   `down_payment_note` text DEFAULT NULL,
   `num_terms` int(11) NOT NULL,
   `monthly_payment` decimal(12,2) NOT NULL,
+  `overdue_fee_percent_per_day` decimal(5,2) DEFAULT 0.00,
+  `total_overdue_fee` decimal(12,2) DEFAULT 0.00,
   `interest_rate` decimal(5,2) DEFAULT 0.00,
   `start_date` date NOT NULL,
   `end_date` date NOT NULL,
@@ -904,22 +909,9 @@ CREATE TABLE `installments` (
 -- Dumping data for table `installments`
 --
 
-INSERT INTO `installments` (`installment_id`, `order_id`, `user_id`, `total_amount`, `down_payment`, `down_payment_status`, `down_payment_date`, `down_payment_note`, `num_terms`, `monthly_payment`, `interest_rate`, `start_date`, `end_date`, `status`, `created_at`, `policy_id`) VALUES
-(25, 46, 20, 12099086.57, 2400000.00, 'paid', '2025-11-24 12:49:52', 'Thanh toán trả trước qua Chuyển khoản', 12, 808257.21, 2.20, '2025-11-24', '2026-11-24', 'active', '2025-11-24 12:44:44', NULL),
-(26, 47, 21, 12076160.32, 2400000.00, 'paid', '2025-11-24 14:44:46', 'Thanh toán trả trước qua Chuyển khoản', 9, 1075128.92, 2.20, '2025-11-24', '2026-08-24', 'active', '2025-11-24 14:41:59', NULL),
-(27, 48, 20, 9036801.00, 2700000.00, 'pending', NULL, NULL, 6, 1056133.50, 2.20, '2025-11-29', '2026-05-29', 'pending', '2025-11-29 12:02:28', NULL),
-(28, 68, 20, 13607659.34, 2656000.00, 'paid', '2025-12-05 08:03:35', 'Thanh toán trả trước qua Ví điện tử', 6, 1781009.89, 2.20, '2025-12-05', '2026-06-05', 'active', '2025-12-05 07:58:48', NULL),
-(29, 69, 20, 23813594.23, 11640000.00, 'pending', NULL, NULL, 6, 1951332.37, 2.20, '2025-12-05', '2026-06-05', 'pending', '2025-12-05 08:02:24', NULL),
-(30, 71, 20, 1014426.41, 198000.00, 'pending', NULL, NULL, 6, 132771.07, 2.20, '2025-12-05', '2026-06-05', 'pending', '2025-12-05 11:23:46', NULL),
-(31, 72, 20, 2561682.86, 500000.00, 'pending', NULL, NULL, 6, 335280.48, 2.20, '2025-12-05', '2026-06-05', 'pending', '2025-12-05 11:30:06', NULL),
-(32, 73, 20, 2561682.86, 500000.00, 'paid', '2025-12-05 12:00:06', 'Thanh toán trả trước qua Chuyển khoản', 6, 335280.48, 2.20, '2025-12-05', '2026-06-05', 'active', '2025-12-05 11:50:25', NULL),
-(33, 74, 20, 10236484.70, 1998000.00, 'paid', '2025-12-05 12:09:03', 'Thanh toán trả trước qua Ví điện tử', 6, 1339780.78, 2.20, '2025-12-05', '2026-06-05', 'active', '2025-12-05 12:07:58', NULL),
-(34, 75, 20, 20472969.39, 3996000.00, 'paid', '2025-12-05 12:20:17', 'Thanh toán trả trước qua Ví điện tử', 6, 2679561.57, 2.20, '2025-12-05', '2026-06-05', 'active', '2025-12-05 12:19:10', NULL),
-(35, 77, 20, 20096711.74, 0.00, 'not_required', NULL, NULL, 6, 3349451.96, 2.20, '2025-12-05', '2026-06-05', 'active', '2025-12-05 12:41:42', NULL),
-(36, 78, 20, 30127560.85, 2997000.00, 'pending', NULL, NULL, 6, 4521760.14, 2.20, '2025-12-05', '2026-06-05', 'approved', '2025-12-05 12:43:07', NULL),
-(37, 79, 20, 45419790.71, 7992000.00, 'pending', NULL, NULL, 6, 6131405.12, 2.20, '2025-12-05', '2026-06-05', 'approved', '2025-12-05 13:02:20', NULL),
-(38, 80, 20, 3739517.30, 658000.00, 'pending', NULL, NULL, 6, 504812.88, 3.00, '2025-12-05', '2026-06-05', 'approved', '2025-12-05 13:04:15', NULL),
-(39, 81, 20, 7141896.63, 3290000.00, 'paid', '2025-12-05 13:32:26', 'Thanh toán trả trước qua Chuyển khoản', 6, 641982.77, 50.00, '2025-12-05', '2026-06-05', 'active', '2025-12-05 13:18:29', 1);
+INSERT INTO `installments` (`installment_id`, `order_id`, `user_id`, `total_amount`, `down_payment`, `down_payment_status`, `down_payment_date`, `down_payment_note`, `num_terms`, `monthly_payment`, `overdue_fee_percent_per_day`, `total_overdue_fee`, `interest_rate`, `start_date`, `end_date`, `status`, `created_at`, `policy_id`) VALUES
+(40, 82, 20, 10298355.41, 0.00, 'not_required', NULL, NULL, 12, 858196.28, 1.00, 280227.36, 2.00, '2025-12-11', '2026-12-11', 'active', '2025-12-11 09:18:53', 8),
+(41, 83, 20, 10061.73, 8000.00, 'paid', '2025-12-11 09:42:54', 'Thanh toán trả trước qua Chuyển khoản', 12, 171.81, 1.00, 0.00, 2.00, '2025-12-11', '2026-12-11', 'active', '2025-12-11 09:42:11', 8);
 
 -- --------------------------------------------------------
 
@@ -934,7 +926,9 @@ CREATE TABLE `installment_payments` (
   `due_date` date NOT NULL,
   `paid_date` date DEFAULT NULL,
   `amount` decimal(12,2) NOT NULL,
-  `status` enum('pending','paid','late','failed') DEFAULT 'pending',
+  `status` enum('pending','paid','overdue','failed') DEFAULT 'pending',
+  `overdue_days` int(11) DEFAULT 0,
+  `overdue_fee` decimal(12,2) DEFAULT 0.00,
   `note` text DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -942,64 +936,31 @@ CREATE TABLE `installment_payments` (
 -- Dumping data for table `installment_payments`
 --
 
-INSERT INTO `installment_payments` (`payment_id`, `installment_id`, `payment_no`, `due_date`, `paid_date`, `amount`, `status`, `note`) VALUES
-(25, 25, 1, '2025-12-24', '2025-11-24', 808257.21, 'paid', 'Thanh toán qua Chuyển khoản'),
-(26, 25, 2, '2026-01-24', NULL, 808257.21, 'pending', NULL),
-(27, 25, 3, '2026-02-24', NULL, 808257.21, 'pending', NULL),
-(28, 25, 4, '2026-03-24', NULL, 808257.21, 'pending', NULL),
-(29, 25, 5, '2026-04-24', NULL, 808257.21, 'pending', NULL),
-(30, 25, 6, '2026-05-24', NULL, 808257.21, 'pending', NULL),
-(31, 25, 7, '2026-06-24', NULL, 808257.21, 'pending', NULL),
-(32, 25, 8, '2026-07-24', NULL, 808257.21, 'pending', NULL),
-(33, 25, 9, '2026-08-24', NULL, 808257.21, 'pending', NULL),
-(34, 25, 10, '2026-09-24', NULL, 808257.21, 'pending', NULL),
-(35, 25, 11, '2026-10-24', NULL, 808257.21, 'pending', NULL),
-(36, 25, 12, '2026-11-24', NULL, 808257.21, 'pending', NULL),
-(37, 26, 1, '2025-12-24', '2025-11-24', 1075128.92, 'paid', 'Thanh toán qua Chuyển khoản'),
-(38, 26, 2, '2026-01-24', NULL, 1075128.92, 'pending', NULL),
-(39, 26, 3, '2026-02-24', NULL, 1075128.92, 'pending', NULL),
-(40, 26, 4, '2026-03-24', NULL, 1075128.92, 'pending', NULL),
-(41, 26, 5, '2026-04-24', NULL, 1075128.92, 'pending', NULL),
-(42, 26, 6, '2026-05-24', NULL, 1075128.92, 'pending', NULL),
-(43, 26, 7, '2026-06-24', NULL, 1075128.92, 'pending', NULL),
-(44, 26, 8, '2026-07-24', NULL, 1075128.92, 'pending', NULL),
-(45, 26, 9, '2026-08-24', NULL, 1075128.92, 'pending', NULL),
-(46, 28, 1, '2026-01-05', NULL, 1781009.89, 'pending', NULL),
-(47, 28, 2, '2026-02-05', NULL, 1781009.89, 'pending', NULL),
-(48, 28, 3, '2026-03-05', NULL, 1781009.89, 'pending', NULL),
-(49, 28, 4, '2026-04-05', NULL, 1781009.89, 'pending', NULL),
-(50, 28, 5, '2026-05-05', NULL, 1781009.89, 'pending', NULL),
-(51, 28, 6, '2026-06-05', NULL, 1781009.89, 'pending', NULL),
-(52, 32, 1, '2026-01-05', NULL, 335280.48, 'pending', NULL),
-(53, 32, 2, '2026-02-05', NULL, 335280.48, 'pending', NULL),
-(54, 32, 3, '2026-03-05', NULL, 335280.48, 'pending', NULL),
-(55, 32, 4, '2026-04-05', NULL, 335280.48, 'pending', NULL),
-(56, 32, 5, '2026-05-05', NULL, 335280.48, 'pending', NULL),
-(57, 32, 6, '2026-06-05', NULL, 335280.48, 'pending', NULL),
-(58, 33, 1, '2026-01-05', NULL, 1339780.78, 'pending', NULL),
-(59, 33, 2, '2026-02-05', NULL, 1339780.78, 'pending', NULL),
-(60, 33, 3, '2026-03-05', NULL, 1339780.78, 'pending', NULL),
-(61, 33, 4, '2026-04-05', NULL, 1339780.78, 'pending', NULL),
-(62, 33, 5, '2026-05-05', NULL, 1339780.78, 'pending', NULL),
-(63, 33, 6, '2026-06-05', NULL, 1339780.78, 'pending', NULL),
-(64, 34, 1, '2026-01-05', '2025-12-05', 2679561.57, 'paid', 'Thanh toán qua Ví điện tử'),
-(65, 34, 2, '2026-02-05', NULL, 2679561.57, 'pending', NULL),
-(66, 34, 3, '2026-03-05', NULL, 2679561.57, 'pending', NULL),
-(67, 34, 4, '2026-04-05', NULL, 2679561.57, 'pending', NULL),
-(68, 34, 5, '2026-05-05', NULL, 2679561.57, 'pending', NULL),
-(69, 34, 6, '2026-06-05', NULL, 2679561.57, 'pending', NULL),
-(70, 35, 1, '2026-01-05', '2025-12-05', 3349451.96, 'paid', 'Thanh toán qua Chuyển khoản'),
-(71, 35, 2, '2026-02-05', NULL, 3349451.96, 'pending', NULL),
-(72, 35, 3, '2026-03-05', NULL, 3349451.96, 'pending', NULL),
-(73, 35, 4, '2026-04-05', NULL, 3349451.96, 'pending', NULL),
-(74, 35, 5, '2026-05-05', NULL, 3349451.96, 'pending', NULL),
-(75, 35, 6, '2026-06-05', NULL, 3349451.96, 'pending', NULL),
-(76, 39, 1, '2026-01-05', NULL, 641982.77, 'pending', NULL),
-(77, 39, 2, '2026-02-05', NULL, 641982.77, 'pending', NULL),
-(78, 39, 3, '2026-03-05', NULL, 641982.77, 'pending', NULL),
-(79, 39, 4, '2026-04-05', NULL, 641982.77, 'pending', NULL),
-(80, 39, 5, '2026-05-05', NULL, 641982.77, 'pending', NULL),
-(81, 39, 6, '2026-06-05', NULL, 641982.77, 'pending', NULL);
+INSERT INTO `installment_payments` (`payment_id`, `installment_id`, `payment_no`, `due_date`, `paid_date`, `amount`, `status`, `overdue_days`, `overdue_fee`, `note`) VALUES
+(82, 40, 1, '2025-12-01', '2025-12-11', 858196.28, 'paid', 10, 0.00, 'Thanh toán qua Chuyển khoản'),
+(83, 40, 2, '2025-12-02', '2025-12-11', 858196.28, 'paid', 9, 77237.67, 'Thanh toán qua Chuyển khoản'),
+(84, 40, 3, '2025-12-03', '2025-12-11', 858196.28, 'paid', 8, 68655.70, 'Thanh toán qua Chuyển khoản'),
+(85, 40, 4, '2025-12-04', '2025-12-11', 858196.28, 'paid', 7, 60073.74, 'Thanh toán qua Chuyển khoản'),
+(86, 40, 5, '2025-12-05', NULL, 858196.28, 'overdue', 6, 51491.78, NULL),
+(87, 40, 6, '2026-06-11', NULL, 858196.28, 'pending', 0, 0.00, NULL),
+(88, 40, 7, '2026-07-11', NULL, 858196.28, 'pending', 0, 0.00, NULL),
+(89, 40, 8, '2026-08-11', NULL, 858196.28, 'pending', 0, 0.00, NULL),
+(90, 40, 9, '2026-09-11', NULL, 858196.28, 'pending', 0, 0.00, NULL),
+(91, 40, 10, '2026-10-11', NULL, 858196.28, 'pending', 0, 0.00, NULL),
+(92, 40, 11, '2026-11-11', NULL, 858196.28, 'pending', 0, 0.00, NULL),
+(93, 40, 12, '2025-12-09', NULL, 1138423.64, 'overdue', 2, 22768.47, 'Kỳ 12 | Phí trễ hạn: 280227.36 VNĐ'),
+(94, 41, 1, '2026-01-11', NULL, 171.81, 'pending', 0, 0.00, NULL),
+(95, 41, 2, '2026-02-11', NULL, 171.81, 'pending', 0, 0.00, NULL),
+(96, 41, 3, '2026-03-11', NULL, 171.81, 'pending', 0, 0.00, NULL),
+(97, 41, 4, '2026-04-11', NULL, 171.81, 'pending', 0, 0.00, NULL),
+(98, 41, 5, '2026-05-11', NULL, 171.81, 'pending', 0, 0.00, NULL),
+(99, 41, 6, '2026-06-11', NULL, 171.81, 'pending', 0, 0.00, NULL),
+(100, 41, 7, '2026-07-11', NULL, 171.81, 'pending', 0, 0.00, NULL),
+(101, 41, 8, '2026-08-11', NULL, 171.81, 'pending', 0, 0.00, NULL),
+(102, 41, 9, '2026-09-11', NULL, 171.81, 'pending', 0, 0.00, NULL),
+(103, 41, 10, '2026-10-11', NULL, 171.81, 'pending', 0, 0.00, NULL),
+(104, 41, 11, '2026-11-11', NULL, 171.81, 'pending', 0, 0.00, NULL),
+(105, 41, 12, '2026-12-11', NULL, 171.81, 'pending', 0, 0.00, NULL);
 
 -- --------------------------------------------------------
 
@@ -1017,21 +978,22 @@ CREATE TABLE `installment_policies` (
   `is_active` tinyint(1) NOT NULL DEFAULT 1,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  `installment_fee_percent` decimal(5,2) NOT NULL DEFAULT 0.00 COMMENT 'Phí trả góp theo phần trăm tổng tiền, chia đều mỗi tháng'
+  `installment_fee_percent` decimal(5,2) NOT NULL DEFAULT 0.00 COMMENT 'Phí trả góp theo phần trăm tổng tiền, chia đều mỗi tháng',
+  `overdue_fee_percent` decimal(5,2) NOT NULL DEFAULT 0.00 COMMENT 'Phí trễ hẹn % mỗi ngày'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `installment_policies`
 --
 
-INSERT INTO `installment_policies` (`policy_id`, `name`, `terms`, `interest_rate`, `min_down_payment`, `description`, `is_active`, `created_at`, `updated_at`, `installment_fee_percent`) VALUES
-(1, 'Trả góp 6 tháng', 6, 50.00, 20.00, NULL, 1, '2025-11-29 11:47:36', '2025-12-05 12:49:26', 2.00),
-(2, 'Trả góp 6 tháng 0%', 6, 2.00, 0.00, 'Trả trong 6 tháng, không phát sinh lãi và phí.', 1, '2025-11-29 12:10:17', '2025-12-05 12:41:00', 0.00),
-(3, 'Trả góp 12 tháng lãi 3%', 12, 3.00, 20.00, 'Gói trả góp 12 tháng, lãi suất 3%/năm, phí hợp đồng 5%.', 1, '2025-11-29 12:10:17', '2025-11-29 12:10:17', 5.00),
-(4, 'Trả góp 18 tháng lãi 6%', 18, 6.00, 15.00, 'Trả góp 18 tháng, lãi suất 6%/năm, phí trả góp 8%.', 1, '2025-11-29 12:10:17', '2025-11-29 12:10:17', 8.00),
-(5, 'Trả góp 24 tháng', 24, 7.50, 10.00, 'Kỳ hạn dài nhất, lãi suất 7.5%/năm, phí hợp đồng 10%.', 1, '2025-11-29 12:10:17', '2025-11-29 12:10:17', 10.00),
-(6, 'Gói ưu đãi cho sản phẩm cao cấp', 9, 2.50, 40.00, 'Dành cho sản phẩm trị giá cao, yêu cầu trả trước 40%.', 1, '2025-11-29 12:10:17', '2025-11-29 12:10:17', 0.00),
-(7, 'Gói trả góp tạm ngưng thử nghiệm', 6, 0.00, 30.00, 'Đang tạm ngưng áp dụng.', 0, '2025-11-29 12:10:17', '2025-11-29 12:10:17', 0.00);
+INSERT INTO `installment_policies` (`policy_id`, `name`, `terms`, `interest_rate`, `min_down_payment`, `description`, `is_active`, `created_at`, `updated_at`, `installment_fee_percent`, `overdue_fee_percent`) VALUES
+(1, 'Trả góp 6 tháng', 6, 50.00, 20.00, NULL, 1, '2025-11-29 11:47:36', '2025-12-05 12:49:26', 2.00, 0.00),
+(2, 'Trả góp 6 tháng 0%', 6, 2.00, 0.00, 'Trả trong 6 tháng, không phát sinh lãi và phí.', 1, '2025-11-29 12:10:17', '2025-12-05 12:41:00', 0.00, 0.00),
+(3, 'Trả góp 12 tháng lãi 3%', 12, 3.00, 20.00, 'Gói trả góp 12 tháng, lãi suất 3%/năm, phí hợp đồng 5%.', 1, '2025-11-29 12:10:17', '2025-11-29 12:10:17', 5.00, 0.00),
+(4, 'Trả góp 18 tháng lãi 6%', 18, 6.00, 15.00, 'Trả góp 18 tháng, lãi suất 6%/năm, phí trả góp 8%.', 1, '2025-11-29 12:10:17', '2025-11-29 12:10:17', 8.00, 0.00),
+(5, 'Trả góp 24 tháng', 24, 7.50, 10.00, 'Kỳ hạn dài nhất, lãi suất 7.5%/năm, phí hợp đồng 10%.', 1, '2025-11-29 12:10:17', '2025-11-29 12:10:17', 10.00, 0.00),
+(6, 'Gói ưu đãi cho sản phẩm cao cấp', 9, 2.50, 40.00, 'Dành cho sản phẩm trị giá cao, yêu cầu trả trước 40%.', 1, '2025-11-29 12:10:17', '2025-11-29 12:10:17', 0.00, 0.00),
+(8, 'Trả góp 12 tháng - Lãi suất thấp - Có Phí Overdue', 12, 2.00, 0.00, NULL, 1, '2025-12-11 07:16:53', '2025-12-11 07:16:53', 2.00, 1.00);
 
 -- --------------------------------------------------------
 
@@ -1120,7 +1082,9 @@ INSERT INTO `orders` (`order_id`, `user_id`, `order_number`, `address_id`, `coup
 (78, 20, 'ORD38587363879', 52, NULL, 'pending', 'unpaid', 29970000.00, 0.00, 0.00, 0.00, 29970000.00, NULL, NULL, '2025-12-05 12:43:07', '2025-12-05 12:43:07', NULL, NULL, NULL, NULL),
 (79, 20, 'ORD39740387554', 52, NULL, 'pending', 'unpaid', 39960000.00, 0.00, 0.00, 0.00, 39960000.00, NULL, NULL, '2025-12-05 13:02:20', '2025-12-05 13:02:20', NULL, NULL, NULL, NULL),
 (80, 20, 'ORD39855467379', 52, NULL, 'pending', 'unpaid', 3290000.00, 0.00, 0.00, 0.00, 3290000.00, NULL, NULL, '2025-12-05 13:04:15', '2025-12-05 13:04:15', NULL, NULL, NULL, NULL),
-(81, 20, 'ORD40709129049', 52, NULL, 'shipping', 'unpaid', 6580000.00, 0.00, 0.00, 0.00, 6580000.00, NULL, NULL, '2025-12-05 13:18:29', '2025-12-05 13:32:26', NULL, NULL, NULL, NULL);
+(81, 20, 'ORD40709129049', 52, NULL, 'shipping', 'unpaid', 6580000.00, 0.00, 0.00, 0.00, 6580000.00, NULL, NULL, '2025-12-05 13:18:29', '2025-12-05 13:32:26', NULL, NULL, NULL, NULL),
+(82, 20, 'ORD44733624691', 68, NULL, 'pending', 'unpaid', 9990000.00, 0.00, 0.00, 0.00, 9990000.00, NULL, NULL, '2025-12-11 09:18:53', '2025-12-11 09:18:53', NULL, NULL, NULL, NULL),
+(83, 20, 'ORD46131581070', 52, NULL, 'shipping', 'unpaid', 10000.00, 0.00, 0.00, 0.00, 10000.00, NULL, NULL, '2025-12-11 09:42:11', '2025-12-11 09:42:54', NULL, NULL, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -1189,7 +1153,9 @@ INSERT INTO `order_items` (`order_item_id`, `order_id`, `variant_id`, `product_n
 (106, 78, 501, 'ASUS TUF VG27AQ 27\" WQHD 165Hz', 'Standard', 'ASUS-VG27AQ-STD', 3, 9990000.00, 0.00, 29970000.00, '2025-12-05 12:43:07'),
 (107, 79, 501, 'ASUS TUF VG27AQ 27\" WQHD 165Hz', 'Standard', 'ASUS-VG27AQ-STD', 4, 9990000.00, 0.00, 39960000.00, '2025-12-05 13:02:20'),
 (108, 80, 510, 'Logitech G Pro X Mechanical Gaming Keyboard', 'GX Blue Switch', 'LOGI-GPROX-STD', 1, 3290000.00, 0.00, 3290000.00, '2025-12-05 13:04:15'),
-(109, 81, 510, 'Logitech G Pro X Mechanical Gaming Keyboard', 'GX Blue Switch', 'LOGI-GPROX-STD', 2, 3290000.00, 0.00, 6580000.00, '2025-12-05 13:18:29');
+(109, 81, 510, 'Logitech G Pro X Mechanical Gaming Keyboard', 'GX Blue Switch', 'LOGI-GPROX-STD', 2, 3290000.00, 0.00, 6580000.00, '2025-12-05 13:18:29'),
+(110, 82, 501, 'ASUS TUF VG27AQ 27\" WQHD 165Hz', 'Standard', 'ASUS-VG27AQ-STD', 1, 9990000.00, 0.00, 9990000.00, '2025-12-11 09:18:53'),
+(111, 83, 511, 'Corsair K70 RGB MK.2 Cherry MX Red', 'Cherry MX Red', 'CORS-K70-RED', 1, 10000.00, 0.00, 10000.00, '2025-12-11 09:42:11');
 
 -- --------------------------------------------------------
 
@@ -1232,7 +1198,9 @@ INSERT INTO `payments` (`payment_id`, `order_id`, `payment_method`, `payment_sta
 (37, 78, 'installment', 'pending', 29970000.00, 'TXN1764938587364484', NULL, NULL, NULL, '2025-12-05 12:43:07', '2025-12-05 12:43:07'),
 (38, 79, 'installment', 'pending', 39960000.00, 'TXN176493974038886', NULL, NULL, NULL, '2025-12-05 13:02:20', '2025-12-05 13:02:20'),
 (39, 80, 'installment', 'pending', 3290000.00, 'TXN176493985546828', NULL, NULL, NULL, '2025-12-05 13:04:15', '2025-12-05 13:04:15'),
-(40, 81, 'installment', 'pending', 6580000.00, 'TXN1764940709135361', NULL, NULL, NULL, '2025-12-05 13:18:29', '2025-12-05 13:18:29');
+(40, 81, 'installment', 'pending', 6580000.00, 'TXN1764940709135361', NULL, NULL, NULL, '2025-12-05 13:18:29', '2025-12-05 13:18:29'),
+(41, 82, 'installment', 'pending', 9990000.00, 'TXN1765444733626700', NULL, NULL, NULL, '2025-12-11 09:18:53', '2025-12-11 09:18:53'),
+(42, 83, 'installment', 'pending', 10000.00, 'TXN176544613158311', NULL, NULL, NULL, '2025-12-11 09:42:11', '2025-12-11 09:42:11');
 
 -- --------------------------------------------------------
 
@@ -1433,10 +1401,10 @@ INSERT INTO `product_variants` (`variant_id`, `product_id`, `sku`, `variant_name
 (427, 291, 'KNG-FURY-DDR4-64-1', '2x32GB', 4200000.00, 5, 1, 1, '2025-11-24 05:32:43', '2025-11-24 05:32:43'),
 (428, 291, 'KNG-FURY-DDR4-64-2', '2x32GB RGB', 4400000.00, 2, 1, 0, '2025-11-24 05:32:43', '2025-11-24 05:32:43'),
 (500, 300, 'LG-27GN800-STD', 'Standard', 8490000.00, 22, 1, 1, '2025-11-25 08:58:13', '2025-12-05 07:27:47'),
-(501, 301, 'ASUS-VG27AQ-STD', 'Standard', 9990000.00, 1, 1, 1, '2025-11-25 08:58:13', '2025-12-05 13:02:20'),
+(501, 301, 'ASUS-VG27AQ-STD', 'Standard', 9990000.00, 0, 1, 1, '2025-11-25 08:58:13', '2025-12-11 09:18:53'),
 (502, 302, 'SAM-G5-32-STD', 'Standard', 7990000.00, 30, 1, 1, '2025-11-25 08:58:13', '2025-11-25 08:58:13'),
 (510, 310, 'LOGI-GPROX-STD', 'GX Blue Switch', 3290000.00, 31, 1, 1, '2025-11-25 08:58:13', '2025-12-05 13:18:29'),
-(511, 311, 'CORS-K70-RED', 'Cherry MX Red', 10000.00, 228, 1, 1, '2025-11-25 08:58:13', '2025-12-05 08:07:12'),
+(511, 311, 'CORS-K70-RED', 'Cherry MX Red', 10000.00, 227, 1, 1, '2025-11-25 08:58:13', '2025-12-11 09:42:11'),
 (512, 312, 'KEY-K2-BROWN', 'Gateron Brown', 2190000.00, 50, 1, 1, '2025-11-25 08:58:13', '2025-11-25 08:58:13'),
 (520, 320, 'LOGI-G304-BLK', 'Black', 990000.00, 57, 1, 1, '2025-11-25 08:58:13', '2025-12-05 11:23:46'),
 (521, 321, 'RAZER-VIPER-ULT', 'Ultimate', 2990000.00, 30, 1, 1, '2025-11-25 08:58:13', '2025-11-25 08:58:13'),
@@ -1557,9 +1525,9 @@ CREATE TABLE `users` (
 
 INSERT INTO `users` (`user_id`, `username`, `email`, `password_hash`, `full_name`, `phone`, `role`, `is_active`, `created_at`, `updated_at`, `last_login`, `session_token`, `admin_session_token`, `user_session_token`) VALUES
 (5, 'admin1', 'admin1@gmail.com', '$2b$10$b9lCzWVznD4ZMQ1Y6/bOc.Jn6efXZS1Us.ZjYVv2PFgHkqKr1PD1.', 'aaa', '0123456789', 2, 0, '2025-11-05 09:18:39', '2025-11-23 11:21:43', NULL, NULL, NULL, NULL),
-(6, 'admin', 'admin@gmail.com', '$2b$10$84e9xqnTc50CPaf5pOldT.Ob9zW9/RVK.G3Whr.TdAncfRdE.UivG', 'admin', '0123456788', 2, 1, '2025-11-05 09:33:52', '2025-12-07 00:32:09', NULL, 'b69bfdf666d4c6d6db8a38aa39ce0aaf32bc8b812d7545f03399bdc9593ffa76', 'abbf406851b0c78e47b6ed538dbf700e3e2b06f28645d3eb453bce83e2d9e668', NULL),
+(6, 'admin', 'admin@gmail.com', '$2b$10$84e9xqnTc50CPaf5pOldT.Ob9zW9/RVK.G3Whr.TdAncfRdE.UivG', 'admin', '0123456788', 2, 1, '2025-11-05 09:33:52', '2025-12-11 10:18:45', NULL, 'b69bfdf666d4c6d6db8a38aa39ce0aaf32bc8b812d7545f03399bdc9593ffa76', '04d225c7a814aa478d79ea498e3623d935c01672fb5cf20fa2d8c45ecad2be0f', NULL),
 (17, 'ad1', 'ad1@gmail.com', '$2b$10$zE.RfZEcYf/th.S7Krdkmu/l0jDW7Nq3Ge9eP4lU78KVlVJzXCUwG', 'ad1', '0987676765', 2, 1, '2025-11-23 11:15:30', '2025-11-25 09:05:36', NULL, NULL, 'e5770a861273d29663ef4c6d20902fa4f370fc43a57b97c96014fd00bf9e8fc5', NULL),
-(20, 'tranthib671', 'thib@gmail.com', '$2b$10$KQc2staSc5WX/9OIkHi3reX8XJO8L51YDjK.N5YP5XpPaghoLS.rK', 'Trần Thị B', '0908787671', 0, 1, '2025-11-24 12:44:44', '2025-12-05 13:32:17', NULL, NULL, NULL, 'c3ac6df9e359d3fe014431231cfb4a9be06cf280bf6399acf1d6f8bef27e8679'),
+(20, 'tranthib671', 'thib@gmail.com', '$2b$10$KQc2staSc5WX/9OIkHi3reX8XJO8L51YDjK.N5YP5XpPaghoLS.rK', 'Trần Thị B', '0908787671', 0, 1, '2025-11-24 12:44:44', '2025-12-11 10:18:00', NULL, NULL, NULL, '5f01a5bfa45d234fa677ff206a101c32c32f556dc46ee3d7d8ee857ec3e0bd08'),
 (21, 'nguyenvana561', 'vana@gmail.com', '$2b$10$AUdU1V0dW6n0Eh1tJ1Nw6.vvvjGnlWOCVmHPXSMuuDCFolwPwXrLO', 'Nguyễn Văn A', '0908786561', 0, 1, '2025-11-24 14:41:59', '2025-11-24 14:44:15', NULL, NULL, NULL, '1f6760867b1d28a485e386f364b7f9e4fe3498d6bace8650e6285242443d33ff'),
 (22, 'a', 'a@gmail.com', '$2b$10$VjJ5iRg7oZrR1NGGUr61muIe/mSd1OQxP7ic2akApHitC3XH14cK6', NULL, NULL, 0, 1, '2025-11-25 05:07:22', '2025-11-25 05:07:28', NULL, NULL, NULL, 'beb07304249a617ff8d169d1d778d5493e72513a5a7fde987f62c9314905cdeb');
 
@@ -2228,7 +2196,7 @@ ALTER TABLE `wishlist_items`
 -- AUTO_INCREMENT for table `addresses`
 --
 ALTER TABLE `addresses`
-  MODIFY `address_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=68;
+  MODIFY `address_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=69;
 
 --
 -- AUTO_INCREMENT for table `articles`
@@ -2270,13 +2238,13 @@ ALTER TABLE `build_items`
 -- AUTO_INCREMENT for table `carts`
 --
 ALTER TABLE `carts`
-  MODIFY `cart_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
+  MODIFY `cart_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
 
 --
 -- AUTO_INCREMENT for table `cart_items`
 --
 ALTER TABLE `cart_items`
-  MODIFY `cart_item_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=118;
+  MODIFY `cart_item_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=120;
 
 --
 -- AUTO_INCREMENT for table `categories`
@@ -2294,19 +2262,19 @@ ALTER TABLE `coupons`
 -- AUTO_INCREMENT for table `installments`
 --
 ALTER TABLE `installments`
-  MODIFY `installment_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=40;
+  MODIFY `installment_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=42;
 
 --
 -- AUTO_INCREMENT for table `installment_payments`
 --
 ALTER TABLE `installment_payments`
-  MODIFY `payment_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=82;
+  MODIFY `payment_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=106;
 
 --
 -- AUTO_INCREMENT for table `installment_policies`
 --
 ALTER TABLE `installment_policies`
-  MODIFY `policy_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `policy_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT for table `notifications`
@@ -2318,19 +2286,19 @@ ALTER TABLE `notifications`
 -- AUTO_INCREMENT for table `orders`
 --
 ALTER TABLE `orders`
-  MODIFY `order_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=82;
+  MODIFY `order_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=84;
 
 --
 -- AUTO_INCREMENT for table `order_items`
 --
 ALTER TABLE `order_items`
-  MODIFY `order_item_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=110;
+  MODIFY `order_item_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=112;
 
 --
 -- AUTO_INCREMENT for table `payments`
 --
 ALTER TABLE `payments`
-  MODIFY `payment_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=41;
+  MODIFY `payment_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=43;
 
 --
 -- AUTO_INCREMENT for table `posts`
