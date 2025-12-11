@@ -12,6 +12,7 @@ import ReturnPolicy from '../pages/user/ReturnPolicy';
 import ShipTracking from '../pages/user/ShipTracking';
 import WarrantyCheck from '../pages/user/WarrantyCheck';
 import WarrantyPolicy from '../pages/user/WarrantyPolicy';
+import WarrantyPage from '../pages/user/Warranty/WarrantyPage';
 import Wishlist from '../pages/user/Wishlist';
 import OrderSuccess from '../pages/user/OrderPage/OrderSuccess';
 import Installment from '../pages/user/InstallmentPage/Installment';
@@ -26,6 +27,7 @@ const UserRoutes = () => {
       <Route path="/" element={<UserLayout />}>
         <Route index element={<Home />} />
         <Route path="build-pc" element={<BuildPC />} />
+        <Route path="warranty" element={<WarrantyPage />} />
         <Route path="blog" element={<Blog />} />
         <Route path="cart" element={<Cart />} />
         <Route path="checkout" element={<Checkout />} />

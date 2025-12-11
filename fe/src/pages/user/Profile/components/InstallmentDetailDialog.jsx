@@ -39,6 +39,7 @@ const InstallmentDetailDialog = ({
   installment,
   formatPrice,
   formatDate,
+  formatDateTime,
   calculateOutstandingBalance,
   canPayDownPayment,
   canPayInstallments,
@@ -252,6 +253,7 @@ const InstallmentDetailDialog = ({
                           <TableHead className="w-[140px]">Số tiền trả góp</TableHead>
                           <TableHead className="w-[100px]">Phí trễ</TableHead>
                           <TableHead className="w-[150px]">Đã trả</TableHead>
+                          <TableHead className="w-[180px]">Ngày thanh toán</TableHead>
                           <TableHead className="w-[140px]">Trạng thái</TableHead>
                           <TableHead className="text-right w-[140px]">Thao tác</TableHead>
                         </TableRow>
@@ -300,6 +302,17 @@ const InstallmentDetailDialog = ({
                                   </p>
                                   <p className="text-xs text-gray-500">
                                     {formatDate(payment.paid_date)}
+                                  </p>
+                                </div>
+                              ) : (
+                                <span className="text-gray-400">-</span>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {payment.paid_date ? (
+                                <div className="text-sm">
+                                  <p className="font-medium text-green-700">
+                                    {formatDateTime(payment.paid_date)}
                                   </p>
                                 </div>
                               ) : (

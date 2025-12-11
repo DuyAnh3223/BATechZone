@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { toast } from "sonner";
-import { translateOrderStatus } from "@/utils/statusTranslations";
+import { translateOrderStatus, translatePaymentMethod, translatePaymentStatus } from "@/utils/statusTranslations";
 
 const OrderDetail = () => {
   const { orderId } = useParams();
@@ -93,11 +93,17 @@ const OrderDetail = () => {
 
   const getPaymentStatusBadge = (status) => {
     const statusMap = {
-      unpaid: { label: "Chưa thanh toán", className: "bg-red-100 text-red-800" },
-      paid: { label: "Đã thanh toán", className: "bg-green-100 text-green-800" },
-      refunded: { label: "Đã hoàn tiền", className: "bg-orange-100 text-orange-800" },
+      unpaid: { className: "bg-red-100 text-red-800" },
+      paid: { className: "bg-green-100 text-green-800" },
+      refunded: { className: "bg-orange-100 text-orange-800" },
+      pending: { className: "bg-yellow-100 text-yellow-800" },
+      completed: { className: "bg-green-100 text-green-800" },
+      failed: { className: "bg-red-100 text-red-800" },
     };
-    return statusMap[status] || { label: status, className: "bg-gray-100 text-gray-800" };
+    return { 
+      label: translatePaymentStatus(status), 
+      className: statusMap[status]?.className || "bg-gray-100 text-gray-800" 
+    };
   };
 
   const sumSubtotal = (items) => {
@@ -150,23 +156,23 @@ const OrderDetail = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-6xl mx-auto px-4">
+      <div className="w-[95vw] mx-auto px-6">
         {/* Header */}
-        <div className="mb-6">
+        <div className="mb-8">
           <Button
             variant="ghost"
             onClick={() => navigate("/orders")}
-            className="mb-4"
+            className="mb-4 text-base"
           >
-            <ArrowLeft className="w-4 h-4 mr-2" />
+            <ArrowLeft className="w-5 h-5 mr-2" />
             Về danh sách đơn hàng
           </Button>
-          <div className="flex items-center gap-3 mb-2">
-            <CheckCircle2 className="w-8 h-8 text-green-600" />
-            <h1 className="text-3xl font-bold text-gray-900">Chi tiết đơn hàng</h1>
+          <div className="flex items-center gap-4 mb-3">
+            <CheckCircle2 className="w-10 h-10 text-green-600" />
+            <h1 className="text-4xl font-bold text-gray-900">Chi tiết đơn hàng</h1>
           </div>
-          <p className="text-gray-600">
-            Mã đơn hàng: <span className="font-semibold text-indigo-600">{orderNumber}</span>
+          <p className="text-lg text-gray-600">
+            Mã đơn hàng: <span className="font-semibold text-indigo-600 text-xl">{orderNumber}</span>
           </p>
         </div>
 
@@ -176,60 +182,108 @@ const OrderDetail = () => {
             {/* Order Status */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Package className="w-5 h-5" />
+                <CardTitle className="flex items-center gap-2 text-xl">
+                  <Package className="w-6 h-6" />
                   Thông tin đơn hàng
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-sm text-gray-600 mb-1">Trạng thái đơn hàng</p>
-                    <Badge className={statusBadge.className}>
+                    <p className="text-base text-gray-600 mb-2">Trạng thái đơn hàng</p>
+                    <Badge className={`${statusBadge.className} text-base px-3 py-1`}>
                       {statusBadge.label}
                     </Badge>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600 mb-1">Trạng thái thanh toán</p>
-                    <Badge className={paymentBadge.className}>
+                    <p className="text-base text-gray-600 mb-2">Trạng thái thanh toán</p>
+                    <Badge className={`${paymentBadge.className} text-base px-3 py-1`}>
                       {paymentBadge.label}
                     </Badge>
                   </div>
                 </div>
                 <Separator />
-                <div>
-                  <p className="text-sm text-gray-600 mb-1">Ngày đặt hàng</p>
-                  <p className="font-semibold">{formatDate(order.created_at || order.createdAt)}</p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-base text-gray-600 mb-2">Phương thức thanh toán</p>
+                    <p className="font-semibold text-lg">{translatePaymentMethod(order.payment_method || order.paymentMethod || 'cod')}</p>
+                  </div>
+                  <div>
+                    <p className="text-base text-gray-600 mb-2">Ngày đặt hàng</p>
+                    <p className="font-semibold text-lg">{formatDate(order.created_at || order.createdAt)}</p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
 
+            {/* Payment Details */}
+            {order.payments && order.payments.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-xl">
+                    <CreditCard className="w-6 h-6" />
+                    Thông tin thanh toán
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {order.payments.map((payment, index) => (
+                      <div key={payment.paymentId || index} className="p-4 bg-gray-50 rounded-lg space-y-3">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <p className="text-base text-gray-600 mb-1">Phương thức thanh toán</p>
+                            <p className="font-semibold text-lg">{translatePaymentMethod(payment.paymentMethod || payment.payment_method)}</p>
+                          </div>
+                          <div>
+                            <p className="text-base text-gray-600 mb-1">Trạng thái</p>
+                            <Badge className={payment.paymentStatus === 'paid' || payment.payment_status === 'paid' ? 'bg-green-100 text-green-800 text-base px-3 py-1' : 'bg-red-100 text-red-800 text-base px-3 py-1'}>
+                              {translatePaymentStatus(payment.paymentStatus || payment.payment_status)}
+                            </Badge>
+                          </div>
+                        </div>
+                        {(payment.transactionId || payment.transaction_id) && (
+                          <div>
+                            <p className="text-base text-gray-600 mb-1">Mã giao dịch</p>
+                            <p className="font-mono text-base font-semibold">{payment.transactionId || payment.transaction_id}</p>
+                          </div>
+                        )}
+                        <div>
+                          <p className="text-base text-gray-600 mb-1">Số tiền</p>
+                          <p className="font-bold text-lg text-blue-600">{formatPrice(payment.amount)}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Order Items */}
             <Card>
               <CardHeader>
-                <CardTitle>Sản phẩm đã đặt</CardTitle>
+                <CardTitle className="text-xl">Sản phẩm đã đặt</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   {order.items && order.items.length > 0 ? (
                     order.items.map((item, index) => (
-                      <div key={item.order_item_id || item.orderItemId || `item-${index}`} className="flex gap-4 p-4 bg-gray-50 rounded-lg">
+                      <div key={item.order_item_id || item.orderItemId || `item-${index}`} className="flex gap-6 p-5 bg-gray-50 rounded-lg">
                         <div className="flex-1">
-                          <p className="font-medium">{item.product_name || item.productName}</p>
+                          <p className="font-medium text-lg">{item.product_name || item.productName}</p>
                           {item.variant_name || item.variantName ? (
-                            <p className="text-sm text-gray-600">Biến thể: {item.variant_name || item.variantName}</p>
+                            <p className="text-base text-gray-600 mt-1">Biến thể: {item.variant_name || item.variantName}</p>
                           ) : null}
-                          <p className="text-sm text-gray-500">SKU: {item.sku || '-'}</p>
+                          <p className="text-base text-gray-500 mt-1">SKU: {item.sku || '-'}</p>
                         </div>
                         <div className="text-right">
-                          <p className="text-sm text-gray-600">SL: {item.quantity || 0}</p>
-                          <p className="font-semibold">{formatPrice(item.unit_price || item.unitPrice || 0)}</p>
-                          <p className="text-sm text-gray-600">Tạm tính: {formatPrice(item.subtotal || item.subTotal || 0)}</p>
+                          <p className="text-base text-gray-600">SL: {item.quantity || 0}</p>
+                          <p className="font-semibold text-lg">{formatPrice(item.unit_price || item.unitPrice || 0)}</p>
+                          <p className="text-base text-gray-600">Tạm tính: {formatPrice(item.subtotal || item.subTotal || 0)}</p>
                         </div>
                       </div>
                     ))
                   ) : (
-                    <p className="text-gray-500 text-center py-4">Không có sản phẩm nào</p>
+                    <p className="text-gray-500 text-center py-4 text-base">Không có sản phẩm nào</p>
                   )}
                 </div>
               </CardContent>
@@ -239,18 +293,18 @@ const OrderDetail = () => {
             {(order.coupon_code || order.couponCode) && (
               <Card>
                 <CardHeader>
-                  <CardTitle>Mã giảm giá đã sử dụng</CardTitle>
+                  <CardTitle className="text-xl">Mã giảm giá đã sử dụng</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg">
-                    <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div className="p-5 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg">
+                    <div className="grid grid-cols-2 gap-6 text-base">
                       <div>
-                        <p className="text-gray-600 mb-1">Mã coupon:</p>
-                        <p className="font-bold text-lg text-green-700">{order.coupon_code || order.couponCode}</p>
+                        <p className="text-gray-600 mb-2">Mã coupon:</p>
+                        <p className="font-bold text-xl text-green-700">{order.coupon_code || order.couponCode}</p>
                       </div>
                       <div>
-                        <p className="text-gray-600 mb-1">Số tiền đã giảm:</p>
-                        <p className="font-bold text-lg text-red-600">-{formatPrice(discountAmount)}</p>
+                        <p className="text-gray-600 mb-2">Số tiền đã giảm:</p>
+                        <p className="font-bold text-xl text-red-600">-{formatPrice(discountAmount)}</p>
                       </div>
                     </div>
                   </div>
@@ -261,30 +315,30 @@ const OrderDetail = () => {
             {/* Shipping Address */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <MapPin className="w-5 h-5" />
+                <CardTitle className="flex items-center gap-2 text-xl">
+                  <MapPin className="w-6 h-6" />
                   Địa chỉ giao hàng
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-2">
-                  <p className="font-medium">
+                <div className="space-y-3">
+                  <p className="font-medium text-lg">
                     {order.recipient_name || order.recipientName || '-'}
                   </p>
-                  <p className="text-gray-600">
+                  <p className="text-gray-600 text-base">
                     {order.address_line1 || order.addressLine1 || ''}
                     {order.address_line2 || order.addressLine2 ? `, ${order.address_line2 || order.addressLine2}` : ''}
                   </p>
-                  <p className="text-gray-600">
+                  <p className="text-gray-600 text-base">
                     {[order.ward, order.district, order.city].filter(Boolean).join(', ')}
                   </p>
-                  <p className="text-gray-600 flex items-center gap-2 mt-2">
-                    <Phone className="w-4 h-4" />
+                  <p className="text-gray-600 flex items-center gap-2 mt-3 text-base">
+                    <Phone className="w-5 h-5" />
                     {order.recipient_phone || order.recipientPhone || order.user_phone || '-'}
                   </p>
                   {order.email && (
-                    <p className="text-gray-600 flex items-center gap-2">
-                      <Mail className="w-4 h-4" />
+                    <p className="text-gray-600 flex items-center gap-2 text-base">
+                      <Mail className="w-5 h-5" />
                       {order.email}
                     </p>
                   )}
@@ -297,13 +351,13 @@ const OrderDetail = () => {
           <div className="lg:col-span-1">
             <Card className="sticky top-4">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <CreditCard className="w-5 h-5" />
+                <CardTitle className="flex items-center gap-2 text-xl">
+                  <CreditCard className="w-6 h-6" />
                   Tóm tắt đơn hàng
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="space-y-2 text-sm">
+                <div className="space-y-3 text-base">
                   <div className="flex justify-between">
                     <span className="text-gray-600">Tạm tính:</span>
                     <span className="font-semibold">{formatPrice(subtotal)}</span>
@@ -320,24 +374,24 @@ const OrderDetail = () => {
                   </div>
                   <Separator />
                   <div className="flex justify-between">
-                    <span className="font-bold text-base">Tổng cộng:</span>
-                    <span className="font-bold text-lg text-red-600">{formatPrice(totalAmount)}</span>
+                    <span className="font-bold text-lg">Tổng cộng:</span>
+                    <span className="font-bold text-xl text-red-600">{formatPrice(totalAmount)}</span>
                   </div>
                 </div>
 
                 <Separator />
 
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <Button
                     variant="outline"
-                    className="w-full"
+                    className="w-full text-base"
                     onClick={() => navigate("/orders")}
                   >
                     Về danh sách đơn hàng
                   </Button>
                   <Button
                     variant="outline"
-                    className="w-full"
+                    className="w-full text-base"
                     onClick={() => navigate("/")}
                   >
                     Tiếp tục mua sắm

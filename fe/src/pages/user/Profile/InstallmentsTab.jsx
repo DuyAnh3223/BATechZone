@@ -53,9 +53,18 @@ const InstallmentsTab = () => {
     }
   };
 
- 
+const formatDateTime = (dateString) => {
+  if (!dateString) return '-';
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return '-';
+    return format(date, 'dd/MM/yyyy HH:mm:ss', { locale: vi });
+  } catch (error) {
+    return '-';
+  }
+};
 
-  const handleViewDetail = async (installment) => {
+const handleViewDetail = async (installment) => {
     try {
       setIsDetailOpen(true);
       setSelectedInstallment({ ...installment, loading: true });
@@ -330,6 +339,7 @@ const InstallmentsTab = () => {
         installment={selectedInstallment}
         formatPrice={formatPrice}
         formatDate={formatDate}
+        formatDateTime={formatDateTime}
         calculateOutstandingBalance={calculateOutstandingBalance}
         canPayDownPayment={canPayDownPayment}
         canPayInstallments={canPayInstallments}

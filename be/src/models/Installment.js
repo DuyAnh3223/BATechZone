@@ -19,13 +19,20 @@ class Installment {
         this.end_date = data.end_date;
         this.status = data.status;
         this.created_at = data.created_at;
+        // Additional fields from JOIN
+        this.user_name = data.user_name;
+        this.user_phone = data.user_phone;
+        this.user_email = data.user_email;
     }
 
     static async findInstallmentById(id)
     {
         try {
             const rows = await query(
-            'SELECT * FROM installments WHERE installment_id =?',
+            `SELECT i.*, u.full_name as user_name, u.phone as user_phone 
+             FROM installments i 
+             LEFT JOIN users u ON i.user_id = u.user_id 
+             WHERE i.installment_id = ?`,
             [id]
         );
         return rows.length ? new Installment(rows[0]) : null;

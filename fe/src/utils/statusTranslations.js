@@ -31,7 +31,8 @@ export const translatePaymentMethod = (method) => {
     'cod': 'Thanh toán khi nhận hàng',
     'bank_transfer': 'Chuyển khoản ngân hàng',
     'credit_card': 'Thẻ tín dụng',
-    'e_wallet': 'Ví điện tử',
+    'e_wallet': 'Ví điện tử (Momo)',
+    'momo': 'Ví điện tử (Momo)',
     'installment': 'Trả góp'
   };
   return map[method] || method;

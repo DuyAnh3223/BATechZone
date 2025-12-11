@@ -163,7 +163,12 @@ const InstallmentDetailDialog = ({ installment, open, onClose }) => {
                   </div>
                   <div>
                     <label className="text-sm text-gray-500">Khách hàng</label>
-                    <p className="font-semibold">User #{currentInstallment.user_id}</p>
+                    <div>
+                      <p className="font-semibold">{currentInstallment.user_name || `User #${currentInstallment.user_id}`}</p>
+                      {currentInstallment.user_phone && (
+                        <p className="text-xs text-gray-500">{currentInstallment.user_phone}</p>
+                      )}
+                    </div>
                   </div>
                   <div>
                     <label className="text-sm text-gray-500">Trạng thái</label>

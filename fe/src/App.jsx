@@ -15,6 +15,7 @@ import ReturnPolicy from './pages/user/ReturnPolicy';
 import ShipTracking from './pages/user/ShipTracking';
 import WarrantyCheck from './pages/user/WarrantyCheck';
 import WarrantyPolicy from './pages/user/WarrantyPolicy';
+import WarrantyPage from './pages/user/Warranty/WarrantyPage';
 import Wishlist from './pages/user/Wishlist';
 import SignIn from './pages/auth/SignIn';
 import SignUp from './pages/auth/SignUp';
@@ -35,6 +36,7 @@ import AdminPostDetail from './pages/admin/AdminBlogDetail';
 import AdminWishlist from './pages/admin/AdminWishlist';
 import AdminPayment from './pages/admin/AdminPayment';
 import AdminServiceCenter from './pages/admin/AdminServiceCenter';
+import AdminWarrantyPage from './pages/admin/WarrantyPage/AdminWarrantyPage';
 import OrderSuccess from './pages/user/OrderPage/OrderSuccess';
 import Payment from './pages/user/Payment';
 import Orders from './pages/user/OrderPage/Orders';
@@ -56,6 +58,7 @@ function App() {
           <Route path="/" element={<UserLayout />}>
             <Route index element={<Home />} />
             <Route path="build-pc" element={<BuildPC />} />
+            <Route path="warranty" element={<WarrantyPage />} />
             <Route path="blog" element={<Blog />} />
             <Route path="blog/:id" element={<BlogDetail />} />
             <Route path="cart" element={<Cart />} />
@@ -98,6 +101,7 @@ function App() {
             <Route path="posts" element={<AdminPost />} />
             <Route path="posts/:postId" element={<AdminPostDetail />} />
             <Route path="installments" element={<AdminInstallmentPage />} />
+            <Route path="warranty" element={<AdminWarrantyPage />} />
             <Route path="service-center" element={<AdminServiceCenter />} />
           </Route>
       </Routes>

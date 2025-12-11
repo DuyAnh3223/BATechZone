@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { orderService } from "@/services/orderService";
 import { toast } from "sonner";
+import { translatePaymentMethod, translatePaymentStatus } from "@/utils/statusTranslations";
 
 const OrderSuccess = () => {
   const { orderId } = useParams();
@@ -99,16 +100,6 @@ const OrderSuccess = () => {
       refunded: { label: "Đã hoàn tiền", className: "bg-orange-100 text-orange-800" },
     };
     return statusMap[status] || { label: status, className: "bg-gray-100 text-gray-800" };
-  };
-
-  const getPaymentMethodLabel = (method) => {
-    const methodMap = {
-      cod: "Thanh toán khi nhận hàng (COD)",
-      banking: "Chuyển khoản ngân hàng",
-      momo: "Ví MoMo",
-      vnpay: "VNPay",
-    };
-    return methodMap[method] || "Chưa xác định";
   };
 
   if (loading) {
@@ -344,7 +335,7 @@ const OrderSuccess = () => {
                   <div>
                     <p className="text-xs text-gray-500">Phương thức thanh toán</p>
                     <p className="font-semibold text-base">
-                      {getPaymentMethodLabel(order.paymentMethod || order.payment_method)}
+                      {translatePaymentMethod(order.paymentMethod || order.payment_method || 'cod')}
                     </p>
                   </div>
                 </div>

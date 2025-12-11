@@ -3,6 +3,18 @@ import InstallmentPayment from '../models/InstallmentPayment.js';
 import Order from '../models/Order.js';
 import { query } from '../libs/db.js';
 import { calculateAndUpdateOverdueFees } from '../utils/overdueCalculator.js';
+
+// Helper function to format datetime for MySQL (Vietnam timezone GMT+7)
+function formatDateTimeForMySQL(date = new Date()) {
+    const d = new Date(date);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const hours = String(d.getHours()).padStart(2, '0');
+    const minutes = String(d.getMinutes()).padStart(2, '0');
+    const seconds = String(d.getSeconds()).padStart(2, '0');
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+}
 class InstallmentService {
     /**
      * Tạo mới một khoản trả góp
@@ -284,7 +296,7 @@ class InstallmentService {
             // Update down payment status
             const updated = await Installment.update(installmentId, {
                 down_payment_status: 'paid',
-                down_payment_date: paymentData.paid_date || new Date(),
+                down_payment_date: formatDateTimeForMySQL(paymentData.paid_date || new Date()),
                 down_payment_note: paymentData.note || 'Thanh toán trả trước'
             });
 
@@ -368,7 +380,7 @@ class InstallmentService {
 
             // Update payment status
             const updated = await InstallmentPayment.update(paymentId, {
-                paid_date: paymentData.paid_date || new Date(),
+                paid_date: formatDateTimeForMySQL(paymentData.paid_date || new Date()),
                 status: 'paid',
                 note: paymentData.note || payment.note
             });

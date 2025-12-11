@@ -314,40 +314,29 @@ const AdminOrder = () => {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-4 py-3 font-semibold text-gray-600">ID Đơn</th>
-                  <th className="px-4 py-3 font-semibold text-gray-600">ID User</th>
+                  <th className="px-4 py-3 font-semibold text-gray-600">SĐT</th>
                   <th className="px-4 py-3 font-semibold text-gray-600">Mã đơn hàng</th>
                   <th className="px-4 py-3 font-semibold text-gray-600">Loại</th>
                   <th className="px-4 py-3 font-semibold text-gray-600">Trạng thái đơn</th>
                   <th className="px-4 py-3 font-semibold text-gray-600">Tổng tiền</th>
-                  <th className="px-4 py-3 font-semibold text-gray-600">Ngày tạo</th>
-                  <th className="px-4 py-3 font-semibold text-gray-600">Cập nhật lúc</th>
                   <th className="px-4 py-3 font-semibold text-gray-600">Hành động</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
                 {orders.map((order, index) => {
-                  console.log("ORDER RAW:", order);
-                  console.log("ORDER KEYS:", Object.keys(order));
-                  console.log("is_installment value:", order.is_installment, "type:", typeof order.is_installment);
-                  console.log("isInstallment value:", order.isInstallment, "type:", typeof order.isInstallment);
-                  
                   // Hỗ trợ cả camelCase và snake_case
                   const orderId = order.order_id || order.orderId;
-                  const userId = order.user_id || order.userId;
+                  const userPhone = order.user_phone || order.userPhone;
                   const orderNumber = order.order_number || order.orderNumber;
                   const orderStatus = order.order_status || order.orderStatus;
                   const paymentStatus = order.payment_status || order.paymentStatus;
                   const totalAmount = order.total_amount || order.totalAmount;
-                  const createdAt = order.created_at || order.createdAt;
-                  const updatedAt = order.updated_at || order.updatedAt;
                   const isInstallment = order.is_installment === 1 || order.isInstallment === 1 || order.isInstallment === true;
-                  
-                  console.log("Calculated isInstallment:", isInstallment);
                   
                   return (
                     <tr key={orderId || `order-${index}`} className="hover:bg-blue-50 transition">
                       <td className="px-4 py-3 font-medium text-gray-800">{orderId}</td>
-                      <td className="px-4 py-3">{userId || '-'}</td>
+                      <td className="px-4 py-3">{userPhone || '-'}</td>
                       <td className="px-4 py-3 font-semibold text-blue-800">{orderNumber}</td>
                       <td className="px-4 py-3">
                         {isInstallment ? (
@@ -368,20 +357,15 @@ const AdminOrder = () => {
                           {translateOrderStatus(orderStatus)}
                         </span>
                       </td>
-                      <td className="px-4 py-3 font-semibold text-blue-700">
-                        {totalAmount?.toLocaleString('vi-VN')} ₫
-                      </td>
-                      <td className="px-4 py-3">
-                        {createdAt ? formatDate(createdAt) : '-'}
-                      </td>
-                      <td className="px-4 py-3">
-                        {updatedAt ? formatDate(updatedAt) : '-'}
+                      <td className="px-4 py-3 text-right">
+                        <span className="font-semibold text-blue-700 text-base">
+                          {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(totalAmount || 0)}
+                        </span>
                       </td>
                       <td className="px-4 py-3 flex gap-2 whitespace-nowrap">
                         <button 
                           onClick={() => openDetail(order)} 
-                          className="px-3 py-1.5 rounded-md bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition-colors"
-                        >
+                          className="px-3 py-1.5 rounded-md bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition-colors">
                           Chi tiết
                         </button>
                       </td>

@@ -208,7 +208,12 @@ const InstallmentList = () => {
                         <span className="font-mono text-sm">#{installment.order_id}</span>
                       </td>
                       <td className="py-3 px-4">
-                        <span className="text-sm">User #{installment.user_id}</span>
+                        <div>
+                          <span className="text-sm font-medium">{installment.user_name || `User #${installment.user_id}`}</span>
+                          {installment.user_phone && (
+                            <div className="text-xs text-gray-500">{installment.user_phone}</div>
+                          )}
+                        </div>
                       </td>
                       <td className="py-3 px-4 text-right">
                         <span className="font-semibold">{formatCurrency(installment.total_amount)}</span>

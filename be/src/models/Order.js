@@ -303,7 +303,8 @@ class Order {
     
     const order = orders[0];
     
-   
+    // Thêm cả isInstallment (camelCase) để frontend dễ sử dụng
+    order.isInstallment = order.is_installment;
     
     // Lấy order items riêng
     const [items] = await db.query(
@@ -402,7 +403,7 @@ class Order {
     const [orders] = await db.query(
       `SELECT 
         o.*,
-        u.username, u.email,
+        u.username, u.email, u.phone as user_phone,
         (SELECT COUNT(*) FROM order_items WHERE order_id = o.order_id) as item_count,
         EXISTS(SELECT 1 FROM installments WHERE order_id = o.order_id) as is_installment
       FROM orders o
@@ -464,7 +465,8 @@ class Order {
           deliveredAt: orderInstance.deliveredAt,
           cancelledAt: orderInstance.cancelledAt,
           isInstallment: orderInstance.isInstallment,
-          is_installment: orderInstance.is_installment
+          is_installment: orderInstance.is_installment,
+          userPhone: order.user_phone
         };
       }),
       pagination: {

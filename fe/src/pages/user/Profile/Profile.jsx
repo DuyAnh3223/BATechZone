@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { Link } from "react-router-dom";
+import { translatePaymentMethod, translatePaymentStatus, translateOrderStatus } from "@/utils/statusTranslations";
 import {
   Card,
   CardContent,
@@ -414,27 +415,11 @@ const Profile = () => {
   };
 
   const getOrderStatusLabel = (status) => {
-    const labels = {
-      pending: 'Chờ xác nhận',
-      confirmed: 'Đã xác nhận',
-      processing: 'Đang xử lý',
-      shipping: 'Đang giao',
-      delivered: 'Đã giao',
-      completed: 'Hoàn thành',
-      cancelled: 'Đã hủy',
-      refunded: 'Đã hoàn tiền'
-    };
-    return labels[status] || status;
+    return translateOrderStatus(status);
   };
 
   const getPaymentStatusLabel = (status) => {
-    const labels = {
-      pending: 'Chờ thanh toán',
-      paid: 'Đã thanh toán',
-      failed: 'Thanh toán thất bại',
-      refunded: 'Đã hoàn tiền'
-    };
-    return labels[status] || status;
+    return translatePaymentStatus(status);
   };
 
   const getOrderStatusColor = (status) => {
@@ -1295,10 +1280,10 @@ const Profile = () => {
 
         {/* Order Detail Dialog */}
         <Dialog open={isOrderDetailOpen} onOpenChange={setIsOrderDetailOpen}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="w-[98vw] max-w-[1600px] max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Chi tiết đơn hàng #{selectedOrder?.orderNumber || selectedOrder?.order_number || selectedOrder?.orderId || selectedOrder?.order_id}</DialogTitle>
-              <DialogDescription>
+              <DialogTitle className="text-2xl">Chi tiết đơn hàng #{selectedOrder?.orderNumber || selectedOrder?.order_number || selectedOrder?.orderId || selectedOrder?.order_id}</DialogTitle>
+              <DialogDescription className="text-base">
                 Thông tin chi tiết về đơn hàng của bạn
               </DialogDescription>
             </DialogHeader>
@@ -1326,26 +1311,24 @@ const Profile = () => {
                 {selectedOrder.payments && selectedOrder.payments.length > 0 && (
                   <>
                     <div>
-                      <h3 className="font-semibold mb-3">Thông tin thanh toán</h3>
+                      <h3 className="font-semibold text-lg mb-3">Thông tin thanh toán</h3>
                       <div className="space-y-2">
                         {selectedOrder.payments.map((payment, index) => {
                           const paymentMethod = payment.paymentMethod || payment.payment_method;
                           const transactionId = payment.transactionId || payment.transaction_id;
                           
                           return (
-                            <div key={index} className="p-3 bg-gray-50 rounded-lg">
+                            <div key={index} className="p-4 bg-gray-50 rounded-lg">
                               <div>
-                                <p className="text-sm text-gray-600">Phương thức thanh toán</p>
-                                <p className="font-medium">
-                                  {paymentMethod === 'momo' ? '💳 Ví Momo' : 
-                                   paymentMethod === 'cod' ? '💵 Thanh toán khi nhận hàng' : 
-                                   paymentMethod || 'N/A'}
+                                <p className="text-base text-gray-600">Phương thức thanh toán</p>
+                                <p className="font-medium text-lg">
+                                  {translatePaymentMethod(paymentMethod || 'cod')}
                                 </p>
                               </div>
                               {transactionId && (
                                 <div className="mt-2 pt-2 border-t">
-                                  <p className="text-xs text-gray-500">Mã giao dịch</p>
-                                  <p className="text-sm font-mono bg-white px-2 py-1 rounded mt-1">
+                                  <p className="text-base text-gray-500">Mã giao dịch</p>
+                                  <p className="text-base font-mono bg-white px-2 py-1 rounded mt-1">
                                     {transactionId}
                                   </p>
                                 </div>
@@ -1361,33 +1344,33 @@ const Profile = () => {
 
                 {/* Order Items */}
                 <div>
-                  <h3 className="font-semibold mb-3">Sản phẩm</h3>
+                  <h3 className="font-semibold text-lg mb-3">Sản phẩm</h3>
                   {selectedOrder.loading ? (
-                    <div className="text-center py-4 text-gray-500">
+                    <div className="text-center py-4 text-gray-500 text-base">
                       Đang tải chi tiết...
                     </div>
                   ) : !selectedOrder.items || selectedOrder.items.length === 0 ? (
-                    <div className="text-center py-4 text-gray-500">
+                    <div className="text-center py-4 text-gray-500 text-base">
                       Không có sản phẩm
                     </div>
                   ) : (
                     <div className="space-y-3">
                       {selectedOrder.items.map((item, index) => (
-                      <div key={index} className="flex justify-between items-start p-3 border rounded-lg">
+                      <div key={index} className="flex justify-between items-start p-4 border rounded-lg">
                         <div className="flex-1">
-                          <p className="font-medium">{item.productName || item.product_name}</p>
+                          <p className="font-medium text-base">{item.productName || item.product_name}</p>
                           {(item.variantName || item.variant_name) && (
-                            <p className="text-sm text-gray-500">{item.variantName || item.variant_name}</p>
+                            <p className="text-base text-gray-500">{item.variantName || item.variant_name}</p>
                           )}
                           {item.sku && (
-                            <p className="text-xs text-gray-400">SKU: {item.sku}</p>
+                            <p className="text-base text-gray-400">SKU: {item.sku}</p>
                           )}
                         </div>
                         <div className="text-right">
-                          <p className="text-sm text-gray-500">x{item.quantity}</p>
-                          <p className="font-semibold">{formatPrice((item.unitPrice || item.unit_price || item.price) * item.quantity)}</p>
+                          <p className="text-base text-gray-500">x{item.quantity}</p>
+                          <p className="font-semibold text-lg">{formatPrice((item.unitPrice || item.unit_price || item.price) * item.quantity)}</p>
                           {(item.discountAmount || item.discount_amount || 0) > 0 && (
-                            <p className="text-xs text-green-600">-{formatPrice(item.discountAmount || item.discount_amount)}</p>
+                            <p className="text-sm text-green-600">-{formatPrice(item.discountAmount || item.discount_amount)}</p>
                           )}
                         </div>
                       </div>
@@ -1400,16 +1383,16 @@ const Profile = () => {
 
                 {/* Shipping Address */}
                 <div>
-                  <h3 className="font-semibold mb-3">Địa chỉ giao hàng</h3>
+                  <h3 className="font-semibold text-lg mb-3">Địa chỉ giao hàng</h3>
                   {selectedOrder.loading ? (
-                    <div className="text-center py-4 text-gray-500">
+                    <div className="text-center py-4 text-gray-500 text-base">
                       Đang tải...
                     </div>
                   ) : (
-                    <div className="p-3 bg-gray-50 rounded-lg">
-                      <p className="font-medium">{selectedOrder.recipient_name || 'N/A'}</p>
-                      <p className="text-sm text-gray-600 mt-1">{selectedOrder.recipient_phone || selectedOrder.user_phone || 'N/A'}</p>
-                      <p className="text-sm text-gray-600 mt-2">
+                    <div className="p-4 bg-gray-50 rounded-lg">
+                      <p className="font-medium text-base">{selectedOrder.recipient_name || 'N/A'}</p>
+                      <p className="text-base text-gray-600 mt-1">{selectedOrder.recipient_phone || selectedOrder.user_phone || 'N/A'}</p>
+                      <p className="text-base text-gray-600 mt-2">
                         {selectedOrder.address_line1 || 'Địa chỉ chưa cập nhật'}
                         {selectedOrder.address_line2 && `, ${selectedOrder.address_line2}`}
                         {selectedOrder.ward && `, ${selectedOrder.ward}`}
@@ -1424,32 +1407,32 @@ const Profile = () => {
 
                 {/* Order Summary */}
                 <div>
-                  <h3 className="font-semibold mb-3">Tổng kết đơn hàng</h3>
+                  <h3 className="font-semibold text-lg mb-3">Tổng kết đơn hàng</h3>
                   <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
+                    <div className="flex justify-between text-base">
                       <span className="text-gray-600">Tạm tính</span>
                       <span>{formatPrice(parseFloat(selectedOrder.subtotal || selectedOrder.subtotalAmount || selectedOrder.subtotal_amount || 0))}</span>
                     </div>
                     {parseFloat(selectedOrder.discountAmount || selectedOrder.discount_amount || 0) > 0 && (
-                      <div className="flex justify-between text-sm">
+                      <div className="flex justify-between text-base">
                         <span className="text-gray-600">Giảm giá</span>
                         <span className="text-green-600">-{formatPrice(parseFloat(selectedOrder.discountAmount || selectedOrder.discount_amount || 0))}</span>
                       </div>
                     )}
                     {parseFloat(selectedOrder.shippingFee || selectedOrder.shipping_fee || 0) > 0 && (
-                      <div className="flex justify-between text-sm">
+                      <div className="flex justify-between text-base">
                         <span className="text-gray-600">Phí vận chuyển</span>
                         <span>{formatPrice(parseFloat(selectedOrder.shippingFee || selectedOrder.shipping_fee || 0))}</span>
                       </div>
                     )}
                     {parseFloat(selectedOrder.taxAmount || selectedOrder.tax_amount || 0) > 0 && (
-                      <div className="flex justify-between text-sm">
+                      <div className="flex justify-between text-base">
                         <span className="text-gray-600">Thuế</span>
                         <span>{formatPrice(parseFloat(selectedOrder.taxAmount || selectedOrder.tax_amount || 0))}</span>
                       </div>
                     )}
                     <Separator />
-                    <div className="flex justify-between font-semibold text-lg">
+                    <div className="flex justify-between font-semibold text-xl">
                       <span>Tổng cộng</span>
                       <span className="text-red-600">{formatPrice(parseFloat(selectedOrder.totalAmount || selectedOrder.total_amount || 0))}</span>
                     </div>
@@ -1461,8 +1444,8 @@ const Profile = () => {
                   <>
                     <Separator />
                     <div>
-                      <h3 className="font-semibold mb-2">Ghi chú</h3>
-                      <p className="text-sm text-gray-600">{selectedOrder.notes}</p>
+                      <h3 className="font-semibold text-lg mb-2">Ghi chú</h3>
+                      <p className="text-base text-gray-600">{selectedOrder.notes}</p>
                     </div>
                   </>
                 )}

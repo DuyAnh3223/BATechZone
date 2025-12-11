@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { Outlet, NavLink, useNavigate } from "react-router-dom";
-import { User2, Home, Box, ShoppingCart, ListOrdered, Percent, Bell, Search, Users, Star, MapPin, Wrench, Tags, Book, Heart, CreditCard, LifeBuoy, Eye, LogOut } from "lucide-react";
+import { User2, Home, Box, ShoppingCart, ListOrdered, Percent, Bell, Search, Users, Star, MapPin, Wrench, Tags, Book, Heart, CreditCard, LifeBuoy, Eye, LogOut, Shield } from "lucide-react";
 import { useAdminAuthStore } from "@/stores/useAdminAuthStore";
 import adminAvatar from "../assets/react.svg"; // dùng tạm hình có sẵn
 
@@ -11,6 +11,7 @@ const menu = [
   { icon: <Tags size={18} />, label: "Danh mục", to: "/admin/categories" },
   { icon: <ListOrdered size={18} />, label: "Đơn hàng", to: "/admin/orders" },
   { icon: <CreditCard size={18} />, label: "Trả góp", to: "/admin/installments" },
+  { icon: <Shield size={18} />, label: "Bảo hành", to: "/admin/warranty" },
   { icon: <Percent size={18} />, label: "Mã giảm giá", to: "/admin/coupons" },
   { icon: <Bell size={18} />, label: "Thông báo", to: "/admin/notifications" },
   { icon: <Book size={18} />, label: "Bài viết", to: "/admin/posts" },
