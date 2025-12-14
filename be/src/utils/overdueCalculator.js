@@ -142,29 +142,34 @@ export async function calculateAndUpdateOverdueFees(installmentId = null) {
                 
                 // Chỉ cộng phí vào kỳ cuối nếu kỳ cuối chưa thanh toán
                 if (!lastPayment.paid_date && totalAllFees > 0) {
-                    // Lấy số tiền gốc của kỳ cuối (loại bỏ phí đã cộng trước đó nếu có)
-                    let originalAmount = parseFloat(lastPayment.amount);
-                    
-                    // Nếu đã có phí trong note, trừ ra để lấy số tiền gốc
-                    const feeMatch = lastPayment.note ? lastPayment.note.match(/Phí trễ hạn: ([0-9.]+)/) : null;
-                    if (feeMatch) {
-                        const previousFee = parseFloat(feeMatch[1]);
-                        originalAmount = originalAmount - previousFee;
-                    }
-                    
-                    // Tính số tiền mới = gốc + tổng phí hiện tại (bao gồm cả phí của kỳ đã thanh toán)
-                    const newAmount = originalAmount + totalAllFees;
-                    const newNote = `Kỳ ${maxPaymentNo} | Phí trễ hạn: ${totalAllFees.toFixed(2)} VNĐ`;
-                    
-                    await query(
-                        `UPDATE installment_payments 
-                        SET amount = ?,
-                            note = ?
-                        WHERE payment_id = ?`,
-                        [newAmount, newNote, lastPayment.payment_id]
-                    );
+                    try {
+                        // Lấy số tiền gốc của kỳ cuối (loại bỏ phí đã cộng trước đó nếu có)
+                        let originalAmount = parseFloat(lastPayment.amount);
+                        
+                        // Nếu đã có phí trong note, trừ ra để lấy số tiền gốc
+                        const feeMatch = lastPayment.note ? lastPayment.note.match(/Phí trễ hạn: ([0-9.]+)/) : null;
+                        if (feeMatch) {
+                            const previousFee = parseFloat(feeMatch[1]);
+                            originalAmount = originalAmount - previousFee;
+                        }
+                        
+                        // Tính số tiền mới = gốc + tổng phí hiện tại (bao gồm cả phí của kỳ đã thanh toán)
+                        const newAmount = originalAmount + totalAllFees;
+                        const newNote = `Kỳ ${maxPaymentNo} | Phí trễ hạn: ${totalAllFees.toFixed(2)} VNĐ`;
+                        
+                        await query(
+                            `UPDATE installment_payments 
+                            SET amount = ?,
+                                note = ?
+                            WHERE payment_id = ? AND paid_date IS NULL`,
+                            [newAmount, newNote, lastPayment.payment_id]
+                        );
 
-                    console.log(`[OverdueCalculator] ✅ Tự động cộng tổng phí ${totalAllFees.toFixed(2)} vào kỳ cuối (installment #${instId}, payment #${lastPayment.payment_id})`);
+                        console.log(`[OverdueCalculator] ✅ Tự động cộng tổng phí ${totalAllFees.toFixed(2)} vào kỳ cuối (installment #${instId}, payment #${lastPayment.payment_id})`);
+                    } catch (updateError) {
+                        console.error(`[OverdueCalculator] ⚠️ Lỗi cập nhật phí vào kỳ cuối (có thể đã thanh toán):`, updateError.message);
+                        // Bỏ qua lỗi, không làm gián đoạn flow
+                    }
                 } else if (lastPayment.paid_date) {
                     console.log(`[OverdueCalculator] ℹ️ Kỳ cuối đã thanh toán, không cộng phí (installment #${instId})`);
                 }
@@ -229,13 +234,13 @@ export async function calculatePaymentOverdueFee(paymentId) {
         const calculatedFee = payment.amount * (overdueRate / 100) * payment.overdue_days;
         const roundedFee = Math.round(calculatedFee * 100) / 100;
 
-        // Cập nhật vào DB
+        // Cập nhật vào DB (chỉ nếu chưa thanh toán)
         await query(
             `UPDATE installment_payments 
             SET status = 'overdue',
                 overdue_days = ?,
                 overdue_fee = ?
-            WHERE payment_id = ?`,
+            WHERE payment_id = ? AND paid_date IS NULL`,
             [payment.overdue_days, roundedFee, paymentId]
         );
 
