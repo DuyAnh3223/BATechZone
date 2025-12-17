@@ -20,7 +20,7 @@ const PORT = process.env.PORT || 5001;
 
 // Middlewares
 app.use(cors({origin: process.env.CLIENT_URL, credentials: true}));
-app.use(express.json());
+app.use(express.json()); // Đọc body dạng JSON
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
 

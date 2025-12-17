@@ -1,0 +1,23 @@
+@startuml
+actor Guest
+participant "Frontend" as FE
+participant "Backend" as BE
+database DB
+participant "Email Service" as Mail
+
+Guest -> FE : Nhập thông tin đăng ký
+FE -> BE : POST /register
+BE -> DB : Kiểm tra email tồn tại?
+
+alt Email đã tồn tại
+    DB --> BE : Tồn tại
+    BE --> FE : Lỗi email đã dùng
+    FE --> Guest : Hiển thị lỗi
+else Email hợp lệ
+    DB --> BE : Chưa tồn tại
+    BE -> DB : Lưu user (pending)
+    BE -> Mail : Gửi email xác thực
+    BE --> FE : Đăng ký thành công
+    FE --> Guest : Thông báo kiểm tra email
+end
+@enduml

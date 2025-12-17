@@ -10,7 +10,7 @@ export const db = mysql.createPool({
     database: process.env.DB_NAME,
     port: process.env.DB_PORT,
     waitForConnections: true,
-    connectionLimit: 100, // Tăng số connection
+    connectionLimit: 100, 
     queueLimit: 0,
     enableKeepAlive: true, // Giữ kết nối sống
     keepAliveInitialDelay: 0,
