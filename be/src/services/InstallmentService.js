@@ -345,9 +345,18 @@ class InstallmentService {
      */
     async makePayment(paymentId, paymentData = {}) {
         try {
+            console.log(`[makePayment] Bắt đầu thanh toán payment #${paymentId}`);
+            
             // ✨ Tính phí trễ hạn trước khi thanh toán để đảm bảo số liệu chính xác
             const { calculatePaymentOverdueFee } = await import('../utils/overdueCalculator.js');
-            const overdueInfo = await calculatePaymentOverdueFee(paymentId);
+            
+            try {
+                const overdueInfo = await calculatePaymentOverdueFee(paymentId);
+                console.log(`[makePayment] Phí trễ hạn:`, overdueInfo);
+            } catch (overdueError) {
+                console.error(`[makePayment] Lỗi tính phí trễ hạn (bỏ qua):`, overdueError.message);
+                // Bỏ qua lỗi tính phí, vẫn cho thanh toán
+            }
             
             const payment = await InstallmentPayment.findPaymentById(paymentId);
             if (!payment) {
@@ -378,6 +387,8 @@ class InstallmentService {
                 }
             }
 
+            console.log(`[makePayment] Cập nhật trạng thái thanh toán...`);
+            
             // Update payment status
             const updated = await InstallmentPayment.update(paymentId, {
                 paid_date: formatDateTimeForMySQL(paymentData.paid_date || new Date()),
@@ -389,23 +400,26 @@ class InstallmentService {
                 throw new Error('SERVICE Không thể cập nhật thanh toán');
             }
 
+            console.log(`[makePayment] Thanh toán thành công, kiểm tra hoàn thành hợp đồng...`);
+
             // Check if all payments are paid
             const allPayments = await InstallmentPayment.findAllPaymentsByInstallmentId(payment.installment_id);
             
             const allPaid = allPayments.every(p => p.status === 'paid');
             
             if (allPaid) {
+                console.log(`[makePayment] Tất cả kỳ đã thanh toán, cập nhật trạng thái hợp đồng thành completed`);
                 // Update installment status to completed
                 await Installment.update(payment.installment_id, {
-                    ...installment,
                     status: 'completed'
                 });
             }
-            // No more auto-transition from pending to active
-            // Must pay down payment first to set status = active
 
+            console.log(`[makePayment] Hoàn thành thanh toán payment #${paymentId}`);
+            
             return await InstallmentPayment.findPaymentById(paymentId);
         } catch (error) {
+            console.error(`[makePayment] Lỗi:`, error);
             throw new Error(`SERVICE Lỗi thanh toán: ${error.message}`);
         }
     }

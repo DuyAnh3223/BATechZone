@@ -254,7 +254,8 @@ export const makePayment = async (req, res) => {
             data: payment
         });
     } catch (error) {
-        console.error('CONTROLLERError making payment:', error);
+        console.error('CONTROLLER Error making payment:', error);
+        console.error('Error stack:', error.stack);
         
         if (error.message.includes('Không tìm thấy') || error.message.includes('đã được thanh toán')) {
             return res.status(400).json({
@@ -266,7 +267,8 @@ export const makePayment = async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Lỗi khi thanh toán',
-            error: error.message
+            error: error.message,
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
         });
     }
 };
