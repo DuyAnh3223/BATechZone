@@ -17,7 +17,7 @@ export async function calculateAndUpdateOverdueFees(installmentId = null) {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
-        // Query để lấy các kỳ thanh toán quá hạn (chưa thanh toán)
+        // các kỳ thanh toán quá hạn (unpaid và due_date < today) 
         let queryStr = `
             SELECT 
                 ip.payment_id,

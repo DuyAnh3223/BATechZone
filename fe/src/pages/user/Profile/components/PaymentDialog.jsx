@@ -56,7 +56,7 @@ const PaymentDialog = ({
             <div className="flex justify-between">
               <span className="text-gray-600">Số tiền gốc:</span>
               <span className="font-semibold">
-                {formatPrice(payment.amount - (payment.overdue_fee || 0))}
+                {formatPrice(payment.amount)}
               </span>
             </div>
             {payment.overdue_fee > 0 && (
