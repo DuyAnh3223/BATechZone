@@ -47,6 +47,7 @@ import InstallmentCheckoutPage from './pages/user/InstallmentPage/InstallmentChe
 import InstallmentPendingPage from './pages/user/InstallmentPage/InstallmentPendingPage';
 import PaymentSuccess from './pages/user/PaymentSuccess';
 import PaymentCancel from './pages/user/PaymentCancel';
+import OrderTracking from './pages/user/OrderTracking';
 
 function App() {
   return (
@@ -70,6 +71,7 @@ function App() {
             <Route path="payment/cancel" element={<PaymentCancel />} />
             <Route path="payment/:orderId" element={<Payment />} />
             <Route path="order-success/:orderId" element={<OrderSuccess />} />
+            <Route path="order-tracking" element={<OrderTracking />} />
             <Route path="orders" element={<Orders />} />
             <Route path="orders/:orderId" element={<OrderDetail />} />
             <Route path="product/:productId" element={<ProductDetail />} />
@@ -85,9 +87,9 @@ function App() {
           <Route path="/auth/signup" element={<SignUp />} />
 
           {/* Admin Routes */}
+          <Route path="/admin" element={<Navigate to="/admin/login" replace />} />
           <Route path="/admin/login" element={<AdminLogin />} />
-          <Route path="/admin/*" element={<AdminLayout />}>
-            <Route index element={<Navigate to="/admin/login" replace />} />
+          <Route path="/admin" element={<AdminLayout />}>
             <Route path="dashboard" element={<AdminDashboard />} />
             <Route path="products" element={<AdminProductPage />} />
             <Route path="products/:productId" element={<AdminProductDetail />} />

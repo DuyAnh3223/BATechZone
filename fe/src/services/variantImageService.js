@@ -1,17 +1,17 @@
-import api from '@/lib/axios';
+﻿import { adminApi } from '@/lib/axios';
 
 export const variantImageService = {
-    // Lấy tất cả images của variant
+    // Láº¥y táº¥t cáº£ images cá»§a variant
     getVariantImages: async (variantId) => {
-        const response = await api.get(`/variant-images/variants/${variantId}/images`, {
+        const response = await adminApi.get(`/variant-images/variants/${variantId}/images`, {
             withCredentials: true
         });
         return response.data;
     },
 
-    // Lấy primary image của variant
+    // Láº¥y primary image cá»§a variant
     getPrimaryImage: async (variantId) => {
-        const response = await api.get(`/variant-images/variants/${variantId}/images/primary`, {
+        const response = await adminApi.get(`/variant-images/variants/${variantId}/images/primary`, {
             withCredentials: true
         });
         return response.data;
@@ -19,7 +19,7 @@ export const variantImageService = {
 
     // Upload single image cho variant
     uploadVariantImage: async (variantId, formData) => {
-        const response = await api.post(
+        const response = await adminApi.post(
             `/variant-images/variants/${variantId}/images`,
             formData,
             {
@@ -34,7 +34,7 @@ export const variantImageService = {
 
     // Bulk upload images cho variant (max 10)
     bulkUploadImages: async (variantId, formData) => {
-        const response = await api.post(
+        const response = await adminApi.post(
             `/variant-images/variants/${variantId}/images/bulk`,
             formData,
             {
@@ -47,9 +47,9 @@ export const variantImageService = {
         return response.data;
     },
 
-    // Set image làm primary
+    // Set image lÃ m primary
     setPrimaryImage: async (imageId) => {
-        const response = await api.patch(
+        const response = await adminApi.patch(
             `/variant-images/images/${imageId}/set-primary`,
             {},
             {
@@ -61,7 +61,7 @@ export const variantImageService = {
 
     // Update image metadata (alt_text, display_order)
     updateImageMetadata: async (imageId, data) => {
-        const response = await api.patch(
+        const response = await adminApi.patch(
             `/variant-images/images/${imageId}`,
             data,
             {
@@ -71,11 +71,12 @@ export const variantImageService = {
         return response.data;
     },
 
-    // Xóa image
+    // XÃ³a image
     deleteVariantImage: async (imageId) => {
-        const response = await api.delete(`/variant-images/images/${imageId}`, {
+        const response = await adminApi.delete(`/variant-images/images/${imageId}`, {
             withCredentials: true
         });
         return response.data;
     }
 };
+

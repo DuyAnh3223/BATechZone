@@ -67,9 +67,16 @@ const UserLayout = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Check auth khi mount
+  // Check auth khi mount - Restore user session from token
   useEffect(() => {
-    checkAuth();
+    const token = localStorage.getItem('user_access_token');
+    console.log('[UserLayout] Mount - token exists:', !!token, ', user exists:', !!user);
+    // Only restore session if we have token but no user yet (after F5)
+    // Don't call checkAuth if user already exists (just logged in)
+    if (token && !user) {
+      console.log('[UserLayout] Calling checkAuth to restore session...');
+      checkAuth();
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Chỉ chạy 1 lần khi mount
 
@@ -651,6 +658,7 @@ const UserLayout = () => {
                 </DropdownMenu>
               )}
               
+              {/* User Account Menu */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button 
@@ -691,18 +699,18 @@ const UserLayout = () => {
                     <>
                       <DropdownMenuItem asChild>
                         <Link to="/profile" className="flex items-center">
-                  <User className="size-5 mr-2" />
+                          <User className="size-5 mr-2" />
                           Tài khoản
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
                         <Link to="/orders" className="flex items-center">
-                  <ShoppingCart className="size-5 mr-2" />
+                          <ShoppingCart className="size-5 mr-2" />
                           Đơn hàng
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem onSelect={handleLogout}>
-                  <LogOut className="size-5 mr-2" />
+                        <LogOut className="size-5 mr-2" />
                         Đăng xuất
                       </DropdownMenuItem>
                     </>

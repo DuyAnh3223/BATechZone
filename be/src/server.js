@@ -5,6 +5,7 @@ import cookieParser from 'cookie-parser';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { testConnection } from './libs/db.js';
+import { validateJWTConfig } from './utils/jwt.js';
 import authRoute from './routes/authRoute.js';
 import routes from './routes/index.js';
 
@@ -54,6 +55,10 @@ app.use((req, res) => {
 // Database connection and server start
 const startServer = async () => {
   try {
+    // Validate JWT configuration
+    validateJWTConfig();
+    console.log('✅ JWT configuration validated');
+    
     await testConnection();
     app.listen(PORT, () => {
       console.log(`✅ Server is running on port ${PORT}`);

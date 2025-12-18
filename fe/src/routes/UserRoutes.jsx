@@ -15,6 +15,7 @@ import WarrantyPolicy from '../pages/user/WarrantyPolicy';
 import WarrantyPage from '../pages/user/Warranty/WarrantyPage';
 import Wishlist from '../pages/user/Wishlist';
 import OrderSuccess from '../pages/user/OrderPage/OrderSuccess';
+import OrderTracking from '../pages/user/OrderTracking';
 import Installment from '../pages/user/InstallmentPage/Installment';
 import SignIn from '../pages/auth/SignIn';
 import SignUp from '../pages/auth/SignUp';
@@ -35,6 +36,7 @@ const UserRoutes = () => {
         <Route path="/installment/checkout" element={<InstallmentCheckoutPage />} />
         <Route path="/installment/pending" element={<InstallmentPendingPage />} />
         <Route path="order-success/:orderId" element={<OrderSuccess />} />
+        <Route path="order-tracking" element={<OrderTracking />} />
         <Route path="product/:productId" element={<ProductDetail />} />
         <Route path="category/:categoryId" element={<ProductList />} />
         <Route path="products" element={<ProductList />} />

@@ -314,7 +314,8 @@ const AdminOrder = () => {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-4 py-3 font-semibold text-gray-600">ID Đơn</th>
-                  <th className="px-4 py-3 font-semibold text-gray-600">SĐT</th>
+                  <th className="px-4 py-3 font-semibold text-gray-600">SĐT Giao hàng</th>
+                  <th className="px-4 py-3 font-semibold text-gray-600">Người nhận</th>
                   <th className="px-4 py-3 font-semibold text-gray-600">Mã đơn hàng</th>
                   <th className="px-4 py-3 font-semibold text-gray-600">Loại</th>
                   <th className="px-4 py-3 font-semibold text-gray-600">Trạng thái đơn</th>
@@ -326,7 +327,8 @@ const AdminOrder = () => {
                 {orders.map((order, index) => {
                   // Hỗ trợ cả camelCase và snake_case
                   const orderId = order.order_id || order.orderId;
-                  const userPhone = order.user_phone || order.userPhone;
+                  const recipientPhone = order.recipient_phone || order.recipientPhone || order.user_phone || order.userPhone;
+                  const recipientName = order.recipient_name || order.recipientName || order.username;
                   const orderNumber = order.order_number || order.orderNumber;
                   const orderStatus = order.order_status || order.orderStatus;
                   const paymentStatus = order.payment_status || order.paymentStatus;
@@ -336,7 +338,8 @@ const AdminOrder = () => {
                   return (
                     <tr key={orderId || `order-${index}`} className="hover:bg-blue-50 transition">
                       <td className="px-4 py-3 font-medium text-gray-800">{orderId}</td>
-                      <td className="px-4 py-3">{userPhone || '-'}</td>
+                      <td className="px-4 py-3 font-medium">{recipientPhone || '-'}</td>
+                      <td className="px-4 py-3">{recipientName || '-'}</td>
                       <td className="px-4 py-3 font-semibold text-blue-800">{orderNumber}</td>
                       <td className="px-4 py-3">
                         {isInstallment ? (
@@ -433,6 +436,45 @@ const AdminOrder = () => {
               <div className="p-8 text-center text-gray-500">Đang tải chi tiết đơn hàng...</div>
             ) : orderDetail ? (
               <>
+                {/* Thông tin giao hàng */}
+                <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <h3 className="text-sm font-semibold mb-3 text-blue-800">Thông tin giao hàng</h3>
+                  <div className="grid md:grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <div className="text-gray-600 mb-1">Người nhận:</div>
+                      <div className="font-semibold text-gray-900">
+                        {orderDetail.recipient_name || orderDetail.recipientName || orderDetail.username || '-'}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-gray-600 mb-1">Số điện thoại:</div>
+                      <div className="font-semibold text-gray-900">
+                        {orderDetail.recipient_phone || orderDetail.recipientPhone || orderDetail.user_phone || orderDetail.userPhone || '-'}
+                      </div>
+                    </div>
+                    <div className="md:col-span-2">
+                      <div className="text-gray-600 mb-1">Địa chỉ giao hàng:</div>
+                      <div className="font-semibold text-gray-900">
+                        {[
+                          orderDetail.address_line1 || orderDetail.addressLine1,
+                          orderDetail.address_line2 || orderDetail.addressLine2,
+                          orderDetail.ward,
+                          orderDetail.district,
+                          orderDetail.city
+                        ].filter(Boolean).join(', ') || '-'}
+                      </div>
+                    </div>
+                    {(orderDetail.email || orderDetail.user_phone) && (
+                      <div className="md:col-span-2">
+                        <div className="text-gray-600 mb-1">Email:</div>
+                        <div className="font-semibold text-gray-900">
+                          {orderDetail.email || '-'}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
                 <div className="grid md:grid-cols-2 gap-4 mb-4 text-sm">
                   <div className="border rounded p-3">
                     <div className="text-gray-500 mb-2">Trạng thái đơn</div>

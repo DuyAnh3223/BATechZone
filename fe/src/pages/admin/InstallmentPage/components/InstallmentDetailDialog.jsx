@@ -46,8 +46,8 @@ const InstallmentDetailDialog = ({ installment, open, onClose }) => {
   const loadInstallmentDetails = async () => {
     try {
       await Promise.all([
-        fetchInstallmentById(installment.installment_id),
-        fetchPaymentSummary(installment.installment_id)
+        fetchInstallmentById(installment.installment_id, true), // isAdmin = true
+        fetchPaymentSummary(installment.installment_id, true)   // isAdmin = true
       ]);
     } catch (error) {
       console.error('Error loading installment details:', error);
@@ -83,7 +83,7 @@ const InstallmentDetailDialog = ({ installment, open, onClose }) => {
     try {
       await updateInstallment(currentInstallment.installment_id, { 
         status: 'approved' 
-      });
+      }, true); // isAdmin = true
       toast.success('Đã duyệt hợp đồng trả góp');
       
       // Close dialog without reloading - parent will reload list
@@ -104,7 +104,7 @@ const InstallmentDetailDialog = ({ installment, open, onClose }) => {
     try {
       await updateInstallment(currentInstallment.installment_id, { 
         status: 'cancelled' 
-      });
+      }, true); // isAdmin = true
       toast.success('Đã từ chối hợp đồng trả góp');
       
       // Close dialog without reloading - parent will reload list

@@ -1,4 +1,4 @@
-import api from '@/lib/axios';
+import { userApi } from '@/lib/axios';
 
 export const profileService = {
     // Lấy thông tin profile của user hiện tại

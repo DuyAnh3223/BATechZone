@@ -17,16 +17,26 @@ export const useAdminAuthStore = create((set, get) => ({
             }
         } catch (error) {
             // Im lặng xử lý lỗi 401 (chưa đăng nhập)
+            // Don't log silent errors
+            if (!error._silent) {
+                console.error('[Admin Auth] Check auth failed:', error);
+            }
             set({ user: null, loading: false });
         }
     },
 
-    // Đăng nhập admin
+    // Đăng nhập admin (JWT)
     adminSignIn: async (username, password) => {
         try {
             const response = await authService.adminSignIn(username, password);
-            const { user } = response;
-            set({ user });
+            
+            // JWT response contains accessToken and user
+            const { user, accessToken } = response;
+            
+            // Access token is already stored in localStorage by authService
+            // Update the user state AND loading to false immediately
+            set({ user, loading: false });
+            
             return user;
         } catch (error) {
             const message = error.response?.data?.message || 'Đăng nhập thất bại';
@@ -34,14 +44,23 @@ export const useAdminAuthStore = create((set, get) => ({
         }
     },
 
-    // Đăng xuất
+    // Đăng xuất admin (JWT)
     signOut: async () => {
         try {
-            await authService.signOut();
+            await authService.signOutAdmin();
+            
+            // Clear user state
             set({ user: null });
+            
+            // Access token already cleared by authService
             toast.success('Đăng xuất thành công');
         } catch (error) {
             console.error('Logout error:', error);
+            
+            // Even if API fails, clear local state
+            set({ user: null });
+            localStorage.removeItem('admin_access_token');
+            
             toast.error('Có lỗi xảy ra khi đăng xuất');
         }
     },

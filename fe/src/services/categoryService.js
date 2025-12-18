@@ -1,7 +1,7 @@
-import api from '@/lib/axios';
+﻿import api, { adminApi } from '@/lib/axios';
 
 export const categoryService = {
-    // Lấy danh sách categories
+    // Láº¥y danh sÃ¡ch categories (public - used by users to browse)
     listCategories: async (params = {}) => {
         const response = await api.get('/categories', { 
             params,
@@ -10,7 +10,7 @@ export const categoryService = {
         return response.data;
     },
 
-    // Lấy category theo ID
+    // Láº¥y category theo ID (public - used by users)
     getCategory: async (categoryId) => {
         const response = await api.get(`/categories/${categoryId}`, { 
             withCredentials: true 
@@ -18,7 +18,7 @@ export const categoryService = {
         return response.data;
     },
 
-    // Lấy danh sách categories đơn giản
+    // Láº¥y danh sÃ¡ch categories Ä'Æ¡n giáº£n (public - used by users for navigation)
     getSimpleCategories: async () => {
         const response = await api.get('/categories/simple', { 
             withCredentials: true 
@@ -26,31 +26,31 @@ export const categoryService = {
         return response.data;
     },
 
-    // Tạo category mới
+    // Táº¡o category má»›i
     createCategory: async (data) => {
-        const response = await api.post('/categories', data, { 
+        const response = await adminApi.post('/categories', data, { 
             withCredentials: true 
         });
         return response.data;
     },
 
-    // Cập nhật category
+    // Cáº­p nháº­t category
     updateCategory: async (categoryId, data) => {
-        const response = await api.put(`/categories/${categoryId}`, data, { 
+        const response = await adminApi.put(`/categories/${categoryId}`, data, { 
             withCredentials: true 
         });
         return response.data;
     },
 
-    // Xóa category
+    // XÃ³a category
     deleteCategory: async (categoryId) => {
-        const response = await api.delete(`/categories/${categoryId}`, { 
+        const response = await adminApi.delete(`/categories/${categoryId}`, { 
             withCredentials: true 
         });
         return response.data;
     },
 
-    // Lấy category tree
+    // Láº¥y category tree (public - used for navigation)
     getCategoryTree: async () => {
         const response = await api.get('/categories/tree', { 
             withCredentials: true 
@@ -61,17 +61,17 @@ export const categoryService = {
         }
         return response.data || [];
     },
-    // Lấy attributes của category
+    // Láº¥y attributes cá»§a category
     getCategoryAttributes: async (categoryId) => {
-        const response = await api.get(`/categories/${categoryId}/attributes`, {
+        const response = await adminApi.get(`/categories/${categoryId}/attributes`, {
             withCredentials: true
         });
         return response.data;
     },
 
-    // Cập nhật attributes cho category
+    // Cáº­p nháº­t attributes cho category
     updateCategoryAttributes: async (categoryId, attributeIds) => {
-        const response = await api.put(`/categories/${categoryId}/attributes`, {
+        const response = await adminApi.put(`/categories/${categoryId}/attributes`, {
             attribute_ids: attributeIds
         }, {
             withCredentials: true
@@ -79,20 +79,20 @@ export const categoryService = {
         return response.data;
     },
 
-    // Xóa một attribute khỏi category
+    // XÃ³a má»™t attribute khá»i category
     removeCategoryAttribute: async (categoryId, attributeId) => {
-        const response = await api.delete(`/categories/${categoryId}/attributes/${attributeId}`, {
+        const response = await adminApi.delete(`/categories/${categoryId}/attributes/${attributeId}`, {
             withCredentials: true
         });
         return response.data;
     },
 
-    // Upload ảnh category
+    // Upload áº£nh category
     uploadCategoryImage: async (file) => {
         const formData = new FormData();
         formData.append('image', file);
         
-        const response = await api.post('/categories/upload-image', formData, {
+        const response = await adminApi.post('/categories/upload-image', formData, {
             headers: {
                 'Content-Type': 'multipart/form-data'
             },
@@ -101,9 +101,9 @@ export const categoryService = {
         return response.data;
     },
 
-    // Xóa ảnh category
+    // XÃ³a áº£nh category
     deleteCategoryImage: async (imageUrl) => {
-        const response = await api.post('/categories/delete-image', {
+        const response = await adminApi.post('/categories/delete-image', {
             imageUrl
         }, {
             withCredentials: true

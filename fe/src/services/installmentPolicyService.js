@@ -1,41 +1,42 @@
-import api from '@/lib/axios';
+﻿import { adminApi } from '@/lib/axios';
 
 const BASE_URL = '/installment-policies';
 
 export const installmentPolicyService = {
-    // Admin - Lấy tất cả chính sách
+    // Admin - Láº¥y táº¥t cáº£ chÃ­nh sÃ¡ch
     getAllPolicies: async () => {
-        const response = await api.get(BASE_URL);
+        const response = await adminApi.get(BASE_URL);
         return response.data;
     },
 
-    // Public - Lấy chính sách đang hoạt động
+    // Public - Láº¥y chÃ­nh sÃ¡ch Ä‘ang hoáº¡t Ä‘á»™ng
     getActivePolicies: async () => {
-        const response = await api.get(`${BASE_URL}/active`);
+        const response = await adminApi.get(`${BASE_URL}/active`);
         return response.data;
     },
 
-    // Admin - Tạo chính sách mới
+    // Admin - Táº¡o chÃ­nh sÃ¡ch má»›i
     createPolicy: async (data) => {
-        const response = await api.post(BASE_URL, data);
+        const response = await adminApi.post(BASE_URL, data);
         return response.data;
     },
 
-    // Admin - Cập nhật chính sách
+    // Admin - Cáº­p nháº­t chÃ­nh sÃ¡ch
     updatePolicy: async (id, data) => {
-        const response = await api.put(`${BASE_URL}/${id}`, data);
+        const response = await adminApi.put(`${BASE_URL}/${id}`, data);
         return response.data;
     },
 
-    // Admin - Xóa chính sách
+    // Admin - XÃ³a chÃ­nh sÃ¡ch
     deletePolicy: async (id) => {
-        const response = await api.delete(`${BASE_URL}/${id}`);
+        const response = await adminApi.delete(`${BASE_URL}/${id}`);
         return response.data;
     },
 
-    // Admin - Toggle trạng thái
+    // Admin - Toggle tráº¡ng thÃ¡i
     togglePolicyStatus: async (id) => {
-        const response = await api.patch(`${BASE_URL}/${id}/toggle`);
+        const response = await adminApi.patch(`${BASE_URL}/${id}/toggle`);
         return response.data;
     }
 };
+

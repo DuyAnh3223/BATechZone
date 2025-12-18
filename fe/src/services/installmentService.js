@@ -1,29 +1,31 @@
-import api from '@/lib/axios';
+﻿import { userApi, adminApi } from '@/lib/axios';
 
 export const installmentService = {
     /**
-     * Tạo khoản trả góp mới
-     * @param {Object} data - Dữ liệu trả góp
-     * @param {number} data.order_id - ID đơn hàng
-     * @param {number} data.user_id - ID người dùng
-     * @param {number} data.total_amount - Tổng số tiền
-     * @param {number} data.down_payment - Số tiền trả trước
-     * @param {number} data.num_terms - Số kỳ trả góp
-     * @param {number} data.interest_rate - Lãi suất (%)
-     * @param {Date} data.start_date - Ngày bắt đầu
+     * Táº¡o khoáº£n tráº£ gÃ³p má»›i
+     * @param {Object} data - Dá»¯ liá»‡u tráº£ gÃ³p
+     * @param {number} data.order_id - ID Ä‘Æ¡n hÃ ng
+     * @param {number} data.user_id - ID ngÆ°á»i dÃ¹ng
+     * @param {number} data.total_amount - Tá»•ng sá»‘ tiá»n
+     * @param {number} data.down_payment - Sá»‘ tiá»n tráº£ trÆ°á»›c
+     * @param {number} data.num_terms - Sá»‘ ká»³ tráº£ gÃ³p
+     * @param {number} data.interest_rate - LÃ£i suáº¥t (%)
+     * @param {Date} data.start_date - NgÃ y báº¯t Ä‘áº§u
      */
     createInstallment: async (data) => {
-        const response = await api.post('/installments', data, {
+        const response = await userApi.post('/installments', data, {
             withCredentials: true
         });
         return response.data;
     },
 
     /**
-     * Lấy chi tiết khoản trả góp theo ID
+     * Láº¥y chi tiáº¿t khoáº£n tráº£ gÃ³p theo ID
      * @param {number} installmentId 
+     * @param {boolean} isAdmin - True if called from admin context
      */
-    getInstallmentById: async (installmentId) => {
+    getInstallmentById: async (installmentId, isAdmin = false) => {
+        const api = isAdmin ? adminApi : userApi;
         const response = await api.get(`/installments/${installmentId}`, {
             withCredentials: true
         });
@@ -31,10 +33,12 @@ export const installmentService = {
     },
 
     /**
-     * Lấy tổng hợp thông tin thanh toán
+     * Láº¥y tá»•ng há»£p thÃ´ng tin thanh toÃ¡n
      * @param {number} installmentId 
+     * @param {boolean} isAdmin - True if called from admin context
      */
-    getPaymentSummary: async (installmentId) => {
+    getPaymentSummary: async (installmentId, isAdmin = false) => {
+        const api = isAdmin ? adminApi : userApi;
         const response = await api.get(`/installments/${installmentId}/summary`, {
             withCredentials: true
         });
@@ -42,10 +46,12 @@ export const installmentService = {
     },
 
     /**
-     * Kiểm tra các khoản thanh toán quá hạn
+     * Kiá»ƒm tra cÃ¡c khoáº£n thanh toÃ¡n quÃ¡ háº¡n
      * @param {number} installmentId 
+     * @param {boolean} isAdmin - True if called from admin context
      */
-    checkOverduePayments: async (installmentId) => {
+    checkOverduePayments: async (installmentId, isAdmin = false) => {
+        const api = isAdmin ? adminApi : userApi;
         const response = await api.get(`/installments/${installmentId}/overdue`, {
             withCredentials: true
         });
@@ -53,71 +59,73 @@ export const installmentService = {
     },
 
     /**
-     * Lấy tất cả khoản trả góp của một user (admin only)
+     * Láº¥y táº¥t cáº£ khoáº£n tráº£ gÃ³p cá»§a má»™t user (admin only)
      * @param {number} userId 
      */
     getInstallmentsByUserId: async (userId) => {
-        const response = await api.get(`/installments/user/${userId}`, {
+        const response = await userApi.get(`/installments/user/${userId}`, {
             withCredentials: true
         });
         return response.data;
     },
 
     /**
-     * Lấy thông tin trả góp theo order_id (admin only)
+     * Láº¥y thÃ´ng tin tráº£ gÃ³p theo order_id (admin only)
      * @param {number} orderId 
      */
     getInstallmentByOrderId: async (orderId) => {
-        const response = await api.get(`/installments/order/${orderId}`, {
+        const response = await userApi.get(`/installments/order/${orderId}`, {
             withCredentials: true
         });
         return response.data;
     },
 
     /**
-     * Lấy danh sách khoản trả góp của user hiện tại (từ session)
+     * Láº¥y danh sÃ¡ch khoáº£n tráº£ gÃ³p cá»§a user hiá»‡n táº¡i (tá»« session)
      */
     getMyInstallments: async () => {
-        const response = await api.get('/installments/me/list', {
+        const response = await userApi.get('/installments/me/list', {
             withCredentials: true
         });
         return response.data;
     },
 
     /**
-     * Thanh toán trả trước (down payment)
-     * @param {number} installmentId - ID của installment
-     * @param {Object} data - Dữ liệu thanh toán
-     * @param {Date} data.paid_date - Ngày thanh toán (optional)
-     * @param {string} data.note - Ghi chú (optional)
+     * Thanh toÃ¡n tráº£ trÆ°á»›c (down payment)
+     * @param {number} installmentId - ID cá»§a installment
+     * @param {Object} data - Dá»¯ liá»‡u thanh toÃ¡n
+     * @param {Date} data.paid_date - NgÃ y thanh toÃ¡n (optional)
+     * @param {string} data.note - Ghi chÃº (optional)
      */
     makeDownPayment: async (installmentId, data = {}) => {
-        const response = await api.post(`/installments/${installmentId}/pay-down-payment`, data, {
+        const response = await userApi.post(`/installments/${installmentId}/pay-down-payment`, data, {
             withCredentials: true
         });
         return response.data;
     },
 
     /**
-     * Thanh toán một kỳ trả góp
-     * @param {number} paymentId - ID của kỳ thanh toán
-     * @param {Object} data - Dữ liệu thanh toán
-     * @param {Date} data.paid_date - Ngày thanh toán (optional)
-     * @param {string} data.note - Ghi chú (optional)
+     * Thanh toÃ¡n má»™t ká»³ tráº£ gÃ³p
+     * @param {number} paymentId - ID cá»§a ká»³ thanh toÃ¡n
+     * @param {Object} data - Dá»¯ liá»‡u thanh toÃ¡n
+     * @param {Date} data.paid_date - NgÃ y thanh toÃ¡n (optional)
+     * @param {string} data.note - Ghi chÃº (optional)
      */
     makePayment: async (paymentId, data = {}) => {
-        const response = await api.post(`/installments/payments/${paymentId}/pay`, data, {
+        const response = await userApi.post(`/installments/payments/${paymentId}/pay`, data, {
             withCredentials: true
         });
         return response.data;
     },
 
     /**
-     * Cập nhật thông tin khoản trả góp
+     * Cáº­p nháº­t thÃ´ng tin khoáº£n tráº£ gÃ³p
      * @param {number} installmentId 
-     * @param {Object} data - Dữ liệu cần cập nhật
+     * @param {Object} data - Dá»¯ liá»‡u cáº§n cáº­p nháº­t
+     * @param {boolean} isAdmin - True if called from admin context
      */
-    updateInstallment: async (installmentId, data) => {
+    updateInstallment: async (installmentId, data, isAdmin = false) => {
+        const api = isAdmin ? adminApi : userApi;
         const response = await api.put(`/installments/${installmentId}`, data, {
             withCredentials: true
         });
@@ -125,34 +133,34 @@ export const installmentService = {
     },
 
     /**
-     * Hủy khoản trả góp
+     * Há»§y khoáº£n tráº£ gÃ³p
      * @param {number} installmentId 
      */
     cancelInstallment: async (installmentId) => {
-        const response = await api.patch(`/installments/${installmentId}/cancel`, {}, {
+        const response = await userApi.patch(`/installments/${installmentId}/cancel`, {}, {
             withCredentials: true
         });
         return response.data;
     },
 
     /**
-     * Xóa khoản trả góp (chỉ nếu chưa có payment nào được thanh toán)
+     * XÃ³a khoáº£n tráº£ gÃ³p (chá»‰ náº¿u chÆ°a cÃ³ payment nÃ o Ä‘Æ°á»£c thanh toÃ¡n)
      * @param {number} installmentId 
      */
     deleteInstallment: async (installmentId) => {
-        const response = await api.delete(`/installments/${installmentId}`, {
+        const response = await userApi.delete(`/installments/${installmentId}`, {
             withCredentials: true
         });
         return response.data;
     },
 
     /**
-     * Tính toán số tiền trả hàng tháng (client-side helper)
-     * @param {number} totalAmount - Tổng số tiền
-     * @param {number} downPayment - Số tiền trả trước
-     * @param {number} numTerms - Số kỳ
-     * @param {number} interestRate - Lãi suất (%)
-     * @returns {number} Số tiền trả hàng tháng
+     * TÃ­nh toÃ¡n sá»‘ tiá»n tráº£ hÃ ng thÃ¡ng (client-side helper)
+     * @param {number} totalAmount - Tá»•ng sá»‘ tiá»n
+     * @param {number} downPayment - Sá»‘ tiá»n tráº£ trÆ°á»›c
+     * @param {number} numTerms - Sá»‘ ká»³
+     * @param {number} interestRate - LÃ£i suáº¥t (%)
+     * @returns {number} Sá»‘ tiá»n tráº£ hÃ ng thÃ¡ng
      */
     calculateMonthlyPayment: (totalAmount, downPayment, numTerms, interestRate = 0) => {
         const remainingAmount = totalAmount - downPayment;
@@ -169,11 +177,11 @@ export const installmentService = {
     },
 
     /**
-     * Tính tổng số tiền phải trả (bao gồm lãi)
-     * @param {number} totalAmount - Tổng số tiền
-     * @param {number} downPayment - Số tiền trả trước
-     * @param {number} numTerms - Số kỳ
-     * @param {number} interestRate - Lãi suất (%)
+     * TÃ­nh tá»•ng sá»‘ tiá»n pháº£i tráº£ (bao gá»“m lÃ£i)
+     * @param {number} totalAmount - Tá»•ng sá»‘ tiá»n
+     * @param {number} downPayment - Sá»‘ tiá»n tráº£ trÆ°á»›c
+     * @param {number} numTerms - Sá»‘ ká»³
+     * @param {number} interestRate - LÃ£i suáº¥t (%)
      * @returns {Object} { monthlyPayment, totalPayment, totalInterest }
      */
     calculateInstallmentDetails: (totalAmount, downPayment, numTerms, interestRate = 0) => {
@@ -196,32 +204,33 @@ export const installmentService = {
     },
 
     /**
-     * Lấy tất cả installments (Admin only)
+     * Láº¥y táº¥t cáº£ installments (Admin only)
      */
     getAllInstallments: async () => {
-        const response = await api.get('/installments/all/list', {
+        const response = await adminApi.get('/installments/all/list', {
             withCredentials: true
         });
         return response.data;
     },
 
     /**
-     * Lấy tất cả payments quá hạn (Admin only)
+     * Láº¥y táº¥t cáº£ payments quÃ¡ háº¡n (Admin only)
      */
     getAllOverduePayments: async () => {
-        const response = await api.get('/installments/overdue/all', {
+        const response = await adminApi.get('/installments/overdue/all', {
             withCredentials: true
         });
         return response.data;
     },
 
     /**
-     * Lấy thống kê tổng quan (Admin only)
+     * Láº¥y thá»‘ng kÃª tá»•ng quan (Admin only)
      */
     getStatistics: async () => {
-        const response = await api.get('/installments/statistics', {
+        const response = await adminApi.get('/installments/statistics', {
             withCredentials: true
         });
         return response.data;
     }
 };
+
