@@ -14,9 +14,13 @@ class User {
         this.created_at = userData.created_at;
         this.updated_at = userData.updated_at;
         this.last_login = userData.last_login;
-        this.session_token = userData.session_token; // Deprecated - giữ lại cho compatibility
+        // Session tokens (deprecated - giữ lại cho compatibility/rollback)
+        this.session_token = userData.session_token;
         this.admin_session_token = userData.admin_session_token;
         this.user_session_token = userData.user_session_token;
+        // JWT refresh tokens (new)
+        this.admin_refresh_token = userData.admin_refresh_token;
+        this.user_refresh_token = userData.user_refresh_token;
     }
 
 
@@ -119,6 +123,87 @@ class User {
         }
     }
 
+    // ==================== JWT REFRESH TOKEN METHODS ====================
+
+    // Update admin refresh token (JWT)
+    static async updateAdminRefreshToken(userId, refreshToken) {
+        try {
+            const sql = 'UPDATE users SET admin_refresh_token = ? WHERE user_id = ?';
+            const result = await query(sql, [refreshToken, userId]);
+            return result.affectedRows > 0;
+        } catch (error) {
+            throw new Error(`Error updating admin refresh token: ${error.message}`);
+        }
+    }
+
+    // Update user refresh token (JWT)
+    static async updateUserRefreshToken(userId, refreshToken) {
+        try {
+            const sql = 'UPDATE users SET user_refresh_token = ? WHERE user_id = ?';
+            const result = await query(sql, [refreshToken, userId]);
+            return result.affectedRows > 0;
+        } catch (error) {
+            throw new Error(`Error updating user refresh token: ${error.message}`);
+        }
+    }
+
+    // Clear admin refresh token (JWT)
+    static async clearAdminRefreshToken(userId) {
+        try {
+            const sql = 'UPDATE users SET admin_refresh_token = NULL WHERE user_id = ?';
+            const result = await query(sql, [userId]);
+            return result.affectedRows > 0;
+        } catch (error) {
+            throw new Error(`Error clearing admin refresh token: ${error.message}`);
+        }
+    }
+
+    // Clear user refresh token (JWT)
+    static async clearUserRefreshToken(userId) {
+        try {
+            const sql = 'UPDATE users SET user_refresh_token = NULL WHERE user_id = ?';
+            const result = await query(sql, [userId]);
+            return result.affectedRows > 0;
+        } catch (error) {
+            throw new Error(`Error clearing user refresh token: ${error.message}`);
+        }
+    }
+
+    // Find user by admin refresh token (JWT)
+    static async findByAdminRefreshToken(refreshToken) {
+        try {
+            const sql = 'SELECT * FROM users WHERE admin_refresh_token = ? AND is_active = 1';
+            const users = await query(sql, [refreshToken]);
+            return users.length ? new User(users[0]) : null;
+        } catch (error) {
+            throw new Error(`Error finding user by admin refresh token: ${error.message}`);
+        }
+    }
+
+    // Find user by user refresh token (JWT)
+    static async findByUserRefreshToken(refreshToken) {
+        try {
+            const sql = 'SELECT * FROM users WHERE user_refresh_token = ? AND is_active = 1';
+            const users = await query(sql, [refreshToken]);
+            return users.length ? new User(users[0]) : null;
+        } catch (error) {
+            throw new Error(`Error finding user by user refresh token: ${error.message}`);
+        }
+    }
+
+    // Clear all refresh tokens (JWT) - useful for logout all sessions
+    static async clearAllRefreshTokens(userId) {
+        try {
+            const sql = 'UPDATE users SET admin_refresh_token = NULL, user_refresh_token = NULL WHERE user_id = ?';
+            const result = await query(sql, [userId]);
+            return result.affectedRows > 0;
+        } catch (error) {
+            throw new Error(`Error clearing all refresh tokens: ${error.message}`);
+        }
+    }
+
+    // ==================== END JWT METHODS ====================
+
     static async create({ username, email, password_hash, full_name = null, phone = null, role = 0 }) {
         try {
             const sql = `
@@ -199,7 +284,16 @@ class User {
     }
 
     toJSON() {
-        const { password_hash, session_token, admin_session_token, user_session_token, ...safeUser } = this;
+        // Exclude sensitive fields from JSON response
+        const { 
+            password_hash, 
+            session_token, 
+            admin_session_token, 
+            user_session_token,
+            admin_refresh_token,  // JWT - don't expose
+            user_refresh_token,   // JWT - don't expose
+            ...safeUser 
+        } = this;
         const roles = {
             0: 'customer',
             1: 'shipper',

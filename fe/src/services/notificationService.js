@@ -1,16 +1,16 @@
-import api from '@/lib/axios';
+﻿import { userApi } from '@/lib/axios';
 
 export const notificationService = {
-    // Lấy danh sách thông báo của user hiện tại
+    // Láº¥y danh sÃ¡ch thÃ´ng bÃ¡o cá»§a user hiá»‡n táº¡i
     getNotifications: async (params = {}) => {
         try {
-            const response = await api.get('/notifications', { 
+            const response = await userApi.get('/notifications', { 
                 params,
                 withCredentials: true 
             });
             return response.data;
         } catch (error) {
-            // Nếu API chưa có, trả về empty array
+            // Náº¿u API chÆ°a cÃ³, tráº£ vá» empty array
             if (error.response?.status === 404) {
                 return { success: true, data: [], total: 0, unreadCount: 0 };
             }
@@ -18,15 +18,15 @@ export const notificationService = {
         }
     },
 
-    // Đánh dấu thông báo là đã đọc
+    // ÄÃ¡nh dáº¥u thÃ´ng bÃ¡o lÃ  Ä‘Ã£ Ä‘á»c
     markAsRead: async (notificationId) => {
         try {
-            const response = await api.put(`/notifications/${notificationId}/read`, {}, { 
+            const response = await userApi.put(`/notifications/${notificationId}/read`, {}, { 
                 withCredentials: true 
             });
             return response.data;
         } catch (error) {
-            // Nếu API chưa có, trả về success
+            // Náº¿u API chÆ°a cÃ³, tráº£ vá» success
             if (error.response?.status === 404) {
                 return { success: true };
             }
@@ -34,15 +34,15 @@ export const notificationService = {
         }
     },
 
-    // Đánh dấu tất cả thông báo là đã đọc
+    // ÄÃ¡nh dáº¥u táº¥t cáº£ thÃ´ng bÃ¡o lÃ  Ä‘Ã£ Ä‘á»c
     markAllAsRead: async () => {
         try {
-            const response = await api.put('/notifications/read-all', {}, { 
+            const response = await userApi.put('/notifications/read-all', {}, { 
                 withCredentials: true 
             });
             return response.data;
         } catch (error) {
-            // Nếu API chưa có, trả về success
+            // Náº¿u API chÆ°a cÃ³, tráº£ vá» success
             if (error.response?.status === 404) {
                 return { success: true };
             }
@@ -50,15 +50,15 @@ export const notificationService = {
         }
     },
 
-    // Xóa thông báo
+    // XÃ³a thÃ´ng bÃ¡o
     deleteNotification: async (notificationId) => {
         try {
-            const response = await api.delete(`/notifications/${notificationId}`, { 
+            const response = await userApi.delete(`/notifications/${notificationId}`, { 
                 withCredentials: true 
             });
             return response.data;
         } catch (error) {
-            // Nếu API chưa có, trả về success
+            // Náº¿u API chÆ°a cÃ³, tráº£ vá» success
             if (error.response?.status === 404) {
                 return { success: true };
             }
@@ -66,15 +66,15 @@ export const notificationService = {
         }
     },
 
-    // Lấy số lượng thông báo chưa đọc
+    // Láº¥y sá»‘ lÆ°á»£ng thÃ´ng bÃ¡o chÆ°a Ä‘á»c
     getUnreadCount: async () => {
         try {
-            const response = await api.get('/notifications/unread-count', { 
+            const response = await userApi.get('/notifications/unread-count', { 
                 withCredentials: true 
             });
             return response.data;
         } catch (error) {
-            // Nếu API chưa có, trả về 0
+            // Náº¿u API chÆ°a cÃ³, tráº£ vá» 0
             if (error.response?.status === 404) {
                 return { success: true, count: 0 };
             }
@@ -82,4 +82,5 @@ export const notificationService = {
         }
     }
 };
+
 

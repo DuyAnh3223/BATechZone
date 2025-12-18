@@ -1,51 +1,129 @@
-import api from '@/lib/axios';
+import { adminApi, userApi } from '@/lib/axios';
+import axios from 'axios';
+
+const baseURL = import.meta.env.MODE === 'development' ? "http://localhost:5001/api" : "/api";
 
 export const authService = {
-    // Kiểm tra trạng thái đăng nhập (dùng chung)
-    checkAuth: async () => {
-        const response = await api.get('/auth/me');
-        return response.data;
-    },
-
+    // ==================== ADMIN AUTH ====================
+    
     // Kiểm tra trạng thái đăng nhập admin
     checkAdminAuth: async () => {
-        const response = await api.get('/auth/admin/me');
+        const response = await adminApi.get('/auth/admin/me');
         return response.data;
     },
 
+    // Đăng nhập admin (JWT)
+    adminSignIn: async (username, password) => {
+        const response = await axios.post(`${baseURL}/auth/admin_signin`, 
+            { username, password },
+            { withCredentials: true }
+        );
+        
+        // Store access token in localStorage
+        if (response.data.success && response.data.accessToken) {
+            localStorage.setItem('admin_access_token', response.data.accessToken);
+        }
+        
+        return response.data;
+    },
+
+    // Refresh admin access token
+    refreshAdminToken: async () => {
+        const response = await axios.post(`${baseURL}/auth/refresh-admin`, {}, {
+            withCredentials: true
+        });
+        
+        if (response.data.success && response.data.accessToken) {
+            localStorage.setItem('admin_access_token', response.data.accessToken);
+        }
+        
+        return response.data.accessToken;
+    },
+
+    // Đăng xuất admin
+    signOutAdmin: async () => {
+        const response = await adminApi.post('/auth/signout');
+        
+        // Clear admin tokens
+        localStorage.removeItem('admin_access_token');
+        
+        return response.data;
+    },
+
+    // ==================== USER AUTH ====================
+    
     // Kiểm tra trạng thái đăng nhập user
     checkUserAuth: async () => {
-        const response = await api.get('/auth/user/me');
+        const response = await userApi.get('/auth/user/me');
         return response.data;
     },
 
-    // Đăng nhập admin
-    adminSignIn: async (username, password) => {
-        const response = await api.post('/auth/admin_signin', { username, password });
-        return response.data;
-    },
-
-    // Đăng nhập user
+    // Đăng nhập user (JWT)
     signIn: async (email, password) => {
-        const response = await api.post('/auth/signin', { email, password });
+        const response = await axios.post(`${baseURL}/auth/signin`, 
+            { email, password },
+            { withCredentials: true }
+        );
+        
+        // Store access token in localStorage
+        if (response.data.success && response.data.accessToken) {
+            localStorage.setItem('user_access_token', response.data.accessToken);
+        }
+        
         return response.data;
     },
 
     // Đăng ký
     signUp: async (username, password, email) => {
-        const response = await api.post('/auth/signup', { username, password, email });
+        const response = await axios.post(`${baseURL}/auth/signup`, 
+            { username, password, email },
+            { withCredentials: true }
+        );
         return response.data;
     },
 
-    // Đăng xuất
+    // Refresh user access token
+    refreshUserToken: async () => {
+        const response = await axios.post(`${baseURL}/auth/refresh-user`, {}, {
+            withCredentials: true
+        });
+        
+        if (response.data.success && response.data.accessToken) {
+            localStorage.setItem('user_access_token', response.data.accessToken);
+        }
+        
+        return response.data.accessToken;
+    },
+
+    // Đăng xuất user
     signOut: async () => {
-        const response = await api.post('/auth/signout');
+        const response = await userApi.post('/auth/signout');
+        
+        // Clear user tokens
+        localStorage.removeItem('user_access_token');
+        
         return response.data;
+    },
+
+    // ==================== COMMON AUTH (Backward Compatibility) ====================
+    
+    // Kiểm tra trạng thái đăng nhập (dùng chung - deprecated)
+    checkAuth: async () => {
+        // Try user first, then admin
+        try {
+            return await authService.checkUserAuth();
+        } catch (error) {
+            try {
+                return await authService.checkAdminAuth();
+            } catch (error2) {
+                throw error2;
+            }
+        }
     },
 
     // Cập nhật profile
     updateProfile: async (fullName, phone, email) => {
-        const response = await api.put('/auth/profile', { fullName, phone, email });
+        const response = await userApi.put('/auth/profile', { fullName, phone, email });
         return response.data;
     },
 };

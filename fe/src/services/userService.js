@@ -1,37 +1,38 @@
-import api from '@/lib/axios';
+﻿import { adminApi } from '@/lib/axios';
 
 export const userService = {
-    // Lấy danh sách users với phân trang và tìm kiếm
+    // Láº¥y danh sÃ¡ch users vá»›i phÃ¢n trang vÃ  tÃ¬m kiáº¿m
     listUsers: async (params = {}) => {
         const { search = '', role = '', is_active = '', page = 1, pageSize = 10 } = params;
-        const response = await api.get('/users', {
+        const response = await adminApi.get('/users', {
             params: { search, role, is_active, page, pageSize }
         });
         return response.data;
     },
 
-    // Lấy thông tin user theo ID
+    // Láº¥y thÃ´ng tin user theo ID
     getUserById: async (userId) => {
-        const response = await api.get(`/users/${userId}`);
+        const response = await adminApi.get(`/users/${userId}`);
         return response.data;
     },
 
-    // Tạo user mới
+    // Táº¡o user má»›i
     createUser: async (userData) => {
-        const response = await api.post('/users', userData);
+        const response = await adminApi.post('/users', userData);
         return response.data;
     },
 
-    // Cập nhật user
+    // Cáº­p nháº­t user
     updateUser: async (userId, userData) => {
-        const response = await api.put(`/users/${userId}`, userData);
+        const response = await adminApi.put(`/users/${userId}`, userData);
         return response.data;
     },
 
-    // Xóa user
+    // XÃ³a user
     deleteUser: async (userId) => {
-        const response = await api.delete(`/users/${userId}`);
+        const response = await adminApi.delete(`/users/${userId}`);
         return response.data;
     },
 };
+
 

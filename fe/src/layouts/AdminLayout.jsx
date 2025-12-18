@@ -24,12 +24,21 @@ const AdminLayout = () => {
   const { user, loading, checkAuth, signOut } = useAdminAuthStore();
 
   useEffect(() => {
-    checkAuth();
+    // Check auth when component mounts
+    // If user just logged in, they will have token but checkAuth verifies it's valid
+    const token = localStorage.getItem('admin_access_token');
+    if (token && !user) {
+      // Have token but no user data - verify token
+      checkAuth();
+    }
+    // No token and no user - skip checkAuth, let redirect useEffect handle it
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Chỉ chạy 1 lần khi mount
 
   useEffect(() => {
-    if (!loading && !user) {
+    // Redirect to login if not authenticated (after loading completes)
+    const token = localStorage.getItem('admin_access_token');
+    if (!loading && !user && !token) {
       navigate('/admin/login');
     }
   }, [loading, user, navigate]);

@@ -36,10 +36,10 @@ export const useInstallmentStore = create((set, get) => ({
     },
 
     // Lấy chi tiết khoản trả góp
-    fetchInstallmentById: async (installmentId) => {
+    fetchInstallmentById: async (installmentId, isAdmin = false) => {
         set({ loading: true, error: null });
         try {
-            const response = await installmentService.getInstallmentById(installmentId);
+            const response = await installmentService.getInstallmentById(installmentId, isAdmin);
             console.log('Store - Raw response:', response);
             
             const installmentData = response.data || response;
@@ -61,10 +61,10 @@ export const useInstallmentStore = create((set, get) => ({
     },
 
     // Lấy tổng hợp thanh toán
-    fetchPaymentSummary: async (installmentId) => {
+    fetchPaymentSummary: async (installmentId, isAdmin = false) => {
         set({ loading: true, error: null });
         try {
-            const response = await installmentService.getPaymentSummary(installmentId);
+            const response = await installmentService.getPaymentSummary(installmentId, isAdmin);
             const summaryData = response.data || response;
             
             set({ 
@@ -231,10 +231,10 @@ export const useInstallmentStore = create((set, get) => ({
     },
 
     // Cập nhật thông tin trả góp
-    updateInstallment: async (installmentId, data) => {
+    updateInstallment: async (installmentId, data, isAdmin = false) => {
         set({ loading: true, error: null });
         try {
-            const response = await installmentService.updateInstallment(installmentId, data);
+            const response = await installmentService.updateInstallment(installmentId, data, isAdmin);
             
             if (response.success) {
                 // Update local state only, don't fetch again

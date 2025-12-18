@@ -57,6 +57,7 @@ const InstallmentCheckoutPage = () => {
     selectedDownPaymentPercent = 20,
     calculation = null,
     selectedPolicy = null,
+    paymentSchedule = [],
   } = installmentData;
 
   const formatCurrency = (amount) => {
@@ -162,6 +163,7 @@ const InstallmentCheckoutPage = () => {
             installmentId: response.data.installmentId,
             cartItems: cartItems,
             calculation: calculation,
+            paymentSchedule: paymentSchedule,
             selectedMonths: selectedMonths,
             selectedDownPaymentPercent: selectedDownPaymentPercent,
             userInfo: {
@@ -314,17 +316,40 @@ const InstallmentCheckoutPage = () => {
 
                 <Separator />
 
-                <div className="flex justify-between items-start">
-                  <span className="text-sm text-gray-600">
-                    Góp mỗi tháng<br />
-                    <span className="text-xs text-gray-500">(trong {selectedMonths} tháng)</span>
-                  </span>
-                  <div className="text-right">
-                    <p className="text-lg font-bold text-blue-600">
-                      {formatCurrency(calculation.monthlyPayment)}
-                    </p>
+                {calculation.firstMonthPayment && calculation.lastMonthPayment ? (
+                  <div className="bg-blue-50 p-3 rounded-lg space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs text-gray-600">Tháng đầu</span>
+                      <span className="text-sm font-semibold text-red-600">
+                        {formatCurrency(calculation.firstMonthPayment)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs text-gray-600">Tháng cuối</span>
+                      <span className="text-sm font-semibold text-green-600">
+                        {formatCurrency(calculation.lastMonthPayment)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center pt-1 border-t border-blue-200">
+                      <span className="text-xs text-gray-600">Trung bình/tháng</span>
+                      <span className="text-base font-bold text-blue-900">
+                        {formatCurrency(calculation.averageMonthlyPayment)}
+                      </span>
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="flex justify-between items-start">
+                    <span className="text-sm text-gray-600">
+                      Góp mỗi tháng<br />
+                      <span className="text-xs text-gray-500">(trong {selectedMonths} tháng)</span>
+                    </span>
+                    <div className="text-right">
+                      <p className="text-lg font-bold text-blue-600">
+                        {formatCurrency(calculation.monthlyPayment)}
+                      </p>
+                    </div>
+                  </div>
+                )}
 
                 <Separator />
 
@@ -344,10 +369,42 @@ const InstallmentCheckoutPage = () => {
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Lãi suất:</span>
                   <span className="font-semibold text-blue-600">
-                    {calculation.interestRate}%/năm
+                    {calculation.interestRate}%/năm (Dư nợ giảm dần)
                   </span>
                 </div>
               </div>
+
+              {/* Payment Schedule Mini Table */}
+              {paymentSchedule && paymentSchedule.length > 0 && (
+                <div className="mt-4">
+                  <h4 className="text-xs font-semibold text-gray-700 mb-2">Lịch trả góp chi tiết</h4>
+                  <div className="border rounded-lg overflow-hidden">
+                    <div className="max-h-48 overflow-y-auto">
+                      <table className="w-full text-xs">
+                        <thead className="bg-gray-50 sticky top-0">
+                          <tr>
+                            <th className="px-2 py-1 text-left font-medium text-gray-700">Kỳ</th>
+                            <th className="px-2 py-1 text-right font-medium text-gray-700">Số tiền</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200">
+                          {paymentSchedule.map((payment) => (
+                            <tr key={payment.month} className="hover:bg-gray-50">
+                              <td className="px-2 py-1.5 text-left">Tháng {payment.month}</td>
+                              <td className="px-2 py-1.5 text-right font-medium text-red-600">
+                                {formatCurrency(payment.total)}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    💡 Số tiền giảm dần mỗi tháng theo phương pháp dư nợ giảm dần
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>

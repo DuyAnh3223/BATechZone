@@ -182,7 +182,43 @@ class Order {
           const installmentStatus = downPayment === 0 ? 'active' : 'approved';
           const downPaymentStatus = downPayment === 0 ? 'not_required' : 'pending';
           
-          // Insert installment record
+          // Calculate declining balance schedule (Dư nợ giảm dần)
+          const principal = totalWithInterest - downPayment;
+          const numTerms = details.months || 12;
+          const monthlyRate = interestRate / 100 / 12;
+          const principalPerMonth = principal / numTerms;
+          const installmentFeePercent = details.installmentFeePercent || 0;
+          const totalFee = (principal * installmentFeePercent) / 100;
+          const monthlyFee = totalFee / numTerms;
+          
+          let balance = principal;
+          const paymentSchedule = [];
+          
+          for (let i = 1; i <= numTerms; i++) {
+            const interest = balance * monthlyRate;
+            const total = Math.round((principalPerMonth + interest + monthlyFee) * 100) / 100;
+            balance -= principalPerMonth;
+            
+            paymentSchedule.push({
+              month: i,
+              principal: Math.round(principalPerMonth * 100) / 100,
+              interest: Math.round(interest * 100) / 100,
+              fee: Math.round(monthlyFee * 100) / 100,
+              total: total,
+              remainingBalance: Math.round(Math.max(0, balance) * 100) / 100
+            });
+          }
+          
+          console.log('Declining balance schedule calculated:', {
+            principal,
+            numTerms,
+            monthlyRate,
+            principalPerMonth,
+            firstPayment: paymentSchedule[0].total,
+            lastPayment: paymentSchedule[numTerms - 1].total
+          });
+          
+          // Insert installment record (without monthly_payment as it varies)
           const [installmentResult] = await conn.query(
             `INSERT INTO installments (
               order_id, 
@@ -191,27 +227,25 @@ class Order {
               down_payment, 
               down_payment_status, 
               num_terms, 
-              monthly_payment, 
               overdue_fee_percent_per_day, 
               interest_rate, 
               policy_id, 
               status, 
               start_date, 
               end_date
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), DATE_ADD(NOW(), INTERVAL ? MONTH))`,
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), DATE_ADD(NOW(), INTERVAL ? MONTH))`,
             [
               orderId,
               orderData.userId || null,
               totalWithInterest,
               downPayment,
               downPaymentStatus,
-              details.months || 12,
-              details.monthlyPayment || 0,
+              numTerms,
               overdueFeePercent,
               interestRate,
               details.policyId || null,
               installmentStatus,
-              details.months || 12
+              numTerms
             ]
           );
           
@@ -221,26 +255,23 @@ class Order {
             totalWithInterest,
             downPayment: downPayment,
             downPaymentStatus: downPaymentStatus,
-            monthlyPayment: details.monthlyPayment,
             interestRate: interestRate,
             overdueFeePercent: overdueFeePercent,
-            installmentFeePercent: details.installmentFeePercent || 0,
+            installmentFeePercent: installmentFeePercent,
             policyId: details.policyId,
             status: installmentStatus
           });
 
-          // Nếu status = 'active' (down_payment = 0), tạo luôn các kỳ thanh toán
+          // Tạo các kỳ thanh toán với số tiền giảm dần (declining balance)
           if (installmentStatus === 'active') {
             const installmentId = installmentResult.insertId;
-            const numTerms = details.months || 12;
-            const monthlyPayment = details.monthlyPayment || 0;
             const startDate = new Date();
 
-            console.log('Creating installment payments for auto-active installment...');
+            console.log('Creating installment payments with declining balance amounts...');
 
-            for (let i = 1; i <= numTerms; i++) {
+            for (let payment of paymentSchedule) {
               const dueDate = new Date(startDate);
-              dueDate.setMonth(dueDate.getMonth() + i);
+              dueDate.setMonth(dueDate.getMonth() + payment.month);
 
               await conn.query(
                 `INSERT INTO installment_payments (
@@ -248,14 +279,14 @@ class Order {
                 ) VALUES (?, ?, ?, ?, 'pending')`,
                 [
                   installmentId,
-                  i,
+                  payment.month,
                   dueDate,
-                  monthlyPayment
+                  payment.total
                 ]
               );
             }
 
-            console.log(`Created ${numTerms} installment payments for installment #${installmentId}`);
+            console.log(`Created ${numTerms} declining balance payments for installment #${installmentId}`);
           }
         } catch (error) {
           console.error('Failed to create installment record:', error.message);
@@ -404,10 +435,13 @@ class Order {
       `SELECT 
         o.*,
         u.username, u.email, u.phone as user_phone,
+        a.recipient_name, a.phone as recipient_phone,
+        a.address_line1, a.city, a.district,
         (SELECT COUNT(*) FROM order_items WHERE order_id = o.order_id) as item_count,
         EXISTS(SELECT 1 FROM installments WHERE order_id = o.order_id) as is_installment
       FROM orders o
       LEFT JOIN users u ON o.user_id = u.user_id
+      LEFT JOIN addresses a ON o.address_id = a.address_id
       WHERE ${conditions.join(' AND ')}
       ORDER BY o.${sortBy} ${sortOrder}
       LIMIT ? OFFSET ?`,
@@ -466,7 +500,16 @@ class Order {
           cancelledAt: orderInstance.cancelledAt,
           isInstallment: orderInstance.isInstallment,
           is_installment: orderInstance.is_installment,
-          userPhone: order.user_phone
+          // Thông tin từ users table
+          userPhone: order.user_phone,
+          username: order.username,
+          email: order.email,
+          // Thông tin từ addresses table (ưu tiên cho hiển thị)
+          recipientName: order.recipient_name,
+          recipientPhone: order.recipient_phone,
+          addressLine1: order.address_line1,
+          city: order.city,
+          district: order.district
         };
       }),
       pagination: {

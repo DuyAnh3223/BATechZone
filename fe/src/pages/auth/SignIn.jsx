@@ -22,9 +22,14 @@ const Login = () => {
 				toast.error('Tính năng đăng nhập bằng số điện thoại chưa được hỗ trợ');
 				return;
 			}
-			await signIn(emailOrUsername, password);
-			toast.success('Đăng nhập thành công');
-			navigate('/');
+			const user = await signIn(emailOrUsername, password);
+			if (user) {
+				toast.success('Đăng nhập thành công');
+				// Delay to ensure Zustand state is synced and persisted before navigation
+				setTimeout(() => {
+					navigate('/');
+				}, 100);
+			}
 		} catch (err) {
 			toast.error(err.message || 'Đăng nhập thất bại');
 		} finally {

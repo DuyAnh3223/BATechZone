@@ -10,7 +10,8 @@ import {
   cancelOrder,
   refundOrder,
   updateOrderStatus,
-  updatePaymentStatus
+  updatePaymentStatus,
+  trackOrderByPhone
 } from '../controllers/orderController.js';
 
 const router = express.Router();
@@ -20,6 +21,9 @@ router.post('/', createOrder);
 
 // Lấy danh sách đơn hàng với filter
 router.get('/', getOrders);
+
+// Theo dõi đơn hàng theo số điện thoại (đặt trước /:id để tránh conflict)
+router.get('/track/:phone', trackOrderByPhone);
 
 // Lấy chi tiết đơn hàng
 router.get('/:id', getOrderById);

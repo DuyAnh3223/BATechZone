@@ -89,6 +89,7 @@ const Installment = () => {
   const [selectedPolicyId, setSelectedPolicyId] = useState(null);
   const [selectedDownPaymentPercent, setSelectedDownPaymentPercent] = useState(30);
   const [calculation, setCalculation] = useState(null);
+  const [paymentSchedule, setPaymentSchedule] = useState([]);
   const { createOrder, loading: orderLoading } = useOrderStore();
 
   // Fetch active policies on mount
@@ -130,47 +131,59 @@ const Installment = () => {
 
   const cartTotal = calculateCartTotal();
 
-  // Calculate installment details
+  // Calculate installment details with declining balance method
   useEffect(() => {
     if (!selectedPolicy || cartTotal === 0) return;
 
     const totalAmount = cartTotal;
     const downPaymentAmount = (totalAmount * selectedDownPaymentPercent) / 100;
     const remainingAmount = totalAmount - downPaymentAmount;
-    
-    // Calculate monthly payment with interest
-    const monthlyInterestRate = selectedPolicy.interest_rate / 100 / 12;
     const selectedMonths = selectedPolicy.terms;
-    let monthlyPayment;
-    
-    // P*r*(1+r)^n / ((1+r)^n -1)
-    if (selectedPolicy.interest_rate > 0) {
-      monthlyPayment = (remainingAmount * monthlyInterestRate * Math.pow(1 + monthlyInterestRate, selectedMonths)) 
-        / (Math.pow(1 + monthlyInterestRate, selectedMonths) - 1);
-    } else {
-      monthlyPayment = remainingAmount / selectedMonths;
-    }
-
-    // Calculate installment fee
+    const monthlyInterestRate = selectedPolicy.interest_rate / 100 / 12;
     const feePercent = selectedPolicy.installment_fee_percent || 0;
     const totalFee = (remainingAmount * feePercent) / 100;
     const monthlyFee = totalFee / selectedMonths;
-    const monthlyPaymentWithFee = monthlyPayment + monthlyFee;
+    
+    // Declining balance calculation (Dư nợ giảm dần)
+    const principalPerMonth = remainingAmount / selectedMonths;
+    let balance = remainingAmount;
+    const schedule = [];
+    let totalInterestPaid = 0;
+    
+    for (let i = 1; i <= selectedMonths; i++) {
+      const interest = balance * monthlyInterestRate;
+      const total = Math.round((principalPerMonth + interest + monthlyFee) * 100) / 100;
+      balance -= principalPerMonth;
+      totalInterestPaid += interest;
+      
+      schedule.push({
+        month: i,
+        openingBalance: Math.round((balance + principalPerMonth) * 100) / 100,
+        principal: Math.round(principalPerMonth * 100) / 100,
+        interest: Math.round(interest * 100) / 100,
+        fee: Math.round(monthlyFee * 100) / 100,
+        total: total,
+        remainingBalance: Math.round(Math.max(0, balance) * 100) / 100
+      });
+    }
+    
+    setPaymentSchedule(schedule);
 
-    const totalPayment = downPaymentAmount + (monthlyPaymentWithFee * selectedMonths);
-    const totalInterest = (monthlyPayment * selectedMonths) - remainingAmount;
+    const totalPayment = downPaymentAmount + schedule.reduce((sum, p) => sum + p.total, 0);
     const difference = totalPayment - totalAmount;
 
     setCalculation({
       totalAmount,
       downPaymentAmount,
       remainingAmount,
-      monthlyPayment,
+      principalPerMonth: Math.round(principalPerMonth * 100) / 100,
+      firstMonthPayment: schedule[0].total,
+      lastMonthPayment: schedule[selectedMonths - 1].total,
+      averageMonthlyPayment: Math.round((schedule.reduce((sum, p) => sum + p.total, 0) / selectedMonths) * 100) / 100,
       monthlyFee,
-      monthlyPaymentWithFee,
       totalFee,
       totalPayment,
-      totalInterest,
+      totalInterest: Math.round(totalInterestPaid * 100) / 100,
       difference,
       interestRate: selectedPolicy.interest_rate,
       feePercent,
@@ -439,7 +452,7 @@ const Installment = () => {
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-gray-600">Lãi suất</span>
                       <span className="text-sm font-semibold text-green-600">
-                        {calculation.interestRate}%/năm
+                        {calculation.interestRate}%/năm (Dư nợ giảm dần)
                       </span>
                     </div>
 
@@ -476,18 +489,33 @@ const Installment = () => {
 
                     <Separator />
 
-                    <div className="flex justify-between items-center py-2 bg-red-50 px-3 rounded-lg">
-                      <span className="text-sm font-medium text-gray-900">Góp mỗi tháng</span>
-                      <span className="text-xl font-bold text-red-600">
-                        {formatCurrency(calculation.monthlyPaymentWithFee)}
-                      </span>
+                    {/* Declining Balance Payment Info */}
+                    <div className="bg-blue-50 p-3 rounded-lg space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs text-gray-600">Gốc mỗi tháng (cố định)</span>
+                        <span className="text-sm font-semibold text-blue-700">
+                          {formatCurrency(calculation.principalPerMonth)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs text-gray-600">Tháng đầu (gốc + lãi + phí)</span>
+                        <span className="text-sm font-semibold text-red-600">
+                          {formatCurrency(calculation.firstMonthPayment)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs text-gray-600">Tháng cuối (giảm dần)</span>
+                        <span className="text-sm font-semibold text-green-600">
+                          {formatCurrency(calculation.lastMonthPayment)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center pt-1 border-t border-blue-200">
+                        <span className="text-xs text-gray-600">Trung bình mỗi tháng</span>
+                        <span className="text-base font-bold text-blue-900">
+                          {formatCurrency(calculation.averageMonthlyPayment)}
+                        </span>
+                      </div>
                     </div>
-
-                    {calculation.feePercent > 0 && (
-                      <p className="text-xs text-gray-500 text-center">
-                        (Bao gồm: {formatCurrency(calculation.monthlyPayment)} gốc + lãi + {formatCurrency(calculation.monthlyFee)} phí)
-                      </p>
-                    )}
 
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-gray-600">Tổng lãi phải trả</span>
@@ -503,6 +531,91 @@ const Installment = () => {
                       </span>
                     </div>
                   </div>
+
+                  <Separator />
+
+                  {/* Payment Schedule Table */}
+                  {paymentSchedule.length > 0 && (
+                    <div className="mt-4">
+                      <h3 className="text-sm font-semibold text-gray-900 mb-3">Lịch trả góp chi tiết</h3>
+                      <div className="border rounded-lg overflow-hidden">
+                        <div className="max-h-96 overflow-y-auto">
+                          <table className="w-full text-xs">
+                            <thead className="bg-gray-50 sticky top-0">
+                              <tr>
+                                <th className="px-2 py-2 text-left font-medium text-gray-700">Kỳ</th>
+                                <th className="px-2 py-2 text-right font-medium text-gray-700">Dư nợ đầu kỳ</th>
+                                <th className="px-2 py-2 text-right font-medium text-gray-700">Gốc</th>
+                                <th className="px-2 py-2 text-right font-medium text-gray-700">Lãi</th>
+                                {calculation.feePercent > 0 && (
+                                  <th className="px-2 py-2 text-right font-medium text-gray-700">Phí</th>
+                                )}
+                                <th className="px-2 py-2 text-right font-medium text-gray-700">Tổng phải trả</th>
+                                <th className="px-2 py-2 text-right font-medium text-gray-700">Dư nợ cuối kỳ</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-200">
+                              {paymentSchedule.map((payment, index) => (
+                                <tr 
+                                  key={payment.month} 
+                                  className={`hover:bg-gray-50 ${index === 0 ? 'bg-red-50' : index === paymentSchedule.length - 1 ? 'bg-green-50' : ''}`}
+                                >
+                                  <td className="px-2 py-2 text-left font-medium">{payment.month}</td>
+                                  <td className="px-2 py-2 text-right text-gray-600">{formatCurrency(payment.openingBalance)}</td>
+                                  <td className="px-2 py-2 text-right text-blue-600 font-medium">{formatCurrency(payment.principal)}</td>
+                                  <td className="px-2 py-2 text-right text-orange-600">{formatCurrency(payment.interest)}</td>
+                                  {calculation.feePercent > 0 && (
+                                    <td className="px-2 py-2 text-right text-purple-600">{formatCurrency(payment.fee)}</td>
+                                  )}
+                                  <td className="px-2 py-2 text-right font-semibold text-red-600">{formatCurrency(payment.total)}</td>
+                                  <td className="px-2 py-2 text-right text-gray-600">{formatCurrency(payment.remainingBalance)}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                            <tfoot className="bg-gray-100 font-semibold">
+                              <tr>
+                                <td className="px-2 py-2 text-left">Tổng</td>
+                                <td className="px-2 py-2"></td>
+                                <td className="px-2 py-2 text-right text-blue-700">
+                                  {formatCurrency(paymentSchedule.reduce((sum, p) => sum + p.principal, 0))}
+                                </td>
+                                <td className="px-2 py-2 text-right text-orange-700">
+                                  {formatCurrency(paymentSchedule.reduce((sum, p) => sum + p.interest, 0))}
+                                </td>
+                                {calculation.feePercent > 0 && (
+                                  <td className="px-2 py-2 text-right text-purple-700">
+                                    {formatCurrency(paymentSchedule.reduce((sum, p) => sum + p.fee, 0))}
+                                  </td>
+                                )}
+                                <td className="px-2 py-2 text-right text-red-700">
+                                  {formatCurrency(paymentSchedule.reduce((sum, p) => sum + p.total, 0))}
+                                </td>
+                                <td className="px-2 py-2"></td>
+                              </tr>
+                            </tfoot>
+                          </table>
+                        </div>
+                      </div>
+                      <div className="mt-2 flex gap-4 text-xs text-gray-600">
+                        <div className="flex items-center gap-1">
+                          <div className="w-3 h-3 bg-red-50 border border-red-200 rounded"></div>
+                          <span>Tháng đầu</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <div className="w-3 h-3 bg-green-50 border border-green-200 rounded"></div>
+                          <span>Tháng cuối</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <div className="w-3 h-3 bg-blue-100 rounded"></div>
+                          <span>Gốc (cố định)</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <div className="w-3 h-3 bg-orange-100 rounded"></div>
+                          <span>Lãi (giảm dần)</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   <Separator />
 
@@ -528,7 +641,8 @@ const Installment = () => {
                             cartTotal,
                             selectedDownPaymentPercent,
                             calculation,
-                            selectedPolicy
+                            selectedPolicy,
+                            paymentSchedule
                           }
                         });
                       }}

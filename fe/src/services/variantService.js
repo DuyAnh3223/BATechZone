@@ -1,104 +1,104 @@
-import api from '@/lib/axios';
+﻿import { adminApi } from '@/lib/axios';
 
 export const variantService = {
-    // Lấy danh sách variants
+    // Láº¥y danh sÃ¡ch variants
     listVariants: async (params = {}) => {
-        const response = await api.get('/variants', { params, withCredentials: true });
+        const response = await adminApi.get('/variants', { params, withCredentials: true });
         return response.data;
     },
 
-    // Lấy variant theo ID
+    // Láº¥y variant theo ID
     getVariant: async (variantId) => {
-        const response = await api.get(`/variants/${variantId}`, { withCredentials: true });
+        const response = await adminApi.get(`/variants/${variantId}`, { withCredentials: true });
         return response.data;
     },
 
-    // Lấy variants theo product ID
+    // Láº¥y variants theo product ID
     getVariantsByProductId: async (productId) => {
-        const response = await api.get(`/products/${productId}/variants`, { withCredentials: true });
+        const response = await adminApi.get(`/products/${productId}/variants`, { withCredentials: true });
         return response.data;
     },
 
-    // Tạo variant mới
+    // Táº¡o variant má»›i
     createVariant: async (data) => {
-        const response = await api.post('/variants', data, { withCredentials: true });
+        const response = await adminApi.post('/variants', data, { withCredentials: true });
         return response.data;
     },
 
-    // Tạo variant cho product
+    // Táº¡o variant cho product
     createVariantForProduct: async (productId, data) => {
-        const response = await api.post(`/products/${productId}/variants`, data, { withCredentials: true });
+        const response = await adminApi.post(`/products/${productId}/variants`, data, { withCredentials: true });
         return response.data;
     },
 
-    // Cập nhật variant
+    // Cáº­p nháº­t variant
     updateVariant: async (variantId, data) => {
-        const response = await api.put(`/variants/${variantId}`, data, { withCredentials: true });
+        const response = await adminApi.put(`/variants/${variantId}`, data, { withCredentials: true });
         return response.data;
     },
 
-    // Xóa variant
+    // XÃ³a variant
     deleteVariant: async (variantId) => {
-        const response = await api.delete(`/variants/${variantId}`, { withCredentials: true });
+        const response = await adminApi.delete(`/variants/${variantId}`, { withCredentials: true });
         return response.data;
     },
 
-    // Lấy attributes theo product ID
+    // Láº¥y attributes theo product ID
     getAttributesByProductId: async (productId) => {
-        const response = await api.get(`/products/${productId}/attributes`, { withCredentials: true });
+        const response = await adminApi.get(`/products/${productId}/attributes`, { withCredentials: true });
         return response.data;
     },
 
-    // Lấy mappings theo product ID
+    // Láº¥y mappings theo product ID
     getMappingsByProductId: async (productId) => {
-        const response = await api.get(`/products/${productId}/variant-mappings`, { withCredentials: true });
+        const response = await adminApi.get(`/products/${productId}/variant-mappings`, { withCredentials: true });
         return response.data;
     },
 
-    // Cập nhật variant mappings
+    // Cáº­p nháº­t variant mappings
     updateVariantMappings: async (variantId, attributeIds) => {
-        const response = await api.put(`/variants/${variantId}/mappings`, { attributeIds }, { withCredentials: true });
+        const response = await adminApi.put(`/variants/${variantId}/mappings`, { attributeIds }, { withCredentials: true });
         return response.data;
     },
 
-    // Lấy images theo variant ID
+    // Láº¥y images theo variant ID
     getVariantImages: async (variantId) => {
-        const response = await api.get(`/variant-images/variants/${variantId}/images`, { withCredentials: true });
+        const response = await adminApi.get(`/variant-images/variants/${variantId}/images`, { withCredentials: true });
         return response.data;
     },
 
-    // Thêm image cho variant
+    // ThÃªm image cho variant
     addVariantImage: async (variantId, data) => {
-        const response = await api.post(`/variant-images/variants/${variantId}/images`, data, { withCredentials: true });
+        const response = await adminApi.post(`/variant-images/variants/${variantId}/images`, data, { withCredentials: true });
         return response.data;
     },
 
-    // Upload nhiều images cho variant
+    // Upload nhiá»u images cho variant
     uploadVariantImages: async (variantId, formData) => {
-        const response = await api.post(`/variant-images/variants/${variantId}/images/bulk`, formData, {
+        const response = await adminApi.post(`/variant-images/variants/${variantId}/images/bulk`, formData, {
             withCredentials: true,
             headers: { 'Content-Type': 'multipart/form-data' }
         });
         return response.data;
     },
 
-    // Xóa image
+    // XÃ³a image
     deleteImage: async (imageId) => {
-        const response = await api.delete(`/variant-images/images/${imageId}`, { withCredentials: true });
+        const response = await adminApi.delete(`/variant-images/images/${imageId}`, { withCredentials: true });
         return response.data;
     },
 
-    // Lấy attribute values theo product category
+    // Láº¥y attribute values theo product category
     getAttributeValuesByProduct: async (productId) => {
-        const response = await api.get(`/products/${productId}/attribute-values`, { withCredentials: true });
+        const response = await adminApi.get(`/products/${productId}/attribute-values`, { withCredentials: true });
         return response.data;
     },
 
-    // Lấy ảnh primary của variant đầu tiên của product
+    // Láº¥y áº£nh primary cá»§a variant Ä‘áº§u tiÃªn cá»§a product
     getFirstVariantPrimaryImage: async (productId) => {
         try {
-            // Lấy variants của product
-            const variantsResponse = await api.get(`/products/${productId}/variants`, { withCredentials: true });
+            // Láº¥y variants cá»§a product
+            const variantsResponse = await adminApi.get(`/products/${productId}/variants`, { withCredentials: true });
             let variants = variantsResponse.data;
             
             // Handle different response formats
@@ -112,15 +112,15 @@ export const variantService = {
                 return null;
             }
             
-            // Lấy variant đầu tiên
+            // Láº¥y variant Ä‘áº§u tiÃªn
             const firstVariant = variants[0];
             
             if (!firstVariant || !firstVariant.variant_id) {
                 return null;
             }
             
-            // Lấy images của variant đầu tiên
-            const imagesResponse = await api.get(`/variant-images/variants/${firstVariant.variant_id}/images`, { 
+            // Láº¥y images cá»§a variant Ä‘áº§u tiÃªn
+            const imagesResponse = await adminApi.get(`/variant-images/variants/${firstVariant.variant_id}/images`, { 
                 withCredentials: true 
             });
             let images = imagesResponse.data || [];
@@ -130,7 +130,7 @@ export const variantService = {
                 images = images.data;
             }
             
-            // Lấy ảnh primary
+            // Láº¥y áº£nh primary
             const primaryImage = images.find(img => img.is_primary);
             
             return primaryImage || (images.length > 0 ? images[0] : null);

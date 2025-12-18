@@ -1,75 +1,75 @@
-import api from '@/lib/axios';
+﻿import { userApi } from '@/lib/axios';
 
 export const cartService = {
-    // Lấy hoặc tạo giỏ hàng
+    // Láº¥y hoáº·c táº¡o giá» hÃ ng
     getOrCreateCart: async (data) => {
-        const response = await api.post('/carts/get-or-create', data);
+        const response = await userApi.post('/carts/get-or-create', data);
         return response.data;
     },
 
-    // Lấy giỏ hàng theo ID
+    // Láº¥y giá» hÃ ng theo ID
     getCartById: async (cartId) => {
-        const response = await api.get(`/carts/${cartId}`);
+        const response = await userApi.get(`/carts/${cartId}`);
         return response.data;
     },
 
-    // Lấy giỏ hàng theo user ID
+    // Láº¥y giá» hÃ ng theo user ID
     getCartByUserId: async (userId) => {
-        const response = await api.get(`/carts/user/${userId}`);
+        const response = await userApi.get(`/carts/user/${userId}`);
         return response.data;
     },
 
-    // Lấy giỏ hàng theo session ID
+    // Láº¥y giá» hÃ ng theo session ID
     getCartBySessionId: async (sessionId) => {
-        const response = await api.get(`/carts/session/${sessionId}`);
+        const response = await userApi.get(`/carts/session/${sessionId}`);
         return response.data;
     },
 
-    // Lấy giỏ hàng với đầy đủ thông tin items
+    // Láº¥y giá» hÃ ng vá»›i Ä‘áº§y Ä‘á»§ thÃ´ng tin items
     getCartWithItems: async (cartId) => {
-        const response = await api.get(`/carts/${cartId}/items`);
+        const response = await userApi.get(`/carts/${cartId}/items`);
         return response.data;
     },
 
-    // Gán giỏ hàng guest cho user khi đăng nhập
+    // GÃ¡n giá» hÃ ng guest cho user khi Ä‘Äƒng nháº­p
     assignCartToUser: async (data) => {
-        const response = await api.post('/carts/assign-to-user', data);
+        const response = await userApi.post('/carts/assign-to-user', data);
         return response.data;
     },
 
-    // Cập nhật thời gian hết hạn
+    // Cáº­p nháº­t thá»i gian háº¿t háº¡n
     updateCartExpiry: async (cartId, expiresAt) => {
-        const response = await api.put(`/carts/${cartId}/expiry`, { expiresAt });
+        const response = await userApi.put(`/carts/${cartId}/expiry`, { expiresAt });
         return response.data;
     },
 
-    // Xóa giỏ hàng
+    // XÃ³a giá» hÃ ng
     deleteCart: async (cartId) => {
-        const response = await api.delete(`/carts/${cartId}`);
+        const response = await userApi.delete(`/carts/${cartId}`);
         return response.data;
     },
 
-    // Xóa giỏ hàng đã hết hạn
+    // XÃ³a giá» hÃ ng Ä‘Ã£ háº¿t háº¡n
     deleteExpiredCarts: async () => {
-        const response = await api.delete('/carts/cleanup/expired');
+        const response = await userApi.delete('/carts/cleanup/expired');
         return response.data;
     },
 
-    // Làm trống giỏ hàng
+    // LÃ m trá»‘ng giá» hÃ ng
     clearCart: async (cartId) => {
-        const response = await api.delete(`/carts/${cartId}/clear`);
+        const response = await userApi.delete(`/carts/${cartId}/clear`);
         return response.data;
     },
 
-    // Tính tổng giá trị giỏ hàng
+    // TÃ­nh tá»•ng giÃ¡ trá»‹ giá» hÃ ng
     calculateCartTotal: async (cartId) => {
-        const response = await api.get(`/carts/${cartId}/total`);
+        const response = await userApi.get(`/carts/${cartId}/total`);
         return response.data;
     },
 
-    // Kiểm tra tồn kho
+    // Kiá»ƒm tra tá»“n kho
     checkCartStock: async (cartId) => {
-        const response = await api.get(`/carts/${cartId}/stock-check`);
+        const response = await userApi.get(`/carts/${cartId}/stock-check`);
         return response.data;
     }
 };

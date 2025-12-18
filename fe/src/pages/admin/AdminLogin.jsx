@@ -16,9 +16,14 @@ const AdminLogin = () => {
 		e.preventDefault();
 		try {
 			setIsSubmitting(true);
-			await adminSignIn(username, password);
-			toast.success('Đăng nhập admin thành công');
-			navigate('/admin/dashboard');
+			const user = await adminSignIn(username, password);
+			if (user) {
+				toast.success('Đăng nhập admin thành công');
+				// Small delay to ensure Zustand state is synced before navigation
+				setTimeout(() => {
+					navigate('/admin/dashboard');
+				}, 0);
+			}
 		} catch (err) {
 			toast.error(err.message || 'Đăng nhập thất bại');
 		} finally {

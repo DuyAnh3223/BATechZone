@@ -1,46 +1,46 @@
-import api from '@/lib/axios';
+﻿import api, { adminApi } from '@/lib/axios';
 
 export const couponService = {
-    // Lấy danh sách coupons
+    // Láº¥y danh sÃ¡ch coupons
     listCoupons: async (params = {}) => {
-        const response = await api.get('/coupons', { params, withCredentials: true });
+        const response = await adminApi.get('/coupons', { params, withCredentials: true });
         return response.data;
     },
 
-    // Lấy coupon theo ID
+    // Láº¥y coupon theo ID
     getCouponById: async (couponId) => {
-        const response = await api.get(`/coupons/${couponId}`, { withCredentials: true });
+        const response = await adminApi.get(`/coupons/${couponId}`, { withCredentials: true });
         return response.data;
     },
 
-    // Tạo coupon mới
+    // Táº¡o coupon má»›i
     createCoupon: async (data) => {
-        const response = await api.post('/coupons', data, { withCredentials: true });
+        const response = await adminApi.post('/coupons', data, { withCredentials: true });
         return response.data;
     },
 
-    // Cập nhật coupon
+    // Cáº­p nháº­t coupon
     updateCoupon: async (couponId, data) => {
-        const response = await api.put(`/coupons/${couponId}`, data, { withCredentials: true });
+        const response = await adminApi.put(`/coupons/${couponId}`, data, { withCredentials: true });
         return response.data;
     },
 
-    // Xóa coupon
+    // XÃ³a coupon
     deleteCoupon: async (couponId) => {
-        const response = await api.delete(`/coupons/${couponId}`, { withCredentials: true });
+        const response = await adminApi.delete(`/coupons/${couponId}`, { withCredentials: true });
         return response.data;
     },
 
-    // Lấy danh sách đơn hàng đã sử dụng coupon
+    // Láº¥y danh sÃ¡ch Ä‘Æ¡n hÃ ng Ä‘Ã£ sá»­ dá»¥ng coupon
     getCouponOrders: async (couponId, params = {}) => {
-        const response = await api.get('/orders', { 
+        const response = await adminApi.get('/orders', { 
             params: { ...params, couponId },
             withCredentials: true 
         });
         return response.data;
     },
 
-    // Validate coupon code và tính toán discount
+    // Validate coupon code vÃ  tÃ­nh toÃ¡n discount (public - used by users during checkout)
     validateCoupon: async (couponCode, subtotal = 0) => {
         const response = await api.get('/coupons/validate', {
             params: { couponCode, subtotal },

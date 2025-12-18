@@ -1,43 +1,43 @@
-import api from '@/lib/axios';
+﻿import { adminApi } from '@/lib/axios';
 
 export const attributeValueService = {
-    // Lấy danh sách tất cả attribute values
+    // Láº¥y danh sÃ¡ch táº¥t cáº£ attribute values
     listAttributeValues: async (params = {}) => {
-        const response = await api.get('/attribute-values', { 
+        const response = await adminApi.get('/attribute-values', { 
             params,
             withCredentials: true 
         });
         return response.data;
     },
 
-    // Lấy các values của một attribute cụ thể (có phân trang)
+    // Láº¥y cÃ¡c values cá»§a má»™t attribute cá»¥ thá»ƒ (cÃ³ phÃ¢n trang)
     getAttributeValues: async (attributeId, params = {}) => {
-        const response = await api.get(`/attribute-values/${attributeId}/values`, {
+        const response = await adminApi.get(`/attribute-values/${attributeId}/values`, {
             params,
             withCredentials: true
         });
         return response.data;
     },
 
-    // Tạo attribute value mới
+    // Táº¡o attribute value má»›i
     createAttributeValue: async (valueData) => {
-        const response = await api.post('/attribute-values', valueData, {
+        const response = await adminApi.post('/attribute-values', valueData, {
             withCredentials: true
         });
         return response.data;
     },
 
-    // Cập nhật attribute value
+    // Cáº­p nháº­t attribute value
     updateAttributeValue: async (valueId, valueData) => {
-        const response = await api.put(`/attribute-values/${valueId}`, valueData, {
+        const response = await adminApi.put(`/attribute-values/${valueId}`, valueData, {
             withCredentials: true
         });
         return response.data;
     },
 
-    // Xóa attribute value
+    // XÃ³a attribute value
     deleteAttributeValue: async (valueId) => {
-        const response = await api.delete(`/attribute-values/${valueId}`, {
+        const response = await adminApi.delete(`/attribute-values/${valueId}`, {
             withCredentials: true
         });
         return response.data;

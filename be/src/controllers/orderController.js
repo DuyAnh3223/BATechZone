@@ -4,7 +4,7 @@ import { db } from '../libs/db.js';
 // Tạo đơn hàng mới
 export const createOrder = async (req, res) => {
   try {
-    const { orderData, items, shippingAddress, guestUserData } = req.body;
+    const { orderData, items, shippingAddress } = req.body;
 
     // Validate
     if (!items || items.length === 0) {
@@ -22,51 +22,8 @@ export const createOrder = async (req, res) => {
       });
     }
 
-    // Create guest user if not logged in and guestUserData provided
-    let userId = orderData.userId;
-    if (!userId && guestUserData) {
-      console.log('Checking for existing user:', guestUserData);
-      
-      // Kiểm tra user đã tồn tại chưa (theo email hoặc phone)
-      const [existingUsers] = await db.query(
-        `SELECT user_id FROM users 
-         WHERE email = ? OR phone = ?
-         LIMIT 1`,
-        [guestUserData.email, guestUserData.phone]
-      );
-
-      if (existingUsers && existingUsers.length > 0) {
-        // Sử dụng user đã có
-        userId = existingUsers[0].user_id;
-        orderData.userId = userId;
-        console.log('Using existing user with ID:', userId);
-      } else {
-        // Tạo user mới
-        console.log('Creating new guest user:', guestUserData);
-        
-        // Hash password (phone number)
-        const bcrypt = await import('bcrypt');
-        const passwordHash = await bcrypt.hash(guestUserData.password, 10);
-        
-        const [userResult] = await db.query(
-          `INSERT INTO users (username, email, password_hash, full_name, phone, role, is_active)
-           VALUES (?, ?, ?, ?, ?, ?, ?)`,
-          [
-            guestUserData.username,
-            guestUserData.email,
-            passwordHash,
-            guestUserData.fullName,
-            guestUserData.phone,
-            guestUserData.role,
-            guestUserData.isActive
-          ]
-        );
-        
-        userId = userResult.insertId;
-        orderData.userId = userId;
-        console.log('New guest user created with ID:', userId);
-      }
-    }
+    // Không tạo user account cho khách vãng lai
+    // Chỉ lưu thông tin vào addresses với user_id = NULL
 
     // Tạo address nếu chưa có addressId
     let addressId = orderData.addressId;
@@ -154,7 +111,7 @@ export const createOrder = async (req, res) => {
       message: 'Đặt hàng thành công',
       data: { 
         orderId,
-        userId,
+        userId: orderData.userId,
         installmentId 
       }
     });
@@ -508,6 +465,96 @@ export const updatePaymentStatus = async (req, res) => {
     res.status(400).json({
       success: false,
       message: error.message
+    });
+  }
+};
+
+// Theo dõi đơn hàng theo số điện thoại
+export const trackOrderByPhone = async (req, res) => {
+  try {
+    const { phone } = req.params;
+
+    if (!phone) {
+      return res.status(400).json({
+        success: false,
+        message: 'Vui lòng cung cấp số điện thoại'
+      });
+    }
+
+    // Tìm tất cả đơn hàng theo số điện thoại từ bảng addresses
+    const [orders] = await db.query(
+      `SELECT DISTINCT
+        o.order_id,
+        o.order_number,
+        o.order_status,
+        o.payment_status,
+        o.subtotal,
+        o.discount_amount,
+        o.shipping_fee,
+        o.tax_amount,
+        o.total_amount,
+        o.notes,
+        o.created_at,
+        o.updated_at,
+        o.confirmed_at,
+        o.shipped_at,
+        o.delivered_at,
+        o.cancelled_at,
+        a.recipient_name,
+        a.phone as recipient_phone,
+        a.address_line1,
+        a.city,
+        a.district,
+        u.email,
+        u.phone as user_phone
+      FROM orders o
+      LEFT JOIN addresses a ON o.address_id = a.address_id
+      LEFT JOIN users u ON o.user_id = u.user_id
+      WHERE a.phone = ? OR u.phone = ?
+      ORDER BY o.created_at DESC`,
+      [phone, phone]
+    );
+
+    if (!orders || orders.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy đơn hàng nào với số điện thoại này'
+      });
+    }
+
+    // Lấy chi tiết sản phẩm cho từng đơn hàng
+    const ordersWithItems = await Promise.all(orders.map(async (order) => {
+      const [items] = await db.query(
+        `SELECT 
+          oi.order_item_id,
+          oi.product_name,
+          oi.variant_name,
+          oi.sku,
+          oi.quantity,
+          oi.unit_price,
+          oi.discount_amount,
+          oi.subtotal
+        FROM order_items oi
+        WHERE oi.order_id = ?`,
+        [order.order_id]
+      );
+
+      return {
+        ...order,
+        items
+      };
+    }));
+
+    res.json({
+      success: true,
+      data: ordersWithItems
+    });
+  } catch (error) {
+    console.error('Error tracking order by phone:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi khi theo dõi đơn hàng',
+      error: error.message
     });
   }
 };

@@ -3,6 +3,7 @@ import User from '../models/User.js';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 import crypto from 'crypto';
+import { generateTokens, verifyAdminRefreshToken, verifyUserRefreshToken, refreshAccessToken } from '../utils/jwt.js';
 
 dotenv.config();
 const ACCESS_TOKEN_TTL='15m';
@@ -100,26 +101,35 @@ export const adminSignIn = async(req,res)=>{
             return res.status(401).json({ message: "Username hoặc password không đúng" });
         }
 
-        const sessionToken = crypto.randomBytes(32).toString('hex');
-        await User.updateAdminSessionToken(admin.user_id, sessionToken);
-
-        // Xóa user_session_token nếu tồn tại để tránh xung đột
+        // Generate JWT tokens for admin session
+        const { accessToken, refreshToken } = generateTokens(admin, 'admin');
+        
+        // Store refresh token in database
+        await User.updateAdminRefreshToken(admin.user_id, refreshToken);
+        
+        // Clear old session tokens (backward compatibility cleanup)
+        await User.clearAdminSessionToken(admin.user_id);
+        res.clearCookie('admin_session_token');
         res.clearCookie('user_session_token');
         
-        res.cookie('admin_session_token', sessionToken, {
+        // Set refresh token as httpOnly cookie
+        res.cookie('admin_refresh_token', refreshToken, {
             httpOnly: true,
-            secure: false,
+            secure: process.env.NODE_ENV === 'production',
             sameSite: 'strict',
-            maxAge: 14 * 24 * 60 * 60 * 1000
+            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
         });
 
         return res.json({
             success: true,
             message: "Đăng nhập admin thành công",
+            accessToken, // Frontend sẽ lưu vào localStorage/memory
             user: {
                 user_id: admin.user_id,
                 username: admin.username,
+                email: admin.email,
                 role: admin.role,
+                sessionType: 'admin'
             }
         });
 
@@ -145,30 +155,45 @@ export const signIn = async(req,res)=>{
         if (!user.is_active) {
             return res.status(403).json({ message: "Tài khoản đã bị vô hiệu hóa" });
         }
+        
+        // Prevent admin from using user login
+        if (user.role === 2) {
+            return res.status(403).json({ message: "Vui lòng đăng nhập bằng admin portal" });
+        }
+        
         const correctPassword = await bcrypt.compare(password, user.password_hash);
         if(!correctPassword){
             return res.status(401).json({message: "email hoặc password không đúng"});
         }
 
-        const sessionToken = crypto.randomBytes(32).toString('hex');
-        await User.updateUserSessionToken(user.user_id, sessionToken);
-
-        // Xóa admin_session_token nếu tồn tại để tránh xung đột
+        // Generate JWT tokens for user session
+        const { accessToken, refreshToken } = generateTokens(user, 'user');
+        
+        // Store refresh token in database
+        await User.updateUserRefreshToken(user.user_id, refreshToken);
+        
+        // Clear old session tokens (backward compatibility cleanup)
+        await User.clearUserSessionToken(user.user_id);
+        res.clearCookie('user_session_token');
         res.clearCookie('admin_session_token');
         
-        res.cookie('user_session_token', sessionToken, {
+        // Set refresh token as httpOnly cookie
+        res.cookie('user_refresh_token', refreshToken, {
             httpOnly: true,
-            secure: false,
+            secure: process.env.NODE_ENV === 'production',
             sameSite: 'strict',
-            maxAge: 14 * 24 * 60 * 60 * 1000
+            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
         });
+        
         return res.json({
             success: true,
+            accessToken, // Frontend sẽ lưu vào localStorage/memory
             user: {
                 user_id: user.user_id,
                 username: user.username,
                 email: user.email,
-                role: user.role
+                role: user.role,
+                sessionType: 'user'
             }
         });
     } catch (error) {
@@ -179,42 +204,51 @@ export const signIn = async(req,res)=>{
 
 export const signOut = async(req,res)=>{
     try {
-        // Lấy session token từ cookie (kiểm tra cả admin và user)
-        const adminToken = req.cookies.admin_session_token;
-        const userToken = req.cookies.user_session_token;
-        const sessionToken = adminToken || userToken;
+        // Get session type from req.user (set by middleware)
+        const sessionType = req.user?.sessionType;
+        const userId = req.user?.user_id;
         
-        if (!sessionToken) {
-            // Vẫn xóa cookies để đảm bảo đăng xuất thành công
-            res.clearCookie('admin_session_token');
-            res.clearCookie('user_session_token');
-            return res.json({
-                success: true,
-                message: "Đăng xuất thành công"
-            });
-        }
-
-        // Tìm user bằng session token
-        let user = null;
-        if (adminToken) {
-            user = await User.findByAdminSessionToken(adminToken);
-            if (user) {
-                await User.clearAdminSessionToken(user.user_id);
+        // JWT-based logout
+        if (sessionType === 'admin') {
+            // Clear admin refresh token from database
+            if (userId) {
+                await User.clearAdminRefreshToken(userId);
             }
-        }
-        if (userToken) {
-            user = await User.findByUserSessionToken(userToken);
-            if (user) {
-                await User.clearUserSessionToken(user.user_id);
-            }
-        }
-
-        // Xóa cookie tương ứng
-        if (adminToken) {
+            res.clearCookie('admin_refresh_token');
+            // Also clear old session token for backward compatibility
             res.clearCookie('admin_session_token');
-        }
-        if (userToken) {
+        } else if (sessionType === 'user') {
+            // Clear user refresh token from database
+            if (userId) {
+                await User.clearUserRefreshToken(userId);
+            }
+            res.clearCookie('user_refresh_token');
+            // Also clear old session token for backward compatibility
             res.clearCookie('user_session_token');
+        } else {
+            // Fallback: Clear all tokens (backward compatibility with old session-based auth)
+            const adminSessionToken = req.cookies.admin_session_token;
+            const userSessionToken = req.cookies.user_session_token;
+            
+            if (adminSessionToken) {
+                const user = await User.findByAdminSessionToken(adminSessionToken);
+                if (user) {
+                    await User.clearAdminSessionToken(user.user_id);
+                }
+                res.clearCookie('admin_session_token');
+            }
+            
+            if (userSessionToken) {
+                const user = await User.findByUserSessionToken(userSessionToken);
+                if (user) {
+                    await User.clearUserSessionToken(user.user_id);
+                }
+                res.clearCookie('user_session_token');
+            }
+            
+            // Clear JWT cookies as well
+            res.clearCookie('admin_refresh_token');
+            res.clearCookie('user_refresh_token');
         }
 
         return res.json({
@@ -273,24 +307,17 @@ export const getMe = async (req, res) => {
 // Endpoint riêng cho admin
 export const getAdminMe = async (req, res) => {
     try {
-        const adminToken = req.cookies?.admin_session_token;
+        // Admin info is already validated by requireAdminAuth middleware
+        // req.user contains: { user_id, username, email, role, sessionType }
+        console.log('getAdminMe - Authenticated admin from middleware:', req.user);
         
-        if (!adminToken) {
-            return res.status(401).json({ success: false, message: 'Chưa đăng nhập admin' });
-        }
-        
-        const user = await User.findByAdminSessionToken(adminToken);
+        // Get full user details from database
+        const user = await User.findById(req.user.user_id);
         if (!user) {
-            return res.status(401).json({ success: false, message: 'Phiên đăng nhập không hợp lệ' });
-        }
-        
-        // Kiểm tra có phải admin không
-        if (user.role !== 2) {
-            return res.status(403).json({ success: false, message: 'Không có quyền admin' });
+            return res.status(401).json({ success: false, message: 'Người dùng không tồn tại' });
         }
         
         if (!user.is_active) {
-            res.clearCookie('admin_session_token');
             return res.status(403).json({ success: false, message: 'Tài khoản đã bị vô hiệu hóa' });
         }
         
@@ -310,32 +337,18 @@ export const getAdminMe = async (req, res) => {
 // Endpoint riêng cho user
 export const getUserMe = async (req, res) => {
     try {
-        console.log('getUserMe - Cookies received:', req.cookies);
-        const userToken = req.cookies?.user_session_token;
+        // User info is already validated by requireUserAuth middleware
+        // req.user contains: { user_id, username, email, role, sessionType }
+        console.log('getUserMe - Authenticated user from middleware:', req.user);
         
-        if (!userToken) {
-            console.log('getUserMe - No user_session_token found');
-            return res.status(401).json({ success: false, message: 'Chưa đăng nhập' });
-        }
-        
-        console.log('getUserMe - Found user_session_token:', userToken);
-        const user = await User.findByUserSessionToken(userToken);
+        // Get full user details from database
+        const user = await User.findById(req.user.user_id);
         if (!user) {
-            console.log('getUserMe - No user found for token');
-            return res.status(401).json({ success: false, message: 'Phiên đăng nhập không hợp lệ' });
+            return res.status(401).json({ success: false, message: 'Người dùng không tồn tại' });
         }
-        
-        console.log('getUserMe - Found user:', user.user_id, user.username, 'role:', user.role);
         
         if (!user.is_active) {
-            res.clearCookie('user_session_token');
             return res.status(403).json({ success: false, message: 'Tài khoản đã bị vô hiệu hóa' });
-        }
-        
-        // Chỉ trả về nếu là user (role = 0), không trả về admin
-        if (user.role !== 0) {
-            console.log('getUserMe - User has admin role, rejecting');
-            return res.status(403).json({ success: false, message: 'Tài khoản này không phải user' });
         }
         
         return res.json({ success: true, user: {
@@ -589,6 +602,180 @@ export const getUserById = async (req, res) => {
         return res.status(500).json({
             success: false,
             message: "Đã có lỗi xảy ra khi lấy thông tin user"
+        });
+    }
+};
+
+// ==================== JWT REFRESH TOKEN ENDPOINTS ====================
+
+// Refresh admin access token
+export const refreshAdminToken = async (req, res) => {
+    try {
+        const refreshToken = req.cookies?.admin_refresh_token;
+        
+        if (!refreshToken) {
+            return res.status(401).json({ 
+                success: false, 
+                message: 'Không tìm thấy refresh token',
+                code: 'NO_REFRESH_TOKEN'
+            });
+        }
+        
+        // Verify refresh token
+        const decoded = verifyAdminRefreshToken(refreshToken);
+        
+        // Check if refresh token exists in database
+        const user = await User.findByAdminRefreshToken(refreshToken);
+        if (!user) {
+            res.clearCookie('admin_refresh_token');
+            return res.status(401).json({ 
+                success: false, 
+                message: 'Refresh token không hợp lệ',
+                code: 'INVALID_REFRESH_TOKEN'
+            });
+        }
+        
+        // Check if user is still active and is admin
+        if (!user.is_active) {
+            await User.clearAdminRefreshToken(user.user_id);
+            res.clearCookie('admin_refresh_token');
+            return res.status(403).json({ 
+                success: false, 
+                message: 'Tài khoản đã bị vô hiệu hóa',
+                code: 'ACCOUNT_DISABLED'
+            });
+        }
+        
+        if (user.role !== 2) {
+            await User.clearAdminRefreshToken(user.user_id);
+            res.clearCookie('admin_refresh_token');
+            return res.status(403).json({ 
+                success: false, 
+                message: 'Không có quyền admin',
+                code: 'NOT_ADMIN'
+            });
+        }
+        
+        // Generate new access token
+        const newAccessToken = refreshAccessToken(refreshToken, 'admin');
+        
+        return res.json({
+            success: true,
+            accessToken: newAccessToken,
+            message: 'Refresh token thành công'
+        });
+        
+    } catch (error) {
+        console.error('Error refreshing admin token:', error);
+        
+        // Handle specific errors
+        if (error.message === 'Admin refresh token expired') {
+            res.clearCookie('admin_refresh_token');
+            return res.status(401).json({ 
+                success: false, 
+                message: 'Refresh token đã hết hạn. Vui lòng đăng nhập lại',
+                code: 'REFRESH_TOKEN_EXPIRED'
+            });
+        }
+        
+        if (error.message.includes('Invalid')) {
+            res.clearCookie('admin_refresh_token');
+            return res.status(401).json({ 
+                success: false, 
+                message: 'Refresh token không hợp lệ',
+                code: 'INVALID_REFRESH_TOKEN'
+            });
+        }
+        
+        return res.status(500).json({ 
+            success: false, 
+            message: 'Lỗi refresh token'
+        });
+    }
+};
+
+// Refresh user access token
+export const refreshUserToken = async (req, res) => {
+    try {
+        const refreshToken = req.cookies?.user_refresh_token;
+        
+        if (!refreshToken) {
+            return res.status(401).json({ 
+                success: false, 
+                message: 'Không tìm thấy refresh token',
+                code: 'NO_REFRESH_TOKEN'
+            });
+        }
+        
+        // Verify refresh token
+        const decoded = verifyUserRefreshToken(refreshToken);
+        
+        // Check if refresh token exists in database
+        const user = await User.findByUserRefreshToken(refreshToken);
+        if (!user) {
+            res.clearCookie('user_refresh_token');
+            return res.status(401).json({ 
+                success: false, 
+                message: 'Refresh token không hợp lệ',
+                code: 'INVALID_REFRESH_TOKEN'
+            });
+        }
+        
+        // Check if user is still active and not admin
+        if (!user.is_active) {
+            await User.clearUserRefreshToken(user.user_id);
+            res.clearCookie('user_refresh_token');
+            return res.status(403).json({ 
+                success: false, 
+                message: 'Tài khoản đã bị vô hiệu hóa',
+                code: 'ACCOUNT_DISABLED'
+            });
+        }
+        
+        if (user.role === 2) {
+            await User.clearUserRefreshToken(user.user_id);
+            res.clearCookie('user_refresh_token');
+            return res.status(403).json({ 
+                success: false, 
+                message: 'Vui lòng sử dụng admin portal',
+                code: 'USE_ADMIN_PORTAL'
+            });
+        }
+        
+        // Generate new access token
+        const newAccessToken = refreshAccessToken(refreshToken, 'user');
+        
+        return res.json({
+            success: true,
+            accessToken: newAccessToken,
+            message: 'Refresh token thành công'
+        });
+        
+    } catch (error) {
+        console.error('Error refreshing user token:', error);
+        
+        // Handle specific errors
+        if (error.message === 'User refresh token expired') {
+            res.clearCookie('user_refresh_token');
+            return res.status(401).json({ 
+                success: false, 
+                message: 'Refresh token đã hết hạn. Vui lòng đăng nhập lại',
+                code: 'REFRESH_TOKEN_EXPIRED'
+            });
+        }
+        
+        if (error.message.includes('Invalid')) {
+            res.clearCookie('user_refresh_token');
+            return res.status(401).json({ 
+                success: false, 
+                message: 'Refresh token không hợp lệ',
+                code: 'INVALID_REFRESH_TOKEN'
+            });
+        }
+        
+        return res.status(500).json({ 
+            success: false, 
+            message: 'Lỗi refresh token'
         });
     }
 };
