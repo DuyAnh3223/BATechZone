@@ -1,0 +1,16 @@
+@startuml
+start
+
+:Nhập thông tin đăng ký;
+:Validate dữ liệu;
+
+if (Email hợp lệ?) then (Có)
+    :Lưu thông tin người dùng;
+    :Gửi email xác thực;
+    :Thông báo đăng ký thành công;
+else (Không)
+    :Hiển thị lỗi;
+endif
+
+stop
+@enduml

@@ -29,26 +29,44 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
-// Mock data for cart items
-const mockCartItems = [
-  {
-    id: 1,
-    name: "AMD Ryzen 7 5800X",
-    price: 8990000,
-    quantity: 1,
-    image: "https://via.placeholder.com/100",
-  },
-  {
-    id: 2,
-    name: "NVIDIA RTX 4070",
-    price: 15990000,
-    quantity: 1,
-    image: "https://via.placeholder.com/100",
-  },
-];
+// Base URL for serving uploads
+const BASE_API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+
+const toAbsoluteUrl = (url) => {
+  if (!url) return url;
+  if (/^https?:\/\//i.test(url)) return url;
+  if (url.startsWith('/uploads')) return `${BASE_API_URL}${url}`;
+  return url;
+};
+import { Link, useNavigate } from "react-router";
+import { useCartStore } from "@/stores/useCartStore";
+import { useCartItemStore } from "@/stores/useCartItemStore";
+import { useUserAuthStore } from "@/stores/useUserAuthStore";
+import { useOrderStore } from "@/stores/useOrderStore";
+import { couponService } from "@/services/couponService";
+import { toast } from "sonner";
+import { useEffect } from "react";
+import { X, Tag, Wallet } from "lucide-react";
 
 const Checkout = () => {
+  const navigate = useNavigate();
+  const { user } = useUserAuthStore();
+  const { getOrCreateCart, cart, clearCart } = useCartStore();
+  const { 
+    cartItems, 
+    fetchCartItems, 
+    loading,
+    reset: resetCartItems
+  } = useCartItemStore();
+  const { createOrder, loading: orderLoading } = useOrderStore();
+  const [isLoadingCart, setIsLoadingCart] = useState(true);
   const [step, setStep] = useState(1);
+  const [paymentMethod, setPaymentMethod] = useState("cod");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [discountAmount, setDiscountAmount] = useState(0);
+  const [isValidatingCoupon, setIsValidatingCoupon] = useState(false);
+  
   const form = useForm({
     defaultValues: {
       fullName: "",
@@ -62,6 +80,103 @@ const Checkout = () => {
     },
   });
 
+  // Load coupon từ localStorage sau khi cart items đã được load
+  useEffect(() => {
+    const validateSavedCoupon = async () => {
+      const savedCoupon = localStorage.getItem('applied_coupon');
+      const savedDiscount = localStorage.getItem('discount_amount');
+      
+      if (savedCoupon && savedDiscount && cartItems && cartItems.length > 0) {
+        try {
+          const coupon = JSON.parse(savedCoupon);
+          const subtotal = calculateSubtotal();
+          
+          if (subtotal > 0) {
+            try {
+              const response = await couponService.validateCoupon(coupon.coupon_code, subtotal);
+              if (response.success && response.data) {
+                setAppliedCoupon(response.data.coupon);
+                setDiscountAmount(response.data.discountAmount);
+                // Cập nhật lại localStorage với discount mới
+                localStorage.setItem('applied_coupon', JSON.stringify(response.data.coupon));
+                localStorage.setItem('discount_amount', response.data.discountAmount.toString());
+              } else {
+                // Coupon không còn hợp lệ, xóa khỏi localStorage
+                setAppliedCoupon(null);
+                setDiscountAmount(0);
+                localStorage.removeItem('applied_coupon');
+                localStorage.removeItem('discount_amount');
+              }
+            } catch (error) {
+              // Coupon không còn hợp lệ, xóa khỏi localStorage
+              setAppliedCoupon(null);
+              setDiscountAmount(0);
+              localStorage.removeItem('applied_coupon');
+              localStorage.removeItem('discount_amount');
+            }
+          }
+        } catch (error) {
+          console.error('Error loading coupon from localStorage:', error);
+          setAppliedCoupon(null);
+          setDiscountAmount(0);
+          localStorage.removeItem('applied_coupon');
+          localStorage.removeItem('discount_amount');
+        }
+      } else if (savedCoupon && savedDiscount && (!cartItems || cartItems.length === 0)) {
+        // Tạm thời load coupon nếu chưa có cart items
+        try {
+          const coupon = JSON.parse(savedCoupon);
+          const discount = parseFloat(savedDiscount);
+          setAppliedCoupon(coupon);
+          setDiscountAmount(discount);
+        } catch (error) {
+          console.error('Error loading coupon from localStorage:', error);
+        }
+      }
+    };
+
+    validateSavedCoupon();
+  }, [cartItems]);
+
+  // Load cart data khi component mount
+  useEffect(() => {
+    const loadCart = async () => {
+      try {
+        setIsLoadingCart(true);
+        
+        // 1. Lấy hoặc tạo cart
+        let cartData = {};
+        if (user) {
+          cartData.userId = user.user_id;
+        } else {
+          let sessionId = localStorage.getItem('guest_session_id');
+          if (!sessionId) {
+            sessionId = `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            localStorage.setItem('guest_session_id', sessionId);
+          }
+          cartData.sessionId = sessionId;
+        }
+
+        const cartResponse = await getOrCreateCart(cartData);
+        const currentCart = cartResponse?.data || cartResponse;
+        
+        const cartId = currentCart?.cart_id || currentCart?.cartId;
+        
+        if (cartId) {
+          // 2. Lấy cart items
+          await fetchCartItems(cartId);
+        }
+      } catch (error) {
+        console.error('Error loading cart:', error);
+        toast.error('Không thể tải giỏ hàng');
+      } finally {
+        setIsLoadingCart(false);
+      }
+    };
+
+    loadCart();
+  }, [user, getOrCreateCart, fetchCartItems]);
+
   const formatPrice = (price) => {
     return new Intl.NumberFormat("vi-VN", {
       style: "currency",
@@ -70,23 +185,188 @@ const Checkout = () => {
   };
 
   const calculateSubtotal = () => {
-    return mockCartItems.reduce((total, item) => total + item.price * item.quantity, 0);
+    if (!cartItems || cartItems.length === 0) return 0;
+    return cartItems.reduce((total, item) => {
+      const itemPrice = item.price || item.current_price || item.currentPrice || 0;
+      const itemQuantity = item.quantity || 0;
+      return total + (itemPrice * itemQuantity);
+    }, 0);
   };
 
   const calculateShipping = () => {
-    return 50000; // Mock shipping cost
+    return 50000; // Phí ship cố định
   };
 
   const calculateTotal = () => {
-    return calculateSubtotal() + calculateShipping();
+    const subtotal = calculateSubtotal();
+    const shipping = calculateShipping();
+    return Math.max(0, subtotal + shipping - discountAmount);
   };
 
-  const onSubmit = (data) => {
+  const onSubmit = async (data) => {
     if (step === 1) {
+      // Validate có sản phẩm trong giỏ
+      if (!cartItems || cartItems.length === 0) {
+        toast.error('Giỏ hàng trống. Vui lòng thêm sản phẩm trước khi đặt hàng.');
+        return;
+      }
+      setPaymentMethod(data.paymentMethod);
       setStep(2);
     } else {
-      // Handle final submission
-      console.log("Form submitted:", data);
+      // Step 2: Đặt hàng
+      await handlePlaceOrder(data);
+    }
+  };
+
+  const handlePlaceOrder = async (formData) => {
+    try {
+      setIsSubmitting(true);
+
+      // Chuẩn bị dữ liệu đơn hàng
+      const orderData = {
+        userId: user?.user_id || null,
+        addressId: null, // Sẽ được tạo trong backend cho guest
+        subtotal: calculateSubtotal(),
+        shippingFee: calculateShipping(),
+        taxAmount: 0,
+        discountAmount: discountAmount,
+        totalAmount: calculateTotal(),
+        notes: formData.note || null,
+        paymentMethod: formData.paymentMethod,
+        couponId: appliedCoupon?.coupon_id || null
+      };
+
+      // Chuẩn bị thông tin giao hàng (cho cả guest và user đã đăng nhập nếu chưa có addressId)
+      const shippingAddress = !orderData.addressId ? {
+        fullName: formData.fullName,
+        phone: formData.phone,
+        email: formData.email,
+        province: formData.province,
+        district: formData.district,
+        address: formData.address,
+        note: formData.note
+      } : null;
+      
+     
+
+      // Chuẩn bị items
+      const items = cartItems.map(item => ({
+        variantId: item.variant_id,
+        productName: item.product_name || item.productName,
+        variantName: item.variant_name || item.variantName || null,
+        sku: item.sku || null,
+        quantity: item.quantity,
+        unitPrice: item.price || item.current_price || item.currentPrice,
+        discountAmount: 0
+      }));
+
+      // Nếu chọn Momo, tạo payment link
+      if (formData.paymentMethod === 'momo') {
+        const amount = calculateTotal();
+        const description = `Thanh toán đơn hàng BATechZone - ${formData.fullName}`;
+        const buyerName = formData.fullName;
+        const buyerEmail = formData.email || `user_${Date.now()}@batechzone.com`;
+        const buyerPhone = formData.phone;
+        const buyerAddress = `${formData.address}, ${formData.district}, ${formData.province}`;
+        
+        // Cập nhật payment_method, payment_status và order_status cho online payment
+        const momoOrderData = {
+          ...orderData,
+          payment_method: 'momo',
+          payment_status: 'paid', // Thanh toán online thành công = đã thanh toán
+          order_status: 'shipping' // Đã thanh toán online -> Đang giao hàng
+        };
+        
+        // Lưu thông tin order vào localStorage để tạo sau khi thanh toán
+        localStorage.setItem('pending_order', JSON.stringify({
+          orderData: momoOrderData,
+          shippingAddress,
+          items
+        }));
+
+        try {
+          const paymentResponse = await fetch('http://localhost:5001/api/payments/create-payment-link', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            credentials: 'include',
+            body: JSON.stringify({
+              amount,
+              description,
+              buyerName,
+              buyerEmail,
+              buyerPhone,
+              buyerAddress,
+              paymentType: 'wallet' // Momo sẽ hiển thị QR và ATM options
+            })
+          });
+
+          const result = await paymentResponse.json();
+
+          if (result.success && result.data?.checkoutUrl) {
+            // Lưu orderId từ Momo vào momoOrderData để dùng làm transaction_id
+            const momoOrderDataWithTxn = {
+              ...momoOrderData,
+              transaction_id: result.data.orderId // Lấy orderId từ Momo
+            };
+            
+            // Cập nhật lại localStorage với transaction_id
+            localStorage.setItem('pending_order', JSON.stringify({
+              orderData: momoOrderDataWithTxn,
+              shippingAddress,
+              items
+            }));
+            
+            toast.success('Đang chuyển đến trang thanh toán Momo...');
+            // Chuyển hướng đến trang thanh toán Momo
+            window.location.href = result.data.checkoutUrl;
+            return; // Dừng thực thi
+          } else {
+            throw new Error(result.message || 'Không thể tạo link thanh toán Momo');
+          }
+        } catch (error) {
+          console.error('Momo payment error:', error);
+          toast.error(error.message || 'Không thể tạo link thanh toán Momo');
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
+      // Gọi API tạo đơn hàng (chỉ cho COD và các phương thức khác)
+      const response = await createOrder({
+        orderData,
+        shippingAddress,
+        items
+      });
+
+      // Xóa giỏ hàng sau khi đặt hàng thành công
+      const cartId = cart?.cart_id || cart?.cartId;
+      if (cartId) {
+        await clearCart(cartId);
+      }
+      
+      // Reset cart items state
+      resetCartItems();
+
+      // Xóa coupon khỏi localStorage sau khi đặt hàng thành công
+      localStorage.removeItem('applied_coupon');
+      localStorage.removeItem('discount_amount');
+
+      toast.success('Đặt hàng thành công!');
+      
+      // Chuyển đến trang thanh toán
+      const orderId = response?.data?.orderId || response?.data?.order_id;
+      if (orderId) {
+        navigate(`/payment/${orderId}`);
+      } else {
+        navigate('/');
+      }
+    } catch (error) {
+      console.error('Error placing order:', error);
+      toast.error(error.response?.data?.message || 'Đặt hàng thất bại. Vui lòng thử lại.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -248,7 +528,11 @@ const Checkout = () => {
                       )}
                     />
 
-                    <Button type="submit" className="w-full">
+                    <Button 
+                      type="submit" 
+                      className="w-full"
+                      disabled={isLoadingCart || !cartItems || cartItems.length === 0}
+                    >
                       Tiếp tục
                     </Button>
                   </form>
@@ -257,7 +541,7 @@ const Checkout = () => {
             </Card>
           )}
 
-          {/* Payment Method */}
+          {/* Step 2: Payment Method */}
           {step === 2 && (
             <Card>
               <CardHeader>
@@ -296,29 +580,20 @@ const Checkout = () => {
                                 </label>
                               </div>
                               <div className="flex items-center space-x-2 border rounded-lg p-4">
-                                <RadioGroupItem value="banking" id="banking" />
-                                <label
-                                  htmlFor="banking"
-                                  className="flex flex-col cursor-pointer"
-                                >
-                                  <span className="font-medium">
-                                    Chuyển khoản ngân hàng
-                                  </span>
-                                  <span className="text-sm text-gray-500">
-                                    Thanh toán qua tài khoản ngân hàng
-                                  </span>
-                                </label>
-                              </div>
-                              <div className="flex items-center space-x-2 border rounded-lg p-4">
                                 <RadioGroupItem value="momo" id="momo" />
                                 <label
                                   htmlFor="momo"
-                                  className="flex flex-col cursor-pointer"
+                                  className="flex items-center gap-2 cursor-pointer w-full"
                                 >
-                                  <span className="font-medium">Ví Momo</span>
-                                  <span className="text-sm text-gray-500">
-                                    Thanh toán qua ví điện tử Momo
-                                  </span>
+                                  <Wallet className="h-5 w-5 text-pink-600" />
+                                  <div className="flex flex-col">
+                                    <span className="font-medium">
+                                      Thanh toán qua Ví Momo
+                                    </span>
+                                    <span className="text-sm text-gray-500">
+                                      Quét mã QR hoặc thanh toán bằng thẻ ATM
+                                    </span>
+                                  </div>
                                 </label>
                               </div>
                             </RadioGroup>
@@ -328,17 +603,29 @@ const Checkout = () => {
                       )}
                     />
 
-                    <div className="flex gap-4">
+                    <div className="flex flex-col gap-4">
                       <Button
                         type="button"
                         variant="outline"
                         onClick={() => setStep(1)}
                         className="w-full"
+                        disabled={isSubmitting}
                       >
                         Quay lại
                       </Button>
-                      <Button type="submit" className="w-full">
-                        Đặt hàng
+                      <Button 
+                        type="submit" 
+                        className="w-full"
+                        disabled={isSubmitting || isLoadingCart}
+                      >
+                        {isSubmitting ? (
+                          <>
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                            Đang xử lý...
+                          </>
+                        ) : (
+                          'Đặt hàng'
+                        )}
                       </Button>
                     </div>
                   </form>
@@ -354,50 +641,138 @@ const Checkout = () => {
             <CardHeader>
               <CardTitle>Đơn hàng của bạn</CardTitle>
               <CardDescription>
-                {mockCartItems.length} sản phẩm trong giỏ hàng
+                {cartItems?.length || 0} sản phẩm trong giỏ hàng
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <ScrollArea className="h-[300px] pr-4">
-                {mockCartItems.map((item) => (
-                  <div key={item.id} className="flex gap-4 py-4">
-                    <img
-                      src={item.image}
-                      alt={item.name}
-                      className="w-20 h-20 object-cover rounded"
-                    />
-                    <div className="flex-1">
-                      <h4 className="font-medium line-clamp-2">{item.name}</h4>
-                      <div className="text-sm text-gray-500">
-                        Số lượng: {item.quantity}
-                      </div>
-                      <div className="font-medium text-red-600">
-                        {formatPrice(item.price)}
+              {isLoadingCart ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                  <p className="text-sm text-gray-500">Đang tải...</p>
+                </div>
+              ) : cartItems && cartItems.length > 0 ? (
+                <>
+                  <ScrollArea className="h-[300px] pr-4">
+                    {cartItems.map((item) => {
+                      const imageUrl = toAbsoluteUrl(item.image_url || item.imageUrl) || null;
+                      const productName = item.product_name || item.productName || item.name || 'Sản phẩm';
+                      const variantName = item.variant_name || item.variantName || '';
+                      const displayName = variantName ? `${productName}` : productName;
+                      const itemPrice = item.price || item.current_price || item.currentPrice || 0;
+                      
+                      return (
+                        <div key={item.cart_item_id} className="flex gap-4 py-4 border-b last:border-0">
+                          {imageUrl ? (
+                            <img
+                              src={imageUrl}
+                              alt={displayName}
+                              className="w-20 h-20 object-cover rounded"
+                              onError={(e) => {
+                                e.target.style.display = 'none';
+                                if (e.target.nextElementSibling) {
+                                  e.target.nextElementSibling.style.display = 'flex';
+                                }
+                              }}
+                            />
+                          ) : null}
+                          <div 
+                            className={`w-20 h-20 rounded bg-gray-200 flex items-center justify-center ${imageUrl ? 'hidden' : ''}`}
+                          >
+                            <span className="text-gray-400 text-xs">Không có ảnh</span>
+                          </div>
+                          <div className="flex-1">
+                            <h4 className="font-medium line-clamp-2">{displayName}</h4>
+                            {item.sku && (
+                              <div className="text-xs text-gray-400">SKU: {item.sku}</div>
+                            )}
+                            <div className="text-sm text-gray-500 mt-1">
+                              Số lượng: {item.quantity}
+                            </div>
+                            <div className="font-medium text-red-600 mt-1">
+                              {formatPrice(itemPrice)}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </ScrollArea>
+                </>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <p>Giỏ hàng trống</p>
+                  <Link to="/products">
+                    <Button variant="outline" className="mt-4">
+                      Tiếp tục mua sắm
+                    </Button>
+                  </Link>
+                </div>
+              )}
+
+              {!isLoadingCart && cartItems && cartItems.length > 0 && (
+                <>
+                  <Separator className="my-4" />
+
+                  {/* Hiển thị coupon đã áp dụng */}
+                  {appliedCoupon && (
+                    <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-md">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Tag className="h-4 w-4 text-green-600" />
+                          <div>
+                            <p className="text-sm font-medium text-green-900">
+                              {appliedCoupon.coupon_code}
+                            </p>
+                            {appliedCoupon.description && (
+                              <p className="text-xs text-green-700">
+                                {appliedCoupon.description}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setAppliedCoupon(null);
+                            setDiscountAmount(0);
+                            localStorage.removeItem('applied_coupon');
+                            localStorage.removeItem('discount_amount');
+                            toast.success("Đã xóa mã giảm giá");
+                          }}
+                          className="h-8 w-8 p-0"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
                       </div>
                     </div>
+                  )}
+
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Tạm tính:</span>
+                      <span>{formatPrice(calculateSubtotal())}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Phí vận chuyển:</span>
+                      <span>{formatPrice(calculateShipping())}</span>
+                    </div>
+                    {discountAmount > 0 && (
+                      <div className="flex justify-between text-sm text-green-600">
+                        <span>Giảm giá:</span>
+                        <span>-{formatPrice(discountAmount)}</span>
+                      </div>
+                    )}
+                    <Separator className="my-2" />
+                    <div className="flex justify-between font-medium">
+                      <span>Tổng cộng:</span>
+                      <span className="text-lg text-red-600">
+                        {formatPrice(calculateTotal())}
+                      </span>
+                    </div>
                   </div>
-                ))}
-              </ScrollArea>
-
-              <Separator className="my-4" />
-
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Tạm tính:</span>
-                  <span>{formatPrice(calculateSubtotal())}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Phí vận chuyển:</span>
-                  <span>{formatPrice(calculateShipping())}</span>
-                </div>
-                <Separator className="my-2" />
-                <div className="flex justify-between font-medium">
-                  <span>Tổng cộng:</span>
-                  <span className="text-lg text-red-600">
-                    {formatPrice(calculateTotal())}
-                  </span>
-                </div>
-              </div>
+                </>
+              )}
             </CardContent>
           </Card>
         </div>

@@ -4,38 +4,50 @@ import UserLayout from './layouts/UserLayout';
 import AdminLayout from './layouts/AdminLayout';
 import Home from './pages/user/Home';
 import Blog from './pages/user/Blog';
+import BlogDetail from './pages/user/BlogDetail';
 import BuildPC from './pages/user/BuildPC';
 import Cart from './pages/user/Cart';
 import Checkout from './pages/user/Checkout';
 import ProductDetail from './pages/user/ProductDetail';
 import ProductList from './pages/user/ProductList';
-import Profile from './pages/user/Profile';
+import Profile from './pages/user/Profile/Profile';
 import ReturnPolicy from './pages/user/ReturnPolicy';
 import ShipTracking from './pages/user/ShipTracking';
 import WarrantyCheck from './pages/user/WarrantyCheck';
 import WarrantyPolicy from './pages/user/WarrantyPolicy';
+import WarrantyPage from './pages/user/Warranty/WarrantyPage';
 import Wishlist from './pages/user/Wishlist';
 import SignIn from './pages/auth/SignIn';
 import SignUp from './pages/auth/SignUp';
 import AdminLogin from './pages/admin/AdminLogin';
 import AdminDashboard from './pages/admin/AdminDashboard';
-import AdminProduct from './pages/admin/AdminProduct';
+import AdminProductPage from './pages/admin/ProductPage/AdminProductPage';
 import AdminProductDetail from './pages/admin/AdminProductDetail';
-import AdminUser from './pages/admin/AdminUser';
+import AdminUserPage from './pages/admin/UserPage/AdminUserPage';
 import AdminUserDetail from './pages/admin/AdminUserDetail';
-import AdminCoupon from './pages/admin/AdminCoupon';
+import AdminCouponPage from './pages/admin/CouponPage/AdminCouponPage';
 import AdminAddress from './pages/admin/AdminAddress';
 import AdminOrder from './pages/admin/AdminOrder';
 import AdminNotification from './pages/admin/AdminNotification';
 import AdminBuild from './pages/admin/AdminBuild';
-import AdminCategory from './pages/admin/AdminCategory';
-import AdminPost from './pages/admin/AdminPost';
-import AdminPostDetail from './pages/admin/AdminPostDetail';
+import AdminCategoryPage from './pages/admin/CategoryPage/AdminCategoryPage';
+import AdminPost from './pages/admin/AdminBlog';
+import AdminPostDetail from './pages/admin/AdminBlogDetail';
 import AdminWishlist from './pages/admin/AdminWishlist';
 import AdminPayment from './pages/admin/AdminPayment';
-import AdminRecentView from './pages/admin/AdminRecentView';
-import AdminModeration from './pages/admin/AdminModeration';
 import AdminServiceCenter from './pages/admin/AdminServiceCenter';
+import AdminWarrantyPage from './pages/admin/WarrantyPage/AdminWarrantyPage';
+import OrderSuccess from './pages/user/OrderPage/OrderSuccess';
+import Payment from './pages/user/Payment';
+import Orders from './pages/user/OrderPage/Orders';
+import OrderDetail from './pages/user/OrderPage/OrderDetail';
+import AdminInstallmentPage from './pages/admin/InstallmentPage/AdminInstallmentPage';
+import Installment from './pages/user/InstallmentPage/Installment';
+import InstallmentCheckoutPage from './pages/user/InstallmentPage/InstallmentCheckoutPage';
+import InstallmentPendingPage from './pages/user/InstallmentPage/InstallmentPendingPage';
+import PaymentSuccess from './pages/user/PaymentSuccess';
+import PaymentCancel from './pages/user/PaymentCancel';
+import OrderTracking from './pages/user/OrderTracking';
 
 function App() {
   return (
@@ -47,9 +59,21 @@ function App() {
           <Route path="/" element={<UserLayout />}>
             <Route index element={<Home />} />
             <Route path="build-pc" element={<BuildPC />} />
+            <Route path="warranty" element={<WarrantyPage />} />
             <Route path="blog" element={<Blog />} />
+            <Route path="blog/:id" element={<BlogDetail />} />
             <Route path="cart" element={<Cart />} />
             <Route path="checkout" element={<Checkout />} />
+            <Route path="installment" element={<Installment />} />
+            <Route path="/installment/checkout" element={<InstallmentCheckoutPage />} />
+            <Route path="/installment/pending" element={<InstallmentPendingPage />} />
+            <Route path="payment/success" element={<PaymentSuccess />} />
+            <Route path="payment/cancel" element={<PaymentCancel />} />
+            <Route path="payment/:orderId" element={<Payment />} />
+            <Route path="order-success/:orderId" element={<OrderSuccess />} />
+            <Route path="order-tracking" element={<OrderTracking />} />
+            <Route path="orders" element={<Orders />} />
+            <Route path="orders/:orderId" element={<OrderDetail />} />
             <Route path="product/:productId" element={<ProductDetail />} />
             <Route path="category/:categoryId" element={<ProductList />} />
             <Route path="profile" element={<Profile />} />
@@ -63,26 +87,23 @@ function App() {
           <Route path="/auth/signup" element={<SignUp />} />
 
           {/* Admin Routes */}
+          <Route path="/admin" element={<Navigate to="/admin/login" replace />} />
           <Route path="/admin/login" element={<AdminLogin />} />
-          <Route path="/admin/*" element={<AdminLayout />}>
-            <Route index element={<Navigate to="/admin/login" replace />} />
+          <Route path="/admin" element={<AdminLayout />}>
             <Route path="dashboard" element={<AdminDashboard />} />
-            <Route path="products" element={<AdminProduct />} />
+            <Route path="products" element={<AdminProductPage />} />
             <Route path="products/:productId" element={<AdminProductDetail />} />
-            <Route path="users" element={<AdminUser />} />
+            <Route path="users" element={<AdminUserPage />} />
             <Route path="users/:userId" element={<AdminUserDetail />} />
-            <Route path="coupons" element={<AdminCoupon />} />
-            <Route path="addresses" element={<AdminAddress />} />
+            <Route path="coupons" element={<AdminCouponPage />} />
             <Route path="orders" element={<AdminOrder />} />
             <Route path="notifications" element={<AdminNotification />} />
             <Route path="builds" element={<AdminBuild />} />
-            <Route path="categories" element={<AdminCategory />} />
+            <Route path="categories" element={<AdminCategoryPage />} />
             <Route path="posts" element={<AdminPost />} />
             <Route path="posts/:postId" element={<AdminPostDetail />} />
-            <Route path="wishlists" element={<AdminWishlist />} />
-            <Route path="payments" element={<AdminPayment />} />
-            <Route path="recent-views" element={<AdminRecentView />} />
-            <Route path="moderation" element={<AdminModeration />} />
+            <Route path="installments" element={<AdminInstallmentPage />} />
+            <Route path="warranty" element={<AdminWarrantyPage />} />
             <Route path="service-center" element={<AdminServiceCenter />} />
           </Route>
       </Routes>

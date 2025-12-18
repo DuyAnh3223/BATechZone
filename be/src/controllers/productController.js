@@ -1,0 +1,469 @@
+import Product from '../models/Product.js';
+import Variant from '../models/Variant.js';
+import { db, query } from '../libs/db.js';
+
+// Lấy danh sách sản phẩm
+export const listProducts = async (req, res) => {
+  try {
+    const filters = {
+      page: parseInt(req.query.page) || 1,
+      limit: parseInt(req.query.limit) || (parseInt(req.query.pageSize) || 10),
+      search: req.query.search,
+      category_id: req.query.category_id,
+      minPrice: req.query.minPrice,
+      maxPrice: req.query.maxPrice,
+      sortBy: req.query.sortBy,
+      sortOrder: req.query.sortOrder?.toUpperCase() || 'DESC',
+      is_active: req.query.is_active !== undefined ? (req.query.is_active === 'true' || req.query.is_active === true) : undefined,
+      is_featured: req.query.is_featured !== undefined ? (req.query.is_featured === 'true' || req.query.is_featured === true) : undefined
+    };
+
+    const result = await Product.list(filters);
+    res.json({ success: true, ...result });
+  } catch (error) {
+    console.error('Error listing products:', error);
+    console.error('Error stack:', error.stack);
+    res.status(500).json({ success: false, message: 'Error retrieving products', error: error.message });
+  }
+};
+
+// Lấy chi tiết sản phẩm
+export const getProduct = async (req, res) => {
+  try {
+    const product = await Product.getById(req.params.id);
+    if (!product) {
+      return res.status(404).json({ success: false, message: 'Product not found' });
+    }
+    
+    // Get applicable attributes from category
+    if (product.category_id) {
+      const [attributes] = await db.query(
+        `SELECT a.attribute_id, a.attribute_name
+        FROM attributes a
+        INNER JOIN attribute_categories ac ON a.attribute_id = ac.attribute_id
+        WHERE ac.category_id = ?`,
+        [product.category_id]
+      );
+      product.applicable_attributes = attributes;
+    }
+    
+    res.json({ success: true, data: product });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error retrieving product', error: error.message });
+  }
+};
+
+// Tạo mới sản phẩm
+export const createProduct = async (req, res) => {
+  try {
+    const { 
+      category_id, 
+      product_name, 
+      slug, 
+      description, 
+      base_price, 
+      is_active, 
+      is_featured, 
+      defaultVariant, 
+      additionalVariants,
+      variant_attributes
+    } = req.body;
+
+    // Validate required fields
+    if (!product_name || !product_name.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Tên sản phẩm là bắt buộc'
+      });
+    }
+
+    if (!category_id) {
+      return res.status(400).json({
+        success: false,
+        message: 'Danh mục là bắt buộc'
+      });
+    }
+
+    // Validate: Phải có defaultVariant HOẶC additionalVariants (không thể cả 2 đều null)
+    const hasDefaultVariant = defaultVariant && defaultVariant !== null;
+    const hasAdditionalVariants = additionalVariants && Array.isArray(additionalVariants) && additionalVariants.length > 0;
+
+    if (!hasDefaultVariant && !hasAdditionalVariants) {
+      return res.status(400).json({
+        success: false,
+        message: 'Phải có ít nhất một biến thể (defaultVariant hoặc additionalVariants)'
+      });
+    }
+
+    // Validate price from defaultVariant or additionalVariants
+    if (hasDefaultVariant) {
+      if (!defaultVariant.price || isNaN(defaultVariant.price) || parseFloat(defaultVariant.price) <= 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Giá sản phẩm phải là số dương'
+        });
+      }
+
+      if (defaultVariant.stock !== undefined && parseInt(defaultVariant.stock) < 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Số lượng tồn kho không được âm'
+        });
+      }
+    }
+
+    // Auto-generate slug if not provided
+    let finalSlug = slug?.trim();
+    if (!finalSlug) {
+      finalSlug = product_name
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '') // Remove diacritics
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+    }
+
+    const productId = await Product.create({
+      category_id: parseInt(category_id),
+      product_name: product_name.trim(),
+      slug: finalSlug,
+      description: description?.trim() || null,
+      base_price: base_price ? parseFloat(base_price) : null, // Optional reference price
+      is_active: is_active !== undefined ? (is_active ? 1 : 0) : 1,
+      is_featured: is_featured !== undefined ? (is_featured ? 1 : 0) : 0
+    });
+
+    // Kiểm tra có thuộc tính được chọn không
+    if (hasAdditionalVariants) {
+      // CÓ thuộc tính => Tạo variants từ additionalVariants
+      for (let i = 0; i < additionalVariants.length; i++) {
+        const variant = additionalVariants[i];
+        const variantStock = parseInt(variant.stock || 0);
+        
+        // Validate stock for each variant
+        if (variantStock < 0) {
+          console.error(`Invalid stock for variant ${i + 1}: ${variantStock}`);
+          continue; // Skip invalid variants
+        }
+
+        try {
+          // Extract attribute value IDs from variant.attribute_values
+          const attributeValueIds = variant.attribute_values?.map(av => {
+            // Handle both {attribute_value_id: X} and {attributeValueId: X} formats
+            return av.attribute_value_id || av.attributeValueId;
+          }).filter(id => id != null) || [];
+
+          const variantId = await Variant.create({
+            productId: productId,
+            sku: variant.sku || `${finalSlug}-${i + 1}`,
+            variantName: variant.sku || null,
+            price: parseFloat(variant.price),
+            stockQuantity: variantStock,
+            isActive: 1,
+            isDefault: i === 0 ? 1 : 0, // First variant is default
+            attributes: attributeValueIds
+          });
+
+          console.log(`Created variant ${i + 1} with SKU: ${variant.sku}`);
+        } catch (variantError) {
+          console.error(`Error creating variant ${i + 1}:`, variantError);
+          // If first variant fails, rollback product
+          if (i === 0) {
+            await Product.delete(productId);
+            throw new Error('Không thể tạo biến thể cho sản phẩm');
+          }
+          // Continue with other variants even if one fails
+        }
+      }
+    } else if (hasDefaultVariant) {
+      // KHÔNG có thuộc tính => Tạo default variant
+      try {
+        const defaultVariantId = await Variant.create({
+          productId: productId,
+          sku: `${finalSlug}-default`,
+          variantName: product_name.trim(),
+          price: parseFloat(defaultVariant.price),
+          stockQuantity: parseInt(defaultVariant.stock || 0),
+          isActive: 1,
+          isDefault: 1,
+          attributes: [] // Default variant has no attributes
+        });
+
+        console.log('Created default variant with ID:', defaultVariantId);
+      } catch (variantError) {
+        console.error('Error creating default variant:', variantError);
+        // Rollback product if default variant creation fails
+        await Product.delete(productId);
+        throw new Error('Không thể tạo biến thể mặc định cho sản phẩm');
+      }
+    }
+
+    // Lấy lại product với category_name
+    const product = await Product.getById(productId);
+
+    // **FIX**: Load variants ngay sau khi tạo product để trả về đầy đủ variants
+    const variants = await Variant.getByProductId(productId);
+
+    res.status(201).json({
+      success: true,
+      message: 'Product created successfully',
+      data: {
+        ...product,
+        variants: variants || [] // Include variants in response
+      }
+    });
+  } catch (error) {
+    console.error('Error creating product:', error);
+    console.error('Error stack:', error.stack);
+    
+    // Handle duplicate entry
+    if (error.code === 'ER_DUP_ENTRY') {
+      return res.status(400).json({
+        success: false,
+        message: 'Sản phẩm với tên hoặc slug này đã tồn tại'
+      });
+    }
+
+    // Handle foreign key constraint
+    if (error.code === 'ER_NO_REFERENCED_ROW_2') {
+      return res.status(400).json({
+        success: false,
+        message: 'Danh mục không tồn tại'
+      });
+    }
+
+    res.status(500).json({ 
+      success: false, 
+      message: 'Có lỗi xảy ra khi tạo sản phẩm',
+      error: error.message 
+    });
+  }
+};
+
+// Cập nhật sản phẩm
+export const updateProduct = async (req, res) => {
+  try {
+    const product = await Product.getById(req.params.id);
+    if (!product) {
+      return res.status(404).json({ success: false, message: 'Product not found' });
+    }
+
+    await Product.update(req.params.id, req.body);
+    
+    // Lấy lại product với category_name sau khi cập nhật
+    const updatedProduct = await Product.getById(req.params.id);
+    
+    res.json({ 
+      success: true, 
+      message: 'Product updated successfully',
+      data: updatedProduct
+    });
+  } catch (error) {
+    console.error('Error updating product:', error);
+    console.error('Error stack:', error.stack);
+    res.status(500).json({ success: false, message: 'Error updating product', error: error.message });
+  }
+};
+
+// Xóa mềm (soft delete)
+export const deleteProduct = async (req, res) => {
+  try {
+    const product = await Product.getById(req.params.id);
+    if (!product) {
+      return res.status(404).json({ success: false, message: 'Product not found' });
+    }
+
+    await Product.delete(req.params.id);
+    res.json({ success: true, message: 'Product deleted (soft delete)' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error deleting product', error: error.message });
+  }
+};
+
+export const increaseProductView = async (req, res) => {
+  try {
+    const product = await Product.getById(req.params.id);
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: 'Product not found'
+      });
+    }
+
+    await Product.increaseViewCount(req.params.id);
+    res.json({
+      success: true,
+      message: 'Product view count increased'
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error increasing product view count',
+      error: error.message
+    });
+  }
+};
+
+// Get filter options for a category
+export const getFilterOptions = async (req, res) => {
+  try {
+    const { category_id } = req.query;
+    
+    if (!category_id) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'category_id is required' 
+      });
+    }
+
+    const filterOptions = await Product.getFilterOptions(category_id);
+    
+    res.json({ 
+      success: true, 
+      data: filterOptions 
+    });
+  } catch (error) {
+    console.error('Error getting filter options:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Error retrieving filter options', 
+      error: error.message 
+    });
+  }
+};
+
+// Lấy products cho Build PC (bao gồm variants và attributes)
+export const getProductsForBuildPC = async (req, res) => {
+  try {
+    console.log('🔵 Build PC API called with category_id:', req.query.category_id);
+    
+    const { category_id } = req.query;
+    
+    if (!category_id) {
+      console.log('❌ Missing category_id');
+      return res.status(400).json({ 
+        success: false, 
+        message: 'category_id is required' 
+      });
+    }
+
+    console.log('🔍 Fetching products for category:', category_id);
+    
+    // Lấy products theo category với variants
+    let products = [];
+    try {
+      products = await query(`
+        SELECT 
+          p.product_id,
+          p.product_name,
+          p.slug,
+          p.description,
+          p.base_price,
+          p.img_path,
+          c.category_name,
+          c.slug as category_slug
+        FROM products p
+        LEFT JOIN categories c ON p.category_id = c.category_id
+        WHERE p.category_id = ? AND p.is_active = 1
+        ORDER BY p.is_featured DESC, p.product_name ASC
+      `, [category_id]);
+      
+      console.log(`✅ Found ${products.length} products`);
+    } catch (queryError) {
+      console.error('❌ Error in products query:', queryError);
+      throw queryError;
+    }
+
+    if (!Array.isArray(products)) {
+      console.error('❌ Products is not an array:', typeof products);
+      throw new Error('Query did not return an array');
+    }
+
+    // Lấy variants và attributes cho mỗi product
+    const productsWithVariants = await Promise.all(products.map(async (product) => {
+      console.log(`  📦 Processing product: ${product.product_name}`);
+      
+      // Get variants
+      let variants = [];
+      try {
+        variants = await query(`
+          SELECT 
+            v.variant_id,
+            v.sku,
+            v.variant_name,
+            v.price,
+            v.stock_quantity as stock
+          FROM product_variants v
+          WHERE v.product_id = ?
+          ORDER BY v.is_default DESC, v.price ASC
+        `, [product.product_id]);
+        
+        console.log(`    ➡️ Found ${variants.length} variants`);
+      } catch (variantError) {
+        console.error(`    ❌ Error fetching variants:`, variantError);
+        variants = [];
+      }
+
+      // Get attributes for this product
+      let attributes = [];
+      try {
+        if (variants.length > 0) {
+          const variantIds = variants.map(v => v.variant_id);
+          const placeholders = variantIds.map(() => '?').join(',');
+          
+          attributes = await query(`
+            SELECT 
+              a.attribute_name,
+              av.value_name as attribute_value,
+              va.variant_id
+            FROM variant_attributes va
+            JOIN attribute_values av ON va.attribute_value_id = av.attribute_value_id
+            JOIN attributes a ON av.attribute_id = a.attribute_id
+            WHERE va.variant_id IN (${placeholders})
+          `, variantIds);
+        }
+        
+        console.log(`    ➡️ Found ${attributes.length} attributes`);
+      } catch (attrError) {
+        console.error(`    ❌ Error fetching attributes:`, attrError);
+        attributes = [];
+      }
+
+      // Group attributes by variant
+      const variantsWithAttributes = variants.map(variant => {
+        const variantAttributes = attributes
+          .filter(attr => attr.variant_id === variant.variant_id)
+          .reduce((acc, attr) => {
+            acc[attr.attribute_name] = attr.attribute_value;
+            return acc;
+          }, {});
+
+        return {
+          ...variant,
+          attributes: variantAttributes
+        };
+      });
+
+      return {
+        ...product,
+        variants: variantsWithAttributes
+      };
+    }));
+
+    console.log('✅ Returning data with variants and attributes');
+
+    res.json({ 
+      success: true, 
+      data: productsWithVariants 
+    });
+  } catch (error) {
+    console.error('❌ Error getting products for Build PC:', error);
+    console.error('Stack:', error.stack);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Error retrieving products for Build PC', 
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
+};

@@ -1,27 +1,68 @@
-import React from "react";
-import { Outlet, NavLink } from "react-router-dom";
-import { User2, Home, Box, ShoppingCart, ListOrdered, Percent, Bell, Search, Users, Star, MapPin, Wrench, Tags, Book, Heart, CreditCard, TriangleAlert, LifeBuoy, Eye } from "lucide-react";
+import React, { useEffect } from "react";
+import { Outlet, NavLink, useNavigate } from "react-router-dom";
+import { User2, Home, Box, ShoppingCart, ListOrdered, Percent, Bell, Search, Users, Star, MapPin, Wrench, Tags, Book, Heart, CreditCard, LifeBuoy, Eye, LogOut, Shield } from "lucide-react";
+import { useAdminAuthStore } from "@/stores/useAdminAuthStore";
 import adminAvatar from "../assets/react.svg"; // dùng tạm hình có sẵn
 
 const menu = [
-  { icon: <Home size={18} />, label: "Dashboard", to: "/admin/dashboard" },
-  { icon: <Users size={18} />, label: "Users", to: "/admin/users" },
-  { icon: <Box size={18} />, label: "Products", to: "/admin/products" },
-  { icon: <Tags size={18} />, label: "Categories", to: "/admin/categories" },
-  { icon: <Book size={18} />, label: "Posts", to: "/admin/posts" },
-  { icon: <Heart size={18} />, label: "Wishlists", to: "/admin/wishlists" },
-  { icon: <Wrench size={18} />, label: "Builds", to: "/admin/builds" },
-  { icon: <MapPin size={18} />, label: "Addresses", to: "/admin/addresses" },
-  { icon: <ListOrdered size={18} />, label: "Orders", to: "/admin/orders" },
-  { icon: <CreditCard size={18} />, label: "Payments", to: "/admin/payments" },
-  { icon: <Bell size={18} />, label: "Notifications", to: "/admin/notifications" },
-  { icon: <Eye size={18} />, label: "Recent Views", to: "/admin/recent-views" },
-  { icon: <LifeBuoy size={18} />, label: "Service Center", to: "/admin/service-center" },
-  { icon: <TriangleAlert size={18} />, label: "Moderation", to: "/admin/moderation" },
-  { icon: <Percent size={18} />, label: "Coupons", to: "/admin/coupons" },
+  { icon: <Home size={18} />, label: "Bảng điều khiển", to: "/admin/dashboard" },
+  { icon: <Users size={18} />, label: "Người dùng", to: "/admin/users" },
+  { icon: <Box size={18} />, label: "Sản phẩm", to: "/admin/products" },
+  { icon: <Tags size={18} />, label: "Danh mục", to: "/admin/categories" },
+  { icon: <ListOrdered size={18} />, label: "Đơn hàng", to: "/admin/orders" },
+  { icon: <CreditCard size={18} />, label: "Trả góp", to: "/admin/installments" },
+  { icon: <Shield size={18} />, label: "Bảo hành", to: "/admin/warranty" },
+  { icon: <Percent size={18} />, label: "Mã giảm giá", to: "/admin/coupons" },
+  { icon: <Bell size={18} />, label: "Thông báo", to: "/admin/notifications" },
+  { icon: <Book size={18} />, label: "Bài viết", to: "/admin/posts" },
+  { icon: <Wrench size={18} />, label: "Cấu hình PC", to: "/admin/builds" },
+  { icon: <LifeBuoy size={18} />, label: "Trung tâm dịch vụ", to: "/admin/service-center" },
 ];
 
 const AdminLayout = () => {
+  const navigate = useNavigate();
+  const { user, loading, checkAuth, signOut } = useAdminAuthStore();
+
+  useEffect(() => {
+    // Check auth when component mounts
+    // If user just logged in, they will have token but checkAuth verifies it's valid
+    const token = localStorage.getItem('admin_access_token');
+    if (token && !user) {
+      // Have token but no user data - verify token
+      checkAuth();
+    }
+    // No token and no user - skip checkAuth, let redirect useEffect handle it
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Chỉ chạy 1 lần khi mount
+
+  useEffect(() => {
+    // Redirect to login if not authenticated (after loading completes)
+    const token = localStorage.getItem('admin_access_token');
+    if (!loading && !user && !token) {
+      navigate('/admin/login');
+    }
+  }, [loading, user, navigate]);
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/admin/login');
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Đang tải...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null;
+  }
+
   return (
     <div className="flex min-h-screen bg-blue-100">
       {/* Sidebar */}
@@ -34,7 +75,7 @@ const AdminLayout = () => {
               key={idx}
               to={item.to}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-4 py-2 rounded-lg font-medium text-sm transition ${isActive ? "bg-blue-100 text-blue-700" : "text-gray-700 hover:bg-gray-100"}`
+                `flex items-center gap-3 ${item.indent ? 'pl-8' : 'px-4'} py-2 rounded-lg font-medium text-sm transition ${isActive ? "bg-blue-100 text-blue-700" : "text-gray-700 hover:bg-gray-100"}`
               }
             >
               {item.icon}
@@ -50,7 +91,7 @@ const AdminLayout = () => {
           <div className="flex items-center gap-3 flex-1">
             <button className="block md:hidden p-2"><span className="sr-only">Menu</span></button>
             <div className="relative w-80 max-w-full">
-              <input type="text" placeholder="Search..." className="w-full border rounded-lg pl-10 pr-3 py-2 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-300" />
+              <input type="text" placeholder="Tìm kiếm..." className="w-full border rounded-lg pl-10 pr-3 py-2 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-300" />
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
             </div>
           </div>
@@ -62,9 +103,16 @@ const AdminLayout = () => {
             <div className="flex items-center gap-3 border-l pl-4">
               <img src={adminAvatar} alt="Avatar" className="w-9 h-9 rounded-full border border-blue-200 bg-white shadow" />
               <div className="text-right">
-                <div className="font-semibold text-gray-700">Admin</div>
+                <div className="font-semibold text-gray-700">{user?.username || 'Admin'}</div>
                 <div className="text-xs text-gray-400">Quản trị viên</div>
               </div>
+              <button 
+                onClick={handleSignOut}
+                className="ml-2 p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+                title="Đăng xuất"
+              >
+                <LogOut size={18} />
+              </button>
             </div>
           </div>
         </header>

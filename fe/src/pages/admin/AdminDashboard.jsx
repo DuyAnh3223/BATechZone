@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { Users, Box, DollarSign, Eye } from "lucide-react";
 
 const summary = {
 	users: 1286,
@@ -18,6 +19,23 @@ const topSelling = [
 	{ product: 'Intel Core i9-13900K', category: 'CPU', sold: 120, price: 12990000, stock: 50 },
 	{ product: 'NVIDIA RTX 4090', category: 'VGA', sold: 48, price: 45990000, stock: 2 },
 	{ product: 'Corsair DDR5 16GB', category: 'RAM', sold: 96, price: 3290000, stock: 100 },
+];
+
+const topViewedVariants = [
+	{ variant_id: 1, product_name: 'Intel Core i9-13900K', variant_name: 'Box', views: 320 },
+	{ variant_id: 3, product_name: 'NVIDIA RTX 4090', variant_name: '24GB', views: 180 },
+	{ variant_id: 7, product_name: 'Corsair Vengeance DDR5', variant_name: '16GB', views: 155 },
+];
+
+const topReportedVariants = [
+	{ variant_id: 1002, product_name: 'Sản phẩm X', report_count: 7 },
+	{ variant_id: 2005, product_name: 'Sản phẩm Y', report_count: 5 },
+];
+
+const topActiveUsers = [
+	{ user_id: 2, username: 'john_doe', recent_views: 24 },
+	{ user_id: 3, username: 'jane_smith', recent_views: 18 },
+	{ user_id: 1, username: 'admin', recent_views: 10 },
 ];
 
 // Bar chart mock for Orders overview
@@ -64,7 +82,7 @@ const Legend = ({segments}) => (
 	</ul>
 );
 
-// Category distribution theo sample DB
+// Phân bổ danh mục sản phẩm
 const categorySegments = [
 	{ label: 'CPU', value: 2, color: '#2563eb' },
 	{ label: 'VGA', value: 2, color: '#10b981' },
@@ -73,7 +91,7 @@ const categorySegments = [
 	{ label: 'Laptop', value: 2, color: '#8b5cf6' },
 ];
 
-// Status distribution computed từ recentOrders (demo)
+// Trạng thái đơn hàng
 const computeStatusSegments = () => {
 	const map = {
 		delivered: { label: 'Hoàn thành', color: '#16a34a', value: 0 },
@@ -85,10 +103,20 @@ const computeStatusSegments = () => {
 	return Object.values(map);
 };
 
-const Card = ({title, value}) => (
+const Card = ({title, value, icon, accentClass = "bg-blue-50 text-blue-600"}) => (
+    <div className="bg-white rounded-xl shadow p-5 flex items-center gap-4">
+        <div className={`shrink-0 rounded-lg ${accentClass} p-3`}>{icon}</div>
+        <div>
+            <div className="text-gray-500 text-sm">{title}</div>
+            <div className="text-2xl font-bold mt-1">{value}</div>
+        </div>
+    </div>
+);
+
+const ViewCard = ({title, children}) => (
 	<div className="bg-white rounded-xl shadow p-5">
-		<div className="text-gray-500 text-sm">{title}</div>
-		<div className="text-2xl font-bold mt-1">{value}</div>
+		<div className="text-lg font-semibold mb-3">{title}</div>
+		{children}
 	</div>
 );
 
@@ -110,12 +138,12 @@ const AdminDashboard = () => {
 			<h1 className="text-2xl md:text-3xl font-bold text-gray-800">Trang quản trị BATechZone</h1>
 
 			{/* Tổng quan */}
-			<div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-				<Card title="Tổng người dùng" value={summary.users} />
-				<Card title="Tổng sản phẩm" value={summary.products} />
-				<Card title="Doanh thu" value={summary.revenue.toLocaleString('vi-VN')} />
-				<Card title="Sản phẩm được theo dõi" value={summary.watchlisted} />
-			</div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <Card title="Tổng người dùng" value={summary.users} icon={<Users className="size-6"/>} accentClass="bg-blue-50 text-blue-600" />
+                <Card title="Tổng sản phẩm" value={summary.products} icon={<Box className="size-6"/>} accentClass="bg-violet-50 text-violet-600" />
+                <Card title="Doanh thu" value={summary.revenue.toLocaleString('vi-VN') + ' ₫'} icon={<DollarSign className="size-6"/>} accentClass="bg-emerald-50 text-emerald-600" />
+                <Card title="Sản phẩm được theo dõi" value={summary.watchlisted} icon={<Eye className="size-6"/>} accentClass="bg-amber-50 text-amber-600" />
+            </div>
 
 			{/* Tổng quan đơn hàng (Biểu đồ cột) với chọn thời gian */}
 			<div>
@@ -211,6 +239,87 @@ const AdminDashboard = () => {
 							))}
 						</tbody>
 					</table>
+				</div>
+			</div>
+
+			{/* Recent Views Section */}
+			<div>
+				<div className="flex items-center justify-between mb-4">
+					<h2 className="text-xl font-bold text-gray-800">Thống kê lượt xem</h2>
+				</div>
+				<div className="grid md:grid-cols-2 gap-4">
+					<ViewCard title="Top variants theo lượt xem">
+						<div className="overflow-x-auto">
+							<table className="min-w-[600px] w-full text-left">
+								<thead className="bg-gray-50">
+									<tr>
+										<th className="px-4 py-2">ID Phiên bản</th>
+										<th className="px-4 py-2">Sản phẩm</th>
+										<th className="px-4 py-2">Biến thể</th>
+										<th className="px-4 py-2 text-right">Lượt xem</th>
+									</tr>
+								</thead>
+								<tbody className="divide-y">
+									{topViewedVariants.map(v => (
+										<tr key={v.variant_id}>
+											<td className="px-4 py-2">{v.variant_id}</td>
+											<td className="px-4 py-2">{v.product_name}</td>
+											<td className="px-4 py-2">{v.variant_name}</td>
+											<td className="px-4 py-2 text-right">{v.views}</td>
+										</tr>
+									))}
+								</tbody>
+							</table>
+						</div>
+					</ViewCard>
+
+					<ViewCard title="Top variants bị report nhiều">
+						<div className="overflow-x-auto">
+							<table className="min-w-[500px] w-full text-left">
+								<thead className="bg-gray-50">
+									<tr>
+										<th className="px-4 py-2">ID Phiên bản</th>
+										<th className="px-4 py-2">Sản phẩm</th>
+										<th className="px-4 py-2 text-right">Lượt report</th>
+									</tr>
+								</thead>
+								<tbody className="divide-y">
+									{topReportedVariants.map(v => (
+										<tr key={v.variant_id}>
+											<td className="px-4 py-2">{v.variant_id}</td>
+											<td className="px-4 py-2">{v.product_name}</td>
+											<td className="px-4 py-2 text-right">{v.report_count}</td>
+										</tr>
+									))}
+								</tbody>
+							</table>
+						</div>
+					</ViewCard>
+				</div>
+
+				<div className="mt-4">
+					<ViewCard title="Top users hoạt động (theo recent views)">
+						<div className="overflow-x-auto">
+							<table className="min-w-[500px] w-full text-left">
+								<thead className="bg-gray-50">
+									<tr>
+										<th className="px-4 py-2">Người dùng</th>
+										<th className="px-4 py-2">Tên đăng nhập</th>
+										<th className="px-4 py-2 text-right">Lượt xem gần đây</th>
+									</tr>
+								</thead>
+								<tbody className="divide-y">
+									{topActiveUsers.map(u => (
+										<tr key={u.user_id}>
+											<td className="px-4 py-2">{u.user_id}</td>
+											<td className="px-4 py-2">{u.username}</td>
+											<td className="px-4 py-2 text-right">{u.recent_views}</td>
+										</tr>
+									))}
+								</tbody>
+							</table>
+						</div>
+					</ViewCard>
 				</div>
 			</div>
 		</div>

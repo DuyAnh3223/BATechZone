@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { useAuth } from '../../context/AuthContext';
+import { useAdminAuthStore } from '@/stores/useAdminAuthStore';
 import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Shield, User2, Lock, Eye, EyeOff, BarChart3 } from 'lucide-react';
 
 const AdminLogin = () => {
-	const { adminLogin } = useAuth();
+	const { adminSignIn } = useAdminAuthStore();
 	const navigate = useNavigate();
 	const [username, setUsername] = useState('');
 	const [password, setPassword] = useState('');
@@ -16,13 +16,14 @@ const AdminLogin = () => {
 		e.preventDefault();
 		try {
 			setIsSubmitting(true);
-			// Đảm bảo gửi đúng format mà API yêu cầu
-			await adminLogin({ 
-				username: username,  // Gửi đúng tên trường là 'username'
-				password: password
-			});
-			toast.success('Đăng nhập admin thành công');
-			navigate('/admin/dashboard'); // <-- chuyển về dashboard admin
+			const user = await adminSignIn(username, password);
+			if (user) {
+				toast.success('Đăng nhập admin thành công');
+				// Small delay to ensure Zustand state is synced before navigation
+				setTimeout(() => {
+					navigate('/admin/dashboard');
+				}, 0);
+			}
 		} catch (err) {
 			toast.error(err.message || 'Đăng nhập thất bại');
 		} finally {
@@ -80,9 +81,6 @@ const AdminLogin = () => {
 									</button>
 								</div>
 							</div>
-							{/* <button disabled={isSubmitting} type="submit" className="w-full rounded-lg bg-gray-900 text-white py-2.5 font-medium hover:bg-black transition disabled:opacity-60">
-                                {isSubmitting ? 'Đang đăng nhập...' : 'Đăng nhập'}
-                            </button> */}
 							<button
 								disabled={isSubmitting}
 								type="submit"

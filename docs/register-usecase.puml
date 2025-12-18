@@ -1,0 +1,13 @@
+@startuml
+left to right direction
+
+actor Guest
+actor User
+
+Guest --> (Đăng ký tài khoản)
+
+(Đăng ký tài khoản) ..> (Xác thực email) : <<include>>
+(Đăng ký tài khoản) ..> (Lưu thông tin người dùng) : <<include>>
+
+User --> (Đăng nhập)
+@enduml

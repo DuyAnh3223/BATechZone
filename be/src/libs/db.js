@@ -10,8 +10,13 @@ export const db = mysql.createPool({
     database: process.env.DB_NAME,
     port: process.env.DB_PORT,
     waitForConnections: true,
-    connectionLimit: 10,
-    queueLimit: 0
+    connectionLimit: 100, 
+    queueLimit: 0,
+    enableKeepAlive: true, // Giữ kết nối sống
+    keepAliveInitialDelay: 0,
+    connectTimeout: 60000, // 60s timeout
+    acquireTimeout: 60000, // 60s để lấy connection từ pool
+    timeout: 60000 // 60s query timeout
 });
 
 // Test connection

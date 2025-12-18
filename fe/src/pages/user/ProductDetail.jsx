@@ -1,64 +1,80 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-} from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel";
-import { Badge } from "@/components/ui/badge";
-import { MinusIcon, PlusIcon, ShoppingCart } from "lucide-react";
-
-// Mock data
-const mockProduct = {
-  id: 1,
-  name: "AMD Ryzen 7 5800X",
-  category: "CPU",
-  price: 8990000,
-  originalPrice: 9990000,
-  discount: 10,
-  brand: "AMD",
-  stock: 15,
-  images: [
-    "https://via.placeholder.com/600",
-    "https://via.placeholder.com/600",
-    "https://via.placeholder.com/600",
-  ],
-  description: `
-    - Socket: AM4
-    - Cores: 8
-    - Threads: 16
-    - Base Clock: 3.8GHz
-    - Max Boost Clock: 4.7GHz
-    - L3 Cache: 32MB
-    - TDP: 105W
-  `,
-  specifications: {
-    "Thương hiệu": "AMD",
-    "Model": "Ryzen 7 5800X",
-    "Socket": "AM4",
-    "Số nhân": "8",
-    "Số luồng": "16",
-    "Xung nhịp cơ bản": "3.8GHz",
-    "Xung nhịp tối đa": "4.7GHz",
-    "Cache L3": "32MB",
-    "TDP": "105W",
-  },
-};
+import { ArrowLeft, Package } from "lucide-react";
+import { useProductStore } from "@/stores/useProductStore";
+import { useVariantStore } from "@/stores/useVariantStore";
+import { useCartStore } from "@/stores/useCartStore";
+import { useCartItemStore } from "@/stores/useCartItemStore";
+import { useUserAuthStore } from "@/stores/useUserAuthStore";
+import { toast } from "sonner";
+import ProductImage from "@/components/product/ProductImage";
+import ProductInfo from "@/components/product/ProductInfo";
+import StockStatus from "@/components/product/StockStatus";
+import VariantSelector from "@/components/product/VariantSelector";
+import QuantitySelector from "@/components/product/QuantitySelector";
+import ProductMeta from "@/components/product/ProductMeta";
+import ProductDescription from "@/components/product/ProductDescription";
+import TechnicalSpecs from "@/components/product/TechnicalSpecs";
+import VariantsList from "@/components/product/VariantsList";
 
 const ProductDetail = () => {
+  const { productId } = useParams();
+  const navigate = useNavigate();
+  const { currentProduct, loading, fetchProduct, increaseView } = useProductStore();
+  const { variants, loading: loadingVariants, fetchVariantsByProductId, fetchVariantImages, variantImages, clearVariantImages, clearVariants } = useVariantStore();
+  const { getOrCreateCart } = useCartStore();
+  const { addToCart } = useCartItemStore();
+  const { user } = useUserAuthStore();
   const [quantity, setQuantity] = useState(1);
-  const [activeTab, setActiveTab] = useState("description");
+  const [selectedVariant, setSelectedVariant] = useState(null);
+
+  // Clear all data when product changes
+  useEffect(() => {
+    // Clear previous product's data
+    if (clearVariantImages) {
+      clearVariantImages();
+    }
+    if (clearVariants) {
+      clearVariants();
+    }
+    setSelectedVariant(null);
+    setQuantity(1);
+  }, [productId, clearVariantImages, clearVariants]);
+
+  // Fetch product data
+  useEffect(() => {
+    if (productId) {
+      fetchProduct(productId);
+      fetchVariantsByProductId(productId).catch(err => console.error('Error loading variants:', err));
+      // Increase view count
+      increaseView(productId).catch(err => console.error('Error increasing view:', err));
+    }
+  }, [productId, fetchProduct, fetchVariantsByProductId, increaseView]);
+
+  // Set default variant when variants are loaded
+  useEffect(() => {
+    if (variants && variants.length > 0) {
+      const defaultVariant = variants.find(v => v.is_default) || variants[0];
+      // Always set default variant when variants change (new product loaded)
+      setSelectedVariant(defaultVariant);
+    }
+  }, [variants]);
+
+  // Fetch variant images when selected variant changes
+  useEffect(() => {
+    if (selectedVariant?.variant_id) {
+      console.log('🔍 ProductDetail: Fetching images for variant_id:', selectedVariant.variant_id);
+      console.log('🔍 ProductDetail: Product ID:', productId);
+      console.log('🔍 ProductDetail: Selected Variant:', selectedVariant);
+      fetchVariantImages(selectedVariant.variant_id).catch(err => console.error('Error loading variant images:', err));
+    }
+  }, [selectedVariant?.variant_id, fetchVariantImages, productId]);
 
   const handleQuantityChange = (type) => {
     if (type === "increase") {
-      setQuantity((prev) => Math.min(prev + 1, mockProduct.stock));
+      setQuantity((prev) => prev + 1);
     } else {
       setQuantity((prev) => Math.max(prev - 1, 1));
     }
@@ -71,88 +87,186 @@ const ProductDetail = () => {
     }).format(price);
   };
 
+  const handleAddToCart = async () => {
+    const variantToAdd = selectedVariant;
+    
+    if (!variantToAdd) {
+      toast.error('Vui lòng chọn biến thể sản phẩm');
+      return;
+    }
+
+    const isProductActive = variantToAdd.is_active && (variantToAdd.stock_quantity ?? variantToAdd.stock ?? 0) > 0;
+    
+    if (!isProductActive) {
+      toast.error('Sản phẩm hiện đang hết hàng');
+      return;
+    }
+
+    // Kiểm tra số lượng tồn kho
+    const currentStock = variantToAdd.stock_quantity ?? variantToAdd.stock ?? 0;
+    if (quantity > currentStock) {
+      toast.error(`Chỉ còn ${currentStock} sản phẩm trong kho`);
+      return;
+    }
+
+    try {
+      // 1. Lấy hoặc tạo giỏ hàng
+      let cartData = {};
+      if (user) {
+        cartData.userId = user.user_id;
+      } else {
+        // Guest cart - lấy từ localStorage hoặc tạo mới
+        let sessionId = localStorage.getItem('guest_session_id');
+        if (!sessionId) {
+          sessionId = `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+          localStorage.setItem('guest_session_id', sessionId);
+        }
+        cartData.sessionId = sessionId;
+      }
+
+      const cartResponse = await getOrCreateCart(cartData);
+      const cart = cartResponse?.data || cartResponse;
+      
+      console.log('Cart response:', cartResponse);
+      console.log('Cart data:', cart);
+
+      const cartId = cart?.cart_id || cart?.cartId;
+      if (!cartId) {
+        console.error('Invalid cart structure:', cart);
+        toast.error('Không thể tạo giỏ hàng');
+        return;
+      }
+
+      // 2. Thêm sản phẩm vào giỏ hàng
+      await addToCart({
+        cartId: cartId,
+        variantId: variantToAdd.variant_id,
+        quantity: quantity
+      });
+
+      toast.success(`Đã thêm ${quantity} sản phẩm vào giỏ hàng`);
+      
+      // Reset quantity về 1 sau khi thêm thành công
+      setQuantity(1);
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+      toast.error(error.response?.data?.message || 'Không thể thêm vào giỏ hàng');
+    }
+  };
+
+  // Get current price (variant price or base price)
+  const getCurrentPrice = () => {
+    if (selectedVariant) {
+      return selectedVariant.price || 0;
+    }
+    return currentProduct?.default_variant_price || currentProduct?.min_variant_price || 0;
+  };
+
+  // Get current stock
+  const getCurrentStock = () => {
+    if (selectedVariant) {
+      return selectedVariant.stock_quantity ?? selectedVariant.stock ?? 0;
+    }
+    return null; // Base product doesn't have stock
+  };
+
+  // Check if current selection is available
+  const isCurrentAvailable = () => {
+    if (selectedVariant) {
+      return selectedVariant.is_active && (selectedVariant.stock_quantity ?? selectedVariant.stock ?? 0) > 0;
+    }
+    return currentProduct?.is_active;
+  };
+
+  if (loading) {
+    return (
+      <div className="py-8">
+        <div className="text-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-500">Đang tải thông tin sản phẩm...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!currentProduct) {
+    return (
+      <div className="py-8">
+        <div className="text-center py-12">
+          <Package className="h-16 w-16 mx-auto mb-4 text-gray-400" />
+          <p className="text-gray-500 mb-4">Không tìm thấy sản phẩm</p>
+          <Button onClick={() => navigate('/products')}>
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Quay lại danh sách
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Placeholder image if no image
+  const productImage = currentProduct.image_url || 'https://via.placeholder.com/600';
+  const isActive = currentProduct.is_active !== undefined ? currentProduct.is_active : true;
+  const isFeatured = currentProduct.is_featured || false;
+
   return (
     <div className="py-8">
+      {/* Back Button */}
+      <div className="mb-6">
+        <Button
+          variant="ghost"
+          onClick={() => navigate(-1)}
+          className="gap-2"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Quay lại
+        </Button>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Product Images */}
-        <div>
-          <Carousel className="w-full max-w-xl mx-auto">
-            <CarouselContent>
-              {mockProduct.images.map((image, index) => (
-                <CarouselItem key={index}>
-                  <img
-                    src={image}
-                    alt={`${mockProduct.name} - ${index + 1}`}
-                    className="w-full aspect-square object-cover rounded-lg"
-                  />
-                </CarouselItem>
-              ))}
-            </CarouselContent>
-            <CarouselPrevious />
-            <CarouselNext />
-          </Carousel>
-        </div>
+        <ProductImage
+          key={productId}
+          imageUrl={productImage}
+          productName={currentProduct.product_name}
+          isActive={isActive}
+          isFeatured={isFeatured}
+          variantImages={variantImages}
+        />
 
         {/* Product Info */}
         <div>
           <div className="space-y-6">
-            <div>
-              <h1 className="text-2xl font-bold mb-2">{mockProduct.name}</h1>
-              <div className="flex items-center gap-2 mb-4">
-                <Badge variant="secondary">
-                  Thương hiệu: {mockProduct.brand}
-                </Badge>
-                <Badge variant="secondary">
-                  Danh mục: {mockProduct.category}
-                </Badge>
-              </div>
-              <div className="flex items-baseline gap-4">
-                <span className="text-3xl font-bold text-red-600">
-                  {formatPrice(mockProduct.price)}
-                </span>
-                {mockProduct.discount > 0 && (
-                  <>
-                    <span className="text-lg text-gray-500 line-through">
-                      {formatPrice(mockProduct.originalPrice)}
-                    </span>
-                    <Badge variant="destructive">-{mockProduct.discount}%</Badge>
-                  </>
-                )}
-              </div>
-            </div>
+            <ProductInfo
+              product={currentProduct}
+              currentPrice={getCurrentPrice()}
+              basePrice={currentProduct.default_variant_price || currentProduct.min_variant_price}
+              minPrice={currentProduct.min_variant_price}
+              maxPrice={currentProduct.max_variant_price}
+              selectedVariant={selectedVariant}
+            />
 
-            {/* Quantity Selector */}
-            <div className="flex items-center gap-4">
-              <span className="text-sm text-gray-500">Số lượng:</span>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => handleQuantityChange("decrease")}
-                  disabled={quantity <= 1}
-                >
-                  <MinusIcon className="h-4 w-4" />
-                </Button>
-                <span className="w-12 text-center">{quantity}</span>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => handleQuantityChange("increase")}
-                  disabled={quantity >= mockProduct.stock}
-                >
-                  <PlusIcon className="h-4 w-4" />
-                </Button>
-              </div>
-              <span className="text-sm text-gray-500">
-                {mockProduct.stock} sản phẩm có sẵn
-              </span>
-            </div>
+            <StockStatus
+              isAvailable={isCurrentAvailable()}
+              currentStock={getCurrentStock()}
+              selectedVariant={selectedVariant}
+            />
 
-            {/* Add to Cart Button */}
-            <Button className="w-full" size="lg">
-              <ShoppingCart className="w-4 h-4 mr-2" />
-              Thêm vào giỏ hàng
-            </Button>
+            <VariantSelector
+              variants={variants}
+              selectedVariant={selectedVariant}
+              onSelectVariant={setSelectedVariant}
+            />
+
+            <QuantitySelector
+              quantity={quantity}
+              onQuantityChange={handleQuantityChange}
+              onAddToCart={handleAddToCart}
+              isAvailable={isCurrentAvailable()}
+              currentStock={getCurrentStock()}
+            />
+
+            <ProductMeta product={currentProduct} />
           </div>
         </div>
       </div>
@@ -160,38 +274,20 @@ const ProductDetail = () => {
       {/* Product Details Tabs */}
       <div className="mt-12">
         <Tabs defaultValue="description" className="w-full">
-          <TabsList>
+          <TabsList className={`grid w-full max-w-2xl ${variants && variants.length > 0 ? 'grid-cols-3' : 'grid-cols-2'}`}>
             <TabsTrigger value="description">Mô tả sản phẩm</TabsTrigger>
-            <TabsTrigger value="specifications">Thông số kỹ thuật</TabsTrigger>
+            <TabsTrigger value="technical-specs">Thông số kỹ thuật</TabsTrigger>
+            {variants && variants.length > 0 && (
+              <TabsTrigger value="variants">Biến thể ({variants.length})</TabsTrigger>
+            )}
           </TabsList>
-          <TabsContent value="description">
-            <Card>
-              <CardContent className="prose max-w-none pt-6">
-                <pre className="whitespace-pre-wrap font-sans">
-                  {mockProduct.description}
-                </pre>
-              </CardContent>
-            </Card>
-          </TabsContent>
-          <TabsContent value="specifications">
-            <Card>
-              <CardContent className="pt-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {Object.entries(mockProduct.specifications).map(
-                    ([key, value]) => (
-                      <div
-                        key={key}
-                        className="flex justify-between py-2 border-b"
-                      >
-                        <span className="text-gray-500">{key}</span>
-                        <span className="font-medium">{value}</span>
-                      </div>
-                    )
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+          
+          <ProductDescription description={currentProduct.description} />
+          <TechnicalSpecs
+            selectedVariant={selectedVariant}
+            variants={variants}
+          />
+          {variants && variants.length > 0 && <VariantsList variants={variants} />}
         </Tabs>
       </div>
     </div>

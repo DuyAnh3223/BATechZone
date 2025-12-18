@@ -14,10 +14,39 @@ class User {
         this.created_at = userData.created_at;
         this.updated_at = userData.updated_at;
         this.last_login = userData.last_login;
+        // Session tokens (deprecated - giữ lại cho compatibility/rollback)
         this.session_token = userData.session_token;
+        this.admin_session_token = userData.admin_session_token;
+        this.user_session_token = userData.user_session_token;
+        // JWT refresh tokens (new)
+        this.admin_refresh_token = userData.admin_refresh_token;
+        this.user_refresh_token = userData.user_refresh_token;
     }
 
 
+    // Update admin session token
+    static async updateAdminSessionToken(userId, sessionToken) {
+        try {
+            const sql = 'UPDATE users SET admin_session_token = ? WHERE user_id = ?';
+            const result = await query(sql, [sessionToken, userId]);
+            return result.affectedRows > 0;
+        } catch (error) {
+            throw new Error(`Error updating admin session token: ${error.message}`);
+        }
+    }
+
+    // Update user session token
+    static async updateUserSessionToken(userId, sessionToken) {
+        try {
+            const sql = 'UPDATE users SET user_session_token = ? WHERE user_id = ?';
+            const result = await query(sql, [sessionToken, userId]);
+            return result.affectedRows > 0;
+        } catch (error) {
+            throw new Error(`Error updating user session token: ${error.message}`);
+        }
+    }
+
+    // Deprecated - giữ lại cho compatibility
     static async updateSessionToken(userId, sessionToken) {
         try {
             const sql = 'UPDATE users SET session_token = ? WHERE user_id = ?';
@@ -28,6 +57,29 @@ class User {
         }
     }
 
+    // Find user by admin session token
+    static async findByAdminSessionToken(sessionToken) {
+        try {
+            const sql = 'SELECT * FROM users WHERE admin_session_token = ?';
+            const users = await query(sql, [sessionToken]);
+            return users.length ? new User(users[0]) : null;
+        } catch (error) {
+            throw new Error(`Error finding user by admin session token: ${error.message}`);
+        }
+    }
+
+    // Find user by user session token
+    static async findByUserSessionToken(sessionToken) {
+        try {
+            const sql = 'SELECT * FROM users WHERE user_session_token = ?';
+            const users = await query(sql, [sessionToken]);
+            return users.length ? new User(users[0]) : null;
+        } catch (error) {
+            throw new Error(`Error finding user by user session token: ${error.message}`);
+        }
+    }
+
+    // Deprecated - giữ lại cho compatibility
     static async findBySessionToken(sessionToken) {
         try {
             const sql = 'SELECT * FROM users WHERE session_token = ?';
@@ -38,6 +90,29 @@ class User {
         }
     }
 
+    // Clear admin session token
+    static async clearAdminSessionToken(userId) {
+        try {
+            const sql = 'UPDATE users SET admin_session_token = NULL WHERE user_id = ?';
+            const result = await query(sql, [userId]);
+            return result.affectedRows > 0;
+        } catch (error) {
+            throw new Error(`Error clearing admin session token: ${error.message}`);
+        }
+    }
+
+    // Clear user session token
+    static async clearUserSessionToken(userId) {
+        try {
+            const sql = 'UPDATE users SET user_session_token = NULL WHERE user_id = ?';
+            const result = await query(sql, [userId]);
+            return result.affectedRows > 0;
+        } catch (error) {
+            throw new Error(`Error clearing user session token: ${error.message}`);
+        }
+    }
+
+    // Clear session token (deprecated - giữ lại cho compatibility)
     static async clearSessionToken(userId) {
         try {
             const sql = 'UPDATE users SET session_token = NULL WHERE user_id = ?';
@@ -48,13 +123,94 @@ class User {
         }
     }
 
-    static async create({ username, email, password_hash, role = 0 }) {
+    // ==================== JWT REFRESH TOKEN METHODS ====================
+
+    // Update admin refresh token (JWT)
+    static async updateAdminRefreshToken(userId, refreshToken) {
+        try {
+            const sql = 'UPDATE users SET admin_refresh_token = ? WHERE user_id = ?';
+            const result = await query(sql, [refreshToken, userId]);
+            return result.affectedRows > 0;
+        } catch (error) {
+            throw new Error(`Error updating admin refresh token: ${error.message}`);
+        }
+    }
+
+    // Update user refresh token (JWT)
+    static async updateUserRefreshToken(userId, refreshToken) {
+        try {
+            const sql = 'UPDATE users SET user_refresh_token = ? WHERE user_id = ?';
+            const result = await query(sql, [refreshToken, userId]);
+            return result.affectedRows > 0;
+        } catch (error) {
+            throw new Error(`Error updating user refresh token: ${error.message}`);
+        }
+    }
+
+    // Clear admin refresh token (JWT)
+    static async clearAdminRefreshToken(userId) {
+        try {
+            const sql = 'UPDATE users SET admin_refresh_token = NULL WHERE user_id = ?';
+            const result = await query(sql, [userId]);
+            return result.affectedRows > 0;
+        } catch (error) {
+            throw new Error(`Error clearing admin refresh token: ${error.message}`);
+        }
+    }
+
+    // Clear user refresh token (JWT)
+    static async clearUserRefreshToken(userId) {
+        try {
+            const sql = 'UPDATE users SET user_refresh_token = NULL WHERE user_id = ?';
+            const result = await query(sql, [userId]);
+            return result.affectedRows > 0;
+        } catch (error) {
+            throw new Error(`Error clearing user refresh token: ${error.message}`);
+        }
+    }
+
+    // Find user by admin refresh token (JWT)
+    static async findByAdminRefreshToken(refreshToken) {
+        try {
+            const sql = 'SELECT * FROM users WHERE admin_refresh_token = ? AND is_active = 1';
+            const users = await query(sql, [refreshToken]);
+            return users.length ? new User(users[0]) : null;
+        } catch (error) {
+            throw new Error(`Error finding user by admin refresh token: ${error.message}`);
+        }
+    }
+
+    // Find user by user refresh token (JWT)
+    static async findByUserRefreshToken(refreshToken) {
+        try {
+            const sql = 'SELECT * FROM users WHERE user_refresh_token = ? AND is_active = 1';
+            const users = await query(sql, [refreshToken]);
+            return users.length ? new User(users[0]) : null;
+        } catch (error) {
+            throw new Error(`Error finding user by user refresh token: ${error.message}`);
+        }
+    }
+
+    // Clear all refresh tokens (JWT) - useful for logout all sessions
+    static async clearAllRefreshTokens(userId) {
+        try {
+            const sql = 'UPDATE users SET admin_refresh_token = NULL, user_refresh_token = NULL WHERE user_id = ?';
+            const result = await query(sql, [userId]);
+            return result.affectedRows > 0;
+        } catch (error) {
+            throw new Error(`Error clearing all refresh tokens: ${error.message}`);
+        }
+    }
+
+    // ==================== END JWT METHODS ====================
+
+    static async create({ username, email, password_hash, full_name = null, phone = null, role = 0 }) {
         try {
             const sql = `
-                INSERT INTO users (username, email, password_hash, role)
-                VALUES (?, ?, ?, ?)
+                INSERT INTO users (username, email, password_hash, full_name, phone, role)
+                VALUES (?, ?, ?, ?, ?, ?)
             `;
-            const result = await query(sql, [username, email, password_hash, role]);
+            const result = await query(sql, [username, email, password_hash, full_name, phone, role]);
             return result.insertId;
         } catch (error) {
             throw new Error(`Error creating user: ${error.message}`);
@@ -81,6 +237,74 @@ class User {
         }
     }
 
+    static async findById(userId) {
+        try {
+            const sql = `
+                SELECT user_id, username, email, full_name, phone, role, is_active, 
+                       created_at, updated_at, last_login
+                FROM users 
+                WHERE user_id = ?
+            `;
+            const users = await query(sql, [userId]);
+            return users.length ? new User(users[0]) : null;
+        } catch (error) {
+            throw new Error(`Error finding user by ID: ${error.message}`);
+        }
+    }
+
+    async update(updateData) {
+        try {
+            const allowedFields = ['username', 'email', 'full_name', 'phone', 'role', 'is_active'];
+            const updates = [];
+            const values = [];
+
+            Object.keys(updateData).forEach(key => {
+                if (allowedFields.includes(key)) {
+                    updates.push(`${key} = ?`);
+                    values.push(updateData[key]);
+                }
+            });
+
+            if (!updates.length) return false;
+
+            // Thêm updated_at vào updates
+            updates.push('updated_at = NOW()');
+            values.push(this.user_id);
+            const sql = `
+                UPDATE users 
+                SET ${updates.join(', ')} 
+                WHERE user_id = ?
+            `;
+
+            const result = await query(sql, values);
+            return result.affectedRows > 0;
+        } catch (error) {
+            throw new Error(`Error updating user: ${error.message}`);
+        }
+    }
+
+    toJSON() {
+        // Exclude sensitive fields from JSON response
+        const { 
+            password_hash, 
+            session_token, 
+            admin_session_token, 
+            user_session_token,
+            admin_refresh_token,  // JWT - don't expose
+            user_refresh_token,   // JWT - don't expose
+            ...safeUser 
+        } = this;
+        const roles = {
+            0: 'customer',
+            1: 'shipper',
+            2: 'admin'
+        };
+        return {
+            ...safeUser,
+            roleName: roles[this.role] || 'unknown'
+        };
+    }
+
     static async updateSessionToken(userId, sessionToken) {
         try {
             const sql = `
@@ -91,6 +315,50 @@ class User {
             await query(sql, [sessionToken, userId]);
         } catch (error) {
             throw new Error(`Error updating session token: ${error.message}`);
+        }
+    }
+
+    static async listAndCount({ search = '', role, is_active, page = 1, pageSize = 10 }) {
+        const where = [];
+        const params = [];
+        if (search) {
+            where.push('(username LIKE ? OR email LIKE ? OR phone LIKE ?)');
+            const like = `%${search}%`;
+            params.push(like, like, like);
+        }
+        if (role !== undefined && role !== '') {
+            where.push('role = ?');
+            params.push(parseInt(role));
+        }
+        if (is_active !== undefined && is_active !== '') {
+            where.push('is_active = ?');
+            params.push(is_active === 'true' || is_active === true ? 1 : 0);
+        }
+        const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
+
+        const countRows = await query(`SELECT COUNT(*) AS total FROM users ${whereSql}`, params);
+        const total = countRows[0]?.total || 0;
+
+        const limit = Math.max(1, parseInt(pageSize));
+        const offset = Math.max(0, (parseInt(page) - 1) * limit);
+
+        const rows = await query(
+            `SELECT user_id, username, email, full_name, phone, role, is_active, created_at, updated_at, last_login
+             FROM users ${whereSql}
+             ORDER BY user_id DESC
+             LIMIT ? OFFSET ?`,
+            [...params, limit, offset]
+        );
+        return { users: rows.map(r => new User(r)), total };
+    }
+
+    static async delete(userId) {
+        try {
+            const sql = 'DELETE FROM users WHERE user_id = ?';
+            const result = await query(sql, [userId]);
+            return result.affectedRows > 0;
+        } catch (error) {
+            throw new Error(`Error deleting user: ${error.message}`);
         }
     }
 }
