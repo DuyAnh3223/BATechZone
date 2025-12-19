@@ -60,39 +60,52 @@ class Variant {
 
   // Get variant by ID
   async getById(variantId) {
+    // Get variant basic info
     const [variants] = await db.query(
       `SELECT 
         pv.*,
-        p.product_name,
-        JSON_ARRAYAGG(
-          JSON_OBJECT(
-            'attributeValueId', va.attribute_value_id,
-            'attributeName', a.attribute_name,
-            'attributeType', a.attribute_type,
-            'value', av.value
-          )
-        ) as attributes,
-        (
-          SELECT JSON_ARRAYAGG(
-            JSON_OBJECT(
-              'imageId', vi.image_id,
-              'imageUrl', vi.image_url,
-              'isPrimary', vi.is_primary
-            )
-          )
-          FROM variant_images vi
-          WHERE vi.variant_id = pv.variant_id
-        ) as images
+        p.product_name
       FROM product_variants pv
       JOIN products p ON pv.product_id = p.product_id
-      LEFT JOIN variant_attributes va ON pv.variant_id = va.variant_id
-      LEFT JOIN attribute_values av ON va.attribute_value_id = av.attribute_value_id
-      LEFT JOIN attributes a ON av.attribute_id = a.attribute_id
-      WHERE pv.variant_id = ?
-      GROUP BY pv.variant_id`,
+      WHERE pv.variant_id = ?`,
       [variantId]
     );
-    return variants[0];
+    
+    if (variants.length === 0) {
+      return null;
+    }
+    
+    const variant = variants[0];
+    
+    // Get attributes
+    const [attributes] = await db.query(
+      `SELECT 
+        va.attribute_value_id as attributeValueId,
+        a.attribute_name as attributeName,
+        a.attribute_type as attributeType,
+        av.value_name as value
+      FROM variant_attributes va
+      LEFT JOIN attribute_values av ON va.attribute_value_id = av.attribute_value_id
+      LEFT JOIN attributes a ON av.attribute_id = a.attribute_id
+      WHERE va.variant_id = ?`,
+      [variantId]
+    );
+    
+    // Get images
+    const [images] = await db.query(
+      `SELECT 
+        image_id as imageId,
+        image_url as imageUrl,
+        is_primary as isPrimary
+      FROM variant_images
+      WHERE variant_id = ?`,
+      [variantId]
+    );
+    
+    variant.attributes = attributes;
+    variant.images = images;
+    
+    return variant;
   }
 
   // Update variant

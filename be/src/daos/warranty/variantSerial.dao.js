@@ -229,7 +229,10 @@ class VariantSerialDAO {
    * Bulk insert serials
    */
   async bulkInsert(serials) {
+    console.log(`🔵 DAO bulkInsert called with ${serials?.length || 0} serials`);
+    
     if (!serials || serials.length === 0) {
+      console.log('⚠️ No serials to insert');
       return [];
     }
 
@@ -245,8 +248,19 @@ class VariantSerialDAO {
       s.status || 'in_stock'
     ]);
 
-    const result = await query(sql, [values]);
-    return result;
+    console.log(`💾 Executing bulk insert SQL with ${values.length} rows...`);
+    console.log(`📝 First value sample:`, values[0]);
+    
+    try {
+      // Import db directly for bulk insert (query() uses execute which doesn't support VALUES ?)
+      const { db } = await import('../../libs/db.js');
+      const [result] = await db.query(sql, [values]);
+      console.log(`✅ Bulk insert successful. Result:`, result);
+      return result;
+    } catch (error) {
+      console.error(`❌ Bulk insert failed:`, error);
+      throw error;
+    }
   }
 
   /**

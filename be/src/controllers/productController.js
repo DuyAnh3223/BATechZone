@@ -1,6 +1,7 @@
 import Product from '../models/Product.js';
 import Variant from '../models/Variant.js';
 import { db, query } from '../libs/db.js';
+import VariantSerialService from '../services/variantSerial.service.js';
 
 // Lấy danh sách sản phẩm
 export const listProducts = async (req, res) => {
@@ -165,6 +166,23 @@ export const createProduct = async (req, res) => {
           });
 
           console.log(`Created variant ${i + 1} with SKU: ${variant.sku}`);
+
+          // Auto-generate serials if stock > 0
+          console.log(`🔍 Variant stock: ${variantStock}`);
+          if (variantStock > 0) {
+            console.log(`🚀 Attempting to auto-generate ${variantStock} serials for variant ${variantId}...`);
+            try {
+              const result = await VariantSerialService.autoGenerateSerials(variantId, variantStock);
+              console.log(`✅ Serial generation result:`, result);
+              console.log(`✅ Auto-generated ${variantStock} serials for variant ${variantId}`);
+            } catch (serialError) {
+              console.error(`❌ Error auto-generating serials for variant ${variantId}:`, serialError);
+              console.error(`❌ Error stack:`, serialError.stack);
+              // Don't fail variant creation if serial generation fails
+            }
+          } else {
+            console.log(`⏭️ Skipping serial generation - stock is ${variantStock}`);
+          }
         } catch (variantError) {
           console.error(`Error creating variant ${i + 1}:`, variantError);
           // If first variant fails, rollback product
@@ -178,18 +196,36 @@ export const createProduct = async (req, res) => {
     } else if (hasDefaultVariant) {
       // KHÔNG có thuộc tính => Tạo default variant
       try {
+        const defaultVariantStock = parseInt(defaultVariant.stock || 0);
         const defaultVariantId = await Variant.create({
           productId: productId,
           sku: `${finalSlug}-default`,
           variantName: product_name.trim(),
           price: parseFloat(defaultVariant.price),
-          stockQuantity: parseInt(defaultVariant.stock || 0),
+          stockQuantity: defaultVariantStock,
           isActive: 1,
           isDefault: 1,
           attributes: [] // Default variant has no attributes
         });
 
         console.log('Created default variant with ID:', defaultVariantId);
+
+        // Auto-generate serials if stock > 0
+        console.log(`🔍 Default variant stock: ${defaultVariantStock}`);
+        if (defaultVariantStock > 0) {
+          console.log(`🚀 Attempting to auto-generate ${defaultVariantStock} serials for default variant ${defaultVariantId}...`);
+          try {
+            const result = await VariantSerialService.autoGenerateSerials(defaultVariantId, defaultVariantStock);
+            console.log(`✅ Serial generation result:`, result);
+            console.log(`✅ Auto-generated ${defaultVariantStock} serials for default variant ${defaultVariantId}`);
+          } catch (serialError) {
+            console.error(`❌ Error auto-generating serials for default variant:`, serialError);
+            console.error(`❌ Error stack:`, serialError.stack);
+            // Don't fail variant creation if serial generation fails
+          }
+        } else {
+          console.log(`⏭️ Skipping serial generation - stock is ${defaultVariantStock}`);
+        }
       } catch (variantError) {
         console.error('Error creating default variant:', variantError);
         // Rollback product if default variant creation fails

@@ -1,4 +1,5 @@
 import { db } from '../libs/db.js';
+import VariantSerialService from '../services/variantSerial.service.js';
 
 class Order {
   constructor(data = {}) {
@@ -92,7 +93,7 @@ class Order {
 
       // Insert order items
       for (const item of items) {
-        await conn.query(
+        const [itemResult] = await conn.query(
           `INSERT INTO order_items (
             order_id, variant_id, product_name, variant_name, sku,
             quantity, unit_price, discount_amount, subtotal
@@ -110,6 +111,8 @@ class Order {
           ]
         );
 
+        const orderItemId = itemResult.insertId;
+
         // Giảm số lượng tồn kho
         await conn.query(
           `UPDATE product_variants 
@@ -117,6 +120,20 @@ class Order {
           WHERE variant_id = ?`,
           [item.quantity, item.variantId]
         );
+
+        // Reserve serials for this order item
+        try {
+          await VariantSerialService.reserveSerials({
+            variant_id: item.variantId,
+            order_item_id: orderItemId,
+            quantity: item.quantity
+          });
+          console.log(`Reserved ${item.quantity} serials for order item ${orderItemId}`);
+        } catch (serialError) {
+          console.error(`Error reserving serials for order item ${orderItemId}:`, serialError);
+          // Rollback will be handled by outer catch
+          throw new Error(`Không thể đặt trước serial: ${serialError.message}`);
+        }
       }
 
       // Cập nhật coupon usage nếu có
@@ -615,6 +632,22 @@ class Order {
         [this.orderId]
       );
 
+      // Get all order items and confirm sale (reserved -> sold)
+      const [orderItems] = await conn.query(
+        'SELECT order_item_id FROM order_items WHERE order_id = ?',
+        [this.orderId]
+      );
+
+      for (const item of orderItems) {
+        try {
+          await VariantSerialService.confirmSale(item.order_item_id);
+          console.log(`Confirmed sale for order item ${item.order_item_id}`);
+        } catch (serialError) {
+          console.error(`Error confirming sale for order item ${item.order_item_id}:`, serialError);
+          // Don't fail the delivery, just log the error
+        }
+      }
+
       await conn.commit();
 
       this.orderStatus = 'delivered';
@@ -651,7 +684,7 @@ class Order {
 
       // Hoàn lại số lượng tồn kho
       const [items] = await conn.query(
-        'SELECT variant_id, quantity FROM order_items WHERE order_id = ?',
+        'SELECT order_item_id, variant_id, quantity FROM order_items WHERE order_id = ?',
         [this.orderId]
       );
 
@@ -662,6 +695,15 @@ class Order {
           WHERE variant_id = ?`,
           [item.quantity, item.variant_id]
         );
+
+        // Release reserved serials (reserved -> in_stock)
+        try {
+          await VariantSerialService.cancelReservation(item.order_item_id);
+          console.log(`Released reserved serials for order item ${item.order_item_id}`);
+        } catch (serialError) {
+          console.error(`Error releasing serials for order item ${item.order_item_id}:`, serialError);
+          // Don't fail the cancellation, just log the error
+        }
       }
 
       // Hoàn lại coupon usage nếu có

@@ -12,6 +12,69 @@ import {
 class VariantSerialService {
 
   /**
+   * Auto generated serial number 
+   * FORMAT: PREFIX + {Variant_ID} + {YYYY} + Sequential Number (4 digits starting from 0001)
+   * Sequential number is counted for each variant
+   */
+  generateSerialNumber(variantId, prefix = 'SN', sequenceNumber) {
+    const year = new Date().getFullYear();
+    const sequentialNumber = String(sequenceNumber).padStart(4, '0');
+    return `${prefix}${variantId}${year}${sequentialNumber}`;
+  }
+
+  /**
+   * Auto-generate serials for a variant based on quantity
+   * This will create serial numbers starting from the next available sequence
+   */
+  async autoGenerateSerials(variantId, quantity) {
+    console.log(`🔵 autoGenerateSerials called - variantId: ${variantId}, quantity: ${quantity}`);
+    
+    if (!variantId || variantId <= 0) {
+      throw new Error('variant_id không hợp lệ');
+    }
+
+    if (!quantity || quantity <= 0) {
+      throw new Error('quantity phải là số nguyên dương');
+    }
+
+    // Get existing serials count for this variant to determine starting sequence
+    console.log(`🔍 Fetching existing serials for variant ${variantId}...`);
+    const existingSerials = await VariantSerialDAO.findByVariantId(variantId);
+    console.log(`📊 Found ${existingSerials.length} existing serials`);
+    const startingSequence = existingSerials.length + 1;
+    console.log(`🔢 Starting sequence: ${startingSequence}`);
+
+    // Generate serial numbers
+    const serialNumbers = [];
+    for (let i = 0; i < quantity; i++) {
+      const serialNumber = this.generateSerialNumber(variantId, 'SN', startingSequence + i);
+      serialNumbers.push(serialNumber);
+    }
+    console.log(`✅ Generated serial numbers:`, serialNumbers);
+
+    // Bulk create serials
+    const serials = serialNumbers.map(sn => ({
+      variant_id: variantId,
+      serial_number: sn,
+      status: 'in_stock'
+    }));
+
+    console.log(`💾 Inserting ${serials.length} serials into database...`);
+    const result = await VariantSerialDAO.bulkInsert(serials);
+    console.log(`✅ Bulk insert result:`, result);
+
+    return {
+      success: true,
+      message: `Đã tạo ${quantity} serial tự động`,
+      data: {
+        variant_id: variantId,
+        quantity: quantity,
+        serial_numbers: serialNumbers
+      }
+    };
+  }
+
+  /**
    * Create new serial
    */
   async createSerial(data) {

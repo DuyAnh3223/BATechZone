@@ -1,12 +1,34 @@
 import Variant from '../models/Variant.js';
 import { db } from '../libs/db.js';
+import VariantSerialService from '../services/variantSerial.service.js';
 
 // Note: db is used in updateVariant to fetch product_id
 
 export const createVariant = async (req, res) => {
   try {
+    console.log('🔵 createVariant called with body:', JSON.stringify(req.body, null, 2));
     const variantId = await Variant.create(req.body);
+    console.log('✅ Variant created with ID:', variantId);
     const variant = await Variant.getById(variantId);
+    
+    // Auto-generate serials if stock quantity is provided and > 0
+    console.log('🔍 Checking stockQuantity:', req.body.stockQuantity);
+    if (req.body.stockQuantity && req.body.stockQuantity > 0) {
+      console.log('🚀 Attempting to auto-generate serials...');
+      try {
+        const result = await VariantSerialService.autoGenerateSerials(variantId, req.body.stockQuantity);
+        console.log('✅ Auto-generated serials result:', result);
+        console.log(`✅ Auto-generated ${req.body.stockQuantity} serials for variant ${variantId}`);
+      } catch (serialError) {
+        console.error('❌ Error auto-generating serials:', serialError);
+        console.error('❌ Error stack:', serialError.stack);
+        // Don't fail the variant creation if serial generation fails
+        // Just log the error
+      }
+    } else {
+      console.log('⏭️ Skipping serial generation - stockQuantity:', req.body.stockQuantity);
+    }
+    
     res.status(201).json(variant);
   } catch (error) {
     console.error('Error creating variant:', error);
@@ -35,6 +57,12 @@ export const updateVariant = async (req, res) => {
     const variantId = parseInt(req.params.id);
     if (isNaN(variantId)) {
       return res.status(400).json({ success: false, message: 'Invalid variant ID' });
+    }
+
+    // Get current variant to compare stock changes
+    const currentVariant = await Variant.getById(variantId);
+    if (!currentVariant) {
+      return res.status(404).json({ success: false, message: 'Variant not found' });
     }
 
     // Validate stock quantity
@@ -69,6 +97,29 @@ export const updateVariant = async (req, res) => {
     const updated = await Variant.update(variantId, updateData);
     if (!updated) {
       return res.status(404).json({ success: false, message: 'Variant not found' });
+    }
+
+    // Auto-generate additional serials if stock increased
+    if (updateData.stockQuantity !== undefined) {
+      const oldStock = currentVariant.stock_quantity || 0;
+      const newStock = updateData.stockQuantity;
+      const stockIncrease = newStock - oldStock;
+      console.log(`🔍 Stock change - Old: ${oldStock}, New: ${newStock}, Increase: ${stockIncrease}`);
+
+      if (stockIncrease > 0) {
+        console.log('🚀 Attempting to auto-generate additional serials...');
+        try {
+          const result = await VariantSerialService.autoGenerateSerials(variantId, stockIncrease);
+          console.log('✅ Auto-generated serials result:', result);
+          console.log(`✅ Auto-generated ${stockIncrease} additional serials for variant ${variantId}`);
+        } catch (serialError) {
+          console.error('❌ Error auto-generating serials:', serialError);
+          console.error('❌ Error stack:', serialError.stack);
+          // Don't fail the variant update if serial generation fails
+        }
+      } else {
+        console.log('⏭️ Skipping serial generation - stock did not increase');
+      }
     }
 
     // Fetch updated variant using getByProductId (more reliable than getById)
