@@ -65,21 +65,33 @@ class VariantSerialDAO {
 
   /**
    * Find serials by order item ID
+   * @param {number} orderItemId - Order item ID
+   * @param {object} connection - Optional DB connection for transactions
    */
-  async findByOrderItemId(orderItemId) {
+  async findByOrderItemId(orderItemId, connection = null) {
     const sql = `
       SELECT * FROM variant_serials 
       WHERE order_item_id = ?
       ORDER BY created_at ASC
     `;
-    const rows = await query(sql, [orderItemId]);
+    
+    let rows;
+    if (connection) {
+      [rows] = await connection.execute(sql, [orderItemId]);
+    } else {
+      rows = await query(sql, [orderItemId]);
+    }
+    
     return rows.map(row => new VariantSerial(row));
   }
 
   /**
    * Update serial
+   * @param {number} serialId - Serial ID to update
+   * @param {object} updates - Fields to update
+   * @param {object} connection - Optional DB connection for transactions
    */
-  async update(serialId, updates) {
+  async update(serialId, updates, connection = null) {
     const allowedFields = ['status', 'order_item_id', 'warranty_id'];
     const fields = [];
     const params = [];
@@ -102,8 +114,14 @@ class VariantSerialDAO {
       WHERE serial_id = ?
     `;
 
-    const result = await query(sql, params);
-    return result.affectedRows > 0;
+    // Use provided connection (for transactions) or default query helper
+    if (connection) {
+      const [result] = await connection.execute(sql, params);
+      return result.affectedRows > 0;
+    } else {
+      const result = await query(sql, params);
+      return result.affectedRows > 0;
+    }
   }
 
   /**
@@ -117,32 +135,44 @@ class VariantSerialDAO {
 
   /**
    * Count serials by variant and status
+   * @param {number} variantId - Variant ID
+   * @param {string} status - Serial status
+   * @param {object} connection - Optional DB connection for transactions
    */
-  async countByVariantAndStatus(variantId, status) {
+  async countByVariantAndStatus(variantId, status, connection = null) {
     const sql = `
       SELECT COUNT(*) as count 
       FROM variant_serials 
       WHERE variant_id = ? AND status = ?
     `;
-    const rows = await query(sql, [variantId, status]);
+    
+    let rows;
+    if (connection) {
+      [rows] = await connection.execute(sql, [variantId, status]);
+    } else {
+      rows = await query(sql, [variantId, status]);
+    }
+    
     return rows[0].count;
   }
 
   /**
    * Get available count (in_stock)
+   * @param {number} variantId - Variant ID
+   * @param {object} connection - Optional DB connection for transactions
    */
-  async getAvailableCount(variantId) {
-    return await this.countByVariantAndStatus(variantId, 'in_stock');
+  async getAvailableCount(variantId, connection = null) {
+    return await this.countByVariantAndStatus(variantId, 'in_stock', connection);
   }
 
   /**
-   * Find one available serial (FIFO)
+   * Find one available serial (FIFO by serial_id)
    */
   async findOneAvailable(variantId) {
     const sql = `
       SELECT * FROM variant_serials 
       WHERE variant_id = ? AND status = 'in_stock'
-      ORDER BY created_at ASC
+      ORDER BY serial_id ASC
       LIMIT 1
     `;
     const rows = await query(sql, [variantId]);
@@ -150,16 +180,26 @@ class VariantSerialDAO {
   }
 
   /**
-   * Find multiple available serials
+   * Find multiple available serials (FIFO by serial_id)
+   * @param {number} variantId - Variant ID
+   * @param {number} limit - Number of serials to find
+   * @param {object} connection - Optional DB connection for transactions
    */
-  async findAvailableSerials(variantId, limit) {
+  async findAvailableSerials(variantId, limit, connection = null) {
     const sql = `
       SELECT * FROM variant_serials 
       WHERE variant_id = ? AND status = 'in_stock'
-      ORDER BY created_at ASC
+      ORDER BY serial_id ASC
       LIMIT ?
     `;
-    const rows = await query(sql, [variantId, limit]);
+    
+    let rows;
+    if (connection) {
+      [rows] = await connection.execute(sql, [variantId, limit]);
+    } else {
+      rows = await query(sql, [variantId, limit]);
+    }
+    
     return rows.map(row => new VariantSerial(row));
   }
 

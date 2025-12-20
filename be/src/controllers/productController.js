@@ -57,6 +57,9 @@ export const getProduct = async (req, res) => {
 // Tạo mới sản phẩm
 export const createProduct = async (req, res) => {
   try {
+    console.log('🔵 RAW req.body:', JSON.stringify(req.body, null, 2));
+    console.log('🔵 req.body.defaultVariant:', req.body.defaultVariant);
+    
     const { 
       category_id, 
       product_name, 
@@ -137,8 +140,10 @@ export const createProduct = async (req, res) => {
     // Kiểm tra có thuộc tính được chọn không
     if (hasAdditionalVariants) {
       // CÓ thuộc tính => Tạo variants từ additionalVariants
+      console.log('📦 Creating additional variants, first variant:', additionalVariants[0]);
       for (let i = 0; i < additionalVariants.length; i++) {
         const variant = additionalVariants[i];
+        console.log(`📦 Variant ${i + 1} warranty_period:`, variant.warranty_period);
         const variantStock = parseInt(variant.stock || 0);
         
         // Validate stock for each variant
@@ -160,6 +165,7 @@ export const createProduct = async (req, res) => {
             variantName: variant.sku || null,
             price: parseFloat(variant.price),
             stockQuantity: variantStock,
+            warrantyPeriod: variant.warranty_period ? parseInt(variant.warranty_period) : null,
             isActive: 1,
             isDefault: i === 0 ? 1 : 0, // First variant is default
             attributes: attributeValueIds
@@ -195,6 +201,8 @@ export const createProduct = async (req, res) => {
       }
     } else if (hasDefaultVariant) {
       // KHÔNG có thuộc tính => Tạo default variant
+      console.log('📦 Creating default variant with data:', defaultVariant);
+      console.log('📦 warranty_period from defaultVariant:', defaultVariant.warranty_period);
       try {
         const defaultVariantStock = parseInt(defaultVariant.stock || 0);
         const defaultVariantId = await Variant.create({
@@ -203,6 +211,7 @@ export const createProduct = async (req, res) => {
           variantName: product_name.trim(),
           price: parseFloat(defaultVariant.price),
           stockQuantity: defaultVariantStock,
+          warrantyPeriod: defaultVariant.warranty_period ? parseInt(defaultVariant.warranty_period) : null,
           isActive: 1,
           isDefault: 1,
           attributes: [] // Default variant has no attributes

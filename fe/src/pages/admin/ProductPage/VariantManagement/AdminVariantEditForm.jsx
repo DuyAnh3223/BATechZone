@@ -10,6 +10,7 @@ const AdminVariantEditForm = ({ variant, product, onCancel, onSuccess }) => {
   const [sku, setSku] = useState(variant.sku || '');
   const [price, setPrice] = useState(variant.price || 0);
   const [stock, setStock] = useState(variant.stock_quantity ?? variant.stock ?? 0);
+  const [warrantyPeriod, setWarrantyPeriod] = useState(variant.warranty_period || null);
   const [isActive, setIsActive] = useState(variant.is_active !== undefined ? variant.is_active : true);
   const [saving, setSaving] = useState(false);
   
@@ -174,8 +175,7 @@ const AdminVariantEditForm = ({ variant, product, onCancel, onSuccess }) => {
       const payload = {
         sku: sku.trim(),
         price: parseFloat(price),
-        stock: parseInt(stock),
-        is_active: isActive,
+        stock: parseInt(stock),        warranty_period: warrantyPeriod ? parseInt(warrantyPeriod) : null,        is_active: isActive,
         // Chỉ gửi attribute_value_ids nếu có thay đổi so với ban đầu
         attribute_value_ids: JSON.stringify(selectedAttributeValues.sort()) !== JSON.stringify(originalAttributeValues.sort())
           ? selectedAttributeValues
@@ -250,6 +250,21 @@ const AdminVariantEditForm = ({ variant, product, onCancel, onSuccess }) => {
             required
           />
         </div>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium mb-1">
+          Bảo hành (tháng)
+        </label>
+        <input
+          type="number"
+          className="w-full px-3 py-2 border rounded-md"
+          value={warrantyPeriod || ''}
+          onChange={(e) => setWarrantyPeriod(e.target.value ? Number(e.target.value) : null)}
+          min="0"
+          placeholder="12"
+        />
+        <p className="text-xs text-gray-500 mt-1">Thời gian bảo hành tính bằng tháng (VD: 12 = 1 năm)</p>
       </div>
 
       <div>

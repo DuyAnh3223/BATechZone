@@ -11,14 +11,15 @@ class Variant {
       const [variant] = await conn.query(
         `INSERT INTO product_variants (
           product_id, sku, variant_name, price, 
-          stock_quantity,  is_active, is_default
-        ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          stock_quantity, warranty_period, is_active, is_default
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           variantData.productId,
           variantData.sku || null,
           variantData.variantName || null,
           variantData.price,
           variantData.stockQuantity || 0,
+          variantData.warrantyPeriod || null,
           variantData.isActive ?? true,
           variantData.isDefault ?? false
         ]
@@ -141,6 +142,10 @@ class Variant {
       if (variantData.stockQuantity !== undefined) {
         updateFields.push('stock_quantity = ?');
         updateValues.push(variantData.stockQuantity);
+      }
+      if (variantData.warrantyPeriod !== undefined) {
+        updateFields.push('warranty_period = ?');
+        updateValues.push(variantData.warrantyPeriod);
       }
       if (variantData.weight !== undefined) {
         updateFields.push('weight = ?');

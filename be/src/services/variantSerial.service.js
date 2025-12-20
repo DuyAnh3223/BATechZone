@@ -241,8 +241,10 @@ class VariantSerialService {
 
   /**
    * Reserve serials for order
+   * @param {object} data - Reserve data containing variant_id, quantity, order_item_id
+   * @param {object} connection - Optional DB connection for transactions
    */
-  async reserveSerials(data) {
+  async reserveSerials(data, connection = null) {
     const dto = new ReserveSerialDTO(data);
     const validation = dto.validate();
 
@@ -251,7 +253,7 @@ class VariantSerialService {
     }
 
     // Check available stock
-    const availableCount = await VariantSerialDAO.getAvailableCount(dto.variant_id);
+    const availableCount = await VariantSerialDAO.getAvailableCount(dto.variant_id, connection);
     if (availableCount < dto.quantity) {
       throw new Error(`Không đủ hàng trong kho. Có sẵn: ${availableCount}, Yêu cầu: ${dto.quantity}`);
     }
@@ -259,7 +261,8 @@ class VariantSerialService {
     // Find and reserve serials
     const availableSerials = await VariantSerialDAO.findAvailableSerials(
       dto.variant_id, 
-      dto.quantity
+      dto.quantity,
+      connection
     );
 
     const reservedSerials = [];
@@ -267,7 +270,7 @@ class VariantSerialService {
       await VariantSerialDAO.update(serial.serial_id, {
         status: 'reserved',
         order_item_id: dto.order_item_id
-      });
+      }, connection);
       reservedSerials.push(serial.serial_number);
     }
 
@@ -285,9 +288,12 @@ class VariantSerialService {
 
   /**
    * Confirm sale (reserved -> sold)
+   * @param {number} orderItemId - Order item ID
+   * @param {object} connection - Optional DB connection for transactions
+   * @returns {Promise<{success: boolean, message: string, data: object, soldSerialIds: number[]}>}
    */
-  async confirmSale(orderItemId) {
-    const serials = await VariantSerialDAO.findByOrderItemId(orderItemId);
+  async confirmSale(orderItemId, connection = null) {
+    const serials = await VariantSerialDAO.findByOrderItemId(orderItemId, connection);
     
     if (serials.length === 0) {
       throw new Error('Không tìm thấy serial cho order item này');
@@ -298,10 +304,12 @@ class VariantSerialService {
       throw new Error('Không có serial nào ở trạng thái reserved');
     }
 
+    const soldSerialIds = [];
     for (const serial of reservedSerials) {
       await VariantSerialDAO.update(serial.serial_id, {
         status: 'sold'
-      });
+      }, connection);
+      soldSerialIds.push(serial.serial_id);
     }
 
     return {
@@ -310,15 +318,18 @@ class VariantSerialService {
       data: {
         order_item_id: orderItemId,
         quantity: reservedSerials.length
-      }
+      },
+      soldSerialIds // Return serial IDs for warranty activation
     };
   }
 
   /**
    * Cancel reservation (reserved -> in_stock)
+   * @param {number} orderItemId - Order item ID
+   * @param {object} connection - Optional DB connection for transactions
    */
-  async cancelReservation(orderItemId) {
-    const serials = await VariantSerialDAO.findByOrderItemId(orderItemId);
+  async cancelReservation(orderItemId, connection = null) {
+    const serials = await VariantSerialDAO.findByOrderItemId(orderItemId, connection);
     
     if (serials.length === 0) {
       throw new Error('Không tìm thấy serial cho order item này');
@@ -333,7 +344,7 @@ class VariantSerialService {
       await VariantSerialDAO.update(serial.serial_id, {
         status: 'in_stock',
         order_item_id: null
-      });
+      }, connection);
     }
 
     return {

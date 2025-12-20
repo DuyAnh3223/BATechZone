@@ -79,6 +79,7 @@ export const updateVariant = async (req, res) => {
       variantName: req.body.variant_name,
       price: req.body.price !== undefined ? parseFloat(req.body.price) : undefined,
       stockQuantity: req.body.stock !== undefined ? parseInt(req.body.stock) : undefined,
+      warrantyPeriod: req.body.warranty_period !== undefined ? parseInt(req.body.warranty_period) : undefined,
       // Map boolean values correctly
       isActive: req.body.is_active !== undefined ? (req.body.is_active ? 1 : 0) : undefined,
       isDefault: req.body.is_default !== undefined ? (req.body.is_default ? 1 : 0) : undefined,

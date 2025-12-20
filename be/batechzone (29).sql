@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Dec 18, 2025 at 04:47 PM
+-- Generation Time: Dec 20, 2025 at 10:28 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -74,7 +74,20 @@ INSERT INTO `addresses` (`address_id`, `user_id`, `recipient_name`, `phone`, `ad
 (73, NULL, 'Demo', '0908887776', '32 Demo', NULL, 'hcm', 'Quận 12', NULL, NULL, 'Vietnam', 0, 'other', '2025-12-18 07:28:26', '2025-12-18 07:28:26'),
 (74, 23, 'demo776', '0908887776', '32 Demo', NULL, 'hcm', 'Quận 5', NULL, NULL, 'Vietnam', 0, 'other', '2025-12-18 07:30:54', '2025-12-18 07:30:54'),
 (75, 23, 'demo776', '0908887776', '32 Demo', NULL, 'hcm', 'Quận Gò Vấp', NULL, NULL, 'Vietnam', 0, 'other', '2025-12-18 07:39:32', '2025-12-18 07:39:32'),
-(76, 23, 'demo776', '0908887776', '32 Demo', NULL, 'hcm', 'Quận 10', NULL, NULL, 'Vietnam', 0, 'other', '2025-12-18 07:58:55', '2025-12-18 07:58:55');
+(76, 23, 'demo776', '0908887776', '32 Demo', NULL, 'hcm', 'Quận 10', NULL, NULL, 'Vietnam', 0, 'other', '2025-12-18 07:58:55', '2025-12-18 07:58:55'),
+(77, NULL, 'Demo', '0908887776', '32 Demo', NULL, 'hcm', 'q1', NULL, NULL, 'Vietnam', 0, 'other', '2025-12-19 14:52:09', '2025-12-19 14:52:09'),
+(78, NULL, 'Demo', '0908887776', '32 Demo', NULL, 'hcm', 'q1', NULL, NULL, 'Vietnam', 0, 'other', '2025-12-20 06:57:11', '2025-12-20 06:57:11'),
+(79, NULL, 'Demo', '0908887776', '32 Demo', NULL, 'hcm', 'q1', NULL, NULL, 'Vietnam', 0, 'other', '2025-12-20 06:57:14', '2025-12-20 06:57:14'),
+(80, NULL, 'Demo', '0908887776', '32 Demo', NULL, 'hcm', 'q1', NULL, NULL, 'Vietnam', 0, 'other', '2025-12-20 06:57:40', '2025-12-20 06:57:40'),
+(81, NULL, 'Demo', '0908887776', '32 Demo', NULL, 'hcm', 'q1', NULL, NULL, 'Vietnam', 0, 'other', '2025-12-20 06:59:04', '2025-12-20 06:59:04'),
+(82, NULL, 'Demo', '0908887776', '32 Demo', NULL, 'hcm', 'q1', NULL, NULL, 'Vietnam', 0, 'other', '2025-12-20 07:07:15', '2025-12-20 07:07:15'),
+(83, NULL, 'Demo', '0908887776', '32 Demo', NULL, 'hcm', 'q1', NULL, NULL, 'Vietnam', 0, 'other', '2025-12-20 07:28:51', '2025-12-20 07:28:51'),
+(84, NULL, 'Demo', '0908887776', '32 Demo', NULL, 'hcm', 'q1', NULL, NULL, 'Vietnam', 0, 'other', '2025-12-20 07:33:54', '2025-12-20 07:33:54'),
+(85, NULL, 'Demo', '0908887776', '32 Demo', NULL, 'hcm', 'q1', NULL, NULL, 'Vietnam', 0, 'other', '2025-12-20 07:38:14', '2025-12-20 07:38:14'),
+(86, NULL, 'Demo', '0908887776', '32 Demo', NULL, 'hcm', 'q1', NULL, NULL, 'Vietnam', 0, 'other', '2025-12-20 07:48:04', '2025-12-20 07:48:04'),
+(87, NULL, 'Demo', '0908887776', '32 Demo', NULL, 'hcm', 'q1', NULL, NULL, 'Vietnam', 0, 'other', '2025-12-20 07:57:06', '2025-12-20 07:57:06'),
+(88, NULL, 'Demo', '0908887776', '32 Demo', NULL, 'hcm', 'q1', NULL, NULL, 'Vietnam', 0, 'other', '2025-12-20 08:01:49', '2025-12-20 08:01:49'),
+(89, NULL, 'Demo', '0908887776', '32 Demo', NULL, 'hcm', 'q1', NULL, NULL, 'Vietnam', 0, 'other', '2025-12-20 08:11:12', '2025-12-20 08:11:12');
 
 -- --------------------------------------------------------
 
@@ -803,7 +816,6 @@ INSERT INTO `cart_items` (`cart_item_id`, `cart_id`, `variant_id`, `quantity`, `
 (69, 11, 501, 1, '2025-11-29 12:00:57', '2025-11-29 12:00:57'),
 (118, 14, 501, 1, '2025-12-11 07:32:42', '2025-12-11 07:32:42'),
 (121, 10, 510, 2, '2025-12-11 12:08:59', '2025-12-14 13:12:34'),
-(127, 1, 520, 1, '2025-12-18 07:25:33', '2025-12-18 07:25:33'),
 (129, 15, 511, 1, '2025-12-18 07:38:30', '2025-12-18 07:58:06');
 
 -- --------------------------------------------------------
@@ -1134,7 +1146,14 @@ INSERT INTO `orders` (`order_id`, `user_id`, `order_number`, `address_id`, `coup
 (89, NULL, 'ORD42906136668', 73, NULL, 'pending', 'unpaid', 990000.00, 0.00, 0.00, 0.00, 990000.00, NULL, NULL, '2025-12-18 07:28:26', '2025-12-18 07:28:26', NULL, NULL, NULL, NULL),
 (90, 23, 'ORD43054769173', 74, NULL, 'pending', 'unpaid', 990000.00, 0.00, 0.00, 0.00, 990000.00, NULL, NULL, '2025-12-18 07:30:54', '2025-12-18 07:30:54', NULL, NULL, NULL, NULL),
 (91, 23, 'ORD43572170399', 75, NULL, 'shipping', 'unpaid', 10000.00, 0.00, 0.00, 0.00, 10000.00, NULL, NULL, '2025-12-18 07:39:32', '2025-12-18 07:40:09', NULL, NULL, NULL, NULL),
-(92, 23, 'ORD44735675996', 76, NULL, 'pending', 'unpaid', 10000.00, 0.00, 0.00, 0.00, 10000.00, NULL, NULL, '2025-12-18 07:58:55', '2025-12-18 07:58:55', NULL, NULL, NULL, NULL);
+(92, 23, 'ORD44735675996', 76, NULL, 'pending', 'unpaid', 10000.00, 0.00, 0.00, 0.00, 10000.00, NULL, NULL, '2025-12-18 07:58:55', '2025-12-18 07:58:55', NULL, NULL, NULL, NULL),
+(93, NULL, 'ORD55929176813', 77, NULL, 'pending', 'unpaid', 10980000.00, 0.00, 50000.00, 0.00, 11030000.00, NULL, NULL, '2025-12-19 14:52:09', '2025-12-19 14:52:09', NULL, NULL, NULL, NULL),
+(100, NULL, 'ORD16034232756', 84, NULL, 'delivered', 'paid', 100000.00, 0.00, 50000.00, 0.00, 150000.00, NULL, NULL, '2025-12-20 07:33:54', '2025-12-20 07:35:40', NULL, NULL, NULL, NULL),
+(101, NULL, 'ORD16294503673', 85, NULL, 'delivered', 'paid', 50000.00, 0.00, 50000.00, 0.00, 100000.00, NULL, NULL, '2025-12-20 07:38:14', '2025-12-20 07:44:45', NULL, NULL, NULL, NULL),
+(102, NULL, 'ORD16884741403', 86, NULL, 'shipping', 'unpaid', 50000.00, 0.00, 50000.00, 0.00, 100000.00, NULL, NULL, '2025-12-20 07:48:04', '2025-12-20 07:56:29', NULL, NULL, NULL, NULL),
+(103, NULL, 'ORD17426460840', 87, NULL, 'delivered', 'unpaid', 100000.00, 0.00, 50000.00, 0.00, 150000.00, NULL, NULL, '2025-12-20 07:57:06', '2025-12-20 07:58:01', NULL, NULL, NULL, NULL),
+(104, NULL, 'ORD17709381008', 88, NULL, 'delivered', 'paid', 50000.00, 0.00, 50000.00, 0.00, 100000.00, NULL, NULL, '2025-12-20 08:01:49', '2025-12-20 08:02:13', NULL, NULL, NULL, NULL),
+(105, NULL, 'ORD18272513016', 89, NULL, 'delivered', 'unpaid', 50000.00, 0.00, 50000.00, 0.00, 100000.00, NULL, NULL, '2025-12-20 08:11:12', '2025-12-20 08:11:34', NULL, NULL, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -1216,7 +1235,15 @@ INSERT INTO `order_items` (`order_item_id`, `order_id`, `variant_id`, `product_n
 (119, 89, 520, 'Logitech G304 Lightspeed Wireless', 'Black', 'LOGI-G304-BLK', 1, 990000.00, 0.00, 990000.00, '2025-12-18 07:28:26'),
 (120, 90, 520, 'Logitech G304 Lightspeed Wireless', 'Black', 'LOGI-G304-BLK', 1, 990000.00, 0.00, 990000.00, '2025-12-18 07:30:54'),
 (121, 91, 511, 'Corsair K70 RGB MK.2 Cherry MX Red', 'Cherry MX Red', 'CORS-K70-RED', 1, 10000.00, 0.00, 10000.00, '2025-12-18 07:39:32'),
-(122, 92, 511, 'Corsair K70 RGB MK.2 Cherry MX Red', 'Cherry MX Red', 'CORS-K70-RED', 1, 10000.00, 0.00, 10000.00, '2025-12-18 07:58:55');
+(122, 92, 511, 'Corsair K70 RGB MK.2 Cherry MX Red', 'Cherry MX Red', 'CORS-K70-RED', 1, 10000.00, 0.00, 10000.00, '2025-12-18 07:58:55'),
+(123, 93, 501, 'ASUS TUF VG27AQ 27\" WQHD 165Hz', 'Standard', 'ASUS-VG27AQ-STD', 1, 9990000.00, 0.00, 9990000.00, '2025-12-19 14:52:09'),
+(124, 93, 520, 'Logitech G304 Lightspeed Wireless', 'Black', 'LOGI-G304-BLK', 1, 990000.00, 0.00, 990000.00, '2025-12-19 14:52:09'),
+(131, 100, 568, 'Demo Serial', 'Seagate-1TB-5400RPM', 'Seagate-1TB-5400RPM', 2, 50000.00, 0.00, 100000.00, '2025-12-20 07:33:54'),
+(132, 101, 568, 'Demo Serial', 'Seagate-1TB-5400RPM', 'Seagate-1TB-5400RPM', 1, 50000.00, 0.00, 50000.00, '2025-12-20 07:38:14'),
+(133, 102, 568, 'Demo Serial', 'Seagate-1TB-5400RPM', 'Seagate-1TB-5400RPM', 1, 50000.00, 0.00, 50000.00, '2025-12-20 07:48:04'),
+(134, 103, 568, 'Demo Serial', 'Seagate-1TB-5400RPM', 'Seagate-1TB-5400RPM', 2, 50000.00, 0.00, 100000.00, '2025-12-20 07:57:06'),
+(135, 104, 568, 'Demo Serial', 'Seagate-1TB-5400RPM', 'Seagate-1TB-5400RPM', 1, 50000.00, 0.00, 50000.00, '2025-12-20 08:01:49'),
+(136, 105, 568, 'Demo Serial', 'Seagate-1TB-5400RPM', 'Seagate-1TB-5400RPM', 1, 50000.00, 0.00, 50000.00, '2025-12-20 08:11:12');
 
 -- --------------------------------------------------------
 
@@ -1270,7 +1297,14 @@ INSERT INTO `payments` (`payment_id`, `order_id`, `payment_method`, `payment_sta
 (55, 89, 'installment', 'pending', 990000.00, 'TXN1766042906138375', NULL, NULL, NULL, '2025-12-18 07:28:26', '2025-12-18 07:28:26'),
 (56, 90, 'installment', 'pending', 990000.00, 'TXN1766043054776348', NULL, NULL, NULL, '2025-12-18 07:30:54', '2025-12-18 07:30:54'),
 (57, 91, 'installment', 'pending', 10000.00, 'TXN1766043572171658', NULL, NULL, NULL, '2025-12-18 07:39:32', '2025-12-18 07:39:32'),
-(58, 92, 'installment', 'pending', 10000.00, 'TXN1766044735681184', NULL, NULL, NULL, '2025-12-18 07:58:55', '2025-12-18 07:58:55');
+(58, 92, 'installment', 'pending', 10000.00, 'TXN1766044735681184', NULL, NULL, NULL, '2025-12-18 07:58:55', '2025-12-18 07:58:55'),
+(59, 93, 'cod', 'pending', 11030000.00, 'TXN1766155929178767', NULL, NULL, NULL, '2025-12-19 14:52:09', '2025-12-19 14:52:09'),
+(61, 100, 'cod', 'pending', 150000.00, 'TXN1766216034238686', NULL, NULL, NULL, '2025-12-20 07:33:54', '2025-12-20 07:33:54'),
+(62, 101, 'cod', 'pending', 100000.00, 'TXN1766216294509733', NULL, NULL, NULL, '2025-12-20 07:38:14', '2025-12-20 07:38:14'),
+(63, 102, 'cod', 'pending', 100000.00, 'TXN1766216884744962', NULL, NULL, NULL, '2025-12-20 07:48:04', '2025-12-20 07:48:04'),
+(64, 103, 'cod', 'pending', 150000.00, 'TXN1766217426465794', NULL, NULL, NULL, '2025-12-20 07:57:06', '2025-12-20 07:57:06'),
+(66, 104, 'momo', 'paid', 100000.00, 'BATECH_1766217650278', 'momo', NULL, '2025-12-20 08:01:49', '2025-12-20 08:01:49', '2025-12-20 08:01:49'),
+(67, 105, 'cod', 'pending', 100000.00, 'TXN1766218272519129', NULL, NULL, NULL, '2025-12-20 08:11:12', '2025-12-20 08:11:12');
 
 -- --------------------------------------------------------
 
@@ -1389,7 +1423,8 @@ INSERT INTO `products` (`product_id`, `category_id`, `product_name`, `slug`, `de
 (352, 45, 'Razer Iskur Gaming Chair', 'razer-iskur-gaming-chair', 'Ghế gaming hỗ trợ lưng tích hợp', 8990000.00, 1, 0, 0, 0.00, 0, '2025-11-25 08:58:13', '2025-11-25 08:58:13', ''),
 (360, 46, 'Lian Li UNI FAN SL120 V2 3-Pack', 'lianli-uni-fan-sl120-v2-3pack', 'Bộ 3 quạt 120mm ARGB modular', 2290000.00, 1, 1, 0, 0.00, 0, '2025-11-25 08:58:13', '2025-11-25 08:58:13', ''),
 (361, 46, 'Corsair iCUE SP120 RGB ELITE 3-Pack', 'corsair-sp120-rgb-elite-3pack', 'Bộ 3 quạt 120mm RGB PWM', 1690000.00, 1, 0, 0, 0.00, 0, '2025-11-25 08:58:13', '2025-11-25 08:58:13', ''),
-(362, 46, 'Noctua NF-A12x25 PWM', 'noctua-nf-a12x25-pwm', 'Quạt 120mm PWM cao cấp', 790000.00, 1, 0, 0, 0.00, 0, '2025-11-25 08:58:13', '2025-11-25 08:58:13', '');
+(362, 46, 'Noctua NF-A12x25 PWM', 'noctua-nf-a12x25-pwm', 'Quạt 120mm PWM cao cấp', 790000.00, 1, 0, 0, 0.00, 0, '2025-11-25 08:58:13', '2025-11-25 08:58:13', ''),
+(366, 13, 'Demo Serial', 'demo-serial', NULL, 5.00, 1, 0, 0, 0.00, 0, '2025-12-19 16:09:49', '2025-12-19 16:09:49', '');
 
 -- --------------------------------------------------------
 
@@ -1408,14 +1443,14 @@ CREATE TABLE `product_variants` (
   `is_default` tinyint(1) DEFAULT 0,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  `warranty_months` int(11) DEFAULT NULL
+  `warranty_period` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `product_variants`
 --
 
-INSERT INTO `product_variants` (`variant_id`, `product_id`, `sku`, `variant_name`, `price`, `stock_quantity`, `is_active`, `is_default`, `created_at`, `updated_at`, `warranty_months`) VALUES
+INSERT INTO `product_variants` (`variant_id`, `product_id`, `sku`, `variant_name`, `price`, `stock_quantity`, `is_active`, `is_default`, `created_at`, `updated_at`, `warranty_period`) VALUES
 (374, 264, 'Seagate-2TB-7200RPM', 'Seagate-2TB-7200RPM', 2500000.00, 28, 1, 1, '2025-11-24 12:30:39', '2025-12-05 11:50:25', NULL),
 (375, 265, 'INTEL-13600K-BOX', 'Box', 6000000.00, 15, 1, 1, '2025-11-24 05:32:43', '2025-11-24 05:32:43', NULL),
 (376, 265, 'INTEL-13600K-DELUXE', 'Deluxe', 6500000.00, 10, 1, 0, '2025-11-24 05:32:43', '2025-11-24 05:32:43', NULL),
@@ -1472,12 +1507,12 @@ INSERT INTO `product_variants` (`variant_id`, `product_id`, `sku`, `variant_name
 (427, 291, 'KNG-FURY-DDR4-64-1', '2x32GB', 4200000.00, 5, 1, 1, '2025-11-24 05:32:43', '2025-11-24 05:32:43', NULL),
 (428, 291, 'KNG-FURY-DDR4-64-2', '2x32GB RGB', 4400000.00, 2, 1, 0, '2025-11-24 05:32:43', '2025-11-24 05:32:43', NULL),
 (500, 300, 'LG-27GN800-STD', 'Standard', 8490000.00, 20, 1, 1, '2025-11-25 08:58:13', '2025-12-18 05:03:36', NULL),
-(501, 301, 'ASUS-VG27AQ-STD', 'Standard', 9990000.00, 0, 1, 1, '2025-11-25 08:58:13', '2025-12-11 09:18:53', NULL),
+(501, 301, 'ASUS-VG27AQ-STD', 'Standard', 9990000.00, 1, 1, 1, '2025-11-25 08:58:13', '2025-12-19 14:52:09', NULL),
 (502, 302, 'SAM-G5-32-STD', 'Standard', 7990000.00, 30, 1, 1, '2025-11-25 08:58:13', '2025-11-25 08:58:13', NULL),
 (510, 310, 'LOGI-GPROX-STD', 'GX Blue Switch', 3290000.00, 28, 1, 1, '2025-11-25 08:58:13', '2025-12-14 13:12:52', NULL),
 (511, 311, 'CORS-K70-RED', 'Cherry MX Red', 10000.00, 223, 1, 1, '2025-11-25 08:58:13', '2025-12-18 07:58:55', NULL),
 (512, 312, 'KEY-K2-BROWN', 'Gateron Brown', 2190000.00, 50, 1, 1, '2025-11-25 08:58:13', '2025-11-25 08:58:13', NULL),
-(520, 320, 'LOGI-G304-BLK', 'Black', 990000.00, 55, 1, 1, '2025-11-25 08:58:13', '2025-12-18 07:30:54', NULL),
+(520, 320, 'LOGI-G304-BLK', 'Black', 990000.00, 54, 1, 1, '2025-11-25 08:58:13', '2025-12-19 14:52:09', NULL),
 (521, 321, 'RAZER-VIPER-ULT', 'Ultimate', 2990000.00, 30, 1, 1, '2025-11-25 08:58:13', '2025-11-25 08:58:13', NULL),
 (522, 322, 'SS-RIVAL3-WL', 'Wireless', 1490000.00, 45, 1, 1, '2025-11-25 08:58:13', '2025-11-25 08:58:13', NULL),
 (530, 330, 'HX-CLOUD2-RED', 'Red', 2390000.00, 33, 1, 1, '2025-11-25 08:58:13', '2025-12-05 04:28:59', NULL),
@@ -1491,7 +1526,8 @@ INSERT INTO `product_variants` (`variant_id`, `product_id`, `sku`, `variant_name
 (552, 352, 'RAZER-ISKUR-BLK', 'Black', 8990000.00, 15, 1, 1, '2025-11-25 08:58:13', '2025-11-25 08:58:13', NULL),
 (560, 360, 'LL-UNIFAN-SL120-3P', '3-Pack', 2290000.00, 40, 1, 1, '2025-11-25 08:58:13', '2025-11-25 08:58:13', NULL),
 (561, 361, 'CORS-SP120-ELITE-3P', '3-Pack', 1690000.00, 50, 1, 1, '2025-11-25 08:58:13', '2025-11-25 08:58:13', NULL),
-(562, 362, 'NOCT-NF-A12-SGL', 'Single', 790000.00, 100, 1, 1, '2025-11-25 08:58:13', '2025-11-25 08:58:13', NULL);
+(562, 362, 'NOCT-NF-A12-SGL', 'Single', 790000.00, 100, 1, 1, '2025-11-25 08:58:13', '2025-11-25 08:58:13', NULL),
+(568, 366, 'Seagate-1TB-5400RPM', 'Seagate-1TB-5400RPM', 50000.00, 5, 1, 1, '2025-12-19 16:09:49', '2025-12-20 08:11:12', 12);
 
 -- --------------------------------------------------------
 
@@ -1597,7 +1633,7 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`user_id`, `username`, `email`, `password_hash`, `full_name`, `phone`, `role`, `is_active`, `created_at`, `updated_at`, `last_login`, `session_token`, `admin_session_token`, `user_session_token`, `admin_refresh_token`, `user_refresh_token`) VALUES
-(6, 'admin', 'admin@gmail.com', '$2b$10$84e9xqnTc50CPaf5pOldT.Ob9zW9/RVK.G3Whr.TdAncfRdE.UivG', 'admin', '0123456788', 2, 1, '2025-11-05 09:33:52', '2025-12-18 07:05:28', NULL, NULL, NULL, NULL, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjYsInVzZXJuYW1lIjoiYWRtaW4iLCJlbWFpbCI6ImFkbWluQGdtYWlsLmNvbSIsInJvbGUiOjIsInNlc3Npb25UeXBlIjoiYWRtaW4iLCJpYXQiOjE3NjYwNDE1MjgsImV4cCI6MTc2NjY0NjMyOH0.e4dJFQlKDu89vJIoh0WZJvA8mxfZunjBZp1YBr7vc6w', NULL),
+(6, 'admin', 'admin@gmail.com', '$2b$10$84e9xqnTc50CPaf5pOldT.Ob9zW9/RVK.G3Whr.TdAncfRdE.UivG', 'admin', '0123456788', 2, 1, '2025-11-05 09:33:52', '2025-12-20 07:57:20', NULL, NULL, NULL, NULL, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjYsInVzZXJuYW1lIjoiYWRtaW4iLCJlbWFpbCI6ImFkbWluQGdtYWlsLmNvbSIsInJvbGUiOjIsInNlc3Npb25UeXBlIjoiYWRtaW4iLCJpYXQiOjE3NjYyMTc0NDAsImV4cCI6MTc2NjgyMjI0MH0.JEmiJtrnVGr9ocZYScT9e8H6qksi2nT-MCtZqgJpzT4', NULL),
 (17, 'ad1', 'ad1@gmail.com', '$2b$10$zE.RfZEcYf/th.S7Krdkmu/l0jDW7Nq3Ge9eP4lU78KVlVJzXCUwG', 'ad1', '0987676765', 2, 1, '2025-11-23 11:15:30', '2025-12-17 12:58:48', NULL, NULL, NULL, NULL, NULL, NULL),
 (20, 'tranthib671', 'thib@gmail.com', '$2b$10$KQc2staSc5WX/9OIkHi3reX8XJO8L51YDjK.N5YP5XpPaghoLS.rK', 'Trần Thị B', '0908787671', 0, 1, '2025-11-24 12:44:44', '2025-12-18 04:58:12', NULL, NULL, NULL, NULL, NULL, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIwLCJ1c2VybmFtZSI6InRyYW50aGliNjcxIiwiZW1haWwiOiJ0aGliQGdtYWlsLmNvbSIsInJvbGUiOjAsInNlc3Npb25UeXBlIjoidXNlciIsImlhdCI6MTc2NjAzMzg5MiwiZXhwIjoxNzY2NjM4NjkyfQ.c-1luzOqUvEUYOwEnaC5QL0U1dsP5TyUqv9np7r_dfE'),
 (21, 'nguyenvana561', 'vana@gmail.com', '$2b$10$AUdU1V0dW6n0Eh1tJ1Nw6.vvvjGnlWOCVmHPXSMuuDCFolwPwXrLO', 'Nguyễn Văn A', '0908786561', 0, 1, '2025-11-24 14:41:59', '2025-12-17 12:58:48', NULL, NULL, NULL, NULL, NULL, NULL),
@@ -1836,7 +1872,10 @@ INSERT INTO `variant_attributes` (`variant_id`, `attribute_value_id`) VALUES
 (562, 290),
 (562, 295),
 (562, 299),
-(562, 301);
+(562, 301),
+(568, 115),
+(568, 118),
+(568, 123);
 
 -- --------------------------------------------------------
 
@@ -1940,18 +1979,37 @@ CREATE TABLE `variant_serials` (
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+--
+-- Dumping data for table `variant_serials`
+--
+
+INSERT INTO `variant_serials` (`serial_id`, `variant_id`, `serial_number`, `status`, `order_item_id`, `warranty_id`, `created_at`, `updated_at`) VALUES
+(3, 568, 'SN56820250001', 'reserved', 131, NULL, '2025-12-19 16:09:49', '2025-12-20 07:33:54'),
+(4, 568, 'SN56820250002', 'reserved', 131, NULL, '2025-12-19 16:09:49', '2025-12-20 07:33:54'),
+(5, 568, 'SN56820250003', 'reserved', 132, NULL, '2025-12-19 16:09:49', '2025-12-20 07:38:14'),
+(6, 568, 'SN56820250004', 'sold', 133, NULL, '2025-12-19 16:09:49', '2025-12-20 07:48:38'),
+(7, 568, 'SN56820250005', 'sold', 134, NULL, '2025-12-19 16:09:49', '2025-12-20 07:58:01'),
+(8, 568, 'SN56820250006', 'sold', 134, NULL, '2025-12-19 16:09:49', '2025-12-20 07:58:01'),
+(9, 568, 'SN56820250007', 'sold', 135, NULL, '2025-12-19 16:09:49', '2025-12-20 08:02:13'),
+(10, 568, 'SN56820250008', 'sold', 136, 1, '2025-12-19 16:09:49', '2025-12-20 08:11:34'),
+(11, 568, 'SN56820250009', 'in_stock', NULL, NULL, '2025-12-19 16:09:49', '2025-12-19 16:09:49'),
+(12, 568, 'SN56820250010', 'in_stock', NULL, NULL, '2025-12-19 16:09:49', '2025-12-19 16:09:49'),
+(13, 568, 'SN56820250011', 'in_stock', NULL, NULL, '2025-12-19 16:10:19', '2025-12-19 16:10:19'),
+(14, 568, 'SN56820250012', 'in_stock', NULL, NULL, '2025-12-19 16:10:19', '2025-12-19 16:10:19'),
+(15, 568, 'SN56820250013', 'in_stock', NULL, NULL, '2025-12-19 16:10:19', '2025-12-19 16:10:19');
+
 -- --------------------------------------------------------
 
 --
--- Table structure for table `warranty`
+-- Table structure for table `warranties`
 --
 
-CREATE TABLE `warranty` (
+CREATE TABLE `warranties` (
   `warranty_id` int(11) NOT NULL,
+  `serial_id` int(11) NOT NULL,
   `order_item_id` int(11) NOT NULL,
   `service_request_id` int(11) DEFAULT NULL,
   `warranty_period` int(11) NOT NULL COMMENT 'Thời gian bảo hành (tháng)',
-  `warranty_type` enum('manufacturer','store','extended') DEFAULT 'manufacturer',
   `start_date` date NOT NULL,
   `end_date` date NOT NULL,
   `status` enum('active','expired','claimed','void') DEFAULT 'active',
@@ -1959,6 +2017,13 @@ CREATE TABLE `warranty` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `warranties`
+--
+
+INSERT INTO `warranties` (`warranty_id`, `serial_id`, `order_item_id`, `service_request_id`, `warranty_period`, `start_date`, `end_date`, `status`, `notes`, `created_at`, `updated_at`) VALUES
+(1, 10, 136, NULL, 12, '2025-12-20', '2026-12-20', 'active', NULL, '2025-12-20 08:11:34', '2025-12-20 08:11:34');
 
 -- --------------------------------------------------------
 
@@ -2264,14 +2329,15 @@ ALTER TABLE `variant_serials`
   ADD KEY `idx_warranty` (`warranty_id`);
 
 --
--- Indexes for table `warranty`
+-- Indexes for table `warranties`
 --
-ALTER TABLE `warranty`
+ALTER TABLE `warranties`
   ADD PRIMARY KEY (`warranty_id`),
   ADD KEY `idx_order_item_id` (`order_item_id`),
   ADD KEY `idx_status` (`status`),
   ADD KEY `idx_end_date` (`end_date`),
-  ADD KEY `fk_warranty_service_request` (`service_request_id`);
+  ADD KEY `fk_warranty_service_request` (`service_request_id`),
+  ADD KEY `idx_serial_id` (`serial_id`);
 
 --
 -- Indexes for table `wishlists`
@@ -2296,7 +2362,7 @@ ALTER TABLE `wishlist_items`
 -- AUTO_INCREMENT for table `addresses`
 --
 ALTER TABLE `addresses`
-  MODIFY `address_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=77;
+  MODIFY `address_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=90;
 
 --
 -- AUTO_INCREMENT for table `articles`
@@ -2344,7 +2410,7 @@ ALTER TABLE `carts`
 -- AUTO_INCREMENT for table `cart_items`
 --
 ALTER TABLE `cart_items`
-  MODIFY `cart_item_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=130;
+  MODIFY `cart_item_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=139;
 
 --
 -- AUTO_INCREMENT for table `categories`
@@ -2386,19 +2452,19 @@ ALTER TABLE `notifications`
 -- AUTO_INCREMENT for table `orders`
 --
 ALTER TABLE `orders`
-  MODIFY `order_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=93;
+  MODIFY `order_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=106;
 
 --
 -- AUTO_INCREMENT for table `order_items`
 --
 ALTER TABLE `order_items`
-  MODIFY `order_item_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=123;
+  MODIFY `order_item_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=137;
 
 --
 -- AUTO_INCREMENT for table `payments`
 --
 ALTER TABLE `payments`
-  MODIFY `payment_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=59;
+  MODIFY `payment_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=68;
 
 --
 -- AUTO_INCREMENT for table `posts`
@@ -2416,13 +2482,13 @@ ALTER TABLE `post_images`
 -- AUTO_INCREMENT for table `products`
 --
 ALTER TABLE `products`
-  MODIFY `product_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=364;
+  MODIFY `product_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=367;
 
 --
 -- AUTO_INCREMENT for table `product_variants`
 --
 ALTER TABLE `product_variants`
-  MODIFY `variant_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=564;
+  MODIFY `variant_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=569;
 
 --
 -- AUTO_INCREMENT for table `recent_views`
@@ -2464,13 +2530,13 @@ ALTER TABLE `variant_images`
 -- AUTO_INCREMENT for table `variant_serials`
 --
 ALTER TABLE `variant_serials`
-  MODIFY `serial_id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `serial_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
 
 --
--- AUTO_INCREMENT for table `warranty`
+-- AUTO_INCREMENT for table `warranties`
 --
-ALTER TABLE `warranty`
-  MODIFY `warranty_id` int(11) NOT NULL AUTO_INCREMENT;
+ALTER TABLE `warranties`
+  MODIFY `warranty_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `wishlists`
@@ -2638,14 +2704,15 @@ ALTER TABLE `variant_images`
 ALTER TABLE `variant_serials`
   ADD CONSTRAINT `vs_fk_order_item` FOREIGN KEY (`order_item_id`) REFERENCES `order_items` (`order_item_id`) ON DELETE SET NULL,
   ADD CONSTRAINT `vs_fk_variant` FOREIGN KEY (`variant_id`) REFERENCES `product_variants` (`variant_id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `vs_fk_warranty` FOREIGN KEY (`warranty_id`) REFERENCES `warranty` (`warranty_id`) ON DELETE SET NULL;
+  ADD CONSTRAINT `vs_fk_warranty` FOREIGN KEY (`warranty_id`) REFERENCES `warranties` (`warranty_id`) ON DELETE SET NULL;
 
 --
--- Constraints for table `warranty`
+-- Constraints for table `warranties`
 --
-ALTER TABLE `warranty`
+ALTER TABLE `warranties`
+  ADD CONSTRAINT `fk_warranties_serial` FOREIGN KEY (`serial_id`) REFERENCES `variant_serials` (`serial_id`) ON DELETE CASCADE,
   ADD CONSTRAINT `fk_warranty_service_request` FOREIGN KEY (`service_request_id`) REFERENCES `service_requests` (`service_request_id`) ON DELETE SET NULL,
-  ADD CONSTRAINT `warranty_ibfk_1` FOREIGN KEY (`order_item_id`) REFERENCES `order_items` (`order_item_id`) ON DELETE CASCADE;
+  ADD CONSTRAINT `warranties_ibfk_1` FOREIGN KEY (`order_item_id`) REFERENCES `order_items` (`order_item_id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `wishlists`

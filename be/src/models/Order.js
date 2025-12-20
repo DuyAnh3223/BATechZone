@@ -1,5 +1,6 @@
 import { db } from '../libs/db.js';
 import VariantSerialService from '../services/variantSerial.service.js';
+import WarrantyService from '../services/warranty.service.js';
 
 class Order {
   constructor(data = {}) {
@@ -127,7 +128,7 @@ class Order {
             variant_id: item.variantId,
             order_item_id: orderItemId,
             quantity: item.quantity
-          });
+          }, conn); // Pass transaction connection to avoid lock timeout
           console.log(`Reserved ${item.quantity} serials for order item ${orderItemId}`);
         } catch (serialError) {
           console.error(`Error reserving serials for order item ${orderItemId}:`, serialError);
@@ -618,13 +619,12 @@ class Order {
       await conn.query(
         `UPDATE orders 
         SET order_status = 'delivered',
-            payment_status = 'paid',
             delivered_at = NOW()
         WHERE order_id = ?`,
         [this.orderId]
       );
 
-      // Cập nhật payment status nếu là COD
+      // Cập nhật trạng thái thanh toán COD nếu có
       await conn.query(
         `UPDATE payments 
         SET payment_status = 'completed'
@@ -632,21 +632,8 @@ class Order {
         [this.orderId]
       );
 
-      // Get all order items and confirm sale (reserved -> sold)
-      const [orderItems] = await conn.query(
-        'SELECT order_item_id FROM order_items WHERE order_id = ?',
-        [this.orderId]
-      );
-
-      for (const item of orderItems) {
-        try {
-          await VariantSerialService.confirmSale(item.order_item_id);
-          console.log(`Confirmed sale for order item ${item.order_item_id}`);
-        } catch (serialError) {
-          console.error(`Error confirming sale for order item ${item.order_item_id}:`, serialError);
-          // Don't fail the delivery, just log the error
-        }
-      }
+      // Confirm sale and activate warranties for all order items
+      await this.activateWarrantiesForOrder(conn);
 
       await conn.commit();
 
@@ -698,7 +685,7 @@ class Order {
 
         // Release reserved serials (reserved -> in_stock)
         try {
-          await VariantSerialService.cancelReservation(item.order_item_id);
+          await VariantSerialService.cancelReservation(item.order_item_id, conn);
           console.log(`Released reserved serials for order item ${item.order_item_id}`);
         } catch (serialError) {
           console.error(`Error releasing serials for order item ${item.order_item_id}:`, serialError);
@@ -797,19 +784,38 @@ class Order {
       throw new Error('Trạng thái không hợp lệ');
     }
 
-    const [result] = await db.query(
-      `UPDATE orders 
-      SET order_status = ?,
-          updated_at = NOW()
-      WHERE order_id = ?`,
-      [newStatus, this.orderId]
-    );
+    const conn = await db.getConnection();
+    try {
+      await conn.beginTransaction();
 
-    if (result.affectedRows > 0) {
+      const [result] = await conn.query(
+        `UPDATE orders 
+        SET order_status = ?,
+            updated_at = NOW()
+        WHERE order_id = ?`,
+        [newStatus, this.orderId]
+      );
+
+      if (result.affectedRows === 0) {
+        await conn.rollback();
+        return false;
+      }
+
       this.orderStatus = newStatus;
+
+      // Auto-activate warranties when order is delivered
+      if (newStatus === 'delivered') {
+        await this.activateWarrantiesForOrder(conn);
+      }
+
+      await conn.commit();
       return true;
+    } catch (error) {
+      await conn.rollback();
+      throw error;
+    } finally {
+      conn.release();
     }
-    return false;
   }
 
   // Cập nhật trạng thái thanh toán
@@ -831,6 +837,37 @@ class Order {
       return true;
     }
     return false;
+  }
+
+  // Helper: Activate warranties for all order items
+  async activateWarrantiesForOrder(conn) {
+    // Get all order items
+    const [orderItems] = await conn.query(
+      'SELECT order_item_id, variant_id FROM order_items WHERE order_id = ?',
+      [this.orderId]
+    );
+
+    for (const item of orderItems) {
+      try {
+        // First: Confirm sale (reserved -> sold)
+        const saleResult = await VariantSerialService.confirmSale(item.order_item_id, conn);
+        console.log(`✅ Confirmed sale for order item ${item.order_item_id}`);
+        
+        // Then: Auto-activate warranty for sold serials
+        if (saleResult.soldSerialIds && saleResult.soldSerialIds.length > 0) {
+          await WarrantyService.autoActivateWarranties(
+            item.order_item_id, 
+            item.variant_id, 
+            saleResult.soldSerialIds, 
+            conn
+          );
+          console.log(`✅ Activated warranties for order item ${item.order_item_id}`);
+        }
+      } catch (serialError) {
+        console.error(`❌ Error processing order item ${item.order_item_id}:`, serialError);
+        // Don't fail the update, just log the error
+      }
+    }
   }
 
   // Kiểm tra có thể hủy không

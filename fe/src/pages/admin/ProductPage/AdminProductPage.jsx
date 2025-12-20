@@ -156,6 +156,7 @@ const AdminProductPage = () => {
 							sku: v.sku,
 							price: v.price,
 							stock: v.stock,
+							warranty_period: v.warranty_period,
 							attribute_values: v.attribute_values
 							// Không gửi images trong initial creation
 						}))
@@ -202,7 +203,8 @@ const AdminProductPage = () => {
 						variant_attributes: [],
 						defaultVariant: {
 							price: defaultVariant.price,
-							stock: defaultVariant.stock
+							stock: defaultVariant.stock,
+							warranty_period: defaultVariant.warranty_period
 							// Không gửi images
 						},
 						additionalVariants: []

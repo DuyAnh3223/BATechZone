@@ -42,6 +42,7 @@ const AdminProductForm = ({ initialData = null, onSubmit, onCancel }) => {
   // Default variant fields (always created)
   const [defaultVariantPrice, setDefaultVariantPrice] = useState(initialData?.price ?? 0);
   const [defaultVariantStock, setDefaultVariantStock] = useState(0);
+  const [defaultVariantWarrantyPeriod, setDefaultVariantWarrantyPeriod] = useState(null);
   const [defaultVariantImages, setDefaultVariantImages] = useState([]);
 
   // Load categories on mount
@@ -197,6 +198,9 @@ const AdminProductForm = ({ initialData = null, onSubmit, onCancel }) => {
     const hasSelectedAttributes = variantAttributes.length > 0 && 
       variantAttributes.some(attrId => selectedValues[attrId] && selectedValues[attrId].size > 0);
 
+    console.log('🔍 defaultVariantWarrantyPeriod state:', defaultVariantWarrantyPeriod);
+    console.log('🔍 Type:', typeof defaultVariantWarrantyPeriod);
+
     // Build payload
     const payload = {
       product_name: name.trim(),
@@ -241,6 +245,7 @@ const AdminProductForm = ({ initialData = null, onSubmit, onCancel }) => {
           sku: `${skuParts}`,
           price: defaultVariantPrice,
           stock: defaultVariantStock,
+          warranty_period: defaultVariantWarrantyPeriod ?? null,
           attribute_values: combo,
           images: defaultVariantImages
         };
@@ -253,6 +258,7 @@ const AdminProductForm = ({ initialData = null, onSubmit, onCancel }) => {
       payload.defaultVariant = {
         price: defaultVariantPrice,
         stock: defaultVariantStock,
+        warranty_period: defaultVariantWarrantyPeriod ?? null,
         images: defaultVariantImages
       };
       payload.additionalVariants = [];
@@ -261,6 +267,14 @@ const AdminProductForm = ({ initialData = null, onSubmit, onCancel }) => {
     // Include product_id only for parent component to know which product to update
     if (initialData?.product_id) {
       payload.product_id = initialData.product_id;
+    }
+    
+    console.log('🚀 Full payload:', JSON.stringify(payload, null, 2));
+    if (payload.additionalVariants?.length > 0) {
+      console.log('🚀 First additionalVariant:', payload.additionalVariants[0]);
+    }
+    if (payload.defaultVariant) {
+      console.log('🚀 DefaultVariant:', payload.defaultVariant);
     }
     
     if (onSubmit) onSubmit(payload);
@@ -400,6 +414,21 @@ const AdminProductForm = ({ initialData = null, onSubmit, onCancel }) => {
             placeholder="Nhập số lượng tồn kho"
           />
         </div>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium mb-1">
+          Bảo hành (tháng)
+        </label>
+        <input 
+          type="number" 
+          className="w-full px-3 py-2 border rounded-md" 
+          value={defaultVariantWarrantyPeriod || ''} 
+          onChange={(e) => setDefaultVariantWarrantyPeriod(e.target.value ? Number(e.target.value) : null)}
+          min="0"
+          placeholder="12"
+        />
+        <p className="text-xs text-gray-500 mt-1">Thời gian bảo hành tính bằng tháng (VD: 12 = 1 năm)</p>
       </div>
 
       <div className="pt-5">

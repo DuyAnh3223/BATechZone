@@ -55,6 +55,7 @@ const AdminVariantForm = ({ product, existingVariants = [], onCancel, onSuccess 
   // Bulk update states
   const [bulkPrice, setBulkPrice] = useState('');
   const [bulkStock, setBulkStock] = useState('');
+  const [bulkWarranty, setBulkWarranty] = useState('');
 
   // UI state
   const [isAttributeDrawerOpen, setIsAttributeDrawerOpen] = useState(false);
@@ -218,6 +219,16 @@ const AdminVariantForm = ({ product, existingVariants = [], onCancel, onSuccess 
     setBulkStock('');
   }
 
+  function applyBulkWarranty() {
+    if (bulkWarranty === '' || isNaN(Number(bulkWarranty))) {
+      alert('Vui lòng nhập thời hạn bảo hành hợp lệ');
+      return;
+    }
+    const warranty_period = Number(bulkWarranty);
+    setVariants(prev => prev.map(v => ({ ...v, warranty_period })));
+    setBulkWarranty('');
+  }
+
   // compute arrays used for cartesian product in the order of variantAttributes
   const selectedArrays = useMemo(() => {
     return variantAttributes.map((attrId) => {
@@ -266,6 +277,7 @@ const AdminVariantForm = ({ product, existingVariants = [], onCancel, onSuccess 
         sku: `${skuParts}`,
         price: 0,
         stock: 0,
+        warranty_period: null,
         attribute_values: combo,
       };
     });
@@ -337,6 +349,7 @@ const AdminVariantForm = ({ product, existingVariants = [], onCancel, onSuccess 
           sku: variant.sku,
           price: variant.price,
           stock: variant.stock || 0,
+          warranty_period: variant.warranty_period || null,
           is_active: true,
           is_default: false,
           attribute_value_ids: variant.attribute_values?.map(av => av.attribute_value_id) || []
@@ -759,6 +772,27 @@ const AdminVariantForm = ({ product, existingVariants = [], onCancel, onSuccess 
                       </Button>
                     </div>
                   </div>
+                  
+                  <div>
+                    <label className="text-xs text-gray-600 mb-1 block">Bảo hành chung (tháng)</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="number"
+                        placeholder="12"
+                        value={bulkWarranty}
+                        onChange={(e) => setBulkWarranty(e.target.value)}
+                        className="flex-1 px-2 py-1.5 text-sm border rounded"
+                      />
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={applyBulkWarranty}
+                        disabled={!bulkWarranty}
+                      >
+                        Áp dụng
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
@@ -800,7 +834,7 @@ const AdminVariantForm = ({ product, existingVariants = [], onCancel, onSuccess 
                 </button>
               </div>
 
-              <div className="grid grid-cols-4 gap-3">
+              <div className="grid grid-cols-5 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">SKU</label>
                   <input 
@@ -829,6 +863,17 @@ const AdminVariantForm = ({ product, existingVariants = [], onCancel, onSuccess 
                     onChange={(e) => updateVariant(idx, { stock: Number(e.target.value) })} 
                     min="0" 
                     placeholder="0"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Bảo hành (tháng)</label>
+                  <input 
+                    type="number" 
+                    className="w-full px-3 py-2 border rounded-md text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" 
+                    value={v.warranty_period || ''} 
+                    onChange={(e) => updateVariant(idx, { warranty_period: e.target.value ? Number(e.target.value) : null })} 
+                    min="0" 
+                    placeholder="12"
                   />
                 </div>
                 <div>
