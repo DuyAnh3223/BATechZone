@@ -5,10 +5,10 @@ import { toast } from 'sonner';
 
 import { useInstallmentStore } from '@/stores/useInstallmentStore';
 import { useUserAuthStore } from '@/stores/useUserAuthStore';
-import InstallmentList from './components/InstallmentList';
-import InstallmentDetailDialog from './components/InstallmentDetailDialog';
-import PaymentDialog from './components/PaymentDialog';
-import DownPaymentDialog from './components/DownPaymentDialog';
+import InstallmentList from './components/installments/InstallmentList';
+import InstallmentDetailDialog from './components/installments/InstallmentDetailDialog';
+import PaymentDialog from './components/installments/PaymentDialog';
+import DownPaymentDialog from './components/installments/DownPaymentDialog';
 
 const InstallmentsTab = () => {
   const { user } = useUserAuthStore();

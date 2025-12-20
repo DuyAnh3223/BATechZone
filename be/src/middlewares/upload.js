@@ -14,11 +14,13 @@ const variantsRoot = path.join(uploadsRoot, 'variants');
 const categoriesRoot = path.join(uploadsRoot, 'categories');
 const articlesRoot = path.join(uploadsRoot, 'articles');
 const postsRoot = path.join(uploadsRoot, 'posts');
+const warrantyRoot = path.join(uploadsRoot, 'warranty');
 
 ensureDir(variantsRoot);
 ensureDir(categoriesRoot);
 ensureDir(articlesRoot);
 ensureDir(postsRoot);
+ensureDir(warrantyRoot);
 
 const sanitize = (s) => String(s || '').replace(/[^a-zA-Z0-9-_]/g, '');
 
@@ -89,6 +91,26 @@ export const uploadPostImage = multer({
     limits: { fileSize: 6 * 1024 * 1024 } // 6MB, tuỳ bạn chỉnh
 });
 
+// Storage for warranty request images (uploads/warranty)
+const storageWarrantyImage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        ensureDir(warrantyRoot);
+        cb(null, warrantyRoot);
+    },
+    filename: function (req, file, cb) {
+        const ext = path.extname(file.originalname).toLowerCase();
+        const base = path.basename(file.originalname, ext).replace(/[^a-zA-Z0-9-_]/g, '') || 'warranty';
+        const unique = Date.now() + '-' + Math.round(Math.random() * 1e9);
+        cb(null, `${base}-${unique}${ext}`);
+    }
+});
+
+export const uploadWarrantyImage = multer({
+    storage: storageWarrantyImage,
+    fileFilter,
+    limits: { fileSize: 5 * 1024 * 1024 } // 5MB per image
+});
+
 
 
 export const getPublicUrlForVariant = (variantId, filename) => {
@@ -102,6 +124,10 @@ export const getPublicUrlForCategory = (filename) => {
 export const getPublicUrlForPost = (postId, filename) => {
     // store relative path so easy to move host later
     return `/uploads/posts/${sanitize(postId || 'common')}/${filename}`;
+};
+
+export const getPublicUrlForWarranty = (filename) => {
+    return `/uploads/warranty/${filename}`;
 };
 
 

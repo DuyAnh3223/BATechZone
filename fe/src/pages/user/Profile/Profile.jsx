@@ -40,11 +40,12 @@ import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 import { Star, ShoppingCart, Trash2, Eye } from "lucide-react";
 import { toast } from "sonner";
-import api from "@/lib/axios";
+import { userApi } from "@/lib/axios";
 import { useUserAddressStore } from "@/stores/useAddressStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { useUserAuthStore } from "@/stores/useUserAuthStore";
 import InstallmentsTab from "./InstallmentsTab";
+import WarrantyTab from "./WarrantyTab";
 import {
   Dialog,
   DialogContent,
@@ -273,9 +274,16 @@ const Profile = () => {
 
   // Load profile from API
   const loadProfile = async () => {
+    // Check if access token exists before making request
+    const token = localStorage.getItem('user_access_token');
+    if (!token) {
+      console.warn('No access token found, skipping profile load');
+      return;
+    }
+    
     try {
       setLoadingProfile(true);
-      const res = await api.get('/user/profile', { withCredentials: true });
+      const res = await userApi.get('/user/profile');
       const profileData = res.data?.data;
       if (profileData) {
         setUserProfile(profileData);
@@ -287,7 +295,10 @@ const Profile = () => {
       }
     } catch (error) {
       console.error('Error loading profile:', error);
-      toast.error(error.response?.data?.message || 'Không thể tải thông tin cá nhân');
+      // Don't show error toast for 401 - user will be redirected to login
+      if (error.response?.status !== 401) {
+        toast.error(error.response?.data?.message || 'Không thể tải thông tin cá nhân');
+      }
     } finally {
       setLoadingProfile(false);
     }
@@ -295,10 +306,10 @@ const Profile = () => {
 
   // Load profile when profile tab is active
   useEffect(() => {
-    if (activeTab === 'profile') {
+    if (activeTab === 'profile' && user) {
       loadProfile();
     }
-  }, [activeTab]);
+  }, [activeTab, user]);
 
   // Address handlers
   const handleAddAddress = () => {
@@ -450,7 +461,7 @@ const Profile = () => {
   const handleSubmitProfile = async (data) => {
     try {
       setIsSubmittingProfile(true);
-      const res = await api.put('/user/profile', data, { withCredentials: true });
+      const res = await userApi.put('/user/profile', data);
       toast.success(res.data?.message || 'Cập nhật thông tin thành công');
       await loadProfile();
       setIsEditing(false);
@@ -550,6 +561,8 @@ const Profile = () => {
               </TabsTrigger>
               <TabsTrigger className="justify-start w-full" value="installments">
                 Trả góp
+              </TabsTrigger><TabsTrigger className="justify-start w-full" value="warranty">
+                Bảo hành
               </TabsTrigger>
               <TabsTrigger className="justify-start w-full" value="security">
                 Bảo mật
@@ -563,9 +576,7 @@ const Profile = () => {
               <TabsTrigger className="justify-start w-full" value="coupons">
                 Mã giảm giá
               </TabsTrigger>
-              <TabsTrigger className="justify-start w-full" value="reviews">
-                Đánh giá
-              </TabsTrigger>
+              
             </TabsList>
           </aside>
           {/* Content */}
@@ -1464,6 +1475,11 @@ const Profile = () => {
           <InstallmentsTab />
         </TabsContent>
 
+        {/* Warranty Tab */}
+        <TabsContent value="warranty">
+          <WarrantyTab />
+        </TabsContent>
+
         {/* Security Settings */}
         <TabsContent value="security">
           <Card>
@@ -1852,6 +1868,8 @@ const Profile = () => {
             </CardContent>
           </Card>
         </TabsContent>
+        
+        
           </section>
         </div>
       </Tabs>

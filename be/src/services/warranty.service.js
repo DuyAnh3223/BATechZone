@@ -60,7 +60,6 @@ class WarrantyService {
       const warranties = soldSerialIds.map(serialId => ({
         serial_id: serialId,
         order_item_id: orderItemId,
-        service_request_id: null,
         warranty_period: warrantyPeriod,
         start_date: startDate,
         end_date: endDate,
@@ -73,13 +72,12 @@ class WarrantyService {
       if (connection) {
         const sql = `
           INSERT INTO warranties 
-          (serial_id, order_item_id, service_request_id, warranty_period, start_date, end_date, status) 
+          (serial_id, order_item_id, warranty_period, start_date, end_date, status) 
           VALUES ?
         `;
         const values = warranties.map(w => [
           w.serial_id,
           w.order_item_id,
-          w.service_request_id,
           w.warranty_period,
           w.start_date,
           w.end_date,

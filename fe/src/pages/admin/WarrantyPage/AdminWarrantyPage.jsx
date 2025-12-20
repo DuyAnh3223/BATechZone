@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Shield, 
   Search, 
@@ -18,9 +19,16 @@ import {
   Edit,
   Trash2,
   FileText,
-  Download
+  Download,
+  UserPlus,
+  ClipboardCheck,
+  ArrowRight,
+  Wrench
 } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
+import WalkInWarrantyForm from './components/WalkInWarrantyForm';
+import WarrantyInspectionDialog from './components/WarrantyInspectionDialog';
+import WarrantyStatusUpdateDialog from './components/WarrantyStatusUpdateDialog';
 import {
   Dialog,
   DialogContent,
@@ -29,221 +37,45 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
+import { getAllWarrantyRequests, getWarrantyRequestDetail } from '@/services/serviceRequestService';
+import { toast } from 'sonner';
 
 const AdminWarrantyPage = () => {
+  const [activeTab, setActiveTab] = useState('dashboard');
   const [warranties, setWarranties] = useState([]);
   const [filteredWarranties, setFilteredWarranties] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [filterPriority, setFilterPriority] = useState('all');
   const [selectedWarranty, setSelectedWarranty] = useState(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [isInspectionOpen, setIsInspectionOpen] = useState(false);
+  const [isStatusUpdateOpen, setIsStatusUpdateOpen] = useState(false);
 
-  // Mock data bảo hành với thông tin khách hàng
+  // Load warranty requests from API
   useEffect(() => {
-    const mockWarranties = [
-      {
-        warranty_id: 1,
-        order_item_id: 101,
-        order_id: 50,
-        user_id: 20,
-        user_name: 'Nguyễn Văn A',
-        user_phone: '0901234567',
-        user_email: 'nguyenvana@gmail.com',
-        product_name: 'CPU Intel Core i9-13900K',
-        product_sku: 'CPU-I9-13900K',
-        warranty_period: 36,
-        warranty_type: 'manufacturer',
-        start_date: '2024-01-15',
-        end_date: '2027-01-15',
-        status: 'active',
-        remaining_days: 760,
-        notes: 'Bảo hành chính hãng Intel 36 tháng',
-        created_at: '2024-01-15 10:30:00'
-      },
-      {
-        warranty_id: 2,
-        order_item_id: 102,
-        order_id: 51,
-        user_id: 21,
-        user_name: 'Trần Thị B',
-        user_phone: '0912345678',
-        user_email: 'tranthib@gmail.com',
-        product_name: 'VGA ASUS ROG Strix RTX 4080',
-        product_sku: 'VGA-ASUS-4080',
-        warranty_period: 24,
-        warranty_type: 'manufacturer',
-        start_date: '2024-03-20',
-        end_date: '2026-03-20',
-        status: 'active',
-        remaining_days: 495,
-        notes: 'Bảo hành ASUS 24 tháng',
-        created_at: '2024-03-20 14:20:00'
-      },
-      {
-        warranty_id: 3,
-        order_item_id: 103,
-        order_id: 52,
-        user_id: 22,
-        user_name: 'Lê Văn C',
-        user_phone: '0923456789',
-        user_email: 'levanc@gmail.com',
-        product_name: 'RAM G.SKILL Trident Z5 32GB',
-        product_sku: 'RAM-GSKILL-32GB',
-        warranty_period: 60,
-        warranty_type: 'manufacturer',
-        start_date: '2023-06-10',
-        end_date: '2028-06-10',
-        status: 'active',
-        remaining_days: 1247,
-        notes: 'Bảo hành trọn đời G.SKILL',
-        created_at: '2023-06-10 09:15:00'
-      },
-      {
-        warranty_id: 4,
-        order_item_id: 104,
-        order_id: 53,
-        user_id: 23,
-        user_name: 'Phạm Thị D',
-        user_phone: '0934567890',
-        user_email: 'phamthid@gmail.com',
-        product_name: 'SSD Samsung 990 PRO 2TB',
-        product_sku: 'SSD-SAM-990PRO-2TB',
-        warranty_period: 60,
-        warranty_type: 'manufacturer',
-        start_date: '2023-08-25',
-        end_date: '2028-08-25',
-        status: 'active',
-        remaining_days: 1323,
-        notes: 'Bảo hành Samsung 5 năm',
-        created_at: '2023-08-25 16:45:00'
-      },
-      {
-        warranty_id: 5,
-        order_item_id: 105,
-        order_id: 54,
-        user_id: 24,
-        user_name: 'Hoàng Văn E',
-        user_phone: '0945678901',
-        user_email: 'hoangvane@gmail.com',
-        product_name: 'Mainboard MSI MPG Z790',
-        product_sku: 'MB-MSI-Z790',
-        warranty_period: 36,
-        warranty_type: 'store',
-        start_date: '2022-11-05',
-        end_date: '2025-11-05',
-        status: 'active',
-        remaining_days: 329,
-        notes: 'Bảo hành cửa hàng 36 tháng',
-        created_at: '2022-11-05 11:20:00'
-      },
-      {
-        warranty_id: 6,
-        order_item_id: 106,
-        order_id: 55,
-        user_id: 25,
-        user_name: 'Vũ Thị F',
-        user_phone: '0956789012',
-        user_email: 'vuthif@gmail.com',
-        product_name: 'PSU Corsair RM850x',
-        product_sku: 'PSU-CORSAIR-850X',
-        warranty_period: 120,
-        warranty_type: 'manufacturer',
-        start_date: '2023-01-12',
-        end_date: '2033-01-12',
-        status: 'active',
-        remaining_days: 2954,
-        notes: 'Bảo hành Corsair 10 năm',
-        created_at: '2023-01-12 13:30:00'
-      },
-      {
-        warranty_id: 7,
-        order_item_id: 107,
-        order_id: 56,
-        user_id: 26,
-        user_name: 'Đỗ Văn G',
-        user_phone: '0967890123',
-        user_email: 'dovang@gmail.com',
-        product_name: 'Case NZXT H710i',
-        product_sku: 'CASE-NZXT-H710I',
-        warranty_period: 24,
-        warranty_type: 'store',
-        start_date: '2021-09-18',
-        end_date: '2023-09-18',
-        status: 'expired',
-        remaining_days: -437,
-        notes: 'Bảo hành đã hết hạn',
-        created_at: '2021-09-18 10:00:00'
-      },
-      {
-        warranty_id: 8,
-        order_item_id: 108,
-        order_id: 57,
-        user_id: 27,
-        user_name: 'Bùi Thị H',
-        user_phone: '0978901234',
-        user_email: 'buithih@gmail.com',
-        product_name: 'Monitor LG UltraGear 27GL850',
-        product_sku: 'MON-LG-27GL850',
-        warranty_period: 36,
-        warranty_type: 'manufacturer',
-        start_date: '2022-05-20',
-        end_date: '2025-05-20',
-        status: 'claimed',
-        remaining_days: 160,
-        notes: 'Đã yêu cầu bảo hành - Đang xử lý',
-        service_request_id: 15,
-        claim_date: '2024-12-01',
-        claim_reason: 'Màn hình bị nhấp nháy',
-        created_at: '2022-05-20 15:10:00'
-      },
-      {
-        warranty_id: 9,
-        order_item_id: 109,
-        order_id: 58,
-        user_id: 28,
-        user_name: 'Đinh Văn I',
-        user_phone: '0989012345',
-        user_email: 'dinhvani@gmail.com',
-        product_name: 'Keyboard Logitech G915 TKL',
-        product_sku: 'KB-LOGI-G915',
-        warranty_period: 24,
-        warranty_type: 'manufacturer',
-        start_date: '2023-10-15',
-        end_date: '2025-10-15',
-        status: 'claimed',
-        remaining_days: 308,
-        notes: 'Yêu cầu bảo hành - Chờ phê duyệt',
-        service_request_id: 16,
-        claim_date: '2024-12-08',
-        claim_reason: 'Một số phím không hoạt động',
-        created_at: '2023-10-15 12:00:00'
-      },
-      {
-        warranty_id: 10,
-        order_item_id: 110,
-        order_id: 59,
-        user_id: 29,
-        user_name: 'Ngô Thị K',
-        user_phone: '0990123456',
-        user_email: 'ngothik@gmail.com',
-        product_name: 'Mouse Razer DeathAdder V3',
-        product_sku: 'MOUSE-RAZER-DA3',
-        warranty_period: 12,
-        warranty_type: 'store',
-        start_date: '2024-06-01',
-        end_date: '2025-06-01',
-        status: 'void',
-        remaining_days: 172,
-        notes: 'Đã hủy do khách hàng tự sửa chữa',
-        void_reason: 'Vi phạm điều khoản bảo hành - Tự ý mở máy',
-        void_date: '2024-11-20',
-        created_at: '2024-06-01 14:30:00'
-      }
-    ];
-
-    setWarranties(mockWarranties);
-    setFilteredWarranties(mockWarranties);
+    loadWarrantyRequests();
   }, []);
+
+  const loadWarrantyRequests = async () => {
+    setLoading(true);
+    try {
+      const response = await getAllWarrantyRequests();
+      
+      if (response.success) {
+        setWarranties(response.data);
+        setFilteredWarranties(response.data);
+      } else {
+        toast.error(response.message || 'Không thể tải danh sách yêu cầu');
+      }
+    } catch (error) {
+      console.error('Load warranties error:', error);
+      toast.error('Có lỗi xảy ra khi tải dữ liệu');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     let filtered = warranties;
@@ -252,9 +84,12 @@ const AdminWarrantyPage = () => {
     if (searchTerm) {
       filtered = filtered.filter(w => 
         w.product_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        w.order_id.toString().includes(searchTerm) ||
-        w.user_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        w.user_phone.includes(searchTerm) ||
+        w.request_id?.toString().includes(searchTerm) ||
+        w.user_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        w.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        w.user_phone?.includes(searchTerm) ||
+        w.customer_phone?.includes(searchTerm) ||
+        w.serial_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         w.product_sku.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
@@ -264,23 +99,46 @@ const AdminWarrantyPage = () => {
       filtered = filtered.filter(w => w.status === filterStatus);
     }
 
+    // Filter by priority
+    if (filterPriority !== 'all') {
+      filtered = filtered.filter(w => w.priority === filterPriority);
+    }
+
     setFilteredWarranties(filtered);
-  }, [searchTerm, filterStatus, warranties]);
+  }, [searchTerm, filterStatus, filterPriority, warranties]);
 
   const getStatusBadge = (status) => {
     const statusConfig = {
-      active: { label: 'Đang bảo hành', className: 'bg-green-100 text-green-800', icon: CheckCircle },
-      expired: { label: 'Hết hạn', className: 'bg-gray-100 text-gray-800', icon: XCircle },
-      claimed: { label: 'Đã yêu cầu BH', className: 'bg-blue-100 text-blue-800', icon: Clock },
-      void: { label: 'Đã hủy', className: 'bg-red-100 text-red-800', icon: AlertCircle }
+      pending: { label: 'Chờ xử lý', className: 'bg-yellow-100 text-yellow-800', icon: Clock },
+      received: { label: 'Đã tiếp nhận', className: 'bg-blue-100 text-blue-800', icon: CheckCircle },
+      warranty_accepted: { label: 'Chấp nhận BH', className: 'bg-green-100 text-green-800', icon: CheckCircle },
+      warranty_rejected: { label: 'Từ chối BH', className: 'bg-red-100 text-red-800', icon: XCircle },
+      completed: { label: 'Hoàn thành', className: 'bg-green-100 text-green-800', icon: CheckCircle },
+      cancelled: { label: 'Đã hủy', className: 'bg-gray-100 text-gray-800', icon: XCircle }
     };
 
-    const config = statusConfig[status] || statusConfig.active;
+    const config = statusConfig[status] || statusConfig.pending;
     const Icon = config.icon;
 
     return (
       <Badge className={`${config.className} flex items-center gap-1`}>
         <Icon size={14} />
+        {config.label}
+      </Badge>
+    );
+  };
+
+  const getPriorityBadge = (priority) => {
+    const priorityConfig = {
+      high: { label: 'Cao', className: 'bg-red-100 text-red-800' },
+      normal: { label: 'Thường', className: 'bg-blue-100 text-blue-800' },
+      low: { label: 'Thấp', className: 'bg-gray-100 text-gray-800' }
+    };
+
+    const config = priorityConfig[priority] || priorityConfig.normal;
+
+    return (
+      <Badge className={config.className}>
         {config.label}
       </Badge>
     );
@@ -302,34 +160,35 @@ const AdminWarrantyPage = () => {
     );
   };
 
-  const getRemainingTime = (remainingDays) => {
-    if (remainingDays < 0) {
-      return <span className="text-red-600 font-semibold">Đã hết hạn {Math.abs(remainingDays)} ngày</span>;
-    }
-
-    if (remainingDays < 30) {
-      return <span className="text-orange-600 font-semibold">Còn {remainingDays} ngày</span>;
-    }
-
-    const months = Math.floor(remainingDays / 30);
-    const days = remainingDays % 30;
-
-    return (
-      <span className="text-green-600 font-semibold">
-        Còn {months} tháng {days > 0 && `${days} ngày`}
-      </span>
-    );
-  };
-
   const handleViewDetail = (warranty) => {
     setSelectedWarranty(warranty);
     setIsDetailOpen(true);
   };
 
-  const handleUpdateStatus = (warrantyId, newStatus) => {
+  const handleOpenInspection = (warranty) => {
+    setSelectedWarranty(warranty);
+    setIsInspectionOpen(true);
+  };
+
+  const handleOpenStatusUpdate = (warranty) => {
+    setSelectedWarranty(warranty);
+    setIsStatusUpdateOpen(true);
+  };
+
+  const handleInspectionComplete = (updatedWarranty) => {
     setWarranties(prev => 
-      prev.map(w => w.warranty_id === warrantyId ? { ...w, status: newStatus } : w)
+      prev.map(w => w.request_id === updatedWarranty.request_id ? updatedWarranty : w)
     );
+    // Reload data from server to get fresh state
+    loadWarrantyRequests();
+  };
+
+  const handleStatusUpdateComplete = (updatedWarranty) => {
+    setWarranties(prev => 
+      prev.map(w => w.request_id === updatedWarranty.request_id ? updatedWarranty : w)
+    );
+    // Reload data from server to get fresh state
+    loadWarrantyRequests();
   };
 
   return (
@@ -341,208 +200,314 @@ const AdminWarrantyPage = () => {
             <Shield className="size-8 text-blue-600" />
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Quản lý bảo hành</h1>
-              <p className="text-gray-600">Quản lý thông tin bảo hành sản phẩm khách hàng</p>
+              <p className="text-gray-600">Quản lý yêu cầu bảo hành và khách vãng lai</p>
             </div>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" className="gap-2">
-              <Download size={18} />
-              Xuất Excel
-            </Button>
           </div>
         </div>
       </div>
 
-      {/* Summary Statistics */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-center">
-              <div className="text-3xl font-bold text-blue-600">
-                {warranties.length}
-              </div>
-              <div className="text-sm text-gray-600 mt-1">Tổng số</div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-center">
-              <div className="text-3xl font-bold text-green-600">
-                {warranties.filter(w => w.status === 'active').length}
-              </div>
-              <div className="text-sm text-gray-600 mt-1">Đang bảo hành</div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-center">
-              <div className="text-3xl font-bold text-blue-600">
-                {warranties.filter(w => w.status === 'claimed').length}
-              </div>
-              <div className="text-sm text-gray-600 mt-1">Đã yêu cầu</div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-center">
-              <div className="text-3xl font-bold text-gray-600">
-                {warranties.filter(w => w.status === 'expired').length}
-              </div>
-              <div className="text-sm text-gray-600 mt-1">Đã hết hạn</div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-center">
-              <div className="text-3xl font-bold text-red-600">
-                {warranties.filter(w => w.status === 'void').length}
-              </div>
-              <div className="text-sm text-gray-600 mt-1">Đã hủy</div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-2 max-w-md">
+          <TabsTrigger value="dashboard" className="flex items-center gap-2">
+            <Shield className="size-4" />
+            Bảng điều khiển
+          </TabsTrigger>
+          <TabsTrigger value="walk-in" className="flex items-center gap-2">
+            <UserPlus className="size-4" />
+            Khách vãng lai
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Search and Filter */}
-      <Card className="mb-6">
-        <CardContent className="pt-6">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-              <Input
-                type="text"
-                placeholder="Tìm kiếm theo tên sản phẩm, khách hàng, SĐT, SKU, mã đơn hàng..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <div className="flex gap-2">
-              <Button
-                variant={filterStatus === 'all' ? 'default' : 'outline'}
-                onClick={() => setFilterStatus('all')}
-              >
-                Tất cả
-              </Button>
-              <Button
-                variant={filterStatus === 'active' ? 'default' : 'outline'}
-                onClick={() => setFilterStatus('active')}
-              >
-                Đang BH
-              </Button>
-              <Button
-                variant={filterStatus === 'claimed' ? 'default' : 'outline'}
-                onClick={() => setFilterStatus('claimed')}
-              >
-                Đã yêu cầu
-              </Button>
-              <Button
-                variant={filterStatus === 'expired' ? 'default' : 'outline'}
-                onClick={() => setFilterStatus('expired')}
-              >
-                Hết hạn
-              </Button>
-              <Button
-                variant={filterStatus === 'void' ? 'default' : 'outline'}
-                onClick={() => setFilterStatus('void')}
-              >
-                Đã hủy
-              </Button>
-            </div>
+        {/* Dashboard Tab */}
+        <TabsContent value="dashboard" className="space-y-6">
+          {/* Summary Statistics */}
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <Card>
+              <CardContent className="pt-6">
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-blue-600">
+                    {warranties.length}
+                  </div>
+                  <div className="text-sm text-gray-600 mt-1">Tổng số</div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-6">
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-yellow-600">
+                    {warranties.filter(w => w.status === 'pending' || w.status === 'received').length}
+                  </div>
+                  <div className="text-sm text-gray-600 mt-1">Chờ xử lý</div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-6">
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-green-600">
+                    {warranties.filter(w => w.status === 'warranty_accepted').length}
+                  </div>
+                  <div className="text-sm text-gray-600 mt-1">Đã chấp nhận</div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-6">
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-green-600">
+                    {warranties.filter(w => w.status === 'completed').length}
+                  </div>
+                  <div className="text-sm text-gray-600 mt-1">Hoàn thành</div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-6">
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-red-600">
+                    {warranties.filter(w => w.status === 'warranty_rejected' || w.status === 'cancelled').length}
+                  </div>
+                  <div className="text-sm text-gray-600 mt-1">Từ chối/Hủy</div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
-        </CardContent>
-      </Card>
 
-      {/* Warranty Table */}
-      <Card>
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b">
-                <tr>
-                  <th className="text-left py-3 px-4 font-medium text-gray-700">Mã BH</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-700">Khách hàng</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-700">Sản phẩm</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-700">Loại BH</th>
-                  <th className="text-center py-3 px-4 font-medium text-gray-700">Thời hạn</th>
-                  <th className="text-center py-3 px-4 font-medium text-gray-700">Còn lại</th>
-                  <th className="text-center py-3 px-4 font-medium text-gray-700">Trạng thái</th>
-                  <th className="text-center py-3 px-4 font-medium text-gray-700">Thao tác</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredWarranties.length === 0 ? (
-                  <tr>
-                    <td colSpan="8" className="py-12 text-center">
-                      <Shield className="mx-auto size-16 text-gray-300 mb-4" />
-                      <p className="text-gray-500 text-lg">Không tìm thấy thông tin bảo hành</p>
-                    </td>
-                  </tr>
-                ) : (
-                  filteredWarranties.map((warranty) => (
-                    <tr key={warranty.warranty_id} className="border-b hover:bg-gray-50">
-                      <td className="py-3 px-4">
-                        <span className="font-mono text-sm font-semibold">#{warranty.warranty_id}</span>
-                      </td>
-                      <td className="py-3 px-4">
-                        <div>
-                          <p className="font-medium text-sm">{warranty.user_name}</p>
-                          <p className="text-xs text-gray-500">{warranty.user_phone}</p>
-                        </div>
-                      </td>
-                      <td className="py-3 px-4">
-                        <div>
-                          <p className="font-medium text-sm">{warranty.product_name}</p>
-                          <p className="text-xs text-gray-500">SKU: {warranty.product_sku}</p>
-                          <p className="text-xs text-gray-500">Đơn #{warranty.order_id}</p>
-                        </div>
-                      </td>
-                      <td className="py-3 px-4">
-                        {getWarrantyTypeBadge(warranty.warranty_type)}
-                      </td>
-                      <td className="py-3 px-4 text-center">
-                        <span className="text-sm font-medium">{warranty.warranty_period} tháng</span>
-                      </td>
-                      <td className="py-3 px-4 text-center text-sm">
-                        {getRemainingTime(warranty.remaining_days)}
-                      </td>
-                      <td className="py-3 px-4 text-center">
-                        {getStatusBadge(warranty.status)}
-                      </td>
-                      <td className="py-3 px-4 text-center">
-                        <div className="flex justify-center gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleViewDetail(warranty)}
-                          >
-                            <FileText size={16} />
-                          </Button>
-                          <Button variant="ghost" size="sm">
-                            <Edit size={16} />
-                          </Button>
-                        </div>
-                      </td>
+          {/* Search and Filter */}
+          <Card>
+            <CardContent className="pt-6">
+              <div className="space-y-4">
+                <div className="flex flex-col md:flex-row gap-4">
+                  <div className="flex-1 relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                    <Input
+                      type="text"
+                      placeholder="Tìm kiếm theo tên, SĐT, serial, SKU, mã yêu cầu..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setSearchTerm('');
+                        setFilterStatus('all');
+                        setFilterPriority('all');
+                      }}
+                    >
+                      Xóa bộ lọc
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Status Filter */}
+                <div className="flex flex-wrap gap-2">
+                  <span className="text-sm font-medium text-gray-700 flex items-center">Trạng thái:</span>
+                  <Button
+                    size="sm"
+                    variant={filterStatus === 'all' ? 'default' : 'outline'}
+                    onClick={() => setFilterStatus('all')}
+                  >
+                    Tất cả
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={filterStatus === 'pending' ? 'default' : 'outline'}
+                    onClick={() => setFilterStatus('pending')}
+                  >
+                    Chờ xử lý
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={filterStatus === 'received' ? 'default' : 'outline'}
+                    onClick={() => setFilterStatus('received')}
+                  >
+                    Đã tiếp nhận
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={filterStatus === 'warranty_accepted' ? 'default' : 'outline'}
+                    onClick={() => setFilterStatus('warranty_accepted')}
+                  >
+                    Chấp nhận BH
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={filterStatus === 'warranty_rejected' ? 'default' : 'outline'}
+                    onClick={() => setFilterStatus('warranty_rejected')}
+                  >
+                    Từ chối BH
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={filterStatus === 'completed' ? 'default' : 'outline'}
+                    onClick={() => setFilterStatus('completed')}
+                  >
+                    Hoàn thành
+                  </Button>
+                </div>
+
+                {/* Priority Filter */}
+                <div className="flex flex-wrap gap-2">
+                  <span className="text-sm font-medium text-gray-700 flex items-center">Ưu tiên:</span>
+                  <Button
+                    size="sm"
+                    variant={filterPriority === 'all' ? 'default' : 'outline'}
+                    onClick={() => setFilterPriority('all')}
+                  >
+                    Tất cả
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={filterPriority === 'high' ? 'default' : 'outline'}
+                    onClick={() => setFilterPriority('high')}
+                  >
+                    Cao
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={filterPriority === 'normal' ? 'default' : 'outline'}
+                    onClick={() => setFilterPriority('normal')}
+                  >
+                    Thường
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={filterPriority === 'low' ? 'default' : 'outline'}
+                    onClick={() => setFilterPriority('low')}
+                  >
+                    Thấp
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Warranty Table */}
+          <Card>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50 border-b">
+                    <tr>
+                      <th className="text-left py-3 px-4 font-medium text-gray-700">Mã YC</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-700">Khách hàng</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-700">Sản phẩm</th>
+                      <th className="text-center py-3 px-4 font-medium text-gray-700">Ưu tiên</th>
+                      <th className="text-center py-3 px-4 font-medium text-gray-700">Trạng thái</th>
+                      <th className="text-center py-3 px-4 font-medium text-gray-700">Ngày tạo</th>
+                      <th className="text-center py-3 px-4 font-medium text-gray-700">Thao tác</th>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
+                  </thead>
+                  <tbody>
+                    {loading ? (
+                      <tr>
+                        <td colSpan="7" className="py-12 text-center">
+                          <div className="flex justify-center items-center gap-2">
+                            <Clock className="animate-spin size-5 text-blue-600" />
+                            <span className="text-gray-600">Đang tải dữ liệu...</span>
+                          </div>
+                        </td>
+                      </tr>
+                    ) : filteredWarranties.length === 0 ? (
+                      <tr>
+                        <td colSpan="7" className="py-12 text-center">
+                          <Shield className="mx-auto size-16 text-gray-300 mb-4" />
+                          <p className="text-gray-500 text-lg">Không tìm thấy yêu cầu bảo hành</p>
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredWarranties.map((warranty) => (
+                        <tr key={warranty.request_id} className="border-b hover:bg-gray-50">
+                          <td className="py-3 px-4">
+                            <span className="font-mono text-sm font-semibold">#{warranty.request_id}</span>
+                          </td>
+                          <td className="py-3 px-4">
+                            <div>
+                              <p className="font-medium text-sm">
+                                {warranty.customer_name || warranty.user_name}
+                                {!warranty.user_id && <Badge className="ml-2 text-xs bg-orange-100 text-orange-800">Vãng lai</Badge>}
+                              </p>
+                              <p className="text-xs text-gray-500">{warranty.customer_phone || warranty.user_phone}</p>
+                            </div>
+                          </td>
+                          <td className="py-3 px-4">
+                            <div>
+                              <p className="font-medium text-sm">{warranty.product_name}</p>
+                              <p className="text-xs text-gray-500">Serial: {warranty.serial_number}</p>
+                              <p className="text-xs text-gray-500">{warranty.subject}</p>
+                            </div>
+                          </td>
+                          <td className="py-3 px-4 text-center">
+                            {getPriorityBadge(warranty.priority)}
+                          </td>
+                          <td className="py-3 px-4 text-center">
+                            {getStatusBadge(warranty.status)}
+                          </td>
+                          <td className="py-3 px-4 text-center text-sm">
+                            {formatDate(warranty.created_at)}
+                          </td>
+                          <td className="py-3 px-4 text-center">
+                            <div className="flex justify-center gap-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleViewDetail(warranty)}
+                                title="Xem chi tiết"
+                              >
+                                <FileText size={16} />
+                              </Button>
+                              {warranty.status === 'received' && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleOpenInspection(warranty)}
+                                  title="Kiểm tra & đánh giá"
+                                  className="text-purple-600 hover:text-purple-700"
+                                >
+                                  <ClipboardCheck size={16} />
+                                </Button>
+                              )}
+                              {!['completed', 'cancelled'].includes(warranty.status) && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleOpenStatusUpdate(warranty)}
+                                  title="Cập nhật trạng thái"
+                                  className="text-blue-600 hover:text-blue-700"
+                                >
+                                  <ArrowRight size={16} />
+                                </Button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Walk-in Customer Tab */}
+        <TabsContent value="walk-in">
+          <WalkInWarrantyForm />
+        </TabsContent>
+      </Tabs>
 
       {/* Detail Dialog */}
       <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-2xl">Chi tiết bảo hành #{selectedWarranty?.warranty_id}</DialogTitle>
+            <DialogTitle className="text-2xl">Chi tiết yêu cầu bảo hành #{selectedWarranty?.request_id}</DialogTitle>
             <DialogDescription>
-              Thông tin chi tiết về bảo hành sản phẩm
+              Thông tin chi tiết về yêu cầu bảo hành
             </DialogDescription>
           </DialogHeader>
           
@@ -559,16 +524,23 @@ const AdminWarrantyPage = () => {
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <p className="text-sm text-gray-500">Tên khách hàng</p>
-                        <p className="font-medium">{selectedWarranty.user_name}</p>
+                        <p className="font-medium">
+                          {selectedWarranty.customer_name || selectedWarranty.user_name}
+                          {!selectedWarranty.user_id && (
+                            <Badge className="ml-2 bg-orange-100 text-orange-800">Khách vãng lai</Badge>
+                          )}
+                        </p>
                       </div>
                       <div>
                         <p className="text-sm text-gray-500">Số điện thoại</p>
-                        <p className="font-medium">{selectedWarranty.user_phone}</p>
+                        <p className="font-medium">{selectedWarranty.customer_phone || selectedWarranty.user_phone}</p>
                       </div>
-                      <div className="col-span-2">
-                        <p className="text-sm text-gray-500">Email</p>
-                        <p className="font-medium">{selectedWarranty.user_email}</p>
-                      </div>
+                      {selectedWarranty.user_email && (
+                        <div className="col-span-2">
+                          <p className="text-sm text-gray-500">Email</p>
+                          <p className="font-medium">{selectedWarranty.user_email}</p>
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -580,7 +552,7 @@ const AdminWarrantyPage = () => {
               <div>
                 <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
                   <Package size={20} className="text-blue-600" />
-                  Thông tin sản phẩm
+                  Thông tin sản phẩm & yêu cầu
                 </h3>
                 <Card>
                   <CardContent className="pt-6">
@@ -595,10 +567,20 @@ const AdminWarrantyPage = () => {
                           <p className="font-medium font-mono">{selectedWarranty.product_sku}</p>
                         </div>
                         <div>
-                          <p className="text-sm text-gray-500">Mã đơn hàng</p>
-                          <p className="font-medium">#{selectedWarranty.order_id}</p>
+                          <p className="text-sm text-gray-500">Serial Number</p>
+                          <p className="font-medium font-mono">{selectedWarranty.serial_number}</p>
                         </div>
                       </div>
+                      <div>
+                        <p className="text-sm text-gray-500">Vấn đề</p>
+                        <p className="font-semibold">{selectedWarranty.subject}</p>
+                      </div>
+                      {selectedWarranty.description && (
+                        <div>
+                          <p className="text-sm text-gray-500">Mô tả chi tiết</p>
+                          <p className="text-sm">{selectedWarranty.description}</p>
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -606,40 +588,58 @@ const AdminWarrantyPage = () => {
 
               <Separator />
 
-              {/* Warranty Info */}
+              {/* Warranty Status Info */}
               <div>
                 <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
                   <Shield size={20} className="text-blue-600" />
-                  Thông tin bảo hành
+                  Thông tin trạng thái
                 </h3>
                 <Card>
                   <CardContent className="pt-6">
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <p className="text-sm text-gray-500">Loại bảo hành</p>
-                        <div className="mt-1">{getWarrantyTypeBadge(selectedWarranty.warranty_type)}</div>
-                      </div>
-                      <div>
                         <p className="text-sm text-gray-500">Trạng thái</p>
                         <div className="mt-1">{getStatusBadge(selectedWarranty.status)}</div>
                       </div>
                       <div>
-                        <p className="text-sm text-gray-500">Ngày bắt đầu</p>
-                        <p className="font-medium">{formatDate(selectedWarranty.start_date)}</p>
+                        <p className="text-sm text-gray-500">Ưu tiên</p>
+                        <div className="mt-1">{getPriorityBadge(selectedWarranty.priority)}</div>
                       </div>
                       <div>
-                        <p className="text-sm text-gray-500">Ngày kết thúc</p>
-                        <p className="font-medium">{formatDate(selectedWarranty.end_date)}</p>
+                        <p className="text-sm text-gray-500">Ngày tạo</p>
+                        <p className="font-medium">{formatDate(selectedWarranty.created_at)}</p>
                       </div>
-                      <div>
-                        <p className="text-sm text-gray-500">Thời hạn bảo hành</p>
-                        <p className="font-medium">{selectedWarranty.warranty_period} tháng</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-gray-500">Thời gian còn lại</p>
-                        <div>{getRemainingTime(selectedWarranty.remaining_days)}</div>
-                      </div>
+                      {selectedWarranty.received_at && (
+                        <div>
+                          <p className="text-sm text-gray-500">Ngày tiếp nhận</p>
+                          <p className="font-medium">{formatDate(selectedWarranty.received_at)}</p>
+                        </div>
+                      )}
+                      {selectedWarranty.inspected_at && (
+                        <div>
+                          <p className="text-sm text-gray-500">Ngày kiểm tra</p>
+                          <p className="font-medium">{formatDate(selectedWarranty.inspected_at)}</p>
+                        </div>
+                      )}
+                      {selectedWarranty.completed_at && (
+                        <div>
+                          <p className="text-sm text-gray-500">Ngày hoàn thành</p>
+                          <p className="font-medium">{formatDate(selectedWarranty.completed_at)}</p>
+                        </div>
+                      )}
                     </div>
+                    {selectedWarranty.actual_issue && (
+                      <div className="mt-4 p-3 bg-purple-50 rounded-lg">
+                        <p className="text-sm text-gray-600 mb-1 font-semibold">Lỗi thực tế (sau kiểm tra)</p>
+                        <p className="text-sm">{selectedWarranty.actual_issue}</p>
+                      </div>
+                    )}
+                    {selectedWarranty.rejection_reason && (
+                      <div className="mt-4 p-3 bg-red-50 rounded-lg">
+                        <p className="text-sm text-gray-600 mb-1 font-semibold">Lý do từ chối</p>
+                        <p className="text-sm text-red-700">{selectedWarranty.rejection_reason}</p>
+                      </div>
+                    )}
                     {selectedWarranty.notes && (
                       <div className="mt-4 p-3 bg-gray-50 rounded-lg">
                         <p className="text-sm text-gray-500 mb-1">Ghi chú</p>
@@ -650,91 +650,32 @@ const AdminWarrantyPage = () => {
                 </Card>
               </div>
 
-              {/* Claim Info if status is claimed */}
-              {selectedWarranty.status === 'claimed' && (
-                <>
-                  <Separator />
-                  <div>
-                    <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
-                      <AlertCircle size={20} className="text-orange-600" />
-                      Thông tin yêu cầu bảo hành
-                    </h3>
-                    <Card>
-                      <CardContent className="pt-6">
-                        <div className="space-y-3">
-                          <div>
-                            <p className="text-sm text-gray-500">Mã yêu cầu dịch vụ</p>
-                            <p className="font-medium">#{selectedWarranty.service_request_id}</p>
-                          </div>
-                          <div>
-                            <p className="text-sm text-gray-500">Ngày yêu cầu</p>
-                            <p className="font-medium">{formatDate(selectedWarranty.claim_date)}</p>
-                          </div>
-                          <div>
-                            <p className="text-sm text-gray-500">Lý do</p>
-                            <p className="font-medium">{selectedWarranty.claim_reason}</p>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
-                </>
-              )}
-
-              {/* Void Info if status is void */}
-              {selectedWarranty.status === 'void' && (
-                <>
-                  <Separator />
-                  <div>
-                    <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
-                      <XCircle size={20} className="text-red-600" />
-                      Thông tin hủy bảo hành
-                    </h3>
-                    <Card>
-                      <CardContent className="pt-6">
-                        <div className="space-y-3">
-                          <div>
-                            <p className="text-sm text-gray-500">Ngày hủy</p>
-                            <p className="font-medium">{formatDate(selectedWarranty.void_date)}</p>
-                          </div>
-                          <div>
-                            <p className="text-sm text-gray-500">Lý do hủy</p>
-                            <p className="font-medium text-red-600">{selectedWarranty.void_reason}</p>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
-                </>
-              )}
-
               {/* Action Buttons */}
               <div className="flex justify-end gap-2 pt-4">
-                {selectedWarranty.status === 'claimed' && (
-                  <>
-                    <Button 
-                      variant="outline" 
-                      className="text-green-600"
-                      onClick={() => handleUpdateStatus(selectedWarranty.warranty_id, 'active')}
-                    >
-                      Phê duyệt yêu cầu
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      className="text-red-600"
-                      onClick={() => handleUpdateStatus(selectedWarranty.warranty_id, 'void')}
-                    >
-                      Từ chối
-                    </Button>
-                  </>
-                )}
-                {selectedWarranty.status === 'active' && (
+                {selectedWarranty.status === 'received' && (
                   <Button 
                     variant="outline" 
-                    className="text-red-600"
-                    onClick={() => handleUpdateStatus(selectedWarranty.warranty_id, 'void')}
+                    className="text-purple-600"
+                    onClick={() => {
+                      setIsDetailOpen(false);
+                      handleOpenInspection(selectedWarranty);
+                    }}
                   >
-                    Hủy bảo hành
+                    <ClipboardCheck className="size-4 mr-2" />
+                    Kiểm tra & đánh giá
+                  </Button>
+                )}
+                {!['completed', 'cancelled'].includes(selectedWarranty.status) && (
+                  <Button 
+                    variant="outline" 
+                    className="text-blue-600"
+                    onClick={() => {
+                      setIsDetailOpen(false);
+                      handleOpenStatusUpdate(selectedWarranty);
+                    }}
+                  >
+                    <ArrowRight className="size-4 mr-2" />
+                    Cập nhật trạng thái
                   </Button>
                 )}
                 <Button onClick={() => setIsDetailOpen(false)}>
@@ -745,6 +686,22 @@ const AdminWarrantyPage = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Inspection Dialog */}
+      <WarrantyInspectionDialog
+        request={selectedWarranty}
+        open={isInspectionOpen}
+        onOpenChange={setIsInspectionOpen}
+        onComplete={handleInspectionComplete}
+      />
+
+      {/* Status Update Dialog */}
+      <WarrantyStatusUpdateDialog
+        request={selectedWarranty}
+        open={isStatusUpdateOpen}
+        onOpenChange={setIsStatusUpdateOpen}
+        onComplete={handleStatusUpdateComplete}
+      />
     </div>
   );
 };

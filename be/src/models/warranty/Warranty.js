@@ -3,7 +3,6 @@ class Warranty {
         this.warranty_id = data.warranty_id;
         this.serial_id = data.serial_id;
         this.order_item_id = data.order_item_id;
-        this.service_request_id = data.service_request_id;
         this.warranty_period = data.warranty_period;
         this.start_date = data.start_date;
         this.end_date = data.end_date;
@@ -42,7 +41,6 @@ class Warranty {
             warranty_id: this.warranty_id,
             serial_id: this.serial_id,
             order_item_id: this.order_item_id,
-            service_request_id: this.service_request_id,
             warranty_period: this.warranty_period,
             start_date: this.start_date,
             end_date: this.end_date,

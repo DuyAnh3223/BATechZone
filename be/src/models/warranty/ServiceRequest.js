@@ -1,17 +1,23 @@
 class ServiceRequest {
     constructor(data){
         this.service_request_id = data.service_request_id;
-        this.user_id = data.user_id;
-        this.request_type = data.request_type;
-        this.status = data.status;
-        this.subject = data.subject;
-        this.description = data.description;
-        this.priority = data.priority;
-        this.assigned_to = data.assigned_to;
-        this.resolution = data.resolution;
-        this.created_at = data.created_at;
-        this.updated_at = data.updated_at;
-        this.resolved_at = data.resolved_at;
+        this.user_id = data.user_id; // Null for guest requests
+        this.warranty_id = data.warranty_id;
+        this.serial_id = data.serial_id;
+        this.customer_name = data.customer_name; // For guest requests
+        this.customer_phone = data.customer_phone; // For guest requests
+        this.request_type = data.request_type; // default 'warranty'
+        this.status = data.status; // default 'pending' ('received','warranty_accepted','warranty_rejected','completed','cancelled')
+        this.subject = data.subject; // Short title
+        this.description = data.description; // Detailed description
+        this.images = data.images; // Array of image URLs Nullable
+        this.priority = data.priority; // default 'medium'
+        this.rejection_reason = data.rejection_reason; // Nullable
+        this.resolution = data.resolution; // Nullable
+        this.progress_notes = data.progress_notes; // Nullable
+        this.created_at = data.created_at; // Timestamp
+        this.updated_at = data.updated_at; // Timestamp
+        this.resolved_at = data.resolved_at; // Timestamp status = 'completed'
     }
 }
 

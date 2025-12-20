@@ -788,13 +788,24 @@ class Order {
     try {
       await conn.beginTransaction();
 
-      const [result] = await conn.query(
-        `UPDATE orders 
-        SET order_status = ?,
-            updated_at = NOW()
-        WHERE order_id = ?`,
-        [newStatus, this.orderId]
-      );
+      // Build update query with appropriate timestamp fields
+      let updateQuery = 'UPDATE orders SET order_status = ?, updated_at = NOW()';
+      const params = [newStatus];
+      
+      if (newStatus === 'delivered') {
+        updateQuery += ', delivered_at = NOW()';
+      } else if (newStatus === 'confirmed') {
+        updateQuery += ', confirmed_at = NOW()';
+      } else if (newStatus === 'shipping') {
+        updateQuery += ', shipped_at = NOW()';
+      } else if (newStatus === 'cancelled') {
+        updateQuery += ', cancelled_at = NOW()';
+      }
+      
+      updateQuery += ' WHERE order_id = ?';
+      params.push(this.orderId);
+
+      const [result] = await conn.query(updateQuery, params);
 
       if (result.affectedRows === 0) {
         await conn.rollback();
@@ -805,6 +816,7 @@ class Order {
 
       // Auto-activate warranties when order is delivered
       if (newStatus === 'delivered') {
+        console.log(`🔔 Order ${this.orderId} delivered - Activating warranties...`);
         await this.activateWarrantiesForOrder(conn);
       }
 
@@ -812,6 +824,7 @@ class Order {
       return true;
     } catch (error) {
       await conn.rollback();
+      console.error(`❌ Error updating order ${this.orderId} status to ${newStatus}:`, error);
       throw error;
     } finally {
       conn.release();

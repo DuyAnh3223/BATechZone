@@ -9,7 +9,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
-import PaymentMethodSelector from './PaymentMethodSelector';
+import PaymentMethodSelector from './PaymentMethodSelector'; 
 
 const DownPaymentDialog = ({ 
   isOpen, 

@@ -27,7 +27,7 @@ class VariantSerialService {
    * This will create serial numbers starting from the next available sequence
    */
   async autoGenerateSerials(variantId, quantity) {
-    console.log(`🔵 autoGenerateSerials called - variantId: ${variantId}, quantity: ${quantity}`);
+    //console.log(`🔵 autoGenerateSerials called - variantId: ${variantId}, quantity: ${quantity}`);
     
     if (!variantId || variantId <= 0) {
       throw new Error('variant_id không hợp lệ');
@@ -38,11 +38,11 @@ class VariantSerialService {
     }
 
     // Get existing serials count for this variant to determine starting sequence
-    console.log(`🔍 Fetching existing serials for variant ${variantId}...`);
+    //console.log(`🔍 Fetching existing serials for variant ${variantId}...`);
     const existingSerials = await VariantSerialDAO.findByVariantId(variantId);
-    console.log(`📊 Found ${existingSerials.length} existing serials`);
+    //console.log(`📊 Found ${existingSerials.length} existing serials`);
     const startingSequence = existingSerials.length + 1;
-    console.log(`🔢 Starting sequence: ${startingSequence}`);
+    //console.log(`🔢 Starting sequence: ${startingSequence}`);
 
     // Generate serial numbers
     const serialNumbers = [];
@@ -50,7 +50,7 @@ class VariantSerialService {
       const serialNumber = this.generateSerialNumber(variantId, 'SN', startingSequence + i);
       serialNumbers.push(serialNumber);
     }
-    console.log(`✅ Generated serial numbers:`, serialNumbers);
+    //console.log(`✅ Generated serial numbers:`, serialNumbers);
 
     // Bulk create serials
     const serials = serialNumbers.map(sn => ({
@@ -59,9 +59,9 @@ class VariantSerialService {
       status: 'in_stock'
     }));
 
-    console.log(`💾 Inserting ${serials.length} serials into database...`);
+    //console.log(`💾 Inserting ${serials.length} serials into database...`);
     const result = await VariantSerialDAO.bulkInsert(serials);
-    console.log(`✅ Bulk insert result:`, result);
+    //console.log(`✅ Bulk insert result:`, result);
 
     return {
       success: true,

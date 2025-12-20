@@ -1,0 +1,57 @@
+@startuml
+title Quy trình bảo hành (Online + Khách vãng lai)
+
+start
+
+partition User_Online {
+  :User đăng nhập;
+  :Chọn sản phẩm đã mua;
+  :Gửi yêu cầu bảo hành (mô tả lỗi + hình ảnh);
+  --> Online_Request;
+}
+
+partition Hệ_thống {
+  Online_Request: Tạo yêu cầu bảo hành (Pending);
+  :Tự động duyệt yêu cầu;
+  :Chuyển trạng thái -> "Chờ tiếp nhận";
+}
+
+partition Admin {
+  :Tiếp nhận sản phẩm từ user;
+  :Kiểm tra tình trạng sản phẩm;
+  if (Sản phẩm hợp lệ?) then (Yes)
+    :Chấp nhận bảo hành;
+    :Cập nhật trạng thái -> "Đang xử lý";
+    :Gửi thông báo cho user;
+  else (No)
+    :Từ chối bảo hành;
+    :Ghi lý do;
+    :Gửi thông báo cho user;
+  endif
+}
+
+partition User_Vãng_Lai {
+  :Khách mang sản phẩm đến cửa hàng;
+  :Cung cấp Serial/SDT;
+}
+
+partition Admin {
+  :Tra cứu sản phẩm theo Serial/SDT;
+  if (Tìm thấy sản phẩm?) then (Yes)
+    :Tạo yêu cầu bảo hành thay khách;
+    :Tiếp nhận và kiểm tra sản phẩm;
+    if (Hợp lệ?) then (Yes)
+      :Chấp nhận bảo hành;
+      :Gửi SMS cho khách;
+    else (No)
+      :Từ chối bảo hành;
+      :Ghi lý do;
+      :Gửi SMS cho khách;
+    endif
+  else (No)
+    :Thông báo "Không có thông tin bảo hành";
+  endif
+}
+
+stop
+@enduml
