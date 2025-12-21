@@ -120,13 +120,13 @@ const WarrantyStatusUpdateDialog = ({ request, open, onOpenChange, onComplete })
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
-          <DialogTitle className="text-2xl flex items-center gap-2">
-            <ArrowRight className="size-6 text-blue-600" />
+      <DialogContent className="max-w-3xl">
+        <DialogHeader className="pb-4">
+          <DialogTitle className="text-3xl flex items-center gap-3">
+            <ArrowRight className="size-8 text-blue-600" />
             Cập nhật trạng thái bảo hành
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-base mt-2">
             Yêu cầu #{request.request_id} - Thay đổi trạng thái xử lý
           </DialogDescription>
         </DialogHeader>
@@ -134,8 +134,8 @@ const WarrantyStatusUpdateDialog = ({ request, open, onOpenChange, onComplete })
         <div className="space-y-6">
           {/* Current Info */}
           <Card className="bg-gray-50">
-            <CardContent className="pt-4">
-              <div className="grid grid-cols-2 gap-4 text-sm">
+            <CardContent className="pt-5">
+              <div className="grid grid-cols-2 gap-5 text-base">
                 <div>
                   <p className="text-gray-600">Khách hàng</p>
                   <p className="font-semibold">{request.customer_name || request.user_name}</p>
@@ -160,18 +160,18 @@ const WarrantyStatusUpdateDialog = ({ request, open, onOpenChange, onComplete })
 
           {/* Status Selection */}
           <div>
-            <Label className="mb-3 block text-base font-semibold">
+            <Label className="mb-4 block text-lg font-semibold">
               Chọn trạng thái mới *
             </Label>
             {nextStatuses.length === 0 ? (
-              <div className="text-center py-8 bg-gray-50 rounded-lg">
-                <CheckCircle className="size-12 text-gray-400 mx-auto mb-2" />
-                <p className="text-gray-600">
+              <div className="text-center py-10 bg-gray-50 rounded-lg">
+                <CheckCircle className="size-14 text-gray-400 mx-auto mb-3" />
+                <p className="text-base text-gray-600">
                   Yêu cầu đã ở trạng thái cuối cùng, không thể cập nhật
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 gap-3">
+              <div className="grid grid-cols-1 gap-4">
                 {nextStatuses.map((status) => {
                   const statusConfig = STATUS_CONFIG[status];
                   const StatusIcon = statusConfig.icon;
@@ -187,20 +187,20 @@ const WarrantyStatusUpdateDialog = ({ request, open, onOpenChange, onComplete })
                       }`}
                       onClick={() => setSelectedStatus(status)}
                     >
-                      <CardContent className="pt-4">
-                        <div className="flex items-center gap-4">
-                          <div className={`p-3 rounded-full ${
+                      <CardContent className="pt-5 pb-5">
+                        <div className="flex items-center gap-5">
+                          <div className={`p-4 rounded-full ${
                             isSelected ? 'bg-blue-500' : 'bg-gray-200'
                           }`}>
-                            <StatusIcon className={`size-6 ${
+                            <StatusIcon className={`size-7 ${
                               isSelected ? 'text-white' : 'text-gray-400'
                             }`} />
                           </div>
                           <div className="flex-1">
-                            <h3 className="font-semibold text-lg">
+                            <h3 className="font-semibold text-xl">
                               {statusConfig.label}
                             </h3>
-                            <p className="text-sm text-gray-600">
+                            <p className="text-base text-gray-600">
                               {getStatusDescription(status)}
                             </p>
                           </div>
@@ -219,8 +219,8 @@ const WarrantyStatusUpdateDialog = ({ request, open, onOpenChange, onComplete })
           {/* Update Note */}
           {selectedStatus && (
             <div>
-              <Label htmlFor="update_note" className="flex items-center gap-2 mb-2">
-                <MessageSquare className="size-4" />
+              <Label htmlFor="update_note" className="flex items-center gap-2 mb-3 text-base">
+                <MessageSquare className="size-5" />
                 Ghi chú cập nhật (tùy chọn)
               </Label>
               <Textarea
@@ -228,9 +228,10 @@ const WarrantyStatusUpdateDialog = ({ request, open, onOpenChange, onComplete })
                 value={updateNote}
                 onChange={(e) => setUpdateNote(e.target.value)}
                 placeholder="Thêm ghi chú về cập nhật này..."
-                rows={3}
+                rows={4}
+                className="text-base"
               />
-              <p className="text-sm text-gray-500 mt-1">
+              <p className="text-base text-gray-500 mt-2">
                 Ghi chú sẽ được gửi cho khách hàng qua SMS/Email
               </p>
             </div>
@@ -250,18 +251,19 @@ const WarrantyStatusUpdateDialog = ({ request, open, onOpenChange, onComplete })
           )}
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="gap-3">
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
             disabled={submitting}
+            className="h-12 px-6 text-base"
           >
             Hủy
           </Button>
           <Button
             onClick={handleSubmit}
             disabled={submitting || !selectedStatus}
-            className="bg-blue-600 hover:bg-blue-700"
+            className="bg-blue-600 hover:bg-blue-700 h-12 px-6 text-base"
           >
             {submitting ? 'Đang cập nhật...' : 'Xác nhận cập nhật'}
           </Button>

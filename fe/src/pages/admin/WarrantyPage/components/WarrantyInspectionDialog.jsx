@@ -149,13 +149,13 @@ const WarrantyInspectionDialog = ({ request, open, onOpenChange, onComplete }) =
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="text-2xl flex items-center gap-2">
-            <ClipboardCheck className="size-6 text-blue-600" />
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader className="pb-4">
+          <DialogTitle className="text-3xl flex items-center gap-3">
+            <ClipboardCheck className="size-8 text-blue-600" />
             Kiểm tra & Đánh giá bảo hành
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-base mt-2">
             Yêu cầu #{request.request_id} - Kiểm tra tình trạng sản phẩm và quyết định bảo hành
           </DialogDescription>
         </DialogHeader>
@@ -212,10 +212,10 @@ const WarrantyInspectionDialog = ({ request, open, onOpenChange, onComplete }) =
           )}
 
           {/* Inspection Form */}
-          <div className="space-y-4">
+          <div className="space-y-5">
             {/* Actual Issue */}
             <div>
-              <Label htmlFor="actual_issue" className="required">
+              <Label htmlFor="actual_issue" className="required text-base mb-2">
                 Lỗi thực tế sau khi kiểm tra *
               </Label>
               <Textarea
@@ -224,17 +224,17 @@ const WarrantyInspectionDialog = ({ request, open, onOpenChange, onComplete }) =
                 value={inspectionData.actual_issue}
                 onChange={handleInputChange}
                 placeholder="Mô tả chính xác lỗi sau khi kiểm tra sản phẩm..."
-                rows={3}
-                className="mt-1"
+                rows={4}
+                className="mt-2 text-base"
               />
-              <p className="text-sm text-gray-500 mt-1">
+              <p className="text-base text-gray-500 mt-2">
                 Ghi rõ tình trạng thực tế của sản phẩm sau khi kiểm tra
               </p>
             </div>
 
             {/* Inspection Notes */}
             <div>
-              <Label htmlFor="inspection_notes">
+              <Label htmlFor="inspection_notes" className="text-base mb-2">
                 Ghi chú kiểm tra (tùy chọn)
               </Label>
               <Textarea
@@ -243,15 +243,15 @@ const WarrantyInspectionDialog = ({ request, open, onOpenChange, onComplete }) =
                 value={inspectionData.inspection_notes}
                 onChange={handleInputChange}
                 placeholder="Các ghi chú khác trong quá trình kiểm tra..."
-                rows={2}
-                className="mt-1"
+                rows={3}
+                className="mt-2 text-base"
               />
             </div>
 
             {/* Inspection Images */}
             <div>
-              <Label>Hình ảnh kiểm tra (Tối đa 5 ảnh)</Label>
-              <div className="mt-2">
+              <Label className="text-base mb-2">Hình ảnh kiểm tra (Tối đa 5 ảnh)</Label>
+              <div className="mt-3">
                 <input
                   type="file"
                   accept="image/*"
@@ -262,12 +262,12 @@ const WarrantyInspectionDialog = ({ request, open, onOpenChange, onComplete }) =
                 />
                 <label
                   htmlFor="inspection-images"
-                  className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-md cursor-pointer hover:bg-gray-50"
+                  className="inline-flex items-center gap-2 px-5 py-3 border border-gray-300 rounded-md cursor-pointer hover:bg-gray-50 text-base"
                 >
-                  <Camera className="size-4" />
+                  <Camera className="size-5" />
                   Chụp ảnh kiểm tra
                 </label>
-                <p className="text-sm text-gray-500 mt-1">
+                <p className="text-base text-gray-500 mt-2">
                   Chụp ảnh sản phẩm tại cửa hàng để làm bằng chứng
                 </p>
               </div>
@@ -297,8 +297,8 @@ const WarrantyInspectionDialog = ({ request, open, onOpenChange, onComplete }) =
 
             {/* Decision */}
             <div>
-              <Label className="required mb-3 block">Kết quả kiểm tra *</Label>
-              <div className="grid grid-cols-2 gap-4">
+              <Label className="required mb-4 block text-base">Kết quả kiểm tra *</Label>
+              <div className="grid grid-cols-2 gap-5">
                 {/* Accept */}
                 <Card
                   className={`cursor-pointer transition-all ${
@@ -308,23 +308,23 @@ const WarrantyInspectionDialog = ({ request, open, onOpenChange, onComplete }) =
                   }`}
                   onClick={() => handleDecisionChange('accept')}
                 >
-                  <CardContent className="pt-6">
+                  <CardContent className="pt-8 pb-6">
                     <div className="text-center">
-                      <div className="flex justify-center mb-3">
-                        <div className={`p-3 rounded-full ${
+                      <div className="flex justify-center mb-4">
+                        <div className={`p-4 rounded-full ${
                           inspectionData.decision === 'accept'
                             ? 'bg-green-500'
                             : 'bg-gray-200'
                         }`}>
-                          <CheckCircle className={`size-8 ${
+                          <CheckCircle className={`size-10 ${
                             inspectionData.decision === 'accept'
                               ? 'text-white'
                               : 'text-gray-400'
                           }`} />
                         </div>
                       </div>
-                      <h3 className="font-semibold text-lg mb-1">Chấp nhận bảo hành</h3>
-                      <p className="text-sm text-gray-600">
+                      <h3 className="font-semibold text-xl mb-2">Chấp nhận bảo hành</h3>
+                      <p className="text-base text-gray-600">
                         Sản phẩm hợp lệ, tiến hành bảo hành
                       </p>
                     </div>
@@ -340,23 +340,23 @@ const WarrantyInspectionDialog = ({ request, open, onOpenChange, onComplete }) =
                   }`}
                   onClick={() => handleDecisionChange('reject')}
                 >
-                  <CardContent className="pt-6">
+                  <CardContent className="pt-8 pb-6">
                     <div className="text-center">
-                      <div className="flex justify-center mb-3">
-                        <div className={`p-3 rounded-full ${
+                      <div className="flex justify-center mb-4">
+                        <div className={`p-4 rounded-full ${
                           inspectionData.decision === 'reject'
                             ? 'bg-red-500'
                             : 'bg-gray-200'
                         }`}>
-                          <XCircle className={`size-8 ${
+                          <XCircle className={`size-10 ${
                             inspectionData.decision === 'reject'
                               ? 'text-white'
                               : 'text-gray-400'
                           }`} />
                         </div>
                       </div>
-                      <h3 className="font-semibold text-lg mb-1">Từ chối bảo hành</h3>
-                      <p className="text-sm text-gray-600">
+                      <h3 className="font-semibold text-xl mb-2">Từ chối bảo hành</h3>
+                      <p className="text-base text-gray-600">
                         Sản phẩm không hợp lệ bảo hành
                       </p>
                     </div>
@@ -411,24 +411,25 @@ const WarrantyInspectionDialog = ({ request, open, onOpenChange, onComplete }) =
           </div>
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="gap-3">
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
             disabled={submitting}
+            className="h-12 px-6 text-base"
           >
             Hủy
           </Button>
           <Button
             onClick={handleSubmit}
             disabled={submitting}
-            className={
+            className={`h-12 px-6 text-base ${
               inspectionData.decision === 'accept'
                 ? 'bg-green-600 hover:bg-green-700'
                 : inspectionData.decision === 'reject'
                 ? 'bg-red-600 hover:bg-red-700'
                 : ''
-            }
+            }`}
           >
             {submitting 
               ? 'Đang xử lý...' 

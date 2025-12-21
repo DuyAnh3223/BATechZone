@@ -228,37 +228,37 @@ const WalkInWarrantyForm = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <div className="mb-6">
-        <div className="flex items-center gap-3 mb-2">
-          <UserPlus className="size-8 text-blue-600" />
+    <div className="max-w-5xl mx-auto p-8">
+      <div className="mb-8">
+        <div className="flex items-center gap-4 mb-3">
+          <UserPlus className="size-12 text-blue-600" />
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Bảo hành khách vãng lai</h1>
-            <p className="text-gray-600">Tạo yêu cầu bảo hành cho khách hàng tại cửa hàng</p>
+            <h1 className="text-4xl font-bold text-gray-900">Bảo hành khách vãng lai</h1>
+            <p className="text-lg text-gray-600 mt-1">Tạo yêu cầu bảo hành cho khách hàng tại cửa hàng</p>
           </div>
         </div>
       </div>
 
       {/* Step 1: Search Product */}
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Search className="size-5" />
+      <Card className="mb-8">
+        <CardHeader className="pb-6">
+          <CardTitle className="flex items-center gap-3 text-xl">
+            <Search className="size-6" />
             Bước 1: Tìm kiếm sản phẩm
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="text-base mt-2">
             Tìm sản phẩm bằng số serial hoặc số điện thoại khách hàng
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
+        <CardContent className="space-y-6" >
+          <div className="space-y-5">
             {/* Search Type Selection */}
-            <div className="flex gap-2">
+            <div className="flex gap-3">
               <Button
                 type="button"
                 variant={searchType === 'serial' ? 'default' : 'outline'}
                 onClick={() => setSearchType('serial')}
-                className="flex-1"
+                className="flex-1 h-12 text-base"
               >
                 Tìm theo Serial
               </Button>
@@ -266,26 +266,28 @@ const WalkInWarrantyForm = () => {
                 type="button"
                 variant={searchType === 'phone' ? 'default' : 'outline'}
                 onClick={() => setSearchType('phone')}
-                className="flex-1"
+                className="flex-1 h-12 text-base"
               >
                 Tìm theo SĐT
               </Button>
             </div>
 
             {/* Search Input */}
-            <div className="flex gap-2">
+            <div className="flex gap-3">
               <Input
                 type="text"
                 placeholder={searchType === 'serial' ? 'Nhập số serial...' : 'Nhập số điện thoại...'}
                 value={searchValue}
                 onChange={(e) => setSearchValue(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                className="h-12 text-base"
               />
               <Button 
                 onClick={handleSearch}
                 disabled={searching}
+                className="h-12 px-6 text-base"
               >
-                <Search className="size-4 mr-2" />
+                <Search className="size-5 mr-2" />
                 {searching ? 'Đang tìm...' : 'Tìm kiếm'}
               </Button>
             </div>
@@ -317,24 +319,24 @@ const WalkInWarrantyForm = () => {
             {/* Found Product Display */}
             {foundProduct && (
               <Card className="bg-green-50 border-green-200">
-                <CardContent className="pt-4">
-                  <div className="flex items-start gap-4">
-                    <div className="bg-green-100 p-3 rounded-lg">
-                      <Package className="size-6 text-green-600" />
+                <CardContent className="pt-6">
+                  <div className="flex items-start gap-5">
+                    <div className="bg-green-100 p-4 rounded-lg">
+                      <Package className="size-8 text-green-600" />
                     </div>
                     <div className="flex-1">
-                      <div className="flex items-start justify-between mb-2">
+                      <div className="flex items-start justify-between mb-3">
                         <div>
-                          <h3 className="font-bold text-lg">{foundProduct.product_name}</h3>
-                          <p className="text-sm text-gray-600">SKU: {foundProduct.product_sku}</p>
-                          <p className="text-sm text-gray-600">Serial: {foundProduct.serial_number}</p>
+                          <h3 className="font-bold text-xl">{foundProduct.product_name}</h3>
+                          <p className="text-base text-gray-600 mt-1">SKU: {foundProduct.product_sku}</p>
+                          <p className="text-base text-gray-600">Serial: {foundProduct.serial_number}</p>
                         </div>
-                        <Badge className="bg-green-100 text-green-800">
-                          <CheckCircle className="size-3 mr-1" />
+                        <Badge className="bg-green-100 text-green-800 text-base px-3 py-1">
+                          <CheckCircle className="size-4 mr-1" />
                           Đã tìm thấy
                         </Badge>
                       </div>
-                      <div className="grid grid-cols-2 gap-4 mt-3 text-sm">
+                      <div className="grid grid-cols-2 gap-5 mt-4 text-base">
                         <div>
                           <p className="text-gray-600">Thời hạn bảo hành</p>
                           <p className="font-semibold">{foundProduct.warranty_months} tháng</p>
@@ -366,15 +368,15 @@ const WalkInWarrantyForm = () => {
       {/* Step 2: Customer Info & Request Details */}
       {foundProduct && (
         <form onSubmit={handleSubmit}>
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Phone className="size-5" />
+          <Card className="mb-8">
+            <CardHeader className="pb-6">
+              <CardTitle className="flex items-center gap-3 text-xl">
+                <Phone className="size-6" />
                 Bước 2: Thông tin khách hàng
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
                   <Label htmlFor="customer_name">Họ tên khách hàng *</Label>
                   <Input
@@ -401,44 +403,46 @@ const WalkInWarrantyForm = () => {
             </CardContent>
           </Card>
 
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Shield className="size-5" />
+          <Card className="mb-8">
+            <CardHeader className="pb-6">
+              <CardTitle className="flex items-center gap-3 text-xl">
+                <Shield className="size-6" />
                 Bước 3: Thông tin yêu cầu bảo hành
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
+              <div className="space-y-5">
                 <div>
-                  <Label htmlFor="subject">Tiêu đề vấn đề *</Label>
+                  <Label htmlFor="subject" className="text-base mb-2">Tiêu đề vấn đề *</Label>
                   <Input
                     id="subject"
                     name="subject"
                     value={formData.subject}
                     onChange={handleInputChange}
                     placeholder="VD: Màn hình bị nhấp nháy, Bàn phím không hoạt động..."
+                    className="h-12 text-base"
                     required
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor="description">Mô tả chi tiết *</Label>
+                  <Label htmlFor="description" className="text-base mb-2">Mô tả chi tiết *</Label>
                   <Textarea
                     id="description"
                     name="description"
                     value={formData.description}
                     onChange={handleInputChange}
                     placeholder="Mô tả chi tiết vấn đề của sản phẩm..."
-                    rows={4}
+                    rows={5}
+                    className="text-base"
                     required
                   />
                 </div>
 
                 {/* Image Upload */}
                 <div>
-                  <Label>Hình ảnh sản phẩm (Tối đa 5 ảnh)</Label>
-                  <div className="mt-2">
+                  <Label className="text-base mb-2">Hình ảnh sản phẩm (Tối đa 5 ảnh)</Label>
+                  <div className="mt-3">
                     <input
                       type="file"
                       accept="image/*"
@@ -449,12 +453,12 @@ const WalkInWarrantyForm = () => {
                     />
                     <label
                       htmlFor="warranty-images"
-                      className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-md cursor-pointer hover:bg-gray-50"
+                      className="inline-flex items-center gap-2 px-5 py-3 border border-gray-300 rounded-md cursor-pointer hover:bg-gray-50 text-base"
                     >
-                      <Package className="size-4" />
+                      <Package className="size-5" />
                       Chọn ảnh
                     </label>
-                    <p className="text-sm text-gray-500 mt-1">
+                    <p className="text-base text-gray-500 mt-2">
                       Chụp ảnh sản phẩm và vấn đề gặp phải
                     </p>
                   </div>
@@ -501,19 +505,20 @@ const WalkInWarrantyForm = () => {
           </Card>
 
           {/* Action Buttons */}
-          <div className="flex justify-end gap-3">
+          <div className="flex justify-end gap-4">
             <Button
               type="button"
               variant="outline"
               onClick={handleReset}
               disabled={submitting}
+              className="h-12 px-6 text-base"
             >
               Hủy bỏ
             </Button>
             <Button
               type="submit"
               disabled={submitting}
-              className="bg-blue-600 hover:bg-blue-700"
+              className="bg-blue-600 hover:bg-blue-700 h-12 px-6 text-base"
             >
               {submitting ? 'Đang tạo...' : 'Tạo yêu cầu bảo hành'}
             </Button>

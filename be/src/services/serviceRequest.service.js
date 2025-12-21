@@ -379,11 +379,30 @@ class ServiceRequestService {
 
             // Add progress notes if provided
             if (statusData.notes) {
-                const timestamp = new Date().toISOString();
-                const noteText = `\n[${timestamp}] Cập nhật trạng thái: ${statusData.status} - ${statusData.notes}`;
-                updates.progress_notes = request.progress_notes 
-                    ? request.progress_notes + noteText 
-                    : noteText;
+                // Parse existing progress_notes (should be JSON array)
+                let progressNotes = [];
+                if (request.progress_notes) {
+                    try {
+                        progressNotes = typeof request.progress_notes === 'string' 
+                            ? JSON.parse(request.progress_notes) 
+                            : request.progress_notes;
+                        if (!Array.isArray(progressNotes)) {
+                            progressNotes = [];
+                        }
+                    } catch (e) {
+                        console.warn('Failed to parse existing progress_notes, starting fresh');
+                        progressNotes = [];
+                    }
+                }
+
+                // Add new note
+                progressNotes.push({
+                    timestamp: new Date().toISOString(),
+                    note: `Cập nhật trạng thái: ${statusData.status} - ${statusData.notes}`,
+                    type: 'status_update'
+                });
+
+                updates.progress_notes = JSON.stringify(progressNotes);
             }
 
             // Handle completed status
