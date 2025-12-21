@@ -39,6 +39,10 @@ export const useAuthStore = create((set, get) => ({
             const response = await authService.signIn(email, password);
             const { user } = response;
             set({ user });
+            
+            // Clear old cart items from localStorage before loading new ones
+            localStorage.removeItem('cart-items-storage');
+            
             return user;
         } catch (error) {
             const message = error.response?.data?.message || 'Đăng nhập thất bại';
@@ -63,6 +67,10 @@ export const useAuthStore = create((set, get) => ({
         try {
             await authService.signOut();
             set({ user: null });
+            
+            // Clear cart items from localStorage to avoid showing old cart after re-login
+            localStorage.removeItem('cart-items-storage');
+            
             toast.success('Đăng xuất thành công');
         } catch (error) {
             console.error('Logout error:', error);

@@ -120,7 +120,7 @@ const WarrantyStatusUpdateDialog = ({ request, open, onOpenChange, onComplete })
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader className="pb-4">
           <DialogTitle className="text-3xl flex items-center gap-3">
             <ArrowRight className="size-8 text-blue-600" />
@@ -131,7 +131,8 @@ const WarrantyStatusUpdateDialog = ({ request, open, onOpenChange, onComplete })
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <div className="overflow-y-auto flex-1 -mx-6 px-6">
+          <div className="space-y-6 py-2">
           {/* Current Info */}
           <Card className="bg-gray-50">
             <CardContent className="pt-5">
@@ -250,8 +251,9 @@ const WarrantyStatusUpdateDialog = ({ request, open, onOpenChange, onComplete })
             </div>
           )}
         </div>
+        </div>
 
-        <DialogFooter className="gap-3">
+        <DialogFooter className="gap-3 pt-4 border-t">
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}

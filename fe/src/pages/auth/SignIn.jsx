@@ -3,9 +3,13 @@ import { useUserAuthStore } from '@/stores/useUserAuthStore';
 import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Mail, Phone, Lock, Eye, EyeOff, ShieldCheck, ShoppingBag } from 'lucide-react';
+import { useCartStore } from '@/stores/useCartStore';
+import { useCartItemStore } from '@/stores/useCartItemStore';
 
 const Login = () => {
 	const { signIn } = useUserAuthStore();
+	const { getOrCreateCart } = useCartStore();
+	const { fetchCartItems, reset: resetCartItems } = useCartItemStore();
 	const navigate = useNavigate();
 	const [tab, setTab] = useState('email');
 	const [emailOrUsername, setEmailOrUsername] = useState('');
@@ -25,6 +29,22 @@ const Login = () => {
 			const user = await signIn(emailOrUsername, password);
 			if (user) {
 				toast.success('Đăng nhập thành công');
+				
+				// Reset cart items first (clear old data)
+				resetCartItems();
+				
+				// Load cart from server after successful login
+				try {
+					const cartResponse = await getOrCreateCart({ userId: user.user_id });
+					if (cartResponse?.data?.cart_id || cartResponse?.cart_id) {
+						const cartId = cartResponse.data?.cart_id || cartResponse.cart_id;
+						await fetchCartItems(cartId);
+					}
+				} catch (cartError) {
+					console.error('Failed to load cart after login:', cartError);
+					// Don't block navigation if cart loading fails
+				}
+				
 				// Delay to ensure Zustand state is synced and persisted before navigation
 				setTimeout(() => {
 					navigate('/');

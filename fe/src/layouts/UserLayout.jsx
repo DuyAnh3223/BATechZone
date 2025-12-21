@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { useCategoryStore } from '@/stores/useCategoryStore';
 import { useNotificationStore } from '@/stores/useNotificationStore';
 import { useCartItemStore } from '@/stores/useCartItemStore';
+import { useCartStore } from '@/stores/useCartStore';
 import { useCouponStore } from '@/stores/useCouponStore';
 import { couponService } from '@/services/couponService';
 import CartDropdown from '@/components/common/CartDropdown';
@@ -41,7 +42,8 @@ const UserLayout = () => {
   const [menuCloseTimeout, setMenuCloseTimeout] = useState(null);
   const { categoryTree, fetchCategoryTree, categories, fetchCategories, loading: categoriesLoading } = useCategoryStore();
   const { notifications, unreadCount, loading: notificationsLoading, fetchNotifications, markAsRead, markAllAsRead } = useNotificationStore();
-  const { cartItems } = useCartItemStore();
+  const { cartItems, fetchCartItems, reset: resetCartItems } = useCartItemStore();
+  const { getOrCreateCart } = useCartStore();
   const { coupons, fetchCoupons, loading: couponsLoading } = useCouponStore();
   
   // Calculate total cart items count (sum of quantities)
@@ -79,6 +81,30 @@ const UserLayout = () => {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Chỉ chạy 1 lần khi mount
+
+  // Load cart when user is authenticated (after login or session restore)
+  useEffect(() => {
+    const loadCart = async () => {
+      if (user && user.user_id) {
+        try {
+          console.log('[UserLayout] Loading cart for user:', user.user_id);
+          // Reset cart items first to clear old data
+          resetCartItems();
+          
+          const cartResponse = await getOrCreateCart({ userId: user.user_id });
+          if (cartResponse?.data?.cart_id || cartResponse?.cart_id) {
+            const cartId = cartResponse.data?.cart_id || cartResponse.cart_id;
+            await fetchCartItems(cartId);
+            console.log('[UserLayout] Cart loaded successfully');
+          }
+        } catch (error) {
+          console.error('[UserLayout] Failed to load cart:', error);
+        }
+      }
+    };
+    
+    loadCart();
+  }, [user, getOrCreateCart, fetchCartItems, resetCartItems]);
 
   // Load active coupons when dialog opens
   useEffect(() => {
@@ -202,6 +228,9 @@ const UserLayout = () => {
 
   const handleLogout = async () => {
     try {
+      // Reset cart items before logout
+      resetCartItems();
+      
       await signOut();
       navigate('/');
     } catch (error) {
