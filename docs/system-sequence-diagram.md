@@ -4,24 +4,24 @@
 3.2.2.4.	Sơ đồ tuần tự chắc năng đổi mật khẩu ( OKE )	68
 3.2.2.5.	Sơ đồ tuần tự chức năng câp nhật thông tin ( OKE )	69
 
-3.2.2.6.	Sơ đồ tuần tự chức năng thêm mã giảm giá	72
-3.2.2.7.	Sơ đồ tuần tự chức năng cập nhật mã giảm giá	73
-3.2.2.8.	Sơ đồ tuần tự chức năng xóa mã giảm giá	74
+3.2.2.8.	Sơ đồ tuần tự chức năng thêm mã giảm giá	( OKE )
+3.2.2.9.	Sơ đồ tuần tự chức năng cập nhật mã giảm giá	(OKE)
+3.2.2.10.	Sơ đồ tuần tự chức năng xóa mã giảm giá	(OKE)
 
-3.2.2.9.	Sơ đồ tuần tự chức năng thêm danh mục	78
-3.2.2.10.	Sơ đồ tuần tự chức năng cập nhật danh mục	78
-3.2.2.11.	Sơ đồ tuần tự chức năng  xóa danh mục	80
+3.2.2.17.	Sơ đồ tuần tự chức năng thêm danh mục	(OKE)
+3.2.2.18.	Sơ đồ tuần tự chức năng cập nhật danh mục	(OKE)
+3.2.2.19.	Sơ đồ tuần tự chức năng  xóa danh mục	(OKE)
 
-3.2.2.12.	Sơ đồ tuần tự chức năng thêm sản phẩm	80
-3.2.2.13.	Sơ đồ tuần tự chức năng cập nhật sản phẩm	81
-3.2.2.14.	Sơ đồ tuần tự chức năng xóa sản phẩm	82
+3.2.2.20.	Sơ đồ tuần tự chức năng thêm sản phẩm	(OKE)
+3.2.2.21.	Sơ đồ tuần tự chức năng cập nhật sản phẩm	(OKE)
+3.2.2.22.	Sơ đồ tuần tự chức năng xóa sản phẩm	(OKE)
 
-3.2.2.15.	Sơ đồ tuần tự thêm sản phẩm vào giỏ hàng	83
-3.2.2.16.	Sơ đồ tuần tự chức năng xem giỏ hàng	85
+3.2.2.26.	Sơ đồ tuần tự thêm sản phẩm vào giỏ hàng	(OKE)
+3.2.2.27.	Sơ đồ tuần tự chức năng xem giỏ hàng	(OKE)
 
-3.2.2.17.	Sơ đồ tuần tự chức năng đặt hàng	86
+3.2.2.28.	Sơ đồ tuần tự chức năng đặt hàng	(OKE)
 
-3.2.2.18.	Sơ đồ tuần tự chức năng xem lịch sử đơn hàng	87
+3.2.2.30.	Sơ đồ tuần tự chức năng xem lịch sử đơn hàng	(OKE)
 
 
 // 
