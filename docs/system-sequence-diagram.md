@@ -49,11 +49,11 @@
 3.2.2.34.    Sơ đồ tuần tự chức năng tạo yêu cầu bảo hành ( user ) /
 3.2.2.35.    Sơ đồ tuần tự chức năng xử lý yêu cầu bảo hành ( admin ) /
 
-3.2.2.36/37/38      Sơ đồ tuần tự chức năng quản lý bài viết (Thêm/Sửa/Xóa) (  /admin )
-3.2.2.39/40.        Sơ đồ tuần tự chức năng quản lý người dùng (Khóa/Mở khóa) ( admin )
+3.2.2.36/37/38      Sơ đồ tuần tự chức năng thêm bài viết (Thêm/Sửa/Xóa) (  /admin )
+3.2.2.39/40.        Sơ đồ tuần tự chức năng quản lý người dùng (Xóa/ chỉnh sửa) ( admin )
       41/42/43      Sơ đồ tuần tự chức năng quản lý biến thể (Thêm/Xóa/Sửa)   
-      44/45         Sơ đồ tuần tự chức năng quản lý thuộc tính (Thêm/Xóa)
-      46/47         Sơ đồ tuần tự chức năng quản lý giá trị thuộc tính (Thêm/Xóa)
-      48/49/50      Sơ đồ tuần tự chức năng quản lý đánh giá sản phẩm (user: Thêm/xóa/sửa; admin: xóa)
+      44/45/46      Sơ đồ tuần tự chức năng quản lý thuộc tính (Thêm/Xóa/Sửa)
+      47/48/49      Sơ đồ tuần tự chức năng quản lý giá trị thuộc tính (Thêm/Xóa/Sửa)
+      50/51/52      Sơ đồ tuần tự chức năng quản lý đánh giá sản phẩm (user: Thêm/xóa/sửa; admin: xóa)
 
 

@@ -8,7 +8,7 @@ sequenceDiagram
     participant UI as Giao diện Bảo hành
     participant Controller as ServiceRequestController
     participant Service as ServiceRequestService
-    participant Model as ServiceRequestModel
+    participant DAO as ServiceRequestDAO
     participant DB as Database
 
     User->>UI: 1. Truy cập menu "Bảo hành"
@@ -20,16 +20,19 @@ sequenceDiagram
     Controller->>Service: 3. getMyProducts(userId)
     activate Service
     
-    Service->>Model: 4. getUserWarrantyProducts(userId)
-    activate Model
-    note right of Model: Truy vấn sản phẩm đã mua và thông tin bảo hành
-    Model->>DB: SELECT p.name, s.serial_number, w.* FROM ...
+    Service->>DAO: 4. getUserWarrantyProducts(userId)
+    activate DAO
+    note right of DAO: Truy vấn sản phẩm đã mua và thông tin bảo hành
+    DAO->>DB: SELECT p.name, s.serial_number, w.* FROM ...
     activate DB
-    DB-->>Model: Danh sách sản phẩm & bảo hành
+    DB-->>DAO: Danh sách sản phẩm & bảo hành (Raw Data)
     deactivate DB
-    Model-->>Service: Danh sách kết quả
-    deactivate Model
+    DAO-->>Service: Danh sách kết quả (Raw Data)
+    deactivate DAO
     
+    Service->>Service: 5. Map to DTO
+    note right of Service: toWarrantyProductDTO(data)
+
     Service-->>Controller: Danh sách DTO
     deactivate Service
     
