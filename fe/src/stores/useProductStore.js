@@ -5,6 +5,7 @@ import { productService } from '@/services/productService';
 export const useProductStore = create((set, get) => ({
     products: [],
     currentProduct: null,
+    pagination: null,
     total: 0,
     loading: false,
     error: null,
@@ -16,6 +17,7 @@ export const useProductStore = create((set, get) => ({
             const response = await productService.listProducts(params);
             set({ 
                 products: response.data || [], 
+                pagination: response.pagination || null,
                 total: response.pagination?.total || 0,
                 loading: false 
             });

@@ -2,21 +2,18 @@ import React, { useEffect, useState } from 'react';
 
 const ATTRIBUTE_TYPES = [
   { value: 'other', label: 'Other' },
-  { value: 'color', label: 'Color' },
-  { value: 'size', label: 'Size' },
-  { value: 'storage', label: 'Storage' },
-  { value: 'ram', label: 'RAM' },
 ];
 
 const AttributeForm = ({ initialData = null, onSubmit, onCancel }) => {
   const [name, setName] = useState(initialData ? initialData.attribute_name : '');
-  const [type, setType] = useState(initialData ? initialData.attribute_type : 'other');
+  const [type, setType] = useState('other'); // Always 'other'
   const [values, setValues] = useState(initialData ? (initialData.values || []).map((v) => v.value_name) : []);
 
   useEffect(() => {
     if (initialData) {
       setName(initialData.attribute_name || '');
-      setType(initialData.attribute_type || 'other');
+      // Always set to 'other' regardless of initialData
+      setType('other');
       setValues((initialData.values || []).map((v) => v.value_name));
     }
   }, [initialData]);

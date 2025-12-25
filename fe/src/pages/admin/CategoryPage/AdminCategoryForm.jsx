@@ -9,6 +9,7 @@ const AdminCategoryForm = ({ initialData = null, onSubmit, onCancel }) => {
 	const [parentId, setParentId] = useState(null);
 	const [imageUrl, setImageUrl] = useState('');
 	const [selectedFile, setSelectedFile] = useState(null);
+	const [isActive, setIsActive] = useState(true);
 
 	const parentCategories = useCategoryStore((s) => s.parentCategories);
 	const fetchSimpleCategories = useCategoryStore((s) => s.fetchSimpleCategories);
@@ -29,12 +30,14 @@ const AdminCategoryForm = ({ initialData = null, onSubmit, onCancel }) => {
 			setDescription(initialData.description || '');
 			setParentId(initialData.parent_category_id ?? null);
 			setImageUrl(initialData.image_url || '');
+			setIsActive(initialData.is_active ?? true);
 		} else {
 			setName('');
 			setSlug('');
 			setDescription('');
 			setParentId(null);
 			setImageUrl('');
+			setIsActive(true);
 		}
 		setSelectedFile(null);
 	}, [initialData]);
@@ -86,6 +89,7 @@ const AdminCategoryForm = ({ initialData = null, onSubmit, onCancel }) => {
 				description: description || null,
 				parent_category_id: parentId || null,
 				image_url: finalImageUrl || null,
+				is_active: isActive,
 			};
 
 			let response;
@@ -137,6 +141,18 @@ const AdminCategoryForm = ({ initialData = null, onSubmit, onCancel }) => {
 				currentImageUrl={imageUrl}
 				onFileSelected={(file) => setSelectedFile(file)}
 			/>
+
+			<div>
+				<label className="flex items-center gap-2 cursor-pointer">
+					<input 
+						type="checkbox" 
+						checked={isActive} 
+						onChange={(e) => setIsActive(e.target.checked)} 
+						className="w-4 h-4"
+					/>
+					<span className="text-sm font-medium">Kích hoạt danh mục</span>
+				</label>
+			</div>
 
 			<div className="flex items-center gap-3">
 				<button type="submit" className="px-4 py-2 rounded-md bg-indigo-600 text-black">Lưu</button>

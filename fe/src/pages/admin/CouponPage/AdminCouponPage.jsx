@@ -188,7 +188,7 @@ const AdminCouponPage = () => {
           value={search} 
           onChange={(e) => { setSearch(e.target.value); setPage(1); }} 
           className="border rounded px-3 py-2 w-full md:w-72" 
-          placeholder="Tìm theo mã/miêu tả..." 
+          placeholder="Tìm theo mã/mô tả" 
         />
         <select 
           value={type} 

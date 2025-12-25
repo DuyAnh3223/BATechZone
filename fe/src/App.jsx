@@ -98,7 +98,6 @@ function App() {
             <Route path="coupons" element={<AdminCouponPage />} />
             <Route path="orders" element={<AdminOrder />} />
             <Route path="notifications" element={<AdminNotification />} />
-            <Route path="builds" element={<AdminBuild />} />
             <Route path="categories" element={<AdminCategoryPage />} />
             <Route path="posts" element={<AdminPost />} />
             <Route path="posts/:postId" element={<AdminPostDetail />} />

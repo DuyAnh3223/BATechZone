@@ -52,6 +52,12 @@ const AdminWarrantyPage = () => {
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isInspectionOpen, setIsInspectionOpen] = useState(false);
   const [isStatusUpdateOpen, setIsStatusUpdateOpen] = useState(false);
+  const [isSuccessDialogOpen, setIsSuccessDialogOpen] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  const PAGE_SIZE_OPTIONS = [5, 10, 20, 50];
 
   // Load warranty requests from API
   useEffect(() => {
@@ -82,15 +88,16 @@ const AdminWarrantyPage = () => {
 
     // Filter by search term
     if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase();
       filtered = filtered.filter(w => 
-        w.product_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        w.product_name?.toLowerCase().includes(searchLower) ||
         w.request_id?.toString().includes(searchTerm) ||
-        w.user_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        w.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        w.user_name?.toLowerCase().includes(searchLower) ||
+        w.customer_name?.toLowerCase().includes(searchLower) ||
         w.user_phone?.includes(searchTerm) ||
         w.customer_phone?.includes(searchTerm) ||
-        w.serial_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        w.product_sku.toLowerCase().includes(searchTerm.toLowerCase())
+        w.serial_number?.toLowerCase().includes(searchLower) ||
+        w.product_sku?.toLowerCase().includes(searchLower)
       );
     }
 
@@ -105,6 +112,7 @@ const AdminWarrantyPage = () => {
     }
 
     setFilteredWarranties(filtered);
+    setPage(1); // Reset to first page when filters change
   }, [searchTerm, filterStatus, filterPriority, warranties]);
 
   const getStatusBadge = (status) => {
@@ -131,11 +139,12 @@ const AdminWarrantyPage = () => {
   const getPriorityBadge = (priority) => {
     const priorityConfig = {
       high: { label: 'Cao', className: 'bg-red-100 text-red-800' },
-      normal: { label: 'Thường', className: 'bg-blue-100 text-blue-800' },
+      medium: { label: 'Trung bình', className: 'bg-blue-100 text-blue-800' },
+      normal: { label: 'Trung bình', className: 'bg-blue-100 text-blue-800' },
       low: { label: 'Thấp', className: 'bg-gray-100 text-gray-800' }
     };
 
-    const config = priorityConfig[priority] || priorityConfig.normal;
+    const config = priorityConfig[priority] || priorityConfig.medium;
 
     return (
       <Badge className={config.className}>
@@ -175,21 +184,39 @@ const AdminWarrantyPage = () => {
     setIsStatusUpdateOpen(true);
   };
 
-  const handleInspectionComplete = (updatedWarranty) => {
+  const handleInspectionComplete = (updatedWarranty, statusLabel) => {
     setWarranties(prev => 
       prev.map(w => w.request_id === updatedWarranty.request_id ? updatedWarranty : w)
     );
     // Reload data from server to get fresh state
     loadWarrantyRequests();
+    
+    // Hiển thị success dialog
+    setSuccessMessage(`Đã hoàn tất kiểm tra và ${statusLabel} cho yêu cầu #${updatedWarranty.request_id}!`);
+    setIsSuccessDialogOpen(true);
   };
 
-  const handleStatusUpdateComplete = (updatedWarranty) => {
+  const handleStatusUpdateComplete = (updatedWarranty, statusLabel) => {
     setWarranties(prev => 
       prev.map(w => w.request_id === updatedWarranty.request_id ? updatedWarranty : w)
     );
     // Reload data from server to get fresh state
     loadWarrantyRequests();
+    
+    // Hiển thị success dialog
+    setSuccessMessage(`Đã cập nhật trạng thái thành "${statusLabel}" cho yêu cầu #${updatedWarranty.request_id}!`);
+    setIsSuccessDialogOpen(true);
   };
+
+  // Pagination logic
+  const totalItems = filteredWarranties.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const paginatedWarranties = filteredWarranties.slice(startIndex, endIndex);
+
+  const goPage = (p) => setPage(Math.min(Math.max(1, p), totalPages));
 
   return (
     <div className="p-6">
@@ -370,10 +397,10 @@ const AdminWarrantyPage = () => {
                   </Button>
                   <Button
                     size="sm"
-                    variant={filterPriority === 'normal' ? 'default' : 'outline'}
-                    onClick={() => setFilterPriority('normal')}
+                    variant={filterPriority === 'medium' ? 'default' : 'outline'}
+                    onClick={() => setFilterPriority('medium')}
                   >
-                    Thường
+                    Trung bình
                   </Button>
                   <Button
                     size="sm"
@@ -421,7 +448,7 @@ const AdminWarrantyPage = () => {
                         </td>
                       </tr>
                     ) : (
-                      filteredWarranties.map((warranty) => (
+                      paginatedWarranties.map((warranty) => (
                         <tr key={warranty.request_id} className="border-b hover:bg-gray-50">
                           <td className="py-3 px-4">
                             <span className="font-mono text-sm font-semibold">#{warranty.request_id}</span>
@@ -491,6 +518,91 @@ const AdminWarrantyPage = () => {
                   </tbody>
                 </table>
               </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="border-t p-4">
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div className="text-sm text-gray-600">
+                      Hiển thị {startIndex + 1}-{Math.min(endIndex, totalItems)} trong tổng số {totalItems} yêu cầu
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      <select
+                        value={pageSize}
+                        onChange={(e) => {
+                          setPageSize(Number(e.target.value));
+                          setPage(1);
+                        }}
+                        className="border rounded px-2 py-1 text-sm"
+                      >
+                        {PAGE_SIZE_OPTIONS.map(size => (
+                          <option key={size} value={size}>{size} / trang</option>
+                        ))}
+                      </select>
+
+                      <div className="flex gap-1">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => goPage(1)}
+                          disabled={currentPage === 1}
+                        >
+                          ««
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => goPage(currentPage - 1)}
+                          disabled={currentPage === 1}
+                        >
+                          ‹
+                        </Button>
+                        
+                        {[...Array(totalPages)].map((_, i) => {
+                          const pageNum = i + 1;
+                          if (
+                            pageNum === 1 ||
+                            pageNum === totalPages ||
+                            (pageNum >= currentPage - 1 && pageNum <= currentPage + 1)
+                          ) {
+                            return (
+                              <Button
+                                key={pageNum}
+                                variant={currentPage === pageNum ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => goPage(pageNum)}
+                              >
+                                {pageNum}
+                              </Button>
+                            );
+                          } else if (pageNum === currentPage - 2 || pageNum === currentPage + 2) {
+                            return <span key={pageNum} className="px-2">...</span>;
+                          }
+                          return null;
+                        })}
+
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => goPage(currentPage + 1)}
+                          disabled={currentPage === totalPages}
+                        >
+                          ›
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => goPage(totalPages)}
+                          disabled={currentPage === totalPages}
+                        >
+                          »»
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -702,6 +814,40 @@ const AdminWarrantyPage = () => {
         onOpenChange={setIsStatusUpdateOpen}
         onComplete={handleStatusUpdateComplete}
       />
+
+      {/* Success Dialog */}
+      <Dialog open={isSuccessDialogOpen} onOpenChange={(open) => {
+        setIsSuccessDialogOpen(open);
+        if (!open) {
+          setSuccessMessage('');
+        }
+      }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <div className="flex items-center justify-center mb-4">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                <CheckCircle className="w-10 h-10 text-green-600" />
+              </div>
+            </div>
+            <DialogTitle className="text-center text-xl">Thành công!</DialogTitle>
+            <DialogDescription className="text-center text-base mt-2">
+              {successMessage}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-center pt-2">
+            <Button
+              type="button"
+              onClick={() => {
+                setIsSuccessDialogOpen(false);
+                setSuccessMessage('');
+              }}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white"
+            >
+              Đóng
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

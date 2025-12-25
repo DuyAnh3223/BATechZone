@@ -12,7 +12,7 @@ import {
   DialogFooter,
   DialogDescription,
 } from '@/components/ui/dialog';
-import { Plus, Edit, Trash2, Settings, AlertCircle, Info } from 'lucide-react';
+import { Plus, Edit, Trash2, Settings, AlertCircle, Info, CheckCircle } from 'lucide-react';
 import { useInstallmentPolicyStore } from '@/stores/useInstallmentPolicyStore';
 import { toast } from 'sonner';
 
@@ -32,6 +32,8 @@ const InstallmentPolicies = () => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [editingPolicy, setEditingPolicy] = useState(null);
   const [deletingPolicyId, setDeletingPolicyId] = useState(null);
+  const [isSuccessDialogOpen, setIsSuccessDialogOpen] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
   const [formData, setFormData] = useState({
     name: '',
     terms: '',
@@ -87,7 +89,12 @@ const InstallmentPolicies = () => {
     try {
       await deletePolicy(deletingPolicyId);
       setShowDeleteDialog(false);
+      const policyName = policies.find(p => p.policy_id === deletingPolicyId)?.name || '';
       setDeletingPolicyId(null);
+      
+      // Hiển thị success dialog
+      setSuccessMessage(`Đã xóa chính sách "${policyName}" thành công!`);
+      setIsSuccessDialogOpen(true);
     } catch (error) {
       console.error('Error deleting policy:', error);
     }
@@ -95,7 +102,16 @@ const InstallmentPolicies = () => {
 
   const handleToggleActive = async (policyId) => {
     try {
+      const policy = policies.find(p => p.policy_id === policyId);
+      const newStatus = policy?.is_active === 1 ? 0 : 1;
       await togglePolicyStatus(policyId);
+      
+      // Hiển thị success dialog
+      const message = newStatus === 1 
+        ? `Đã kích hoạt chính sách "${policy?.name}" thành công!`
+        : `Đã tạm ngưng chính sách "${policy?.name}" thành công!`;
+      setSuccessMessage(message);
+      setIsSuccessDialogOpen(true);
     } catch (error) {
       console.error('Error toggling policy status:', error);
     }
@@ -188,14 +204,17 @@ const InstallmentPolicies = () => {
       if (editingPolicy) {
         // Update
         await updatePolicy(editingPolicy.policy_id, policyData);
+        setSuccessMessage(`Đã cập nhật chính sách "${policyData.name}" thành công!`);
       } else {
         // Create
         policyData.is_active = 1;
         await createPolicy(policyData);
+        setSuccessMessage(`Đã tạo chính sách "${policyData.name}" thành công!`);
       }
 
       setShowDialog(false);
       setShowConfirmDialog(false);
+      setIsSuccessDialogOpen(true);
     } catch (error) {
       console.error('Error saving policy:', error);
       setShowConfirmDialog(false);
@@ -597,6 +616,40 @@ const InstallmentPolicies = () => {
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Success Dialog */}
+      <Dialog open={isSuccessDialogOpen} onOpenChange={(open) => {
+        setIsSuccessDialogOpen(open);
+        if (!open) {
+          setSuccessMessage('');
+        }
+      }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <div className="flex items-center justify-center mb-4">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                <CheckCircle className="w-10 h-10 text-green-600" />
+              </div>
+            </div>
+            <DialogTitle className="text-center text-xl">Thành công!</DialogTitle>
+            <DialogDescription className="text-center text-base mt-2">
+              {successMessage}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="sm:justify-center">
+            <Button
+              type="button"
+              onClick={() => {
+                setIsSuccessDialogOpen(false);
+                setSuccessMessage('');
+              }}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white"
+            >
+              Đóng
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

@@ -14,6 +14,10 @@ import AdminCategoryForm from './AdminCategoryForm';
 import { useCategoryStore } from '@/stores/useCategoryStore';
 
 const AdminCategoryPage = () => {
+	const [search, setSearch] = useState('');
+	const [isActive, setIsActive] = useState('');
+	const [page, setPage] = useState(1);
+	const [pageSize, setPageSize] = useState(10);
 	const [showForm, setShowForm] = useState(false);
 	const [editing, setEditing] = useState(null);
 	const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -21,13 +25,23 @@ const AdminCategoryPage = () => {
 	const [isSuccessDialogOpen, setIsSuccessDialogOpen] = useState(false);
 	const [successMessage, setSuccessMessage] = useState('');
 
-	const categories = useCategoryStore((s) => s.categories);
-	const fetchCategories = useCategoryStore((s) => s.fetchCategories);
-	const deleteCategory = useCategoryStore((s) => s.deleteCategory);
+	const { categories, loading, pagination, fetchCategories, deactivateCategory } = useCategoryStore();
+
+	const loadCategories = async () => {
+		try {
+			const params = { page, pageSize };
+			if (search.trim()) params.search = search.trim();
+			if (isActive !== '') params.is_active = isActive;
+			await fetchCategories(params);
+		} catch (error) {
+			console.error('Error loading categories:', error);
+		}
+	};
 
 	useEffect(() => {
-		fetchCategories().catch(() => {});
-	}, [fetchCategories]);
+		loadCategories();
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [search, isActive, page, pageSize]);
 
 	function handleAdd() {
 		setEditing(null);
@@ -48,15 +62,15 @@ const AdminCategoryPage = () => {
 		if (!categoryToDelete) return;
 		try {
 			const categoryName = categoryToDelete.category_name || 'danh mục';
-			await deleteCategory(categoryToDelete.category_id);
+			await deactivateCategory(categoryToDelete.category_id);
 			setIsDeleteDialogOpen(false);
 			setCategoryToDelete(null);
 			
 			// Hiển thị success dialog
-			setSuccessMessage(`Đã xóa danh mục ${categoryName} thành công!`);
+			setSuccessMessage(`Đã vô hiệu hóa danh mục ${categoryName} thành công!`);
 			setIsSuccessDialogOpen(true);
 		} catch (err) {
-			console.error('Delete category failed', err);
+			console.error('Deactivate category failed', err);
 		}
 	}
 
@@ -64,11 +78,7 @@ const AdminCategoryPage = () => {
 		const categoryName = response?.data?.category_name || response?.category_name || editing?.category_name || '';
 		setShowForm(false);
 		setEditing(null);
-		try {
-			await fetchCategories();
-		} catch (err) {
-			console.error('Error refreshing categories', err);
-		}
+		await loadCategories();
 		
 		// Hiển thị success dialog
 		if (isUpdate) {
@@ -89,7 +99,24 @@ const AdminCategoryPage = () => {
 					</button>
 				</div>
 			</div>
-
+		{/* Bộ lọc nhanh */}
+		<div className="mb-3 flex flex-wrap items-center gap-2">
+			<input 
+				value={search} 
+				onChange={(e) => { setSearch(e.target.value); setPage(1); }} 
+				className="border rounded px-3 py-2 w-full md:w-72" 
+				placeholder="Tìm theo tên danh mục..."
+			/>
+			<select 
+				value={isActive} 
+				onChange={(e) => { setIsActive(e.target.value); setPage(1); }} 
+				className="border rounded px-3 py-2"
+			>
+				<option value="">Tất cả trạng thái</option>
+				<option value="true">Hoạt động</option>
+				<option value="false">Không hoạt động</option>
+			</select>
+		</div>
 			{showForm && (
 				<div className="mb-6 p-4 border rounded-md bg-white">
 					<AdminCategoryForm 
@@ -100,9 +127,27 @@ const AdminCategoryPage = () => {
 				</div>
 			)}
 
-			<AdminCategoryList categories={categories} onEdit={handleEdit} onDelete={handleDelete} />
+			{loading ? (
+				<div className="text-center py-8 text-gray-500">
+					<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto"></div>
+					<p className="mt-2">Đang tải danh mục...</p>
+				</div>
+			) : (
+				<AdminCategoryList 
+					categories={categories}
+					loading={loading}
+					total={pagination?.total || 0}
+					currentPage={Math.min(page, Math.max(1, Math.ceil((pagination?.total || 0) / pageSize)))}
+					totalPages={Math.max(1, Math.ceil((pagination?.total || 0) / pageSize))}
+					pageSize={pageSize}
+					onPageChange={setPage}
+					onPageSizeChange={(size) => { setPageSize(size); setPage(1); }}
+					onEdit={handleEdit} 
+					onDelete={handleDelete} 
+				/>
+			)}
 
-			{/* Delete Confirmation Dialog */}
+			{/* Deactivate Confirmation Dialog */}
 			<Dialog open={isDeleteDialogOpen} onOpenChange={(open) => {
 				setIsDeleteDialogOpen(open);
 				if (!open) {
@@ -111,9 +156,10 @@ const AdminCategoryPage = () => {
 			}}>
 				<DialogContent className="max-w-md">
 					<DialogHeader>
-						<DialogTitle>Xác nhận xóa danh mục</DialogTitle>
+						<DialogTitle>Xác nhận vô hiệu hóa danh mục</DialogTitle>
 						<DialogDescription>
-							Bạn có chắc chắn muốn xóa danh mục <span className="font-semibold text-red-600">{categoryToDelete?.category_name}</span>? Hành động này không thể hoàn tác.
+							Bạn có chắc chắn muốn vô hiệu hóa danh mục <span className="font-semibold text-red-600">{categoryToDelete?.category_name}</span>? 
+							Danh mục sẽ không còn hiển thị cho người dùng. Bạn có thể kích hoạt lại trong phần chỉnh sửa.
 						</DialogDescription>
 					</DialogHeader>
 					<DialogFooter>
@@ -125,14 +171,14 @@ const AdminCategoryPage = () => {
 								setCategoryToDelete(null);
 							}}
 						>
-							Đóng
+							Hủy
 						</Button>
 						<Button
 							type="button"
 							onClick={handleConfirmDelete}
 							className="bg-red-600 hover:bg-red-700 text-white"
 						>
-							Xóa
+							Vô hiệu hóa
 						</Button>
 					</DialogFooter>
 				</DialogContent>

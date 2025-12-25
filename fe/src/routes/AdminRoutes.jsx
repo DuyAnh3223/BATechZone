@@ -42,8 +42,8 @@ const AdminRoutes = () => (
       <Route path="posts/:postId" element={<AdminPostDetail />} />
       <Route path="payments" element={<AdminPayment />} />
       <Route path="recent-views" element={<AdminRecentView />} />
-      <Route path="service-center" element={<AdminServiceCenter />} />
       <Route path="installments" element={<AdminInstallmentPage />} />
+      <Route path="warranty" element={<AdminWarrantyPage />} />
       {/* Các màn admin khác có thể thêm ở đây */}
     </Route>
   </>

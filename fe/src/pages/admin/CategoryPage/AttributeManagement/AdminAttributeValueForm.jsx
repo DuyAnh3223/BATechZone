@@ -2,18 +2,12 @@ import React, { useEffect, useState } from 'react';
 
 const AdminAttributeValueForm = ({ initialValue = null, onSubmit, onCancel }) => {
   const [valueName, setValueName] = useState('');
-  const [colorCode, setColorCode] = useState('');
-  const [imageUrl, setImageUrl] = useState('');
 
   useEffect(() => {
     if (initialValue) {
       setValueName(initialValue.value_name || '');
-      setColorCode(initialValue.color_code || '');
-      setImageUrl(initialValue.image_url || '');
     } else {
       setValueName('');
-      setColorCode('');
-      setImageUrl('');
     }
   }, [initialValue]);
 
@@ -24,8 +18,8 @@ const AdminAttributeValueForm = ({ initialValue = null, onSubmit, onCancel }) =>
     const payload = {
       attribute_value_id: initialValue?.attribute_value_id,
       value_name: valueName.trim(),
-      color_code: colorCode || null,
-      image_url: imageUrl || null,
+      color_code: null,
+      image_url: null,
     };
 
     // Forward payload to parent; parent knows attributeId and will call API
@@ -42,27 +36,6 @@ const AdminAttributeValueForm = ({ initialValue = null, onSubmit, onCancel }) =>
           className="w-full px-3 py-2 border rounded-md"
           placeholder="Ví dụ: Intel, AMD"
         />
-      </div>
-
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className="block text-sm font-medium mb-1">Màu (hex)</label>
-          <input
-            value={colorCode}
-            onChange={(e) => setColorCode(e.target.value)}
-            className="w-full px-3 py-2 border rounded-md"
-            placeholder="#ffffff"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">Image URL</label>
-          <input
-            value={imageUrl}
-            onChange={(e) => setImageUrl(e.target.value)}
-            className="w-full px-3 py-2 border rounded-md"
-            placeholder="/uploads/values/example.png"
-          />
-        </div>
       </div>
 
       <div className="flex items-center gap-3">

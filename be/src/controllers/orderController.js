@@ -172,6 +172,7 @@ export const getOrders = async (req, res) => {
       sortOrder: req.query.sortOrder || 'DESC'
     };
 
+    console.log('📦 Order list params:', params);
     const result = await Order.list(params);
 
     res.json({
@@ -179,7 +180,8 @@ export const getOrders = async (req, res) => {
       ...result
     });
   } catch (error) {
-    console.error('Error getting orders:', error);
+    console.error('❌ Error getting orders:', error);
+    console.error('Error stack:', error.stack);
     res.status(500).json({
       success: false,
       message: 'Lỗi khi lấy danh sách đơn hàng',
@@ -321,15 +323,17 @@ export const cancelOrder = async (req, res) => {
       });
     }
 
-    const order = await Order.getById(id);
+    const orderData = await Order.getById(id);
 
-    if (!order) {
+    if (!orderData) {
       return res.status(404).json({
         success: false,
         message: 'Không tìm thấy đơn hàng'
       });
     }
 
+    // Tạo Order instance từ data
+    const order = new Order(orderData);
     await order.cancel(reason);
 
     res.json({

@@ -432,8 +432,8 @@ class Order {
     }
 
     if (search) {
-      conditions.push('(o.order_number LIKE ? OR u.username LIKE ? OR u.email LIKE ?)');
-      values.push(`%${search}%`, `%${search}%`, `%${search}%`);
+      conditions.push('(COALESCE(a.phone, "") LIKE ? OR COALESCE(a.recipient_name, "") LIKE ?)');
+      values.push(`%${search}%`, `%${search}%`);
     }
 
     if (fromDate) {
@@ -487,6 +487,7 @@ class Order {
       `SELECT COUNT(*) as total
       FROM orders o
       LEFT JOIN users u ON o.user_id = u.user_id
+      LEFT JOIN addresses a ON o.address_id = a.address_id
       WHERE ${conditions.join(' AND ')}`,
       values.slice(0, -2)
     );

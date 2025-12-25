@@ -57,7 +57,7 @@ export const useInstallmentPolicyStore = create((set, get) => ({
                 // Refresh danh sách sau khi tạo
                 await get().fetchAllPolicies();
                 set({ loading: false });
-                toast.success('Tạo chính sách trả góp thành công');
+                // toast.success('Đã tạo chính sách trả góp thành công');
                 return response.data;
             } else {
                 set({ loading: false });
@@ -81,7 +81,7 @@ export const useInstallmentPolicyStore = create((set, get) => ({
                 // Refresh danh sách sau khi cập nhật
                 await get().fetchAllPolicies();
                 set({ loading: false });
-                toast.success('Cập nhật chính sách thành công');
+                // toast.success('Cập nhật chính sách thành công');
                 return true;
             } else {
                 set({ loading: false });
@@ -107,7 +107,7 @@ export const useInstallmentPolicyStore = create((set, get) => ({
                     policies: state.policies.filter(p => p.policy_id !== id),
                     loading: false
                 }));
-                toast.success('Xóa chính sách thành công');
+                // toast.success('Xóa chính sách thành công');
                 return true;
             } else {
                 set({ loading: false });
@@ -137,10 +137,10 @@ export const useInstallmentPolicyStore = create((set, get) => ({
                     ),
                     loading: false
                 }));
-                const message = response.data.is_active === 1 
-                    ? 'Đã kích hoạt chính sách' 
-                    : 'Đã tạm ngưng chính sách';
-                toast.success(message);
+                // const message = response.data.is_active === 1 
+                //     ? 'Đã kích hoạt chính sách' 
+                //     : 'Đã tạm ngưng chính sách';
+                // toast.success(message);
                 return true;
             } else {
                 set({ loading: false });
