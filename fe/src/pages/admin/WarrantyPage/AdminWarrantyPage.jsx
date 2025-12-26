@@ -20,13 +20,11 @@ import {
   Trash2,
   FileText,
   Download,
-  UserPlus,
   ClipboardCheck,
   ArrowRight,
   Wrench
 } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
-import WalkInWarrantyForm from './components/WalkInWarrantyForm';
 import WarrantyInspectionDialog from './components/WarrantyInspectionDialog';
 import WarrantyStatusUpdateDialog from './components/WarrantyStatusUpdateDialog';
 import {
@@ -227,7 +225,7 @@ const AdminWarrantyPage = () => {
             <Shield className="size-8 text-blue-600" />
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Quản lý bảo hành</h1>
-              <p className="text-gray-600">Quản lý yêu cầu bảo hành và khách vãng lai</p>
+              <p className="text-gray-600">Quản lý yêu cầu bảo hành của khách hàng</p>
             </div>
           </div>
         </div>
@@ -235,17 +233,6 @@ const AdminWarrantyPage = () => {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2 max-w-md">
-          <TabsTrigger value="dashboard" className="flex items-center gap-2">
-            <Shield className="size-4" />
-            Bảng điều khiển
-          </TabsTrigger>
-          <TabsTrigger value="walk-in" className="flex items-center gap-2">
-            <UserPlus className="size-4" />
-            Khách vãng lai
-          </TabsTrigger>
-        </TabsList>
-
         {/* Dashboard Tab */}
         <TabsContent value="dashboard" className="space-y-6">
           {/* Summary Statistics */}
@@ -605,11 +592,6 @@ const AdminWarrantyPage = () => {
               )}
             </CardContent>
           </Card>
-        </TabsContent>
-
-        {/* Walk-in Customer Tab */}
-        <TabsContent value="walk-in">
-          <WalkInWarrantyForm />
         </TabsContent>
       </Tabs>
 

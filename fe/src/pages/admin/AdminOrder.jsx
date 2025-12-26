@@ -621,6 +621,7 @@ const AdminOrder = () => {
                   <table className="min-w-[800px] w-full text-left">
                     <thead className="bg-gray-50">
                       <tr>
+                        <th className="px-4 py-2">Hình ảnh</th>
                         <th className="px-4 py-2">SKU</th>
                         <th className="px-4 py-2">Sản phẩm</th>
                         <th className="px-4 py-2">Biến thể</th>
@@ -634,6 +635,20 @@ const AdminOrder = () => {
                         <>
                           {orderDetail.items.map((item, index) => (
                             <tr key={item.order_item_id || item.orderItemId || `item-${index}`}>
+                              <td className="px-4 py-2">
+                                <img
+                                  src={
+                                    item.imageUrl 
+                                      ? `${import.meta.env.VITE_API_URL || 'http://localhost:5001'}${item.imageUrl}`
+                                      : '/placeholder-product.png'
+                                  }
+                                  alt={item.product_name || item.productName}
+                                  className="w-16 h-16 object-cover rounded border"
+                                  onError={(e) => {
+                                    e.target.src = '/placeholder-product.png';
+                                  }}
+                                />
+                              </td>
                               <td className="px-4 py-2">{item.sku || '-'}</td>
                               <td className="px-4 py-2">{item.product_name || item.productName || '-'}</td>
                               <td className="px-4 py-2">{item.variant_name || item.variantName || '-'}</td>
@@ -649,7 +664,7 @@ const AdminOrder = () => {
                         </>
                       ) : (
                         <tr>
-                          <td className="px-4 py-2 text-center text-gray-500" colSpan={6}>
+                          <td className="px-4 py-2 text-center text-gray-500" colSpan={7}>
                             Không có sản phẩm nào
                           </td>
                         </tr>

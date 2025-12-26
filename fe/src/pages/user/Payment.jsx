@@ -231,6 +231,23 @@ const Payment = () => {
                     {order.items && order.items.length > 0 ? (
                       order.items.map((item, index) => (
                         <div key={item.order_item_id || item.orderItemId || `item-${index}`} className="flex gap-4 p-3 bg-gray-50 rounded-lg">
+                          {/* Product Image */}
+                          <div className="flex-shrink-0">
+                            <img
+                              src={
+                                item.imageUrl 
+                                  ? `${import.meta.env.VITE_API_URL || 'http://localhost:5001'}${item.imageUrl}`
+                                  : '/placeholder-product.png'
+                              }
+                              alt={item.product_name || item.productName}
+                              className="w-20 h-20 object-cover rounded-lg border-2 border-gray-200"
+                              onError={(e) => {
+                                e.target.src = '/placeholder-product.png';
+                              }}
+                            />
+                          </div>
+                          
+                          {/* Product Info */}
                           <div className="flex-1">
                             <p className="font-medium">{item.product_name || item.productName}</p>
                             {item.variant_name || item.variantName ? (
@@ -238,6 +255,8 @@ const Payment = () => {
                             ) : null}
                             <p className="text-sm text-gray-500">SKU: {item.sku || '-'}</p>
                           </div>
+                          
+                          {/* Price Info */}
                           <div className="text-right">
                             <p className="text-sm text-gray-600">SL: {item.quantity || 0}</p>
                             <p className="font-semibold">{formatPrice(item.unit_price || item.unitPrice || 0)}</p>

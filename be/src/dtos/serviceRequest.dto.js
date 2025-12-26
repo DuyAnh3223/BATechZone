@@ -13,11 +13,15 @@ export const toWarrantyProductDTO = (data) => {
         sku: data.sku,
         warranty_id: data.warranty_id,
         warranty_period: data.warranty_period,
+        warranty_months: data.warranty_period, // Alias for consistency
         warranty_start_date: data.warranty_start_date,
         warranty_end_date: data.warranty_end_date,
         warranty_status: data.warranty_status,
         order_id: data.order_id,
-        order_date: data.order_date
+        order_date: data.order_date,
+        purchase_date: data.order_date, // Alias for purchase date
+        customer_name: data.customer_name,
+        customer_phone: data.customer_phone
     };
 };
 

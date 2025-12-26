@@ -42,21 +42,23 @@ export const serviceRequestService = {
     }
 };
 
-// ============ ADMIN METHODS ============
+// ============ PUBLIC METHODS (No Auth Required) ============
 
-// Search product by serial or phone for walk-in customers
+// Search product by serial or phone for walk-in customers (Public)
 export const searchProductForWarranty = async (searchType, searchValue) => {
     const params = searchType === 'serial' 
         ? { serial: searchValue }
         : { phone: searchValue };
     
-    const response = await adminApi.get('/service-requests/admin/search-product', { params });
+    const response = await userApi.get('/service-requests/public/search-product', { params });
     return response.data;
 };
 
-// Create warranty request for walk-in customer
+// ============ ADMIN METHODS ============
+
+// Create warranty request for walk-in customer (Public)
 export const createWalkInWarrantyRequest = async (formData) => {
-    const response = await adminApi.post('/service-requests/admin/walk-in', formData, {
+    const response = await userApi.post('/service-requests/public/walk-in', formData, {
         headers: {
             'Content-Type': 'multipart/form-data',
         },

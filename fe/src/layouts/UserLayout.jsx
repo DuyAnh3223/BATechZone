@@ -1,7 +1,7 @@
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import { useState, useEffect, useCallback } from 'react';
-import { ShoppingCart, Cpu, User, Menu, X, Search, LogIn, LogOut, ChevronRight, Bell, Tag, Copy, Check, Newspaper, CheckCircle } from "lucide-react";
+import { ShoppingCart, Cpu, User, Menu, X, Search, LogIn, LogOut, ChevronRight, Bell, Tag, Copy, Check, Newspaper, CheckCircle, Shield } from "lucide-react";
 import { useUserAuthStore } from '@/stores/useUserAuthStore';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -502,6 +502,40 @@ const UserLayout = () => {
               >
                 <Tag className="size-6" style={{ color: '#ffffff' }} />
               </Button>
+
+              {/* Warranty Check Icon - Circular with teal background */}
+              <Link
+                to="/warranty-check"
+                className="relative transition-all duration-300 ease-in-out inline-flex items-center justify-center"
+                style={{
+                  position: 'relative',
+                  backgroundColor: '#14b8a6', // teal-500
+                  color: '#ffffff',
+                  borderRadius: '50%',
+                  width: '48px',
+                  height: '48px',
+                  padding: '0',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transform: 'scale(1)',
+                  transition: 'all 0.3s ease-in-out',
+                  border: 'none',
+                  textDecoration: 'none'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#0d9488'; // teal-600 (darker on hover)
+                  e.currentTarget.style.transform = 'scale(1.1)';
+                  e.currentTarget.style.transition = 'all 0.3s ease-in-out';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#14b8a6'; // teal-500
+                  e.currentTarget.style.transform = 'scale(1)';
+                  e.currentTarget.style.transition = 'all 0.3s ease-in-out';
+                }}
+              >
+                <Shield className="size-6" style={{ color: '#ffffff' }} />
+              </Link>
 
               {/* Notification Bell - Only show if user is logged in */}
               {user && (

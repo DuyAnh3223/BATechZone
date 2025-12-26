@@ -32,6 +32,18 @@ router.get('/:requestId', requireUserAuth, ServiceRequestController.getRequestDe
 // PATCH /service-requests/:requestId/cancel - Cancel service request
 router.patch('/:requestId/cancel', requireUserAuth, ServiceRequestController.cancelRequest);
 
+// ============ PUBLIC ROUTES (No Auth) ============
+
+// GET /service-requests/public/search-product - Search products by serial or phone (Public)
+router.get('/public/search-product', ServiceRequestController.searchProduct);
+
+// POST /service-requests/public/walk-in - Create warranty request for walk-in customer (Public)
+router.post(
+    '/public/walk-in',
+    uploadWarrantyImage.array('images', 5), // Max 5 images
+    ServiceRequestController.createWalkInRequest
+);
+
 // ============ ADMIN ROUTES ============
 // All admin routes require admin authentication
 

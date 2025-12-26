@@ -28,7 +28,7 @@ export const translatePaymentStatus = (status) => {
 
 export const translatePaymentMethod = (method) => {
   const map = {
-    'cod': 'Thanh toán khi nhận hàng',
+    'cod': 'Tiền mặt (COD)',
     'bank_transfer': 'Chuyển khoản ngân hàng',
     'credit_card': 'Thẻ tín dụng',
     'e_wallet': 'Ví điện tử (Momo)',
