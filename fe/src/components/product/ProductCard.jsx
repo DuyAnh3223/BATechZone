@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ShoppingCart, Package } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ShoppingCart, Package, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCartStore } from '@/stores/useCartStore';
 import { useCartItemStore } from '@/stores/useCartItemStore';
@@ -26,6 +27,7 @@ const ProductCard = ({ product }) => {
   // Use local state instead of global store to avoid conflicts
   const [variantImages, setVariantImages] = useState([]);
   const [loadingImages, setLoadingImages] = useState(false);
+  const [successDialog, setSuccessDialog] = useState({ open: false, message: '' });
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat('vi-VN', {
@@ -154,7 +156,10 @@ const ProductCard = ({ product }) => {
         quantity: 1
       });
 
-      toast.success('Đã thêm sản phẩm vào giỏ hàng');
+      setSuccessDialog({ 
+        open: true, 
+        message: 'Đã thêm sản phẩm vào giỏ hàng thành công!' 
+      });
     } catch (error) {
       console.error('Error adding to cart:', error);
       toast.error(error.response?.data?.message || 'Không thể thêm vào giỏ hàng');
@@ -270,6 +275,31 @@ const ProductCard = ({ product }) => {
           {isActive ? 'Thêm vào giỏ' : 'Hết hàng'}
         </Button>
       </div>
+
+      {/* Success Dialog */}
+      <Dialog open={successDialog.open} onOpenChange={(open) => !open && setSuccessDialog({ open: false, message: '' })}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <div className="flex items-center justify-center mb-4">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                <CheckCircle className="w-10 h-10 text-green-600" />
+              </div>
+            </div>
+            <DialogTitle className="text-center text-xl">Thành công!</DialogTitle>
+            <DialogDescription className="text-center text-base mt-2">
+              {successDialog.message}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="sm:justify-center">
+            <Button 
+              onClick={() => setSuccessDialog({ open: false, message: '' })}
+              className="bg-indigo-600 hover:bg-indigo-700"
+            >
+              Đóng
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

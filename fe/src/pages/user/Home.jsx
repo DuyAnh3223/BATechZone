@@ -3,6 +3,7 @@ import { useProductStore } from '@/stores/useProductStore';
 import { useCategoryStore } from '@/stores/useCategoryStore';
 import HeroBanner from '@/components/home/HeroBanner';
 import FeaturedCategories from '@/components/home/FeaturedCategories';
+import RecentlyViewedProducts from '@/components/home/RecentlyViewedProducts';
 import FeaturedProducts from '@/components/home/FeaturedProducts';
 import AllComponents from '@/components/home/AllComponents';
 import WhyChooseUs from '@/components/home/WhyChooseUs';
@@ -77,6 +78,7 @@ const Home = () => {
     <div className="space-y-8">
       <HeroBanner banners={banners} />
       <FeaturedCategories categories={categories} loading={categoriesLoading} />
+      <RecentlyViewedProducts />
       <FeaturedProducts products={products} loading={productsLoading} />
       <AllComponents />
       <WhyChooseUs />
