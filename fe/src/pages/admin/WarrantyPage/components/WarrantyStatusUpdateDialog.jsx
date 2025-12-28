@@ -94,15 +94,15 @@ const WarrantyStatusUpdateDialog = ({ request, open, onOpenChange, onComplete })
       }
 
       const statusLabel = STATUS_CONFIG[selectedStatus]?.label || selectedStatus;
-      toast.success(`Đã cập nhật trạng thái: ${statusLabel}`);
+      // toast.success(`Đã cập nhật trạng thái: ${statusLabel}`);
 
-      // Call callback with updated data
+      // Call callback with updated data and status label
       onComplete({
         ...request,
         status: selectedStatus,
         status_updated_at: new Date().toISOString(),
         admin_notes: updateNote || request.admin_notes
-      });
+      }, statusLabel);
 
       // Reset and close
       setSelectedStatus(null);

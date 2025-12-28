@@ -15,8 +15,6 @@ const menu = [
   { icon: <Percent size={18} />, label: "Mã giảm giá", to: "/admin/coupons" },
   { icon: <Bell size={18} />, label: "Thông báo", to: "/admin/notifications" },
   { icon: <Book size={18} />, label: "Bài viết", to: "/admin/posts" },
-  { icon: <Wrench size={18} />, label: "Cấu hình PC", to: "/admin/builds" },
-  { icon: <LifeBuoy size={18} />, label: "Trung tâm dịch vụ", to: "/admin/service-center" },
 ];
 
 const AdminLayout = () => {

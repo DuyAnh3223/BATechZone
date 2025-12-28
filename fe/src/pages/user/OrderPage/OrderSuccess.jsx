@@ -46,7 +46,12 @@ const OrderSuccess = () => {
         
         console.log("✅ Order Data (ALL FIELDS):", orderData);
         console.log("✅ Order Data Keys:", Object.keys(orderData || {}));
-        console.log("📍 Address Info (snake_case):", {
+        console.log("�️ Order Items with Images:", orderData.items?.map(item => ({
+          productName: item.productName || item.product_name,
+          imageUrl: item.imageUrl,
+          variantId: item.variantId
+        })));
+        console.log("�📍 Address Info (snake_case):", {
           recipient_name: orderData.recipient_name,
           recipient_phone: orderData.recipient_phone,
           address_line1: orderData.address_line1,
@@ -361,8 +366,25 @@ const OrderSuccess = () => {
                     {order.items.map((item, index) => (
                       <div
                         key={index}
-                        className="p-4 flex justify-between items-start hover:bg-gray-50 transition-colors"
+                        className="p-4 flex gap-4 items-start hover:bg-gray-50 transition-colors"
                       >
+                        {/* Product Image */}
+                        <div className="flex-shrink-0">
+                          <img
+                            src={
+                              item.imageUrl 
+                                ? `${import.meta.env.VITE_API_URL || 'http://localhost:5001'}${item.imageUrl}`
+                                : '/placeholder-product.png'
+                            }
+                            alt={item.productName || item.product_name}
+                            className="w-24 h-24 object-cover rounded-lg border-2 border-gray-200"
+                            onError={(e) => {
+                              e.target.src = '/placeholder-product.png';
+                            }}
+                          />
+                        </div>
+                        
+                        {/* Product Info */}
                         <div className="flex-1 space-y-1">
                           <p className="font-semibold text-base">
                             {item.productName || item.product_name}
@@ -383,6 +405,8 @@ const OrderSuccess = () => {
                             </span>
                           </p>
                         </div>
+                        
+                        {/* Price Info */}
                         <div className="text-right ml-4">
                           <p className="font-bold text-lg text-red-600">
                             {formatPrice(item.unitPrice || item.unit_price)}

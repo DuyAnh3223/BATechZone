@@ -66,11 +66,20 @@ const AttributeList = ({ categoryId = 1 }) => {
     try {
       let response;
       if (editing?.attribute_id) {
-        // include values when updating so new values can be created together
-        response = await updateAttribute(editing.attribute_id, { attribute_name: payload.attribute_name, values: payload.values || [] });
+        // include values and attribute_type when updating
+        response = await updateAttribute(editing.attribute_id, { 
+          attribute_name: payload.attribute_name, 
+          attribute_type: payload.attribute_type,
+          values: payload.values || [] 
+        });
       } else {
-        // create attribute; include values and category assignment
-        response = await createAttribute({ attribute_name: payload.attribute_name, values: payload.values || [], category_ids: [categoryId] });
+        // create attribute; include values, attribute_type and category assignment
+        response = await createAttribute({ 
+          attribute_name: payload.attribute_name, 
+          attribute_type: payload.attribute_type,
+          values: payload.values || [], 
+          category_ids: [categoryId] 
+        });
       }
       setShowForm(false);
       setEditing(null);

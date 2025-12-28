@@ -1,7 +1,7 @@
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import { useState, useEffect, useCallback } from 'react';
-import { ShoppingCart, Cpu, User, Menu, X, Search, LogIn, LogOut, ChevronRight, Bell, Tag, Copy, Check, Shield } from "lucide-react";
+import { ShoppingCart, Cpu, User, Menu, X, Search, LogIn, LogOut, ChevronRight, Bell, Tag, Copy, Check, Newspaper, CheckCircle, Shield } from "lucide-react";
 import { useUserAuthStore } from '@/stores/useUserAuthStore';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,10 +13,12 @@ import { useCartStore } from '@/stores/useCartStore';
 import { useCouponStore } from '@/stores/useCouponStore';
 import { couponService } from '@/services/couponService';
 import CartDropdown from '@/components/common/CartDropdown';
+import SearchBar from '@/components/search/SearchBar';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -37,7 +39,6 @@ const UserLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
   const [isCategoryMenuOpen, setIsCategoryMenuOpen] = useState(false);
   const [menuCloseTimeout, setMenuCloseTimeout] = useState(null);
   const { categoryTree, fetchCategoryTree, categories, fetchCategories, loading: categoriesLoading } = useCategoryStore();
@@ -52,6 +53,7 @@ const UserLayout = () => {
   // Coupon dialog state
   const [isCouponDialogOpen, setIsCouponDialogOpen] = useState(false);
   const [copiedCouponCode, setCopiedCouponCode] = useState(null);
+  const [successDialog, setSuccessDialog] = useState({ open: false, message: '' });
   
   // Side banners visibility state
   const [showSideBanners, setShowSideBanners] = useState(true);
@@ -140,7 +142,7 @@ const UserLayout = () => {
     try {
       await navigator.clipboard.writeText(couponCode);
       setCopiedCouponCode(couponCode);
-      toast.success(`Đã copy mã giảm giá: ${couponCode}`);
+      setSuccessDialog({ open: true, message: `Đã copy mã giảm giá: ${couponCode}` });
       setTimeout(() => setCopiedCouponCode(null), 2000);
     } catch (error) {
       toast.error('Không thể copy mã giảm giá');
@@ -240,8 +242,8 @@ const UserLayout = () => {
 
   return (
     <div className="min-h-screen flex flex-col w-full relative">
-      {/* Left Side Banner - Sticky - Only show on home page */}
-      {showSideBanners && location.pathname === '/' && (
+      {/* Left Side Banner - Sticky - Show on home page and Build PC page */}
+      {showSideBanners && (location.pathname === '/' || location.pathname === '/build-pc') && (
         <div 
           className="hidden xl:block z-40"
           style={{
@@ -272,8 +274,8 @@ const UserLayout = () => {
         </div>
       )}
 
-      {/* Right Side Banner - Sticky - Only show on home page */}
-      {showSideBanners && location.pathname === '/' && (
+      {/* Right Side Banner - Sticky - Show on home page and Build PC page */}
+      {showSideBanners && (location.pathname === '/' || location.pathname === '/build-pc') && (
         <div 
           className="hidden xl:block z-40"
           style={{
@@ -336,50 +338,43 @@ const UserLayout = () => {
             </Link>
 
             {/* Search Bar */}
-            <div className="flex-1 max-w-3xl mx-4">
-              <div className="flex items-center w-full gap-0">
-                <Input
-                  type="text"
-                  className="flex-[8] bg-white text-gray-900 placeholder-gray-500 border-white/80 focus-visible:ring-white/40 rounded-r-none border-r-0"
-                  placeholder="Tìm kiếm sản phẩm..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      // Handle search
-                      navigate(`/products?search=${encodeURIComponent(searchQuery)}`);
-                    }
-                  }}
-                />
-                <Button 
-                  variant="ghost" 
-                  className="flex-[2] bg-white text-gray-900 hover:bg-gray-100 px-3 py-1 rounded-l-none border border-l-0 border-white/80 h-9 flex items-center justify-center"
-                  onClick={() => {
-                    if (searchQuery.trim()) {
-                      navigate(`/products?search=${encodeURIComponent(searchQuery)}`);
-                    }
-                  }}
-                >
-                  <Search className="size-4 mr-1.5" />
-                  <span className="text-sm font-medium whitespace-nowrap">Tìm kiếm</span>
-                </Button>
-              </div>
-            </div>
+            <SearchBar />
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-4">
-              {/* News button (link to Blog) */}
-              <Button
-                variant="ghost"
-                size="sm"
-                asChild
-                className="hidden md:inline-flex items-center gap-2 px-3 py-2 rounded-md bg-white/90 text-gray-900 hover:bg-gray-100"
+              {/* News Icon - Circular with purple background */}
+              <Link
+                to="/blog"
+                className="relative transition-all duration-300 ease-in-out inline-flex items-center justify-center"
+                style={{
+                  position: "relative",
+                  backgroundColor: "#a855f7",
+                  color: "#ffffff",
+                  borderRadius: "50%",
+                  width: "48px",
+                  height: "48px",
+                  padding: "0",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  transform: "scale(1)",
+                  transition: "all 0.3s ease-in-out",
+                  border: "none",
+                  textDecoration: "none",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = "#9333ea";
+                  e.currentTarget.style.transform = "scale(1.1)";
+                  e.currentTarget.style.transition = "all 0.3s ease-in-out";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = "#a855f7";
+                  e.currentTarget.style.transform = "scale(1)";
+                  e.currentTarget.style.transition = "all 0.3s ease-in-out";
+                }}
               >
-                <Link to="/blog" className="flex items-center gap-2">
-                  <Tag className="w-4 h-4 text-gray-700" />
-                  <span className="text-sm font-medium">News</span>
-                </Link>
-              </Button>
+                <Newspaper className="size-6" style={{ color: "#ffffff" }} />
+              </Link>
               {/* Shopping Cart Icon - Circular with blue background */}
               <CartDropdown cartItemsCount={cartItemsCount}>
                 <div
@@ -473,40 +468,6 @@ const UserLayout = () => {
                 <Cpu className="size-6" style={{ color: "#ffffff" }} />
               </Link>
 
-              {/* Warranty Icon - Circular with teal background */}
-              <Link
-                to="/warranty"
-                className="relative transition-all duration-300 ease-in-out inline-flex items-center justify-center"
-                style={{
-                  position: "relative",
-                  backgroundColor: "#14b8a6",
-                  color: "#ffffff",
-                  borderRadius: "50%",
-                  width: "48px",
-                  height: "48px",
-                  padding: "0",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  transform: "scale(1)",
-                  transition: "all 0.3s ease-in-out",
-                  border: "none",
-                  textDecoration: "none",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = "#0d9488";
-                  e.currentTarget.style.transform = "scale(1.1)";
-                  e.currentTarget.style.transition = "all 0.3s ease-in-out";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = "#14b8a6";
-                  e.currentTarget.style.transform = "scale(1)";
-                  e.currentTarget.style.transition = "all 0.3s ease-in-out";
-                }}
-              >
-                <Shield className="size-6" style={{ color: "#ffffff" }} />
-              </Link>
-
               {/* Coupon Icon - Circular with green background */}
               <Button
                 variant="ghost"
@@ -541,6 +502,40 @@ const UserLayout = () => {
               >
                 <Tag className="size-6" style={{ color: '#ffffff' }} />
               </Button>
+
+              {/* Warranty Check Icon - Circular with teal background */}
+              <Link
+                to="/warranty-check"
+                className="relative transition-all duration-300 ease-in-out inline-flex items-center justify-center"
+                style={{
+                  position: 'relative',
+                  backgroundColor: '#14b8a6', // teal-500
+                  color: '#ffffff',
+                  borderRadius: '50%',
+                  width: '48px',
+                  height: '48px',
+                  padding: '0',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transform: 'scale(1)',
+                  transition: 'all 0.3s ease-in-out',
+                  border: 'none',
+                  textDecoration: 'none'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#0d9488'; // teal-600 (darker on hover)
+                  e.currentTarget.style.transform = 'scale(1.1)';
+                  e.currentTarget.style.transition = 'all 0.3s ease-in-out';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#14b8a6'; // teal-500
+                  e.currentTarget.style.transform = 'scale(1)';
+                  e.currentTarget.style.transition = 'all 0.3s ease-in-out';
+                }}
+              >
+                <Shield className="size-6" style={{ color: '#ffffff' }} />
+              </Link>
 
               {/* Notification Bell - Only show if user is logged in */}
               {user && (
@@ -783,7 +778,7 @@ const UserLayout = () => {
       </nav>
 
       {/* Categories Navigation */}
-      <div className="bg-gray-100 shadow-md w-full sticky top-20 z-50">
+      <div className="bg-gray-100 shadow-md w-full sticky top-20 z-40">
         <div className="w-full max-w-[1920px] mx-auto px-4">
           <div className="flex items-center py-3">
             {/* Category Menu Button */}
@@ -1267,6 +1262,31 @@ const UserLayout = () => {
               </div>
             )}
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Success Dialog */}
+      <Dialog open={successDialog.open} onOpenChange={(open) => !open && setSuccessDialog({ open: false, message: '' })}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <div className="flex items-center justify-center mb-4">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                <CheckCircle className="w-10 h-10 text-green-600" />
+              </div>
+            </div>
+            <DialogTitle className="text-center text-xl">Thành công!</DialogTitle>
+            <DialogDescription className="text-center text-base mt-2">
+              {successDialog.message}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="sm:justify-center">
+            <Button 
+              onClick={() => setSuccessDialog({ open: false, message: '' })}
+              className="bg-indigo-600 hover:bg-indigo-700"
+            >
+              Đóng
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

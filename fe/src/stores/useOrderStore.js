@@ -114,7 +114,7 @@ export const useOrderStore = create((set) => ({
     cancelOrder: async (orderId, reason) => {
         set({ loading: true, error: null });
         try {
-            const response = await orderService.cancelOrder(orderId, reason);
+            const response = await orderService.cancelOrder(orderId, reason, true); // isAdmin = true
             set({ loading: false });
             return response;
         } catch (error) {

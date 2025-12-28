@@ -19,10 +19,15 @@ import { useVariantStore } from '@/stores/useVariantStore';
 import { variantImageService } from '@/services/variantImageService';
 
 const AdminProductPage = () => {
-	const { products, loading, fetchProducts, createProduct, updateProduct, deleteProduct } = useProductStore();
+	const { products, loading, pagination, fetchProducts, createProduct, updateProduct, deleteProduct } = useProductStore();
 	const { parentCategories, fetchSimpleCategories } = useCategoryStore();
 	const { fetchVariantsByProductId } = useVariantStore();
 
+	const [search, setSearch] = useState('');
+	const [categoryId, setCategoryId] = useState('');
+	const [isActive, setIsActive] = useState('');
+	const [page, setPage] = useState(1);
+	const [pageSize, setPageSize] = useState(10);
 	const [showForm, setShowForm] = useState(false);
 	const [editing, setEditing] = useState(null);
 	const [expandedVariants, setExpandedVariants] = useState(new Set()); // Track which products have variants expanded
@@ -37,21 +42,39 @@ const AdminProductPage = () => {
 	// Function to load products (memoized with useCallback)
 	const loadProducts = useCallback(async () => {
 		try {
-			await fetchProducts({
-				page: 1,
-				limit: 100 // Load all products for admin
-			});
+			const params = {
+				page,
+				pageSize
+			};
+			
+			// Only add filters if they have values
+			if (search.trim()) {
+				params.search = search.trim();
+			}
+			if (categoryId) {
+				params.category_id = categoryId;
+			}
+			if (isActive !== '') {
+				params.is_active = isActive;
+			}
+			
+			await fetchProducts(params);
 		} catch (error) {
 			console.error('Error loading products:', error);
 		}
-	}, [fetchProducts]);
+	}, [fetchProducts, search, categoryId, isActive, page, pageSize]);
 
-	// Load data on mount
+	// Load categories on mount
 	useEffect(() => {
 		fetchSimpleCategories();
-		loadProducts();
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
+
+	// Load products when filters change
+	useEffect(() => {
+		loadProducts();
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [search, categoryId, isActive, page, pageSize]);
 
 	// Refresh products when window regains focus
 	useEffect(() => {
@@ -183,13 +206,21 @@ const AdminProductPage = () => {
 								try {
 									const formData = new FormData();
 									variantPayload.images.forEach(img => {
-										formData.append('images', img.file);
-										if (img.isPrimary) {
-											formData.append('isPrimary', 'true');
+										// Check if file is valid File object
+										if (img.file && img.file instanceof File) {
+											formData.append('images', img.file);
+											if (img.isPrimary) {
+												formData.append('isPrimary', 'true');
+											}
+										} else {
+											console.warn('Invalid file object:', img);
 										}
 									});
 									
-									await variantImageService.bulkUploadImages(variant_db.variant_id, formData);
+									// Only upload if there are valid files
+									if (formData.has('images')) {
+										await variantImageService.bulkUploadImages(variant_db.variant_id, formData);
+									}
 								} catch (imgError) {
 									console.error(`Error uploading images for variant ${variantPayload.sku}:`, imgError);
 								}
@@ -228,13 +259,21 @@ const AdminProductPage = () => {
 							try {
 								const formData = new FormData();
 								defaultVariant.images.forEach(img => {
-									formData.append('images', img.file);
-									if (img.isPrimary) {
-										formData.append('isPrimary', 'true');
+									// Check if file is valid File object
+									if (img.file && img.file instanceof File) {
+										formData.append('images', img.file);
+										if (img.isPrimary) {
+											formData.append('isPrimary', 'true');
+										}
+									} else {
+										console.warn('Invalid file object in defaultVariant:', img);
 									}
 								});
 								
-								await variantImageService.bulkUploadImages(defaultVariant_db.variant_id, formData);
+								// Only upload if there are valid files
+								if (formData.has('images')) {
+									await variantImageService.bulkUploadImages(defaultVariant_db.variant_id, formData);
+								}
 							} catch (imgError) {
 								console.error('Error uploading default variant images:', imgError);
 							}
@@ -313,6 +352,35 @@ const AdminProductPage = () => {
 				</div>
 			</div>
 
+		{/* Bộ lọc nhanh */}
+		<div className="mb-3 flex flex-wrap items-center gap-2">
+			<input 
+				value={search} 
+				onChange={(e) => { setSearch(e.target.value); setPage(1); }} 
+				className="border rounded px-3 py-2 w-full md:w-72" 
+				placeholder="Tìm theo tên sản phẩm..."
+			/>
+			<select 
+				value={categoryId} 
+				onChange={(e) => { setCategoryId(e.target.value); setPage(1); }} 
+				className="border rounded px-3 py-2"
+			>
+				<option value="">Tất cả danh mục</option>
+				{parentCategories.map((c) => (
+					<option key={c.category_id} value={c.category_id}>{c.category_name}</option>
+				))}
+			</select>
+			<select 
+				value={isActive} 
+				onChange={(e) => { setIsActive(e.target.value); setPage(1); }} 
+				className="border rounded px-3 py-2"
+			>
+				<option value="">Tất cả trạng thái</option>
+				<option value="true">Hoạt động</option>
+				<option value="false">Không hoạt động</option>
+			</select>
+		</div>
+
 		{showForm && (
 			<div className="mb-6 p-4 border rounded-md bg-white">
 				<AdminProductForm 
@@ -334,6 +402,13 @@ const AdminProductPage = () => {
 		) : (
 			<AdminProductList 
 				products={products} 
+				loading={loading}
+				total={pagination?.total || 0}
+				currentPage={Math.min(page, Math.max(1, Math.ceil((pagination?.total || 0) / pageSize)))}
+				totalPages={Math.max(1, Math.ceil((pagination?.total || 0) / pageSize))}
+				pageSize={pageSize}
+				onPageChange={setPage}
+				onPageSizeChange={(size) => { setPageSize(size); setPage(1); }}
 				onEdit={handleEdit} 
 				onDelete={handleDelete} 
 				onManageVariants={toggleManageVariants}

@@ -23,9 +23,20 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   Table,
   TableBody,
@@ -42,8 +53,12 @@ import {
   SlidersHorizontal,
   X,
   ChevronRight,
+  Trash2,
+  Pencil,
+  CheckCircle,
 } from "lucide-react";
 import { productService } from "@/services/productService";
+import { variantService } from "@/services/variantService";
 import { useCartStore } from "@/stores/useCartStore";
 import { useCartItemStore } from "@/stores/useCartItemStore";
 import { useUserAuthStore } from "@/stores/useUserAuthStore";
@@ -688,6 +703,9 @@ const BuildPC = () => {
   const [filterOptions, setFilterOptions] = useState(null); // Available filter options from API
   const [productCatalog, setProductCatalog] = useState({}); // Dữ liệu thật từ API
   const [loading, setLoading] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState({ open: false, typeId: null }); // Delete confirmation
+  const [clearConfirm, setClearConfirm] = useState(false); // Clear configuration confirmation
+  const [successDialog, setSuccessDialog] = useState({ open: false, message: '' }); // Success dialog
   const pageSize = 6;
   const sortTabs = [
     { value: "default", label: "Khuyến mãi tốt nhất" },
@@ -744,14 +762,31 @@ const BuildPC = () => {
       
       if (response.success && response.data) {
         // Transform API data to match mock format - SHOW ALL VARIANTS
-        const transformedProducts = response.data.flatMap(product => {
+        const transformedProducts = [];
+        
+        for (const product of response.data) {
           // Nếu có variants, tạo entry cho mỗi variant
           if (product.variants?.length > 0) {
-            return product.variants.map(variant => {
+            for (const variant of product.variants) {
               const attrs = variant.attributes || {};
               const brand = attrs['Hãng'] || attrs['Nhà sản xuất'] || attrs['Thương hiệu'] || 'N/A';
               
-              return {
+              // Lấy hình ảnh của variant từ variant images
+              let imageUrl = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="80" height="80"%3E%3Crect width="80" height="80" fill="%23ddd"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%23999" font-family="Arial" font-size="14"%3ENo Image%3C/text%3E%3C/svg%3E';
+              
+              try {
+                const variantImages = await variantService.getVariantImages(variant.variant_id);
+                const images = variantImages?.data || variantImages || [];
+                const primaryImage = images.find(img => img.is_primary) || images[0];
+                
+                if (primaryImage?.image_url) {
+                  imageUrl = `${import.meta.env.VITE_API_URL || 'http://localhost:5001'}${primaryImage.image_url}`;
+                }
+              } catch (error) {
+                console.error(`Error loading image for variant ${variant.variant_id}:`, error);
+              }
+              
+              transformedProducts.push({
                 id: `${product.slug}-${variant.variant_id}`,
                 variantId: variant.variant_id,
                 productId: product.product_id,
@@ -765,16 +800,22 @@ const BuildPC = () => {
                 series: attrs['Dòng card'] || attrs['Dòng sản phẩm'],
                 price: parseFloat(variant.price) || parseFloat(product.base_price) || 0,
                 stock: variant.stock || 0,
-                warranty: '12 tháng', // Default warranty
-                image: product.img_path || 'https://via.placeholder.com/80',
+                warranty: '12 tháng',
+                image: imageUrl,
                 description: product.description || '',
                 highlights: [],
                 attributes: attrs,
-              };
-            });
+              });
+            }
           } else {
             // Nếu không có variants, dùng thông tin product
-            return [{
+            let imageUrl = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="80" height="80"%3E%3Crect width="80" height="80" fill="%23ddd"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%23999" font-family="Arial" font-size="14"%3ENo Image%3C/text%3E%3C/svg%3E';
+            
+            if (product.img_path) {
+              imageUrl = `${import.meta.env.VITE_API_URL || 'http://localhost:5001'}${product.img_path}`;
+            }
+            
+            transformedProducts.push({
               id: product.slug,
               productId: product.product_id,
               sku: product.slug,
@@ -783,12 +824,12 @@ const BuildPC = () => {
               price: parseFloat(product.base_price) || 0,
               stock: 0,
               warranty: 'N/A',
-              image: product.img_path || 'https://via.placeholder.com/80',
+              image: imageUrl,
               description: product.description || '',
               highlights: [],
-            }];
+            });
           }
-        });
+        }
 
         setProductCatalog(prev => ({
           ...prev,
@@ -882,6 +923,10 @@ const BuildPC = () => {
 
   const handleAddComponent = (component) => {
     if (!pickerState.type) return;
+    
+    const componentName = componentTypes.find(t => t.id === pickerState.type)?.name || 'linh kiện';
+    const isUpdate = !!selectedComponents[pickerState.type]; // Check if updating existing component
+    
     setSelectedComponents((prev) => ({
       ...prev,
       [pickerState.type]: component,
@@ -891,6 +936,19 @@ const BuildPC = () => {
       [pickerState.type]: prev[pickerState.type] || 1,
     }));
     closePicker();
+    
+    // Hiển thị success dialog
+    if (isUpdate) {
+      setSuccessDialog({ 
+        open: true, 
+        message: `Đã cập nhật ${componentName} thành công!` 
+      });
+    } else {
+      setSuccessDialog({ 
+        open: true, 
+        message: `Đã thêm ${componentName} vào cấu hình thành công!` 
+      });
+    }
   };
 
   const handleQuantityAdjust = (type, delta) => {
@@ -902,6 +960,7 @@ const BuildPC = () => {
         [type]: nextValue,
       };
     });
+    setSuccessDialog({ open: true, message: 'Đã cập nhật số lượng thành công!' });
   };
 
   const handleQuantityInput = (type, value) => {
@@ -909,9 +968,30 @@ const BuildPC = () => {
       ...prev,
       [type]: Math.max(1, Number(value) || 1),
     }));
+    setSuccessDialog({ open: true, message: 'Đã cập nhật số lượng thành công!' });
   };
 
   const handleRemoveComponent = (type) => {
+    setDeleteConfirm({ open: true, typeId: type });
+  };
+
+  const handleClearConfiguration = () => {
+    setClearConfirm(true);
+  };
+
+  const confirmClearConfiguration = () => {
+    setSelectedComponents({});
+    setQuantities({});
+    setClearConfirm(false);
+    setSuccessDialog({ open: true, message: 'Đã xóa toàn bộ cấu hình thành công!' });
+  };
+
+  const confirmRemoveComponent = () => {
+    const type = deleteConfirm.typeId;
+    if (!type) return;
+    
+    const componentName = componentTypes.find(t => t.id === type)?.name || 'linh kiện';
+    
     setSelectedComponents((prev) => {
       const next = { ...prev };
       delete next[type];
@@ -921,6 +1001,14 @@ const BuildPC = () => {
       const next = { ...prev };
       delete next[type];
       return next;
+    });
+    
+    setDeleteConfirm({ open: false, typeId: null });
+    
+    // Hiển thị success dialog
+    setSuccessDialog({ 
+      open: true, 
+      message: `Đã xóa ${componentName} khỏi cấu hình thành công!` 
     });
   };
 
@@ -971,16 +1059,20 @@ const BuildPC = () => {
 
       await Promise.all(addPromises);
 
-      toast.success('Đã thêm tất cả linh kiện vào giỏ hàng!');
+      const componentCount = Object.keys(selectedComponents).length;
+      setSuccessDialog({ 
+        open: true, 
+        message: `Đã thêm ${componentCount} linh kiện vào giỏ hàng thành công!` 
+      });
       
       // Clear selected components
       setSelectedComponents({});
       setQuantities({});
 
-      // Navigate to cart
+      // Navigate to cart after dialog is closed
       setTimeout(() => {
         navigate('/cart');
-      }, 500);
+      }, 1500);
 
     } catch (error) {
       console.error('Error adding to cart:', error);
@@ -1100,21 +1192,23 @@ const BuildPC = () => {
 
 
   return (
-    <div className="py-8 space-y-6">
-      <div className="text-center space-y-3">
-        <div className="inline-flex items-center gap-2 rounded-full bg-orange-100 px-4 py-1 text-sm font-medium text-orange-600">
-          <Cpu className="h-4 w-4" />
-          Công cụ Build PC
-        </div>
-        <h1 className="text-3xl font-bold">Xây dựng cấu hình PC toàn màn hình</h1>
-        <p className="text-muted-foreground max-w-3xl mx-auto">
-          Quản lý toàn bộ danh sách linh kiện trên một trang, dễ dàng chọn, lọc và sắp xếp sản phẩm dựa trên kho dữ liệu B.A Tech Zone.
-        </p>
-      </div>
+    <>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-orange-50 py-8 space-y-6">
+        <div className="container mx-auto px-4">
+          <div className="text-center space-y-3 mb-8">
+            <div className="inline-flex items-center gap-2 rounded-full bg-orange-100 px-6 py-2 text-lg font-semibold text-orange-600">
+              <Cpu className="h-5 w-5" />
+              Công cụ Build PC
+            </div>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-orange-600 bg-clip-text text-transparent">Xây dựng cấu hình PC</h1>
+            <p className="text-muted-foreground max-w-3xl mx-auto">
+              Quản lý toàn bộ danh sách linh kiện trên một trang, dễ dàng chọn, lọc và sắp xếp sản phẩm dựa trên kho dữ liệu BATechZone.
+            </p>
+          </div>
 
-      <div className="w-full space-y-6">
-        {/* Main table of component slots */}
-        <Card className="w-full">
+          <div className="w-full space-y-6">
+            {/* Main table of component slots */}
+            <Card className="w-full shadow-lg rounded-xl overflow-hidden border-2">
           <CardHeader className="flex flex-col gap-1">
             <CardTitle>Danh sách linh kiện</CardTitle>
             <CardDescription>Chọn từng hạng mục để hoàn thiện cấu hình của bạn.</CardDescription>
@@ -1139,9 +1233,6 @@ const BuildPC = () => {
                       <TableCell>
                         <div className="font-semibold flex items-center gap-1">
                           {type.name}
-                          {type.required && (
-                            <span className="text-xs text-red-500 font-normal">(bắt buộc)</span>
-                          )}
                         </div>
                         <p className="text-xs text-muted-foreground">{type.description}</p>
                       </TableCell>
@@ -1187,14 +1278,33 @@ const BuildPC = () => {
                           : "--"}
                       </TableCell>
                       <TableCell className="text-right">
-                        {selectedComponents[type.id] && (
-                          <Button variant="ghost" size="sm" onClick={() => handleRemoveComponent(type.id)}>
-                            <X className="h-4 w-4" />Bỏ
+                        {selectedComponents[type.id] ? (
+                          <>
+                            <Button 
+                              variant="ghost" 
+                              size="icon"
+                              onClick={() => openPicker(type.id)}
+                              className="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50 h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5 text-blue-600 hover:text-blue-700 hover:bg-blue-50 mr-1"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="icon"
+                              onClick={() => handleRemoveComponent(type.id)}
+                              className="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50 h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5 text-red-600 hover:text-red-700 hover:bg-red-50"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </>
+                        ) : (
+                          <Button 
+                            onClick={() => openPicker(type.id)}
+                            className="inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive bg-primary text-primary-foreground hover:bg-primary/90 py-2 has-[>svg]:px-3 w-full rounded-full sm:w-auto sm:flex-shrink-0 h-9 px-3 text-xs"
+                          >
+                            <PlusCircle />Thêm linh kiện
                           </Button>
                         )}
-                        <Button size="sm" onClick={() => openPicker(type.id)} variant="outline">
-                          <PlusCircle className="h-4 w-4 mr-2" />Thêm linh kiện
-                        </Button>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -1213,8 +1323,8 @@ const BuildPC = () => {
           </div>
         </Card>
 
-        {/* Summary card - below table on mobile, sticky on right on large screens */}
-        <Card className="w-full lg:sticky lg:top-20">
+          {/* Summary card - below table on mobile, sticky on right on large screens */}
+          <Card className="w-full lg:sticky lg:top-20 shadow-lg rounded-xl border-2">
           <CardHeader>
             <CardTitle>Cấu hình đã chọn</CardTitle>
             <CardDescription>Tóm tắt nhanh các linh kiện đang có trong build của bạn.</CardDescription>
@@ -1224,13 +1334,18 @@ const BuildPC = () => {
               <div className="text-sm text-muted-foreground">Chưa có linh kiện nào được chọn.</div>
             ) : (
               Object.entries(selectedComponents).map(([type, component]) => (
-                <div key={type} className="flex items-center justify-between border rounded-lg p-3">
-                  <div>
-                    <p className="text-sm font-medium">{componentTypes.find((t) => t.id === type)?.name}</p>
-                    <p className="text-sm text-muted-foreground">{component.name}</p>
+                <div key={type} className="flex items-center gap-3 border rounded-lg p-3">
+                  <img
+                    src={component.image}
+                    alt={component.name}
+                    className="h-16 w-16 rounded-md border object-cover flex-shrink-0"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium text-muted-foreground">{componentTypes.find((t) => t.id === type)?.name}</p>
+                    <p className="text-sm font-semibold line-clamp-2">{component.name}</p>
                     <p className="text-xs text-muted-foreground">Số lượng: {quantities[type] || 1}</p>
                   </div>
-                  <span className="font-semibold text-red-500">{formatPrice(component.price * (quantities[type] || 1))}</span>
+                  <span className="font-semibold text-red-500 flex-shrink-0">{formatPrice(component.price * (quantities[type] || 1))}</span>
                 </div>
               ))
             )}
@@ -1241,7 +1356,13 @@ const BuildPC = () => {
                 <span className="text-red-600">{formatPrice(calculateTotal)}</span>
               </div>
               <div className="flex gap-2">
-                <Button variant="outline" size="lg" className="flex-1" onClick={() => { setSelectedComponents({}); setQuantities({}); }}>
+                <Button 
+                  variant="outline" 
+                  size="lg" 
+                  className="flex-1 border-red-600 text-red-600 hover:bg-red-50 hover:text-red-700" 
+                  onClick={handleClearConfiguration}
+                  disabled={calculateTotal === 0}
+                >
                   Xóa cấu hình
                 </Button>
                 <Button size="lg" className="flex-1" disabled={calculateTotal === 0} onClick={handleAddToCart}>
@@ -1251,8 +1372,10 @@ const BuildPC = () => {
             </div>
           </CardContent>
         </Card>
+        </div>
       </div>
-      <Dialog open={pickerState.open} onOpenChange={(open) => !open && closePicker()}>
+    </div>
+    <Dialog open={pickerState.open} onOpenChange={(open) => !open && closePicker()}>
         <DialogContent className="!fixed !left-1/2 !top-1/2 !-translate-x-1/2 !-translate-y-1/2 !w-[90vw] !h-[90vh] !max-w-none !p-0 !gap-0 !border-0 !rounded-lg !overflow-hidden !grid !grid-cols-1">
           <DialogHeader className="sr-only">
             <DialogTitle>Chọn linh kiện cho cấu hình</DialogTitle>
@@ -1499,7 +1622,74 @@ const BuildPC = () => {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteConfirm.open} onOpenChange={(open) => !open && setDeleteConfirm({ open: false, typeId: null })}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xác nhận xóa linh kiện</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bạn có chắc chắn muốn xóa linh kiện này khỏi cấu hình? Hành động này không thể hoàn tác.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Hủy</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmRemoveComponent} className="bg-red-600 hover:bg-red-700">
+              Xóa
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Clear Configuration Confirmation Dialog */}
+      <AlertDialog open={clearConfirm} onOpenChange={(open) => !open && setClearConfirm(false)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xác nhận xóa cấu hình</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bạn có chắc chắn muốn xóa toàn bộ cấu hình hiện tại? Hành động này không thể hoàn tác.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Hủy</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmClearConfiguration}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Xóa tất cả
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Success Dialog */}
+      <Dialog open={successDialog.open} onOpenChange={(open) => {
+        setSuccessDialog({ open, message: '' });
+      }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <div className="flex items-center justify-center mb-4">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                <CheckCircle className="w-10 h-10 text-green-600" />
+              </div>
+            </div>
+            <DialogTitle className="text-center text-xl">Thành công!</DialogTitle>
+            <DialogDescription className="text-center text-base mt-2">
+              {successDialog.message}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="sm:justify-center">
+            <Button
+              type="button"
+              onClick={() => setSuccessDialog({ open: false, message: '' })}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white"
+            >
+              Đóng
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 

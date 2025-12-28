@@ -7,6 +7,7 @@ export const useCategoryStore = create((set, get) => ({
     parentCategories: [],
     categoryTree: [],
     currentCategory: null,
+    pagination: null,
     total: 0,
     loading: false,
     error: null,
@@ -15,15 +16,10 @@ export const useCategoryStore = create((set, get) => ({
     fetchCategories: async (params = {}) => {
         set({ loading: true, error: null });
         try {
-            // Lấy tất cả categories (không filter theo is_active) để Admin có thể quản lý
-            // Nếu cần filter, truyền params.is_active từ component
-            const fetchParams = {
-                limit: 100, // Tăng limit để lấy nhiều categories hơn
-                ...params,
-            };
-            const response = await categoryService.listCategories(fetchParams);
+            const response = await categoryService.listCategories(params);
             set({ 
                 categories: response.data || [], 
+                pagination: response.pagination || null,
                 total: response.pagination?.total || 0,
                 loading: false 
             });
@@ -117,6 +113,30 @@ export const useCategoryStore = create((set, get) => ({
             return response;
         } catch (error) {
             const message = error.response?.data?.message || 'Có lỗi xảy ra khi cập nhật danh mục';
+            set({ error: message, loading: false });
+            toast.error(message);
+            throw error;
+        }
+    },
+
+    // Deactivate category (soft delete)
+    deactivateCategory: async (categoryId) => {
+        set({ loading: true, error: null });
+        try {
+            const response = await categoryService.updateCategory(categoryId, { is_active: false });
+            
+            // Update local state to reflect the deactivation
+            set((state) => ({
+                categories: state.categories.map(cat =>
+                    parseInt(cat.category_id) === parseInt(categoryId)
+                        ? { ...cat, is_active: false }
+                        : cat
+                ),
+                loading: false
+            }));
+            return response;
+        } catch (error) {
+            const message = error.response?.data?.message || 'Có lỗi xảy ra khi vô hiệu hóa danh mục';
             set({ error: message, loading: false });
             toast.error(message);
             throw error;

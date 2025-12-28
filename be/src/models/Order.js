@@ -66,6 +66,13 @@ class Order {
       const subtotal = items.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
       const totalAmount = subtotal - (orderData.discountAmount || 0) + (orderData.shippingFee || 0) + (orderData.taxAmount || 0);
 
+      // Xác định payment status - COD sẽ là 'paid' ngay khi đặt hàng
+      const paymentMethod = orderData.payment_method || orderData.paymentMethod || 'cod';
+      const paymentStatus = paymentMethod === 'cod' ? 'paid' : (orderData.payment_status || 'unpaid');
+      
+      // Xác định order status - COD sẽ là 'confirmed' ngay khi đặt hàng
+      const orderStatus = paymentMethod === 'cod' ? 'confirmed' : (orderData.order_status || 'pending');
+
       // Insert đơn hàng
       const [result] = await conn.query(
         `INSERT INTO orders (
@@ -79,8 +86,8 @@ class Order {
           orderNumber,
           orderData.addressId,
           orderData.couponId || null,
-          orderData.order_status || 'pending', // Sử dụng order_status từ orderData
-          orderData.payment_status || 'unpaid', // Sử dụng payment_status từ orderData
+          orderStatus, // Sử dụng orderStatus đã tính toán
+          paymentStatus, // Sử dụng paymentStatus đã tính toán
           subtotal,
           orderData.discountAmount || 0,
           orderData.shippingFee || 0,
@@ -148,10 +155,11 @@ class Order {
       }
 
       // Tạo bản ghi payment
-      const paymentMethod = orderData.payment_method || orderData.paymentMethod || 'cod';
-      const paymentStatus = orderData.payment_status || 'pending';
-      const paymentGateway = paymentMethod === 'momo' ? 'momo' : null;
-      const paidAt = paymentStatus === 'paid' ? new Date() : null;
+      const paymentMethodForPayment = orderData.payment_method || orderData.paymentMethod || 'cod';
+      // COD sẽ có trạng thái 'paid' ngay, các phương thức khác theo orderData
+      const paymentStatusForPayment = paymentMethodForPayment === 'cod' ? 'paid' : (orderData.payment_status || 'pending');
+      const paymentGateway = paymentMethodForPayment === 'momo' ? 'momo' : null;
+      const paidAt = paymentStatusForPayment === 'paid' ? new Date() : null;
       
       // Tạo transaction_id tự động
       const transactionId = orderData.transaction_id || `TXN${Date.now()}${Math.floor(Math.random() * 1000)}`;
@@ -163,8 +171,8 @@ class Order {
         ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
         [
           orderId,
-          paymentMethod,
-          paymentStatus,
+          paymentMethodForPayment,
+          paymentStatusForPayment,
           totalAmount,
           paymentGateway,
           transactionId,
@@ -355,7 +363,7 @@ class Order {
     // Thêm cả isInstallment (camelCase) để frontend dễ sử dụng
     order.isInstallment = order.is_installment;
     
-    // Lấy order items riêng
+    // Lấy order items riêng (không JOIN để tránh lỗi)
     const [items] = await db.query(
       `SELECT 
         order_item_id as orderItemId,
@@ -371,6 +379,33 @@ class Order {
       WHERE order_id = ?`,
       [orderId]
     );
+    
+    // Lấy hình ảnh cho từng item
+    for (const item of items) {
+      if (item.variantId) {
+        const [variants] = await db.query(
+          `SELECT vi.image_url as imageUrl, p.slug as productSlug
+           FROM variant_images vi
+           LEFT JOIN product_variants pv ON vi.variant_id = pv.variant_id
+           LEFT JOIN products p ON pv.product_id = p.product_id
+           WHERE vi.variant_id = ? AND vi.is_primary = 1
+           LIMIT 1`,
+          [item.variantId]
+        );
+        if (variants.length > 0) {
+          item.imageUrl = variants[0].imageUrl;
+          item.productSlug = variants[0].productSlug;
+          console.log(`✅ Found image for variant ${item.variantId}:`, item.imageUrl);
+        } else {
+          console.log(`❌ No image found for variant ${item.variantId}`);
+        }
+      }
+    }
+    
+    console.log('📦 Final items with images:', items.map(i => ({ 
+      productName: i.productName, 
+      imageUrl: i.imageUrl 
+    })));
     
     // Lấy payments riêng
     const [payments] = await db.query(
@@ -432,8 +467,8 @@ class Order {
     }
 
     if (search) {
-      conditions.push('(o.order_number LIKE ? OR u.username LIKE ? OR u.email LIKE ?)');
-      values.push(`%${search}%`, `%${search}%`, `%${search}%`);
+      conditions.push('(COALESCE(a.phone, "") LIKE ? OR COALESCE(a.recipient_name, "") LIKE ?)');
+      values.push(`%${search}%`, `%${search}%`);
     }
 
     if (fromDate) {
@@ -487,6 +522,7 @@ class Order {
       `SELECT COUNT(*) as total
       FROM orders o
       LEFT JOIN users u ON o.user_id = u.user_id
+      LEFT JOIN addresses a ON o.address_id = a.address_id
       WHERE ${conditions.join(' AND ')}`,
       values.slice(0, -2)
     );

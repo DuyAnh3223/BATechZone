@@ -112,12 +112,12 @@ const WarrantyInspectionDialog = ({ request, open, onOpenChange, onComplete }) =
         return;
       }
 
-      const message = inspectionData.decision === 'accept' 
-        ? 'Đã xác nhận sản phẩm hợp lệ bảo hành' 
-        : 'Đã từ chối yêu cầu bảo hành';
-      toast.success(message);
+      const statusLabel = inspectionData.decision === 'accept' 
+        ? 'chấp nhận bảo hành' 
+        : 'từ chối bảo hành';
+      // toast.success(message);
       
-      // Call callback with updated data
+      // Call callback with updated data and status label
       const newStatus = inspectionData.decision === 'accept' ? 'warranty_accepted' : 'warranty_rejected';
       onComplete({
         ...request,
@@ -126,7 +126,7 @@ const WarrantyInspectionDialog = ({ request, open, onOpenChange, onComplete }) =
         inspection_notes: inspectionData.inspection_notes,
         rejection_reason: inspectionData.decision === 'reject' ? inspectionData.rejection_reason : null,
         inspected_at: new Date().toISOString()
-      });
+      }, statusLabel);
 
       // Reset form and close
       setInspectionData({

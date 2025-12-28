@@ -12,7 +12,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, Loader2 } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { RefreshCw, Loader2, CheckCircle } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 const formatDate = (dateString) => {
   if (!dateString) return '-';
@@ -76,6 +85,11 @@ const AdminOrder = () => {
   const [isUpdating, setIsUpdating] = useState(false);
   const [installmentData, setInstallmentData] = useState(null);
   const [showInstallmentDialog, setShowInstallmentDialog] = useState(false);
+  const [isSuccessDialogOpen, setIsSuccessDialogOpen] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
+  const [pendingCancelOrderId, setPendingCancelOrderId] = useState(null);
 
   const PAGE_SIZE_OPTIONS = [5, 10, 20];
 
@@ -88,11 +102,14 @@ const AdminOrder = () => {
     try {
       const params = {
         page,
-        limit: pageSize,
-        orderStatus: status || undefined,
-        paymentStatus: payStatus || undefined,
-        search: search.trim() || undefined
+        limit: pageSize
       };
+      
+      // Only add filters if they have values
+      if (status) params.orderStatus = status;
+      if (payStatus) params.paymentStatus = payStatus;
+      if (search.trim()) params.search = search.trim();
+      
       const response = await fetchOrders(params);
       console.log('Orders response:', response);
       // Don't log orders here - it's still old value
@@ -170,12 +187,11 @@ const AdminOrder = () => {
 
       // Xử lý các trạng thái đặc biệt
       if (status === "cancelled") {
-        const reason = prompt("Vui lòng nhập lý do hủy đơn hàng:");
-        if (!reason) {
-          setIsUpdating(false);
-          return;
-        }
-        response = await cancelOrder(orderId, reason);
+        // Mở dialog để nhập lý do hủy
+        setPendingCancelOrderId(orderId);
+        setShowCancelDialog(true);
+        setIsUpdating(false);
+        return;
       } else if (status === "refunded") {
         const totalAmount = orderDetail?.total_amount || orderDetail?.totalAmount || 0;
         response = await refundOrder(orderId, totalAmount);
@@ -184,8 +200,6 @@ const AdminOrder = () => {
         response = await updateOrderStatus(orderId, status);
       }
 
-      toast.success("Cập nhật trạng thái đơn hàng thành công!");
-      
       // Refresh order detail
       const updatedResponse = await fetchOrderById(orderId);
       const updatedOrderData = updatedResponse.data || updatedResponse;
@@ -204,9 +218,56 @@ const AdminOrder = () => {
       }
       
       setNewStatus("");
+      
+      // Hiển thị success dialog
+      setSuccessMessage(`Đã cập nhật trạng thái đơn hàng #${orderId} thành công!`);
+      setIsSuccessDialogOpen(true);
     } catch (error) {
       console.error("Error updating order status:", error);
       toast.error(error.response?.data?.message || "Cập nhật trạng thái thất bại");
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleConfirmCancel = async () => {
+    if (!cancelReason.trim()) {
+      toast.error('Vui lòng nhập lý do hủy đơn hàng');
+      return;
+    }
+
+    try {
+      setIsUpdating(true);
+      await cancelOrder(pendingCancelOrderId, cancelReason.trim());
+      
+      // Refresh order detail
+      const updatedResponse = await fetchOrderById(pendingCancelOrderId);
+      const updatedOrderData = updatedResponse.data || updatedResponse;
+      setOrderDetail(updatedOrderData);
+      
+      // Refresh orders list
+      await loadOrders();
+      
+      // Update selectedOrder with new status
+      if (updatedOrderData) {
+        setSelectedOrder({
+          ...selectedOrder,
+          order_status: updatedOrderData.order_status || updatedOrderData.orderStatus,
+          orderStatus: updatedOrderData.order_status || updatedOrderData.orderStatus
+        });
+      }
+      
+      setNewStatus("");
+      setShowCancelDialog(false);
+      setCancelReason('');
+      setPendingCancelOrderId(null);
+      
+      // Hiển thị success dialog
+      setSuccessMessage(`Đã hủy đơn hàng #${pendingCancelOrderId} thành công!`);
+      setIsSuccessDialogOpen(true);
+    } catch (error) {
+      console.error("Error cancelling order:", error);
+      toast.error(error.response?.data?.message || "Hủy đơn hàng thất bại");
     } finally {
       setIsUpdating(false);
     }
@@ -257,7 +318,7 @@ const AdminOrder = () => {
             setPage(1); 
           }} 
           className="border rounded px-3 py-2 w-full md:w-72" 
-          placeholder="Tìm theo mã đơn/username/email..." 
+          placeholder="Tìm theo SĐT/người nhận" 
         />
         <select 
           value={status} 
@@ -560,6 +621,7 @@ const AdminOrder = () => {
                   <table className="min-w-[800px] w-full text-left">
                     <thead className="bg-gray-50">
                       <tr>
+                        <th className="px-4 py-2">Hình ảnh</th>
                         <th className="px-4 py-2">SKU</th>
                         <th className="px-4 py-2">Sản phẩm</th>
                         <th className="px-4 py-2">Biến thể</th>
@@ -573,6 +635,20 @@ const AdminOrder = () => {
                         <>
                           {orderDetail.items.map((item, index) => (
                             <tr key={item.order_item_id || item.orderItemId || `item-${index}`}>
+                              <td className="px-4 py-2">
+                                <img
+                                  src={
+                                    item.imageUrl 
+                                      ? `${import.meta.env.VITE_API_URL || 'http://localhost:5001'}${item.imageUrl}`
+                                      : '/placeholder-product.png'
+                                  }
+                                  alt={item.product_name || item.productName}
+                                  className="w-16 h-16 object-cover rounded border"
+                                  onError={(e) => {
+                                    e.target.src = '/placeholder-product.png';
+                                  }}
+                                />
+                              </td>
                               <td className="px-4 py-2">{item.sku || '-'}</td>
                               <td className="px-4 py-2">{item.product_name || item.productName || '-'}</td>
                               <td className="px-4 py-2">{item.variant_name || item.variantName || '-'}</td>
@@ -588,7 +664,7 @@ const AdminOrder = () => {
                         </>
                       ) : (
                         <tr>
-                          <td className="px-4 py-2 text-center text-gray-500" colSpan={6}>
+                          <td className="px-4 py-2 text-center text-gray-500" colSpan={7}>
                             Không có sản phẩm nào
                           </td>
                         </tr>
@@ -794,6 +870,96 @@ const AdminOrder = () => {
           onClose={handleCloseInstallmentDialog}
         />
       )}
+
+      {/* Cancel Order Dialog */}
+      <Dialog open={showCancelDialog} onOpenChange={(open) => {
+        if (!open) {
+          setShowCancelDialog(false);
+          setCancelReason('');
+          setPendingCancelOrderId(null);
+        }
+      }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-semibold">Hủy đơn hàng</DialogTitle>
+            <DialogDescription>
+              Vui lòng nhập lý do hủy đơn hàng #{pendingCancelOrderId}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Textarea
+              placeholder="Nhập lý do hủy..."
+              value={cancelReason}
+              onChange={(e) => setCancelReason(e.target.value)}
+              rows={4}
+              className="resize-none"
+            />
+          </div>
+          <DialogFooter className="gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setShowCancelDialog(false);
+                setCancelReason('');
+                setPendingCancelOrderId(null);
+              }}
+              disabled={isUpdating}
+            >
+              Hủy bỏ
+            </Button>
+            <Button
+              type="button"
+              onClick={handleConfirmCancel}
+              disabled={isUpdating || !cancelReason.trim()}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              {isUpdating ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Đang xử lý...
+                </>
+              ) : (
+                'Xác nhận hủy'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Success Dialog */}
+      <Dialog open={isSuccessDialogOpen} onOpenChange={(open) => {
+        setIsSuccessDialogOpen(open);
+        if (!open) {
+          setSuccessMessage('');
+        }
+      }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <div className="flex items-center justify-center mb-4">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                <CheckCircle className="w-10 h-10 text-green-600" />
+              </div>
+            </div>
+            <DialogTitle className="text-center text-xl">Thành công!</DialogTitle>
+            <DialogDescription className="text-center text-base mt-2">
+              {successMessage}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="sm:justify-center">
+            <Button
+              type="button"
+              onClick={() => {
+                setIsSuccessDialogOpen(false);
+                setSuccessMessage('');
+              }}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white"
+            >
+              Đóng
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

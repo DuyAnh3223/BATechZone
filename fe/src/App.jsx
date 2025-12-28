@@ -75,6 +75,7 @@ function App() {
             <Route path="orders" element={<Orders />} />
             <Route path="orders/:orderId" element={<OrderDetail />} />
             <Route path="product/:productId" element={<ProductDetail />} />
+            <Route path="products" element={<ProductList />} />
             <Route path="category/:categoryId" element={<ProductList />} />
             <Route path="profile" element={<Profile />} />
             <Route path="return-policy" element={<ReturnPolicy />} />
@@ -98,7 +99,6 @@ function App() {
             <Route path="coupons" element={<AdminCouponPage />} />
             <Route path="orders" element={<AdminOrder />} />
             <Route path="notifications" element={<AdminNotification />} />
-            <Route path="builds" element={<AdminBuild />} />
             <Route path="categories" element={<AdminCategoryPage />} />
             <Route path="posts" element={<AdminPost />} />
             <Route path="posts/:postId" element={<AdminPostDetail />} />

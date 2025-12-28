@@ -53,9 +53,12 @@ const InstallmentList = () => {
   
   const filteredInstallments = installmentsList.filter(inst => {
     const matchStatus = filters.status === 'all' || inst.status === filters.status;
+    const searchTerm = filters.search.toLowerCase();
     const matchSearch = !filters.search || 
       inst.installment_id.toString().includes(filters.search) ||
-      inst.order_id.toString().includes(filters.search);
+      inst.order_id.toString().includes(filters.search) ||
+      (inst.user_name && inst.user_name.toLowerCase().includes(searchTerm)) ||
+      (inst.user_phone && inst.user_phone.includes(filters.search));
     return matchStatus && matchSearch;
   });
 
@@ -79,7 +82,7 @@ const InstallmentList = () => {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <Input
-                  placeholder="Tìm theo mã hợp đồng, đơn hàng..."
+                  placeholder="Tìm theo mã hợp đồng, đơn hàng, tên KH, SĐT..."
                   value={filters.search}
                   onChange={(e) => setFilters({ ...filters, search: e.target.value })}
                   className="pl-10"

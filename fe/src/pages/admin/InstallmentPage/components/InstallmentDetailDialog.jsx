@@ -323,88 +323,136 @@ const InstallmentDetailDialog = ({ installment, open, onClose }) => {
             </div>
           </TabsContent>
 
-          <TabsContent value="summary" className="space-y-4">
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              <Card>
+          <TabsContent value="summary" className="space-y-6">
+            {/* Các thẻ thông tin chính */}
+            <div className="grid grid-cols-1 gap-4">
+              <Card className="border-l-4 border-l-blue-500 shadow-sm hover:shadow-md transition-shadow">
                 <CardContent className="pt-6">
-                  <label className="text-sm text-gray-500">Tổng giá trị</label>
-                  <p className="text-2xl font-bold text-blue-600">
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="text-sm font-medium text-gray-600">Tổng giá trị</label>
+                    <DollarSign className="w-5 h-5 text-blue-500 flex-shrink-0" />
+                  </div>
+                  <p className="text-2xl font-bold text-blue-600 break-words">
                     {formatCurrency(paymentSummary.total_amount)}
                   </p>
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="border-l-4 border-l-green-500 shadow-sm hover:shadow-md transition-shadow">
                 <CardContent className="pt-6">
-                  <label className="text-sm text-gray-500">Đã thanh toán</label>
-                  <p className="text-2xl font-bold text-green-600">
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="text-sm font-medium text-gray-600">Đã thanh toán</label>
+                    <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
+                  </div>
+                  <p className="text-2xl font-bold text-green-600 break-words">
                     {formatCurrency(paymentSummary.total_paid)}
                   </p>
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="border-l-4 border-l-orange-500 shadow-sm hover:shadow-md transition-shadow">
                 <CardContent className="pt-6">
-                  <label className="text-sm text-gray-500">Còn lại</label>
-                  <p className="text-2xl font-bold text-orange-600">
-                    {formatCurrency(paymentSummary.total_remaining)}
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="pt-6">
-                  <label className="text-sm text-gray-500">Tiến độ</label>
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-green-500"
-                        style={{ width: `${paymentSummary.completion_percentage}%` }}
-                      />
-                    </div>
-                    <span className="text-sm font-semibold">
-                      {paymentSummary.completion_percentage}%
-                    </span>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="text-sm font-medium text-gray-600">Còn lại</label>
+                    <AlertCircle className="w-5 h-5 text-orange-500 flex-shrink-0" />
                   </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="pt-6">
-                  <label className="text-sm text-gray-500">Đã trả</label>
-                  <p className="text-2xl font-bold">
-                    {paymentSummary.paid_count}/{paymentSummary.total_payments}
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="pt-6">
-                  <label className="text-sm text-gray-500">Quá hạn</label>
-                  <p className="text-2xl font-bold text-red-600">
-                    {paymentSummary.overdue_count}
+                  <p className="text-2xl font-bold text-orange-600 break-words">
+                    {formatCurrency(paymentSummary.total_remaining)}
                   </p>
                 </CardContent>
               </Card>
             </div>
 
+            {/* Thanh tiến độ lớn */}
+            <Card className="shadow-sm">
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between mb-3">
+                  <label className="text-base font-semibold text-gray-700">Tiến độ thanh toán</label>
+                  <span className="text-2xl font-bold text-green-600">
+                    {paymentSummary.completion_percentage}%
+                  </span>
+                </div>
+                <div className="h-4 bg-gray-200 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-gradient-to-r from-green-400 to-green-600 transition-all duration-500 ease-out"
+                    style={{ width: `${paymentSummary.completion_percentage}%` }}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Thống kê chi tiết */}
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <Card className="bg-gradient-to-br from-blue-50 to-white border-blue-100">
+                <CardContent className="pt-6 text-center">
+                  <label className="text-sm font-medium text-gray-600 block mb-2">Số kỳ đã trả</label>
+                  <p className="text-3xl font-bold text-blue-600">
+                    {paymentSummary.paid_count}
+                  </p>
+                  <p className="text-sm text-gray-500 mt-1">
+                    / {paymentSummary.total_payments} kỳ
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-gradient-to-br from-orange-50 to-white border-orange-100">
+                <CardContent className="pt-6 text-center">
+                  <label className="text-sm font-medium text-gray-600 block mb-2">Kỳ chưa trả</label>
+                  <p className="text-3xl font-bold text-orange-600">
+                    {paymentSummary.total_payments - paymentSummary.paid_count}
+                  </p>
+                  <p className="text-sm text-gray-500 mt-1">kỳ</p>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-gradient-to-br from-red-50 to-white border-red-100">
+                <CardContent className="pt-6 text-center">
+                  <label className="text-sm font-medium text-gray-600 block mb-2">Kỳ quá hạn</label>
+                  <p className="text-3xl font-bold text-red-600">
+                    {paymentSummary.overdue_count}
+                  </p>
+                  <p className="text-sm text-gray-500 mt-1">kỳ</p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Kỳ thanh toán tiếp theo */}
             {paymentSummary.next_payment && (
-              <Card className="border-blue-200 bg-blue-50">
+              <Card className="border-2 border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50 shadow-md">
                 <CardContent className="pt-6">
-                  <h3 className="font-semibold mb-2 flex items-center gap-2">
-                    <Clock className="w-4 h-4" />
-                    Kỳ thanh toán tiếp theo
-                  </h3>
-                  <div className="flex items-center justify-between">
-                    <div>
+                  <div className="flex items-start gap-3 mb-4">
+                    <div className="p-2 bg-blue-500 rounded-lg">
+                      <Clock className="w-6 h-6 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-lg font-semibold text-gray-800 mb-1">
+                        Kỳ thanh toán tiếp theo
+                      </h3>
                       <p className="text-sm text-gray-600">
-                        Kỳ {paymentSummary.next_payment.payment_no} - 
-                        Hạn: {formatDate(paymentSummary.next_payment.due_date)}
+                        Vui lòng thanh toán trước ngày đến hạn
                       </p>
                     </div>
-                    <p className="text-xl font-bold text-blue-600">
-                      {formatCurrency(paymentSummary.next_payment.amount)}
-                    </p>
+                  </div>
+                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 p-4 bg-white rounded-lg border border-blue-100">
+                    <div className="space-y-1">
+                      <p className="text-sm text-gray-500">Kỳ thanh toán</p>
+                      <p className="text-base font-semibold text-gray-800">
+                        Kỳ {paymentSummary.next_payment.payment_no}
+                      </p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-sm text-gray-500">Ngày đến hạn</p>
+                      <p className="text-base font-semibold text-gray-800 flex items-center gap-2">
+                        <Calendar className="w-4 h-4 text-blue-500" />
+                        {formatDate(paymentSummary.next_payment.due_date)}
+                      </p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-sm text-gray-500">Số tiền</p>
+                      <p className="text-base font-bold text-blue-600">
+                        {formatCurrency(paymentSummary.next_payment.amount)}
+                      </p>
+                    </div>
                   </div>
                 </CardContent>
               </Card>

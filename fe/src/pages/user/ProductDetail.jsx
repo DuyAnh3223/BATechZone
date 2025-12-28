@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Package } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ArrowLeft, Package, CheckCircle } from "lucide-react";
 import { useProductStore } from "@/stores/useProductStore";
 import { useVariantStore } from "@/stores/useVariantStore";
 import { useCartStore } from "@/stores/useCartStore";
@@ -29,6 +30,7 @@ const ProductDetail = () => {
   const { user } = useUserAuthStore();
   const [quantity, setQuantity] = useState(1);
   const [selectedVariant, setSelectedVariant] = useState(null);
+  const [successDialog, setSuccessDialog] = useState({ open: false, message: '' });
 
   // Clear all data when product changes
   useEffect(() => {
@@ -50,6 +52,21 @@ const ProductDetail = () => {
       fetchVariantsByProductId(productId).catch(err => console.error('Error loading variants:', err));
       // Increase view count
       increaseView(productId).catch(err => console.error('Error increasing view:', err));
+      
+      // Lưu sản phẩm vào danh sách đã xem
+      const viewedIds = JSON.parse(localStorage.getItem('recentlyViewedProducts') || '[]');
+      const productIdNum = parseInt(productId);
+      
+      // Xóa productId nếu đã tồn tại (để di chuyển lên đầu)
+      const filteredIds = viewedIds.filter(id => id !== productIdNum);
+      
+      // Thêm productId vào đầu mảng
+      const updatedIds = [productIdNum, ...filteredIds].slice(0, 12); // Giới hạn 12 sản phẩm
+      
+      localStorage.setItem('recentlyViewedProducts', JSON.stringify(updatedIds));
+      
+      // Dispatch event để các component khác cập nhật
+      window.dispatchEvent(new Event('recentlyViewedUpdated'));
     }
   }, [productId, fetchProduct, fetchVariantsByProductId, increaseView]);
 
@@ -144,7 +161,10 @@ const ProductDetail = () => {
         quantity: quantity
       });
 
-      toast.success(`Đã thêm ${quantity} sản phẩm vào giỏ hàng`);
+      setSuccessDialog({ 
+        open: true, 
+        message: `Đã thêm ${quantity} sản phẩm vào giỏ hàng thành công!` 
+      });
       
       // Reset quantity về 1 sau khi thêm thành công
       setQuantity(1);
@@ -290,6 +310,31 @@ const ProductDetail = () => {
           {variants && variants.length > 0 && <VariantsList variants={variants} />}
         </Tabs>
       </div>
+
+      {/* Success Dialog */}
+      <Dialog open={successDialog.open} onOpenChange={(open) => !open && setSuccessDialog({ open: false, message: '' })}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <div className="flex items-center justify-center mb-4">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                <CheckCircle className="w-10 h-10 text-green-600" />
+              </div>
+            </div>
+            <DialogTitle className="text-center text-xl">Thành công!</DialogTitle>
+            <DialogDescription className="text-center text-base mt-2">
+              {successDialog.message}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="sm:justify-center">
+            <Button 
+              onClick={() => setSuccessDialog({ open: false, message: '' })}
+              className="bg-indigo-600 hover:bg-indigo-700"
+            >
+              Đóng
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

@@ -11,7 +11,9 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { MinusIcon, PlusIcon, Trash2Icon, ShoppingCart, X, Tag } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { MinusIcon, PlusIcon, Trash2Icon, ShoppingCart, X, Tag, CheckCircle } from "lucide-react";
 import { Link } from "react-router";
 import { useCartStore } from "@/stores/useCartStore";
 import { useCartItemStore } from "@/stores/useCartItemStore";
@@ -46,6 +48,8 @@ const Cart = () => {
   const [discountAmount, setDiscountAmount] = useState(0);
   const [isValidatingCoupon, setIsValidatingCoupon] = useState(false);
   const [isLoadingCart, setIsLoadingCart] = useState(true);
+  const [deleteConfirm, setDeleteConfirm] = useState({ open: false, itemId: null, itemName: null });
+  const [successDialog, setSuccessDialog] = useState({ open: false, message: '' });
 
   // Load coupon từ localStorage khi component mount
   useEffect(() => {
@@ -117,14 +121,24 @@ const Cart = () => {
         await fetchCartItems(cartId);
       }
       
-      toast.success('Đã cập nhật số lượng');
+      setSuccessDialog({ 
+        open: true, 
+        message: 'Đã cập nhật số lượng thành công!' 
+      });
     } catch (error) {
       console.error('Error updating quantity:', error);
       toast.error(error.response?.data?.message || 'Không thể cập nhật số lượng');
     }
   };
 
-  const handleRemoveItem = async (itemId) => {
+  const handleRemoveItem = (itemId, itemName) => {
+    setDeleteConfirm({ open: true, itemId, itemName });
+  };
+
+  const confirmRemoveItem = async () => {
+    const { itemId, itemName } = deleteConfirm;
+    setDeleteConfirm({ open: false, itemId: null, itemName: null });
+    
     try {
       await removeItem(itemId);
       
@@ -134,7 +148,7 @@ const Cart = () => {
         await fetchCartItems(cartId);
       }
       
-      toast.success('Đã xóa sản phẩm khỏi giỏ hàng');
+      setSuccessDialog({ open: true, message: 'Đã xóa sản phẩm khỏi giỏ hàng thành công!' });
     } catch (error) {
       console.error('Error removing item:', error);
       toast.error(error.response?.data?.message || 'Không thể xóa sản phẩm');
@@ -172,7 +186,7 @@ const Cart = () => {
         // Lưu coupon vào localStorage để sử dụng ở Checkout
         localStorage.setItem('applied_coupon', JSON.stringify(response.data.coupon));
         localStorage.setItem('discount_amount', response.data.discountAmount.toString());
-        toast.success("Áp dụng mã giảm giá thành công!");
+        setSuccessDialog({ open: true, message: 'Đã áp dụng mã giảm giá thành công!' });
         setCouponCode("");
       }
     } catch (error) {
@@ -354,7 +368,7 @@ const Cart = () => {
                                 variant="ghost"
                                 size="icon"
                                 className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                                onClick={() => handleRemoveItem(item.cart_item_id)}
+                                onClick={() => handleRemoveItem(item.cart_item_id, item.variant_name)}
                                 disabled={loading}
                               >
                                 <Trash2Icon className="h-5 w-5" />
@@ -489,6 +503,52 @@ const Cart = () => {
           </Card>
         </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteConfirm.open} onOpenChange={(open) => !open && setDeleteConfirm({ open: false, itemId: null, itemName: null })}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xác nhận xóa sản phẩm</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bạn có chắc chắn muốn xóa sản phẩm khỏi giỏ hàng?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Hủy</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmRemoveItem}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Xóa
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Success Dialog */}
+      <Dialog open={successDialog.open} onOpenChange={(open) => !open && setSuccessDialog({ open: false, message: '' })}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <div className="flex items-center justify-center mb-4">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                <CheckCircle className="w-10 h-10 text-green-600" />
+              </div>
+            </div>
+            <DialogTitle className="text-center text-xl">Thành công!</DialogTitle>
+            <DialogDescription className="text-center text-base mt-2">
+              {successDialog.message}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="sm:justify-center">
+            <Button 
+              onClick={() => setSuccessDialog({ open: false, message: '' })}
+              className="bg-indigo-600 hover:bg-indigo-700"
+            >
+              Đóng
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
