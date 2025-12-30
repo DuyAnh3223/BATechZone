@@ -83,7 +83,7 @@ const InstallmentList = ({
                 <TableHead>Trả trước</TableHead>
                 <TableHead>Góp/tháng</TableHead>
                 <TableHead>Kỳ hạn</TableHead>
-                <TableHead>Kỳ tiếp</TableHead>
+                {/* <TableHead>Kỳ tiếp</TableHead> */}
                 <TableHead>Phí trễ</TableHead>
                 <TableHead>Còn lại</TableHead>
                 <TableHead>Trạng thái</TableHead>
@@ -109,7 +109,7 @@ const InstallmentList = ({
                     </div>
                   </TableCell>
                   <TableCell className="font-semibold">
-                    {formatPrice(installment.total_amount)}
+                    {formatPrice(installment.total_with_interest)}
                   </TableCell>
                   <TableCell>
                     {installment.down_payment > 0 ? (
@@ -131,7 +131,7 @@ const InstallmentList = ({
                   <TableCell>
                     {installment.num_terms} tháng
                   </TableCell>
-                  <TableCell>
+                  {/* <TableCell>
                     {installment.next_due_date ? (
                       <div>
                         <p className="font-medium">{formatDate(installment.next_due_date)}</p>
@@ -144,7 +144,7 @@ const InstallmentList = ({
                     ) : (
                       <span className="text-gray-400">-</span>
                     )}
-                  </TableCell>
+                  </TableCell> */}
                   <TableCell>
                     {installment.total_overdue_fee > 0 ? (
                       <div className="text-red-600">

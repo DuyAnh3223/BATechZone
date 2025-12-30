@@ -145,14 +145,14 @@ const InstallmentDetailDialog = ({
                   </div>
 
                   <div className="grid grid-cols-1 gap-3 mt-4">
-                    <div className="p-3 border rounded-lg">
+                    {/* <div className="p-3 border rounded-lg">
                       <p className="text-sm text-gray-600 mb-1">Tổng gốc</p>
                       <p className="font-semibold">{formatPrice(installment.total_amount)}</p>
-                    </div>
+                    </div> */}
                     <div className="p-3 border rounded-lg">
                       <p className="text-sm text-gray-600 mb-1">Tổng phải trả (gốc + lãi)</p>
                       <p className="font-semibold text-red-600">
-                        {formatPrice(installment.total_with_interest || installment.total_amount)}
+                        {formatPrice(installment.total_with_interest)}
                       </p>
                     </div>
                     {installment.total_overdue_fee > 0 && (
@@ -167,7 +167,7 @@ const InstallmentDetailDialog = ({
                       </div>
                     )}
                     <div className="p-3 border rounded-lg">
-                      <p className="text-sm text-gray-600 mb-1">Còn lại</p>
+                      <p className="text-sm text-gray-600 mb-1">Gốc còn lại</p>
                       <p className="font-semibold text-blue-600">
                         {formatPrice(calculateOutstandingBalance(installment))}
                       </p>

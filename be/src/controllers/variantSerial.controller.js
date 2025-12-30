@@ -1,5 +1,4 @@
 import VariantSerialService from '../services/variantSerial.service.js';
-import { SearchSerialDTO } from '../dtos/variantSerial.dto.js';
 
 /**
  * VariantSerialController - HTTP Request Handler
@@ -264,22 +263,47 @@ class VariantSerialController {
    */
   async searchSerials(req, res) {
     try {
-      const searchDTO = new SearchSerialDTO(req.query);
-      const validation = searchDTO.validate();
+      // Parse query params
+      const variant_id = req.query.variant_id ? parseInt(req.query.variant_id) : null;
+      const status = req.query.status || null;
+      const order_item_id = req.query.order_item_id ? parseInt(req.query.order_item_id) : null;
+      const serial_number = req.query.serial_number || null;
+      const page = req.query.page ? parseInt(req.query.page) : 1;
+      const limit = req.query.limit ? parseInt(req.query.limit) : 20;
 
-      if (!validation.isValid) {
+      // Validate
+      if (page < 1) {
         return res.status(400).json({
           success: false,
-          message: validation.errors.join(', ')
+          message: 'page phải lớn hơn 0'
+        });
+      }
+      
+      if (limit < 1 || limit > 100) {
+        return res.status(400).json({
+          success: false,
+          message: 'limit phải từ 1 đến 100'
         });
       }
 
-      const filters = searchDTO.getFilters();
-      const result = await VariantSerialService.searchSerials(
-        filters,
-        searchDTO.page,
-        searchDTO.limit
-      );
+      if (status) {
+        const validStatuses = ['in_stock', 'reserved', 'sold', 'rma_in', 'rma_done', 'scrapped'];
+        if (!validStatuses.includes(status)) {
+          return res.status(400).json({
+            success: false,
+            message: `status phải là một trong: ${validStatuses.join(', ')}`
+          });
+        }
+      }
+
+      // Build filters
+      const filters = {};
+      if (variant_id) filters.variant_id = variant_id;
+      if (status) filters.status = status;
+      if (order_item_id) filters.order_item_id = order_item_id;
+      if (serial_number) filters.serial_number = serial_number;
+
+      const result = await VariantSerialService.searchSerials(filters, page, limit);
       
       res.status(200).json(result);
     } catch (error) {

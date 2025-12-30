@@ -1,126 +1,51 @@
-import Order from '../models/Order.js';
-import { db } from '../libs/db.js';
+import OrderService from '../services/order.services.js';
+import User from '../models/User.js';
+import bcrypt from 'bcrypt';
 
 // Tạo đơn hàng mới
 export const createOrder = async (req, res) => {
   try {
-    const { orderData, items, shippingAddress } = req.body;
+    let { orderData, items, shippingAddress, guestUserData } = req.body;
 
-    // Validate
-    if (!items || items.length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: 'Giỏ hàng trống'
-      });
-    }
-
-    // Validate shipping address
-    if (!orderData.userId && !shippingAddress) {
-      return res.status(400).json({
-        success: false,
-        message: 'Thiếu thông tin giao hàng'
-      });
-    }
-
-    // Không tạo user account cho khách vãng lai
-    // Chỉ lưu thông tin vào addresses với user_id = NULL
-
-    // Tạo address nếu chưa có addressId
-    let addressId = orderData.addressId;
-    if (!addressId && shippingAddress) {
-      // Kiểm tra xem địa chỉ đã tồn tại chưa (cùng user_id, phone, address, city, district)
-      const [existingAddresses] = await db.query(
-        `SELECT address_id FROM addresses 
-         WHERE user_id = ? 
-         AND phone = ? 
-         AND address_line1 = ? 
-         AND city = ? 
-         AND district = ?
-         LIMIT 1`,
-        [
-          orderData.userId || null,
-          shippingAddress.phone,
-          shippingAddress.address,
-          shippingAddress.province,
-          shippingAddress.district
-        ]
-      );
-
-      if (existingAddresses && existingAddresses.length > 0) {
-        // Sử dụng địa chỉ đã có
-        addressId = existingAddresses[0].address_id;
-        console.log('Using existing address with ID:', addressId);
+    // Xử lý khách vãng lai: tạo tài khoản mới nếu cần
+    if (guestUserData && !orderData.userId) {
+      // Kiểm tra email đã tồn tại chưa
+      const existingUser = await User.findByEmail(guestUserData.email);
+      
+      if (existingUser) {
+        // Nếu email đã tồn tại, sử dụng user_id hiện tại
+        orderData.userId = existingUser.user_id;
+        console.log(`✅ Email ${guestUserData.email} đã tồn tại, sử dụng user_id: ${existingUser.user_id}`);
       } else {
-        // Tạo địa chỉ mới
-        console.log('Creating new address:', shippingAddress);
-        const [result] = await db.query(
-          `INSERT INTO addresses (
-            user_id, recipient_name, phone, 
-            address_line1, address_line2, 
-            city, district, ward, postal_code, country, 
-            is_default, address_type
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [
-            orderData.userId || null, // user_id = null for guest, userId for registered user
-            shippingAddress.fullName,
-            shippingAddress.phone,
-            shippingAddress.address,
-            shippingAddress.note || null,
-            shippingAddress.province,
-            shippingAddress.district,
-            shippingAddress.ward || null, // ward
-            null, // postal_code
-            'Vietnam',
-            0,
-            'other'
-          ]
-        );
-        addressId = result.insertId;
-        console.log('New address created with ID:', addressId);
+        // Tạo user mới cho khách vãng lai
+        const passwordHash = await bcrypt.hash(guestUserData.password, 10);
+        
+        const newUserId = await User.create({
+          username: guestUserData.username,
+          email: guestUserData.email,
+          password_hash: passwordHash,
+          full_name: guestUserData.fullName,
+          phone: guestUserData.phone,
+          role: guestUserData.role || 0
+        });
+        
+        orderData.userId = newUserId;
+        console.log(`✅ Tạo tài khoản mới cho khách vãng lai: user_id=${newUserId}, email=${guestUserData.email}`);
       }
     }
 
-    // Validate address for registered user (nếu không có shippingAddress để tạo mới)
-    if (orderData.userId && !addressId && !shippingAddress) {
-      return res.status(400).json({
-        success: false,
-        message: 'Thiếu thông tin địa chỉ giao hàng'
-      });
-    }
-
-    const orderId = await Order.create({
-      ...orderData,
-      addressId
-    }, items);
-
-    // Get installment_id if created by Order.create()
-    let installmentId = null;
-    if (orderData.paymentMethod === 'installment') {
-      const [installments] = await db.query(
-        'SELECT installment_id FROM installments WHERE order_id = ? ORDER BY created_at DESC LIMIT 1',
-        [orderId]
-      );
-      if (installments.length > 0) {
-        installmentId = installments[0].installment_id;
-        console.log('Installment found with ID:', installmentId);
-      }
-    }
+    const result = await OrderService.createOrder(orderData, items, shippingAddress);
 
     res.status(201).json({
       success: true,
       message: 'Đặt hàng thành công',
-      data: { 
-        orderId,
-        userId: orderData.userId,
-        installmentId 
-      }
+      data: result
     });
   } catch (error) {
     console.error('Error creating order:', error);
     res.status(500).json({
       success: false,
-      message: 'Lỗi khi tạo đơn hàng',
-      error: error.message
+      message: error.message || 'Lỗi khi tạo đơn hàng'
     });
   }
 };
@@ -130,16 +55,7 @@ export const getOrderById = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const order = await Order.getById(id);
-
-    if (!order) {
-      return res.status(404).json({
-        success: false,
-        message: 'Không tìm thấy đơn hàng'
-      });
-    }
-
-  
+    const order = await OrderService.getOrderById(id);
 
     res.json({
       success: true,
@@ -147,10 +63,10 @@ export const getOrderById = async (req, res) => {
     });
   } catch (error) {
     console.error('Error getting order:', error);
-    res.status(500).json({
+    const statusCode = error.message.includes('Không tìm thấy') ? 404 : 500;
+    res.status(statusCode).json({
       success: false,
-      message: 'Lỗi khi lấy thông tin đơn hàng',
-      error: error.message
+      message: error.message
     });
   }
 };
@@ -172,20 +88,17 @@ export const getOrders = async (req, res) => {
       sortOrder: req.query.sortOrder || 'DESC'
     };
 
-    console.log('📦 Order list params:', params);
-    const result = await Order.list(params);
+    const result = await OrderService.listOrders(params);
 
     res.json({
       success: true,
       ...result
     });
   } catch (error) {
-    console.error('❌ Error getting orders:', error);
-    console.error('Error stack:', error.stack);
+    console.error('Error getting orders:', error);
     res.status(500).json({
       success: false,
-      message: 'Lỗi khi lấy danh sách đơn hàng',
-      error: error.message
+      message: error.message
     });
   }
 };
@@ -195,25 +108,16 @@ export const confirmOrder = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const order = await Order.getById(id);
-
-    if (!order) {
-      return res.status(404).json({
-        success: false,
-        message: 'Không tìm thấy đơn hàng'
-      });
-    }
-
-    await order.confirm();
+    await OrderService.confirmOrder(id);
 
     res.json({
       success: true,
-      message: 'Xác nhận đơn hàng thành công',
-      data: order
+      message: 'Xác nhận đơn hàng thành công'
     });
   } catch (error) {
     console.error('Error confirming order:', error);
-    res.status(400).json({
+    const statusCode = error.message.includes('Không tìm thấy') ? 404 : 400;
+    res.status(statusCode).json({
       success: false,
       message: error.message
     });
@@ -225,25 +129,16 @@ export const processOrder = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const order = await Order.getById(id);
-
-    if (!order) {
-      return res.status(404).json({
-        success: false,
-        message: 'Không tìm thấy đơn hàng'
-      });
-    }
-
-    await order.process();
+    await OrderService.processOrder(id);
 
     res.json({
       success: true,
-      message: 'Chuyển đơn hàng sang xử lý thành công',
-      data: order
+      message: 'Chuyển đơn hàng sang xử lý thành công'
     });
   } catch (error) {
     console.error('Error processing order:', error);
-    res.status(400).json({
+    const statusCode = error.message.includes('Không tìm thấy') ? 404 : 400;
+    res.status(statusCode).json({
       success: false,
       message: error.message
     });
@@ -255,25 +150,16 @@ export const shipOrder = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const order = await Order.getById(id);
-
-    if (!order) {
-      return res.status(404).json({
-        success: false,
-        message: 'Không tìm thấy đơn hàng'
-      });
-    }
-
-    await order.ship();
+    await OrderService.shipOrder(id);
 
     res.json({
       success: true,
-      message: 'Chuyển đơn hàng sang giao hàng thành công',
-      data: order
+      message: 'Chuyển đơn hàng sang giao hàng thành công'
     });
   } catch (error) {
     console.error('Error shipping order:', error);
-    res.status(400).json({
+    const statusCode = error.message.includes('Không tìm thấy') ? 404 : 400;
+    res.status(statusCode).json({
       success: false,
       message: error.message
     });
@@ -285,25 +171,16 @@ export const deliverOrder = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const order = await Order.getById(id);
-
-    if (!order) {
-      return res.status(404).json({
-        success: false,
-        message: 'Không tìm thấy đơn hàng'
-      });
-    }
-
-    await order.deliver();
+    await OrderService.deliverOrder(id);
 
     res.json({
       success: true,
-      message: 'Đơn hàng đã được giao thành công',
-      data: order
+      message: 'Đơn hàng đã được giao thành công'
     });
   } catch (error) {
     console.error('Error delivering order:', error);
-    res.status(400).json({
+    const statusCode = error.message.includes('Không tìm thấy') ? 404 : 400;
+    res.status(statusCode).json({
       success: false,
       message: error.message
     });
@@ -323,27 +200,16 @@ export const cancelOrder = async (req, res) => {
       });
     }
 
-    const orderData = await Order.getById(id);
-
-    if (!orderData) {
-      return res.status(404).json({
-        success: false,
-        message: 'Không tìm thấy đơn hàng'
-      });
-    }
-
-    // Tạo Order instance từ data
-    const order = new Order(orderData);
-    await order.cancel(reason);
+    await OrderService.cancelOrder(id, reason);
 
     res.json({
       success: true,
-      message: 'Hủy đơn hàng thành công',
-      data: order
+      message: 'Hủy đơn hàng thành công'
     });
   } catch (error) {
     console.error('Error cancelling order:', error);
-    res.status(400).json({
+    const statusCode = error.message.includes('Không tìm thấy') ? 404 : 400;
+    res.status(statusCode).json({
       success: false,
       message: error.message
     });
@@ -356,25 +222,16 @@ export const refundOrder = async (req, res) => {
     const { id } = req.params;
     const { amount } = req.body;
 
-    const order = await Order.getById(id);
-
-    if (!order) {
-      return res.status(404).json({
-        success: false,
-        message: 'Không tìm thấy đơn hàng'
-      });
-    }
-
-    await order.refund(amount);
+    await OrderService.refundOrder(id, amount);
 
     res.json({
       success: true,
-      message: 'Hoàn tiền thành công',
-      data: order
+      message: 'Hoàn tiền thành công'
     });
   } catch (error) {
     console.error('Error refunding order:', error);
-    res.status(400).json({
+    const statusCode = error.message.includes('Không tìm thấy') ? 404 : 400;
+    res.status(statusCode).json({
       success: false,
       message: error.message
     });
@@ -394,41 +251,16 @@ export const updateOrderStatus = async (req, res) => {
       });
     }
 
-    const orderData = await Order.getById(id);
-
-    if (!orderData) {
-      return res.status(404).json({
-        success: false,
-        message: 'Không tìm thấy đơn hàng'
-      });
-    }
-
-    // Đảm bảo order_id được set đúng
-    if (!orderData.order_id && !orderData.orderId) {
-      orderData.order_id = id;
-    }
-
-    // Tạo instance Order từ dữ liệu
-    const order = new Order(orderData);
-    
-    // Đảm bảo orderId được set
-    if (!order.orderId) {
-      order.orderId = parseInt(id);
-    }
-    
-    await order.updateStatus(status);
-
-    // Refresh order data
-    const updatedOrder = await Order.getById(id);
+    await OrderService.updateOrderStatus(id, status);
 
     res.json({
       success: true,
-      message: 'Cập nhật trạng thái đơn hàng thành công',
-      data: updatedOrder
+      message: 'Cập nhật trạng thái đơn hàng thành công'
     });
   } catch (error) {
     console.error('Error updating order status:', error);
-    res.status(400).json({
+    const statusCode = error.message.includes('Không tìm thấy') ? 404 : 400;
+    res.status(statusCode).json({
       success: false,
       message: error.message
     });
@@ -448,25 +280,16 @@ export const updatePaymentStatus = async (req, res) => {
       });
     }
 
-    const order = await Order.getById(id);
-
-    if (!order) {
-      return res.status(404).json({
-        success: false,
-        message: 'Không tìm thấy đơn hàng'
-      });
-    }
-
-    await order.updatePaymentStatus(status);
+    await OrderService.updatePaymentStatus(id, status);
 
     res.json({
       success: true,
-      message: 'Cập nhật trạng thái thanh toán thành công',
-      data: order
+      message: 'Cập nhật trạng thái thanh toán thành công'
     });
   } catch (error) {
     console.error('Error updating payment status:', error);
-    res.status(400).json({
+    const statusCode = error.message.includes('Không tìm thấy') ? 404 : 400;
+    res.status(statusCode).json({
       success: false,
       message: error.message
     });
@@ -485,80 +308,19 @@ export const trackOrderByPhone = async (req, res) => {
       });
     }
 
-    // Tìm tất cả đơn hàng theo số điện thoại từ bảng addresses
-    const [orders] = await db.query(
-      `SELECT DISTINCT
-        o.order_id,
-        o.order_number,
-        o.order_status,
-        o.payment_status,
-        o.subtotal,
-        o.discount_amount,
-        o.shipping_fee,
-        o.tax_amount,
-        o.total_amount,
-        o.notes,
-        o.created_at,
-        o.updated_at,
-        o.confirmed_at,
-        o.shipped_at,
-        o.delivered_at,
-        o.cancelled_at,
-        a.recipient_name,
-        a.phone as recipient_phone,
-        a.address_line1,
-        a.city,
-        a.district,
-        u.email,
-        u.phone as user_phone
-      FROM orders o
-      LEFT JOIN addresses a ON o.address_id = a.address_id
-      LEFT JOIN users u ON o.user_id = u.user_id
-      WHERE a.phone = ? OR u.phone = ?
-      ORDER BY o.created_at DESC`,
-      [phone, phone]
-    );
-
-    if (!orders || orders.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: 'Không tìm thấy đơn hàng nào với số điện thoại này'
-      });
-    }
-
-    // Lấy chi tiết sản phẩm cho từng đơn hàng
-    const ordersWithItems = await Promise.all(orders.map(async (order) => {
-      const [items] = await db.query(
-        `SELECT 
-          oi.order_item_id,
-          oi.product_name,
-          oi.variant_name,
-          oi.sku,
-          oi.quantity,
-          oi.unit_price,
-          oi.discount_amount,
-          oi.subtotal
-        FROM order_items oi
-        WHERE oi.order_id = ?`,
-        [order.order_id]
-      );
-
-      return {
-        ...order,
-        items
-      };
-    }));
+    // Tìm đơn hàng qua service
+    const result = await OrderService.trackOrderByPhone(phone);
 
     res.json({
       success: true,
-      data: ordersWithItems
+      data: result
     });
   } catch (error) {
     console.error('Error tracking order by phone:', error);
-    res.status(500).json({
+    const statusCode = error.message.includes('Không tìm thấy') ? 404 : 500;
+    res.status(statusCode).json({
       success: false,
-      message: 'Lỗi khi theo dõi đơn hàng',
-      error: error.message
+      message: error.message
     });
   }
 };

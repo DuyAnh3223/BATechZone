@@ -267,11 +267,11 @@ const WarrantyLookup = () => {
                       <div className="grid grid-cols-2 gap-5 mt-4 text-base">
                         <div>
                           <p className="text-gray-600">Thời hạn bảo hành</p>
-                          <p className="font-semibold">{foundProduct.warranty_months} tháng</p>
+                          <p className="font-semibold">{foundProduct.warranty_period} tháng</p>
                         </div>
                         <div>
                           <p className="text-gray-600">Ngày mua</p>
-                          <p className="font-semibold">{formatDate(foundProduct.purchase_date)}</p>
+                          <p className="font-semibold">{formatDate(foundProduct.warranty_start_date)}</p>
                         </div>
                         <div>
                           <p className="text-gray-600">Hết hạn BH</p>

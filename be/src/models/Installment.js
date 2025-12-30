@@ -57,11 +57,11 @@ class Installment {
     static async create(data){
         try {
             const {
-                installment_id, 
                 order_id, 
                 user_id, 
                 total_amount, 
-                down_payment, 
+                down_payment,
+                down_payment_status,
                 num_terms, 
                 monthly_payment,
                 overdue_fee_percent_per_day, 
@@ -71,13 +71,14 @@ class Installment {
                 status
             } = data;
 
+            // installment_id is AUTO_INCREMENT, don't insert it
             const result = await query(
                 `INSERT INTO installments (
-                installment_id, 
                 order_id, 
                 user_id, 
                 total_amount, 
-                down_payment, 
+                down_payment,
+                down_payment_status,
                 num_terms, 
                 monthly_payment,
                 overdue_fee_percent_per_day, 
@@ -87,14 +88,14 @@ class Installment {
                 status)
                  VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                  [
-                    installment_id,
                     order_id,
                     user_id,
                     total_amount,
                     down_payment,
+                    down_payment_status || null,
                     num_terms,
-                    monthly_payment,
-                    overdue_fee_percent_per_day,
+                    monthly_payment || null,
+                    overdue_fee_percent_per_day || null,
                     interest_rate,
                     start_date,
                     end_date,
@@ -103,12 +104,12 @@ class Installment {
                 );
                 
 
-        const [rows] = await query(
+        const rows = await query(
             `SELECT * FROM installments WHERE installment_id = ?`,
             [result.insertId]
         );
 
-        return rows ? new Installment(rows[0]) : null;
+        return rows && rows.length > 0 ? new Installment(rows[0]) : null;
 
 
         } catch (error) {

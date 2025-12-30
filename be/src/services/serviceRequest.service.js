@@ -1,7 +1,6 @@
 import ServiceRequestDAO from '../daos/warranty/serviceRequest.dao.js';
 import WarrantyDAO from '../daos/warranty/warranty.dao.js';
 import VariantSerialDAO from '../daos/warranty/variantSerial.dao.js';
-import { toWarrantyProductDTO, toServiceRequestDTO, validateServiceRequest } from '../dtos/serviceRequest.dto.js';
 
 /**
  * Service Request Service - For warranty claim operations
@@ -18,7 +17,19 @@ class ServiceRequestService {
             
             return {
                 success: true,
-                data: products.map(p => toWarrantyProductDTO(p))
+                data: products.map(p => ({
+                    serial_id: p.serial_id,
+                    serial_number: p.serial_number,
+                    product_name: p.product_name,
+                    sku: p.sku,
+                    warranty_id: p.warranty_id,
+                    warranty_period: p.warranty_period,
+                    warranty_start_date: p.warranty_start_date,
+                    warranty_end_date: p.warranty_end_date,
+                    warranty_status: p.warranty_status,
+                    order_id: p.order_id,
+                    order_date: p.order_date
+                }))
             };
         } catch (error) {
             console.error('❌ Error getting warranty products:', error);
@@ -35,9 +46,20 @@ class ServiceRequestService {
     async createWarrantyRequest(userId, requestData, imageUrls = []) {
         try {
             // Validate input
-            const validation = validateServiceRequest(requestData);
-            if (!validation.isValid) {
-                throw new Error(validation.errors.join(', '));
+            if (!requestData.serial_id) {
+                throw new Error('serial_id là bắt buộc');
+            }
+            if (!requestData.subject || !requestData.subject.trim()) {
+                throw new Error('Tiêu đề là bắt buộc');
+            }
+            if (!requestData.description || !requestData.description.trim()) {
+                throw new Error('Mô tả vấn đề là bắt buộc');
+            }
+            if (requestData.subject && requestData.subject.length > 200) {
+                throw new Error('Tiêu đề không được vượt quá 200 ký tự');
+            }
+            if (requestData.description && requestData.description.length > 2000) {
+                throw new Error('Mô tả không được vượt quá 2000 ký tự');
             }
 
             // Check serial ownership
@@ -101,7 +123,29 @@ class ServiceRequestService {
             return {
                 success: true,
                 message: 'Yêu cầu bảo hành đã được gửi thành công',
-                data: toServiceRequestDTO(request)
+                data: {
+                    request_id: request.service_request_id,
+                    user_id: request.user_id,
+                    warranty_id: request.warranty_id,
+                    serial_id: request.serial_id,
+                    serial_number: request.serial_number,
+                    product_name: request.product_name,
+                    sku: request.sku,
+                    customer_name: request.user_name || request.customer_name,
+                    customer_phone: request.user_phone || request.customer_phone,
+                    request_type: request.request_type,
+                    subject: request.subject,
+                    description: request.description,
+                    status: request.status,
+                    priority: request.priority,
+                    images: request.images ? JSON.parse(request.images) : [],
+                    rejection_reason: request.rejection_reason,
+                    resolution: request.resolution,
+                    progress_notes: request.progress_notes,
+                    created_at: request.created_at,
+                    updated_at: request.updated_at,
+                    resolved_at: request.resolved_at
+                }
             };
         } catch (error) {
             console.error('❌ Error creating warranty request:', error);
@@ -120,7 +164,29 @@ class ServiceRequestService {
             
             return {
                 success: true,
-                data: requests.map(r => toServiceRequestDTO(r))
+                data: requests.map(r => ({
+                    request_id: r.service_request_id,
+                    user_id: r.user_id,
+                    warranty_id: r.warranty_id,
+                    serial_id: r.serial_id,
+                    serial_number: r.serial_number,
+                    product_name: r.product_name,
+                    sku: r.sku,
+                    customer_name: r.user_name || r.customer_name,
+                    customer_phone: r.user_phone || r.customer_phone,
+                    request_type: r.request_type,
+                    subject: r.subject,
+                    description: r.description,
+                    status: r.status,
+                    priority: r.priority,
+                    images: r.images ? JSON.parse(r.images) : [],
+                    rejection_reason: r.rejection_reason,
+                    resolution: r.resolution,
+                    progress_notes: r.progress_notes,
+                    created_at: r.created_at,
+                    updated_at: r.updated_at,
+                    resolved_at: r.resolved_at
+                }))
             };
         } catch (error) {
             console.error('❌ Error getting warranty requests:', error);
@@ -148,7 +214,29 @@ class ServiceRequestService {
 
             return {
                 success: true,
-                data: toServiceRequestDTO(request)
+                data: {
+                    request_id: request.service_request_id,
+                    user_id: request.user_id,
+                    warranty_id: request.warranty_id,
+                    serial_id: request.serial_id,
+                    serial_number: request.serial_number,
+                    product_name: request.product_name,
+                    sku: request.sku,
+                    customer_name: request.user_name || request.customer_name,
+                    customer_phone: request.user_phone || request.customer_phone,
+                    request_type: request.request_type,
+                    subject: request.subject,
+                    description: request.description,
+                    status: request.status,
+                    priority: request.priority,
+                    images: request.images ? JSON.parse(request.images) : [],
+                    rejection_reason: request.rejection_reason,
+                    resolution: request.resolution,
+                    progress_notes: request.progress_notes,
+                    created_at: request.created_at,
+                    updated_at: request.updated_at,
+                    resolved_at: request.resolved_at
+                }
             };
         } catch (error) {
             console.error('❌ Error getting request detail:', error);
@@ -218,7 +306,19 @@ class ServiceRequestService {
 
             return {
                 success: true,
-                data: products.map(p => toWarrantyProductDTO(p))
+                data: products.map(p => ({
+                    serial_id: p.serial_id,
+                    serial_number: p.serial_number,
+                    product_name: p.product_name,
+                    sku: p.sku,
+                    warranty_id: p.warranty_id,
+                    warranty_period: p.warranty_period,
+                    warranty_start_date: p.warranty_start_date,
+                    warranty_end_date: p.warranty_end_date,
+                    warranty_status: p.warranty_status,
+                    order_id: p.order_id,
+                    order_date: p.order_date
+                }))
             };
         } catch (error) {
             console.error('❌ Error searching products:', error);
@@ -234,9 +334,20 @@ class ServiceRequestService {
     async createWalkInRequest(requestData, imageUrls = []) {
         try {
             // Validate input
-            const validation = validateServiceRequest(requestData);
-            if (!validation.isValid) {
-                throw new Error(validation.errors.join(', '));
+            if (!requestData.serial_id) {
+                throw new Error('serial_id là bắt buộc');
+            }
+            if (!requestData.subject || !requestData.subject.trim()) {
+                throw new Error('Tiêu đề là bắt buộc');
+            }
+            if (!requestData.description || !requestData.description.trim()) {
+                throw new Error('Mô tả vấn đề là bắt buộc');
+            }
+            if (requestData.subject && requestData.subject.length > 200) {
+                throw new Error('Tiêu đề không được vượt quá 200 ký tự');
+            }
+            if (requestData.description && requestData.description.length > 2000) {
+                throw new Error('Mô tả không được vượt quá 2000 ký tự');
             }
 
             // Walk-in customers don't need user_id
@@ -280,7 +391,29 @@ class ServiceRequestService {
             return {
                 success: true,
                 message: 'Yêu cầu bảo hành đã được tạo thành công',
-                data: toServiceRequestDTO(request)
+                data: {
+                    request_id: request.service_request_id,
+                    user_id: request.user_id,
+                    warranty_id: request.warranty_id,
+                    serial_id: request.serial_id,
+                    serial_number: request.serial_number,
+                    product_name: request.product_name,
+                    sku: request.sku,
+                    customer_name: request.user_name || request.customer_name,
+                    customer_phone: request.user_phone || request.customer_phone,
+                    request_type: request.request_type,
+                    subject: request.subject,
+                    description: request.description,
+                    status: request.status,
+                    priority: request.priority,
+                    images: request.images ? JSON.parse(request.images) : [],
+                    rejection_reason: request.rejection_reason,
+                    resolution: request.resolution,
+                    progress_notes: request.progress_notes,
+                    created_at: request.created_at,
+                    updated_at: request.updated_at,
+                    resolved_at: request.resolved_at
+                }
             };
         } catch (error) {
             console.error('❌ Error creating walk-in request:', error);
@@ -298,7 +431,29 @@ class ServiceRequestService {
             
             return {
                 success: true,
-                data: requests.map(r => toServiceRequestDTO(r)),
+                data: requests.map(r => ({
+                    request_id: r.service_request_id,
+                    user_id: r.user_id,
+                    warranty_id: r.warranty_id,
+                    serial_id: r.serial_id,
+                    serial_number: r.serial_number,
+                    product_name: r.product_name,
+                    sku: r.sku,
+                    customer_name: r.user_name || r.customer_name,
+                    customer_phone: r.user_phone || r.customer_phone,
+                    request_type: r.request_type,
+                    subject: r.subject,
+                    description: r.description,
+                    status: r.status,
+                    priority: r.priority,
+                    images: r.images ? JSON.parse(r.images) : [],
+                    rejection_reason: r.rejection_reason,
+                    resolution: r.resolution,
+                    progress_notes: r.progress_notes,
+                    created_at: r.created_at,
+                    updated_at: r.updated_at,
+                    resolved_at: r.resolved_at
+                })),
                 total: requests.length
             };
         } catch (error) {
@@ -321,7 +476,29 @@ class ServiceRequestService {
 
             return {
                 success: true,
-                data: toServiceRequestDTO(request)
+                data: {
+                    request_id: request.service_request_id,
+                    user_id: request.user_id,
+                    warranty_id: request.warranty_id,
+                    serial_id: request.serial_id,
+                    serial_number: request.serial_number,
+                    product_name: request.product_name,
+                    sku: request.sku,
+                    customer_name: request.user_name || request.customer_name,
+                    customer_phone: request.user_phone || request.customer_phone,
+                    request_type: request.request_type,
+                    subject: request.subject,
+                    description: request.description,
+                    status: request.status,
+                    priority: request.priority,
+                    images: request.images ? JSON.parse(request.images) : [],
+                    rejection_reason: request.rejection_reason,
+                    resolution: request.resolution,
+                    progress_notes: request.progress_notes,
+                    created_at: request.created_at,
+                    updated_at: request.updated_at,
+                    resolved_at: request.resolved_at
+                }
             };
         } catch (error) {
             console.error('❌ Error getting request detail:', error);
@@ -428,7 +605,29 @@ class ServiceRequestService {
             return {
                 success: true,
                 message: 'Cập nhật trạng thái thành công',
-                data: toServiceRequestDTO(updatedRequest)
+                data: {
+                    request_id: updatedRequest.service_request_id,
+                    user_id: updatedRequest.user_id,
+                    warranty_id: updatedRequest.warranty_id,
+                    serial_id: updatedRequest.serial_id,
+                    serial_number: updatedRequest.serial_number,
+                    product_name: updatedRequest.product_name,
+                    sku: updatedRequest.sku,
+                    customer_name: updatedRequest.user_name || updatedRequest.customer_name,
+                    customer_phone: updatedRequest.user_phone || updatedRequest.customer_phone,
+                    request_type: updatedRequest.request_type,
+                    subject: updatedRequest.subject,
+                    description: updatedRequest.description,
+                    status: updatedRequest.status,
+                    priority: updatedRequest.priority,
+                    images: updatedRequest.images ? JSON.parse(updatedRequest.images) : [],
+                    rejection_reason: updatedRequest.rejection_reason,
+                    resolution: updatedRequest.resolution,
+                    progress_notes: updatedRequest.progress_notes,
+                    created_at: updatedRequest.created_at,
+                    updated_at: updatedRequest.updated_at,
+                    resolved_at: updatedRequest.resolved_at
+                }
             };
         } catch (error) {
             console.error('❌ Error updating status:', error);

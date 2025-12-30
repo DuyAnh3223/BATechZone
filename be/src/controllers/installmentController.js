@@ -176,7 +176,7 @@ export const getInstallmentsByUserId = async (req, res) => {
             data: installments
         });
     } catch (error) {
-        console.error('CONTROLLERError getting user installments:', error);
+        console.error('CONTROLLER Error getting user installments:', error);
         res.status(500).json({
             success: false,
             message: 'Lỗi khi lấy danh sách trả góp',

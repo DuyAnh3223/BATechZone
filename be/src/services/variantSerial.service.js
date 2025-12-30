@@ -1,10 +1,5 @@
 import VariantSerialDAO from '../daos/warranty/variantSerial.dao.js';
-import {
-  CreateSerialDTO,
-  UpdateSerialDTO,
-  ReserveSerialDTO,
-  BulkCreateSerialDTO
-} from '../dtos/variantSerial.dto.js';
+import VariantSerial from '../models/warranty/VariantSerial.js';
 
 /**
  * VariantSerialService - Business Logic Layer
@@ -78,20 +73,37 @@ class VariantSerialService {
    * Create new serial
    */
   async createSerial(data) {
-    const dto = new CreateSerialDTO(data);
-    const validation = dto.validate();
+    // Validate
+    if (!data.variant_id || typeof data.variant_id !== 'number' || data.variant_id <= 0) {
+      throw new Error('variant_id là bắt buộc và phải là số nguyên dương');
+    }
+    
+    if (!data.serial_number || data.serial_number.trim().length === 0) {
+      throw new Error('serial_number là bắt buộc');
+    }
+    
+    if (data.serial_number.length > 64) {
+      throw new Error('serial_number không được vượt quá 64 ký tự');
+    }
 
-    if (!validation.isValid) {
-      throw new Error(`Validation failed: ${validation.errors.join(', ')}`);
+    const validStatuses = ['in_stock', 'reserved', 'sold', 'rma_in', 'rma_done', 'scrapped'];
+    if (data.status && !validStatuses.includes(data.status)) {
+      throw new Error(`status phải là một trong: ${validStatuses.join(', ')}`);
     }
 
     // Check if serial number already exists
-    const existingSerial = await VariantSerialDAO.findBySerialNumber(dto.serial_number);
+    const existingSerial = await VariantSerialDAO.findBySerialNumber(data.serial_number);
     if (existingSerial) {
-      throw new Error(`Serial number "${dto.serial_number}" đã tồn tại`);
+      throw new Error(`Serial number "${data.serial_number}" đã tồn tại`);
     }
 
-    const serialId = await VariantSerialDAO.create(dto);
+    const serialData = {
+      variant_id: data.variant_id,
+      serial_number: data.serial_number,
+      status: data.status || 'in_stock'
+    };
+
+    const serialId = await VariantSerialDAO.create(serialData);
     const serial = await VariantSerialDAO.findById(serialId);
     
     return {
@@ -105,32 +117,63 @@ class VariantSerialService {
    * Bulk create serials
    */
   async bulkCreateSerials(data) {
-    const dto = new BulkCreateSerialDTO(data);
-    const validation = dto.validate();
-
-    if (!validation.isValid) {
-      throw new Error(`Validation failed: ${validation.errors.join(', ')}`);
+    // Validate
+    if (!data.variant_id || typeof data.variant_id !== 'number' || data.variant_id <= 0) {
+      throw new Error('variant_id là bắt buộc và phải là số nguyên dương');
     }
+    
+    if (!Array.isArray(data.serial_numbers)) {
+      throw new Error('serial_numbers phải là một mảng');
+    }
+    
+    if (data.serial_numbers.length === 0) {
+      throw new Error('serial_numbers không được rỗng');
+    }
+    
+    if (data.serial_numbers.length > 100) {
+      throw new Error('Chỉ có thể tạo tối đa 100 serial một lần');
+    }
+
+    // Check duplicates in array
+    const uniqueSerials = new Set(data.serial_numbers);
+    if (uniqueSerials.size !== data.serial_numbers.length) {
+      throw new Error('serial_numbers chứa các giá trị trùng lặp');
+    }
+
+    // Validate each serial number
+    data.serial_numbers.forEach((sn, index) => {
+      if (!sn || sn.trim().length === 0) {
+        throw new Error(`serial_numbers[${index}] không được để trống`);
+      }
+      if (sn && sn.length > 64) {
+        throw new Error(`serial_numbers[${index}] không được vượt quá 64 ký tự`);
+      }
+    });
 
     // Check for existing serial numbers
     const existingChecks = await Promise.all(
-      dto.serial_numbers.map(sn => VariantSerialDAO.existsBySerialNumber(sn))
+      data.serial_numbers.map(sn => VariantSerialDAO.existsBySerialNumber(sn))
     );
 
-    const duplicates = dto.serial_numbers.filter((sn, idx) => existingChecks[idx]);
+    const duplicates = data.serial_numbers.filter((sn, idx) => existingChecks[idx]);
     if (duplicates.length > 0) {
       throw new Error(`Serial numbers đã tồn tại: ${duplicates.join(', ')}`);
     }
 
     // Bulk insert
-    const serials = dto.getSerials();
+    const serials = data.serial_numbers.map(sn => ({
+      variant_id: data.variant_id,
+      serial_number: sn.trim(),
+      status: 'in_stock'
+    }));
+    
     await VariantSerialDAO.bulkInsert(serials);
 
     return {
       success: true,
       message: `Đã tạo ${serials.length} serial thành công`,
       data: {
-        variant_id: dto.variant_id,
+        variant_id: data.variant_id,
         count: serials.length
       }
     };
@@ -185,11 +228,24 @@ class VariantSerialService {
    * Update serial
    */
   async updateSerial(serialId, data) {
-    const dto = new UpdateSerialDTO(data);
-    const validation = dto.validate();
+    // Validate
+    if (data.status) {
+      const validStatuses = ['in_stock', 'reserved', 'sold', 'rma_in', 'rma_done', 'scrapped'];
+      if (!validStatuses.includes(data.status)) {
+        throw new Error(`status phải là một trong: ${validStatuses.join(', ')}`);
+      }
+    }
 
-    if (!validation.isValid) {
-      throw new Error(`Validation failed: ${validation.errors.join(', ')}`);
+    if (data.order_item_id !== undefined && data.order_item_id !== null) {
+      if (typeof data.order_item_id !== 'number' || data.order_item_id <= 0) {
+        throw new Error('order_item_id phải là số nguyên dương');
+      }
+    }
+
+    if (data.warranty_id !== undefined && data.warranty_id !== null) {
+      if (typeof data.warranty_id !== 'number' || data.warranty_id <= 0) {
+        throw new Error('warranty_id phải là số nguyên dương');
+      }
     }
 
     const serial = await VariantSerialDAO.findById(serialId);
@@ -197,7 +253,12 @@ class VariantSerialService {
       throw new Error('Serial không tồn tại');
     }
 
-    const updates = dto.getUpdateData();
+    // Build update data
+    const updates = {};
+    if (data.status !== undefined) updates.status = data.status;
+    if (data.order_item_id !== undefined) updates.order_item_id = data.order_item_id;
+    if (data.warranty_id !== undefined) updates.warranty_id = data.warranty_id;
+
     const updated = await VariantSerialDAO.update(serialId, updates);
 
     if (!updated) {
@@ -245,23 +306,30 @@ class VariantSerialService {
    * @param {object} connection - Optional DB connection for transactions
    */
   async reserveSerials(data, connection = null) {
-    const dto = new ReserveSerialDTO(data);
-    const validation = dto.validate();
-
-    if (!validation.isValid) {
-      throw new Error(`Validation failed: ${validation.errors.join(', ')}`);
+    // Validate
+    if (!data.variant_id || typeof data.variant_id !== 'number' || data.variant_id <= 0) {
+      throw new Error('variant_id là bắt buộc và phải là số nguyên dương');
+    }
+    
+    if (!data.order_item_id || typeof data.order_item_id !== 'number' || data.order_item_id <= 0) {
+      throw new Error('order_item_id là bắt buộc và phải là số nguyên dương');
+    }
+    
+    const quantity = data.quantity || 1;
+    if (typeof quantity !== 'number' || quantity <= 0) {
+      throw new Error('quantity phải là số nguyên dương');
     }
 
     // Check available stock
-    const availableCount = await VariantSerialDAO.getAvailableCount(dto.variant_id, connection);
-    if (availableCount < dto.quantity) {
-      throw new Error(`Không đủ hàng trong kho. Có sẵn: ${availableCount}, Yêu cầu: ${dto.quantity}`);
+    const availableCount = await VariantSerialDAO.getAvailableCount(data.variant_id, connection);
+    if (availableCount < quantity) {
+      throw new Error(`Không đủ hàng trong kho. Có sẵn: ${availableCount}, Yêu cầu: ${quantity}`);
     }
 
     // Find and reserve serials
     const availableSerials = await VariantSerialDAO.findAvailableSerials(
-      dto.variant_id, 
-      dto.quantity,
+      data.variant_id, 
+      quantity,
       connection
     );
 
@@ -269,7 +337,7 @@ class VariantSerialService {
     for (const serial of availableSerials) {
       await VariantSerialDAO.update(serial.serial_id, {
         status: 'reserved',
-        order_item_id: dto.order_item_id
+        order_item_id: data.order_item_id
       }, connection);
       reservedSerials.push(serial.serial_number);
     }
@@ -278,8 +346,8 @@ class VariantSerialService {
       success: true,
       message: `Đã đặt trước ${reservedSerials.length} serial`,
       data: {
-        variant_id: dto.variant_id,
-        order_item_id: dto.order_item_id,
+        variant_id: data.variant_id,
+        order_item_id: data.order_item_id,
         quantity: reservedSerials.length,
         serial_numbers: reservedSerials
       }

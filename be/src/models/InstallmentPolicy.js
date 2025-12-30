@@ -16,7 +16,7 @@ class InstallmentPolicy {
     {
         try {
             const rows = await query(
-            'SELECT * FROM installment_policies',
+            'SELECT * FROM installment_policies WHERE is_active = 1',
         );
         return rows.map(r=>new InstallmentPolicy(r));
         } catch (error) {
@@ -91,7 +91,7 @@ class InstallmentPolicy {
     static async delete(id){
         try {
             const result = await query(
-                `DELETE FROM installment_policies WHERE policy_id = ?`, [id]
+                `UPDATE installment_policies SET is_active = 0 WHERE policy_id = ?`, [id]
             );
             return result.affectedRows > 0;
         } catch (error) {

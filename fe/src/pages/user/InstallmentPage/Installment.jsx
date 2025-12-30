@@ -138,28 +138,35 @@ const Installment = () => {
     const totalAmount = cartTotal;
     const downPaymentAmount = (totalAmount * selectedDownPaymentPercent) / 100;
     const remainingAmount = totalAmount - downPaymentAmount;
+
+
     const selectedMonths = selectedPolicy.terms;
     const monthlyInterestRate = selectedPolicy.interest_rate / 100 / 12;
     const feePercent = selectedPolicy.installment_fee_percent || 0;
     const totalFee = (remainingAmount * feePercent) / 100;
     const monthlyFee = totalFee / selectedMonths;
     
-    // Declining balance calculation (Dư nợ giảm dần)
-    const principalPerMonth = remainingAmount / selectedMonths;
-    let balance = remainingAmount;
+    // Dư nợ giảm dần
+    const principalPerMonth = remainingAmount / selectedMonths; // Gốc
+    let balance = remainingAmount; 
     const schedule = [];
     let totalInterestPaid = 0;
     
     for (let i = 1; i <= selectedMonths; i++) {
+      const openingBalance = balance;
       const interest = balance * monthlyInterestRate;
-      const total = Math.round((principalPerMonth + interest + monthlyFee) * 100) / 100;
-      balance -= principalPerMonth;
+      
+      // Tháng cuối: điều chỉnh principal để balance = 0 chính xác
+      const principal = i === selectedMonths ? balance : principalPerMonth;
+      
+      const total = Math.round((principal + interest + monthlyFee) * 100) / 100;
+      balance -= principal;
       totalInterestPaid += interest;
       
       schedule.push({
         month: i,
-        openingBalance: Math.round((balance + principalPerMonth) * 100) / 100,
-        principal: Math.round(principalPerMonth * 100) / 100,
+        openingBalance: Math.round(openingBalance * 100) / 100,
+        principal: Math.round(principal * 100) / 100,
         interest: Math.round(interest * 100) / 100,
         fee: Math.round(monthlyFee * 100) / 100,
         total: total,
@@ -490,46 +497,7 @@ const Installment = () => {
                     <Separator />
 
                     {/* Declining Balance Payment Info */}
-                    <div className="bg-blue-50 p-3 rounded-lg space-y-2">
-                      <div className="flex justify-between items-center">
-                        <span className="text-xs text-gray-600">Gốc mỗi tháng (cố định)</span>
-                        <span className="text-sm font-semibold text-blue-700">
-                          {formatCurrency(calculation.principalPerMonth)}
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-xs text-gray-600">Tháng đầu (gốc + lãi + phí)</span>
-                        <span className="text-sm font-semibold text-red-600">
-                          {formatCurrency(calculation.firstMonthPayment)}
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-xs text-gray-600">Tháng cuối (giảm dần)</span>
-                        <span className="text-sm font-semibold text-green-600">
-                          {formatCurrency(calculation.lastMonthPayment)}
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center pt-1 border-t border-blue-200">
-                        <span className="text-xs text-gray-600">Trung bình mỗi tháng</span>
-                        <span className="text-base font-bold text-blue-900">
-                          {formatCurrency(calculation.averageMonthlyPayment)}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Tổng lãi phải trả</span>
-                      <span className="text-sm font-semibold text-blue-600">
-                        {formatCurrency(calculation.totalInterest)}
-                      </span>
-                    </div>
-
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Chênh lệch so với mua thẳng</span>
-                      <span className={`text-sm font-semibold ${calculation.difference > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                        {calculation.difference > 0 ? '+' : ''}{formatCurrency(calculation.difference)}
-                      </span>
-                    </div>
+                    
                   </div>
 
                   <Separator />

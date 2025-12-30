@@ -1,7 +1,15 @@
 import { db } from '../libs/db.js';
+import OrderDAO from '../daos/order.dao.js';
 import VariantSerialService from '../services/variantSerial.service.js';
 import WarrantyService from '../services/warranty.service.js';
 
+/**
+ * Order Model - Data entity và business logic đơn giản
+ * Note: Đang trong quá trình refactor để tuân thủ MODEL RULES:
+ * - Không query DB (delegate to DAO)
+ * - Không biết HTTP
+ * - Chỉ mapping data
+ */
 class Order {
   constructor(data = {}) {
     this.orderId = data.order_id || null;
@@ -53,7 +61,7 @@ class Order {
 
   // ==================== STATIC METHODS (Factory & Queries) ====================
 
-  // Tạo đơn hàng mới
+  // Tạo đơn hàng bình thường (không trả góp)
   static async create(orderData, items) {
     const conn = await db.getConnection();
     try {
@@ -86,8 +94,8 @@ class Order {
           orderNumber,
           orderData.addressId,
           orderData.couponId || null,
-          orderStatus, // Sử dụng orderStatus đã tính toán
-          paymentStatus, // Sử dụng paymentStatus đã tính toán
+          orderStatus,
+          paymentStatus,
           subtotal,
           orderData.discountAmount || 0,
           orderData.shippingFee || 0,
@@ -135,11 +143,10 @@ class Order {
             variant_id: item.variantId,
             order_item_id: orderItemId,
             quantity: item.quantity
-          }, conn); // Pass transaction connection to avoid lock timeout
+          }, conn);
           console.log(`Reserved ${item.quantity} serials for order item ${orderItemId}`);
         } catch (serialError) {
           console.error(`Error reserving serials for order item ${orderItemId}:`, serialError);
-          // Rollback will be handled by outer catch
           throw new Error(`Không thể đặt trước serial: ${serialError.message}`);
         }
       }
@@ -156,7 +163,6 @@ class Order {
 
       // Tạo bản ghi payment
       const paymentMethodForPayment = orderData.payment_method || orderData.paymentMethod || 'cod';
-      // COD sẽ có trạng thái 'paid' ngay, các phương thức khác theo orderData
       const paymentStatusForPayment = paymentMethodForPayment === 'cod' ? 'paid' : (orderData.payment_status || 'pending');
       const paymentGateway = paymentMethodForPayment === 'momo' ? 'momo' : null;
       const paidAt = paymentStatusForPayment === 'paid' ? new Date() : null;
@@ -180,146 +186,6 @@ class Order {
         ]
       );
 
-      // Handle installment if payment method is installment
-      if (orderData.paymentMethod === 'installment' && orderData.installmentDetails) {
-        const details = orderData.installmentDetails;
-        
-        try {
-          // Lấy interest_rate và overdue_fee_percent từ policy đã chọn
-          const interestRate = details.interestRate || 0;
-          let overdueFeePercent = 0;
-          
-          // Nếu có policyId, lấy overdue_fee_percent từ database
-          if (details.policyId) {
-            const [policyRows] = await conn.query(
-              `SELECT overdue_fee_percent FROM installment_policies WHERE policy_id = ?`,
-              [details.policyId]
-            );
-            if (policyRows.length > 0) {
-              overdueFeePercent = policyRows[0].overdue_fee_percent || 0;
-            }
-          }
-          
-          // Use totalWithInterest from frontend calculation (includes interest)
-          const totalWithInterest = details.totalWithInterest || totalAmount;
-          const downPayment = details.downPayment || 0;
-          
-          // Auto-active if down_payment = 0, otherwise set to 'approved' (waiting for down payment)
-          const installmentStatus = downPayment === 0 ? 'active' : 'approved';
-          const downPaymentStatus = downPayment === 0 ? 'not_required' : 'pending';
-          
-          // Calculate declining balance schedule (Dư nợ giảm dần)
-          const principal = totalWithInterest - downPayment;
-          const numTerms = details.months || 12;
-          const monthlyRate = interestRate / 100 / 12;
-          const principalPerMonth = principal / numTerms;
-          const installmentFeePercent = details.installmentFeePercent || 0;
-          const totalFee = (principal * installmentFeePercent) / 100;
-          const monthlyFee = totalFee / numTerms;
-          
-          let balance = principal;
-          const paymentSchedule = [];
-          
-          for (let i = 1; i <= numTerms; i++) {
-            const interest = balance * monthlyRate;
-            const total = Math.round((principalPerMonth + interest + monthlyFee) * 100) / 100;
-            balance -= principalPerMonth;
-            
-            paymentSchedule.push({
-              month: i,
-              principal: Math.round(principalPerMonth * 100) / 100,
-              interest: Math.round(interest * 100) / 100,
-              fee: Math.round(monthlyFee * 100) / 100,
-              total: total,
-              remainingBalance: Math.round(Math.max(0, balance) * 100) / 100
-            });
-          }
-          
-          console.log('Declining balance schedule calculated:', {
-            principal,
-            numTerms,
-            monthlyRate,
-            principalPerMonth,
-            firstPayment: paymentSchedule[0].total,
-            lastPayment: paymentSchedule[numTerms - 1].total
-          });
-          
-          // Insert installment record (without monthly_payment as it varies)
-          const [installmentResult] = await conn.query(
-            `INSERT INTO installments (
-              order_id, 
-              user_id, 
-              total_amount, 
-              down_payment, 
-              down_payment_status, 
-              num_terms, 
-              overdue_fee_percent_per_day, 
-              interest_rate, 
-              policy_id, 
-              status, 
-              start_date, 
-              end_date
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), DATE_ADD(NOW(), INTERVAL ? MONTH))`,
-            [
-              orderId,
-              orderData.userId || null,
-              totalWithInterest,
-              downPayment,
-              downPaymentStatus,
-              numTerms,
-              overdueFeePercent,
-              interestRate,
-              details.policyId || null,
-              installmentStatus,
-              numTerms
-            ]
-          );
-          
-          console.log('Installment created:', {
-            installmentId: installmentResult.insertId,
-            orderId,
-            totalWithInterest,
-            downPayment: downPayment,
-            downPaymentStatus: downPaymentStatus,
-            interestRate: interestRate,
-            overdueFeePercent: overdueFeePercent,
-            installmentFeePercent: installmentFeePercent,
-            policyId: details.policyId,
-            status: installmentStatus
-          });
-
-          // Tạo các kỳ thanh toán với số tiền giảm dần (declining balance)
-          if (installmentStatus === 'active') {
-            const installmentId = installmentResult.insertId;
-            const startDate = new Date();
-
-            console.log('Creating installment payments with declining balance amounts...');
-
-            for (let payment of paymentSchedule) {
-              const dueDate = new Date(startDate);
-              dueDate.setMonth(dueDate.getMonth() + payment.month);
-
-              await conn.query(
-                `INSERT INTO installment_payments (
-                  installment_id, payment_no, due_date, amount, status
-                ) VALUES (?, ?, ?, ?, 'pending')`,
-                [
-                  installmentId,
-                  payment.month,
-                  dueDate,
-                  payment.total
-                ]
-              );
-            }
-
-            console.log(`Created ${numTerms} declining balance payments for installment #${installmentId}`);
-          }
-        } catch (error) {
-          console.error('Failed to create installment record:', error.message);
-          // Don't fail the order creation if installment record fails
-        }
-      }
-
       await conn.commit();
       return orderId;
     } catch (error) {
@@ -340,61 +206,22 @@ class Order {
 
   // Lấy đơn hàng theo ID
   static async getById(orderId) {
-    const [orders] = await db.query(
-      `SELECT 
-        o.*,
-        u.username, u.email, u.phone as user_phone,
-        a.recipient_name, a.phone as recipient_phone, 
-        a.address_line1, a.address_line2, a.city, a.district, a.ward,
-        c.coupon_code, c.discount_type, c.discount_value,
-        EXISTS(SELECT 1 FROM installments WHERE order_id = o.order_id) as is_installment
-      FROM orders o
-      LEFT JOIN users u ON o.user_id = u.user_id
-      LEFT JOIN addresses a ON o.address_id = a.address_id
-      LEFT JOIN coupons c ON o.coupon_id = c.coupon_id
-      WHERE o.order_id = ?`,
-      [orderId]
-    );
-
-    if (orders.length === 0) return null;
-    
-    const order = orders[0];
+    const order = await OrderDAO.findById(orderId);
+    if (!order) return null;
     
     // Thêm cả isInstallment (camelCase) để frontend dễ sử dụng
     order.isInstallment = order.is_installment;
     
-    // Lấy order items riêng (không JOIN để tránh lỗi)
-    const [items] = await db.query(
-      `SELECT 
-        order_item_id as orderItemId,
-        variant_id as variantId,
-        product_name as productName,
-        variant_name as variantName,
-        sku,
-        quantity,
-        unit_price as unitPrice,
-        discount_amount as discountAmount,
-        subtotal
-      FROM order_items
-      WHERE order_id = ?`,
-      [orderId]
-    );
+    // Lấy order items
+    const items = await OrderDAO.findOrderItems(orderId);
     
     // Lấy hình ảnh cho từng item
     for (const item of items) {
       if (item.variantId) {
-        const [variants] = await db.query(
-          `SELECT vi.image_url as imageUrl, p.slug as productSlug
-           FROM variant_images vi
-           LEFT JOIN product_variants pv ON vi.variant_id = pv.variant_id
-           LEFT JOIN products p ON pv.product_id = p.product_id
-           WHERE vi.variant_id = ? AND vi.is_primary = 1
-           LIMIT 1`,
-          [item.variantId]
-        );
-        if (variants.length > 0) {
-          item.imageUrl = variants[0].imageUrl;
-          item.productSlug = variants[0].productSlug;
+        const imageData = await OrderDAO.findVariantImage(item.variantId);
+        if (imageData) {
+          item.imageUrl = imageData.imageUrl;
+          item.productSlug = imageData.productSlug;
           console.log(`✅ Found image for variant ${item.variantId}:`, item.imageUrl);
         } else {
           console.log(`❌ No image found for variant ${item.variantId}`);
@@ -407,20 +234,10 @@ class Order {
       imageUrl: i.imageUrl 
     })));
     
-    // Lấy payments riêng
-    const [payments] = await db.query(
-      `SELECT 
-        payment_id as paymentId,
-        payment_method as paymentMethod,
-        payment_status as paymentStatus,
-        amount,
-        transaction_id as transactionId
-      FROM payments
-      WHERE order_id = ?`,
-      [orderId]
-    );
+    // Lấy payments
+    const payments = await OrderDAO.findOrderPayments(orderId);
     
-    // Trả về object thô với tất cả dữ liệu (không qua constructor để giữ nguyên JOIN fields)
+    // Trả về object với tất cả dữ liệu
     order.items = items;
     order.payments = payments;
    
@@ -482,24 +299,10 @@ class Order {
     }
 
     const offset = (page - 1) * limit;
-    values.push(limit, offset);
 
-    const [orders] = await db.query(
-      `SELECT 
-        o.*,
-        u.username, u.email, u.phone as user_phone,
-        a.recipient_name, a.phone as recipient_phone,
-        a.address_line1, a.city, a.district,
-        (SELECT COUNT(*) FROM order_items WHERE order_id = o.order_id) as item_count,
-        EXISTS(SELECT 1 FROM installments WHERE order_id = o.order_id) as is_installment
-      FROM orders o
-      LEFT JOIN users u ON o.user_id = u.user_id
-      LEFT JOIN addresses a ON o.address_id = a.address_id
-      WHERE ${conditions.join(' AND ')}
-      ORDER BY o.${sortBy} ${sortOrder}
-      LIMIT ? OFFSET ?`,
-      values
-    );
+    // Sử dụng OrderDAO
+    const orders = await OrderDAO.list(conditions, values, sortBy, sortOrder, limit, offset);
+    const total = await OrderDAO.count(conditions, values);
     
     // Debug: Log first order to check is_installment value
     if (orders.length > 0) {
@@ -517,15 +320,6 @@ class Order {
         is_installment: testOrder.is_installment
       });
     }
-
-    const [count] = await db.query(
-      `SELECT COUNT(*) as total
-      FROM orders o
-      LEFT JOIN users u ON o.user_id = u.user_id
-      LEFT JOIN addresses a ON o.address_id = a.address_id
-      WHERE ${conditions.join(' AND ')}`,
-      values.slice(0, -2)
-    );
 
     return {
       data: orders.map(order => {
@@ -567,10 +361,10 @@ class Order {
         };
       }),
       pagination: {
-        total: count[0].total,
+        total: total,
         page: parseInt(page),
         limit: parseInt(limit),
-        totalPages: Math.ceil(count[0].total / limit)
+        totalPages: Math.ceil(total / limit)
       }
     };
   }
@@ -583,15 +377,9 @@ class Order {
       throw new Error('Chỉ có thể xác nhận đơn hàng đang chờ xử lý');
     }
 
-    const [result] = await db.query(
-      `UPDATE orders 
-      SET order_status = 'confirmed',
-          confirmed_at = NOW()
-      WHERE order_id = ?`,
-      [this.orderId]
-    );
+    const affectedRows = await OrderDAO.updateStatus(this.orderId, 'confirmed', 'confirmed_at');
 
-    if (result.affectedRows > 0) {
+    if (affectedRows > 0) {
       this.orderStatus = 'confirmed';
       this.confirmedAt = new Date();
       return true;
@@ -605,14 +393,9 @@ class Order {
       throw new Error('Chỉ có thể xử lý đơn hàng đã được xác nhận');
     }
 
-    const [result] = await db.query(
-      `UPDATE orders 
-      SET order_status = 'processing'
-      WHERE order_id = ?`,
-      [this.orderId]
-    );
+    const affectedRows = await OrderDAO.updateStatus(this.orderId, 'processing');
 
-    if (result.affectedRows > 0) {
+    if (affectedRows > 0) {
       this.orderStatus = 'processing';
       return true;
     }
@@ -625,15 +408,9 @@ class Order {
       throw new Error('Chỉ có thể giao hàng cho đơn hàng đang xử lý');
     }
 
-    const [result] = await db.query(
-      `UPDATE orders 
-      SET order_status = 'shipping',
-          shipped_at = NOW()
-      WHERE order_id = ?`,
-      [this.orderId]
-    );
+    const affectedRows = await OrderDAO.updateStatus(this.orderId, 'shipping', 'shipped_at');
 
-    if (result.affectedRows > 0) {
+    if (affectedRows > 0) {
       this.orderStatus = 'shipping';
       this.shippedAt = new Date();
       return true;
@@ -652,21 +429,10 @@ class Order {
       await conn.beginTransaction();
 
       // Cập nhật trạng thái đơn hàng
-      await conn.query(
-        `UPDATE orders 
-        SET order_status = 'delivered',
-            delivered_at = NOW()
-        WHERE order_id = ?`,
-        [this.orderId]
-      );
+      await OrderDAO.updateStatus(this.orderId, 'delivered', 'delivered_at', conn);
 
-      // Cập nhật trạng thái thanh toán COD nếu có
-      await conn.query(
-        `UPDATE payments 
-        SET payment_status = 'completed'
-        WHERE order_id = ? AND payment_method = 'cod'`,
-        [this.orderId]
-      );
+      // Cập nhật trạng thái thanh toán COD
+      await OrderDAO.updateCODPaymentToCompleted(this.orderId, conn);
 
       // Confirm sale and activate warranties for all order items
       await this.activateWarrantiesForOrder(conn);
@@ -696,14 +462,7 @@ class Order {
       await conn.beginTransaction();
 
       // Cập nhật trạng thái đơn hàng
-      await conn.query(
-        `UPDATE orders 
-        SET order_status = 'cancelled',
-            cancelled_reason = ?,
-            cancelled_at = NOW()
-        WHERE order_id = ?`,
-        [reason, this.orderId]
-      );
+      await OrderDAO.updateCancelledReason(this.orderId, reason, conn);
 
       // Hoàn lại số lượng tồn kho
       const [items] = await conn.query(
@@ -712,12 +471,7 @@ class Order {
       );
 
       for (const item of items) {
-        await conn.query(
-          `UPDATE product_variants 
-          SET stock_quantity = stock_quantity + ?
-          WHERE variant_id = ?`,
-          [item.quantity, item.variant_id]
-        );
+        await OrderDAO.incrementStock(item.variant_id, item.quantity, conn);
 
         // Release reserved serials (reserved -> in_stock)
         try {
@@ -731,12 +485,7 @@ class Order {
 
       // Hoàn lại coupon usage nếu có
       if (this.couponId) {
-        await conn.query(
-          `UPDATE coupons 
-          SET used_count = used_count - 1
-          WHERE coupon_id = ?`,
-          [this.couponId]
-        );
+        await OrderDAO.decrementCouponUsage(this.couponId, conn);
       }
 
       await conn.commit();
@@ -766,21 +515,10 @@ class Order {
       const refundAmount = amount || this.totalAmount;
 
       // Cập nhật trạng thái đơn hàng
-      await conn.query(
-        `UPDATE orders 
-        SET order_status = 'refunded',
-            payment_status = 'refunded'
-        WHERE order_id = ?`,
-        [this.orderId]
-      );
+      await OrderDAO.updateToRefunded(this.orderId, conn);
 
       // Tạo payment record cho refund
-      await conn.query(
-        `INSERT INTO payments (
-          order_id, payment_method, payment_status, amount, transaction_id
-        ) VALUES (?, 'refund', 'completed', ?, ?)`,
-        [this.orderId, refundAmount, `REFUND-${Date.now()}`]
-      );
+      await OrderDAO.insertRefundPayment(this.orderId, refundAmount, conn);
 
       // Hoàn lại số lượng tồn kho nếu chưa hoàn
       if (this.orderStatus !== 'cancelled') {
@@ -790,12 +528,7 @@ class Order {
         );
 
         for (const item of items) {
-          await conn.query(
-            `UPDATE product_variants 
-            SET stock_quantity = stock_quantity + ?
-            WHERE variant_id = ?`,
-            [item.quantity, item.variant_id]
-          );
+          await OrderDAO.incrementStock(item.variant_id, item.quantity, conn);
         }
       }
 
@@ -824,26 +557,21 @@ class Order {
     try {
       await conn.beginTransaction();
 
-      // Build update query with appropriate timestamp fields
-      let updateQuery = 'UPDATE orders SET order_status = ?, updated_at = NOW()';
-      const params = [newStatus];
-      
+      // Xác định timestamp field
+      let timestampField = null;
       if (newStatus === 'delivered') {
-        updateQuery += ', delivered_at = NOW()';
+        timestampField = 'delivered_at';
       } else if (newStatus === 'confirmed') {
-        updateQuery += ', confirmed_at = NOW()';
+        timestampField = 'confirmed_at';
       } else if (newStatus === 'shipping') {
-        updateQuery += ', shipped_at = NOW()';
+        timestampField = 'shipped_at';
       } else if (newStatus === 'cancelled') {
-        updateQuery += ', cancelled_at = NOW()';
+        timestampField = 'cancelled_at';
       }
-      
-      updateQuery += ' WHERE order_id = ?';
-      params.push(this.orderId);
 
-      const [result] = await conn.query(updateQuery, params);
+      const affectedRows = await OrderDAO.updateStatus(this.orderId, newStatus, timestampField, conn);
 
-      if (result.affectedRows === 0) {
+      if (affectedRows === 0) {
         await conn.rollback();
         return false;
       }
@@ -874,14 +602,9 @@ class Order {
       throw new Error('Trạng thái thanh toán không hợp lệ');
     }
 
-    const [result] = await db.query(
-      `UPDATE orders 
-      SET payment_status = ?
-      WHERE order_id = ?`,
-      [status, this.orderId]
-    );
+    const affectedRows = await OrderDAO.updatePaymentStatus(this.orderId, status);
 
-    if (result.affectedRows > 0) {
+    if (affectedRows > 0) {
       this.paymentStatus = status;
       return true;
     }

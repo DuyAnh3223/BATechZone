@@ -1,9 +1,8 @@
 Nhiệm vụ:
 Nhận request
-Gọi DTO
 Gọi Service
 Trả response
-req → DTO → Service → res
+req → Service → res
 
 ❌ Không được
 Query DB

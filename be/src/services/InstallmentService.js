@@ -1,7 +1,7 @@
 import Installment from '../models/Installment.js';
 import InstallmentPayment from '../models/InstallmentPayment.js';
 import Order from '../models/Order.js';
-import { query } from '../libs/db.js';
+import { query, db } from '../libs/db.js';
 import { calculateAndUpdateOverdueFees } from '../utils/overdueCalculator.js';
 
 // Helper function to format datetime for MySQL (Vietnam timezone GMT+7)
@@ -17,16 +17,17 @@ function formatDateTimeForMySQL(date = new Date()) {
 }
 class InstallmentService {
     /**
-     * Tạo mới một khoản trả góp
+     * Tạo mới một khoản trả góp (được gọi từ OrderService)
      * @param {Object} installmentData 
      * @param {number} installmentData.order_id 
      * @param {number} installmentData.user_id 
-     * @param {number} installmentData.total_amount 
+     * @param {number} installmentData.total_amount - Tổng tiền (đã bao gồm lãi suất)
      * @param {number} installmentData.down_payment 
      * @param {number} installmentData.num_terms 
      * @param {number} installmentData.interest_rate 
      * @param {Date} installmentData.start_date 
-     * @returns {Object} Installment và danh sách các kỳ thanh toán
+     * @param {number} installmentData.policy_id
+     * @returns {Object} { installment, payments }
      */
     async createInstallment(installmentData) {
         try {
@@ -34,6 +35,7 @@ class InstallmentService {
                 order_id,
                 user_id,
                 total_amount,
+                total_with_interest,
                 down_payment,
                 num_terms,
                 interest_rate,
@@ -42,82 +44,135 @@ class InstallmentService {
                 policy_id
             } = installmentData;
 
-            // Calculate remaining amount after down payment
-            const remainingAmount = total_amount - down_payment;
-
-            // Calculate monthly payment amount (including interest)
-            const monthlyInterestRate = interest_rate / 100 / 12;
-            let monthly_payment;
-
-            if (interest_rate > 0) {
-                // Formula for installment with interest
-                monthly_payment = (remainingAmount * monthlyInterestRate * Math.pow(1 + monthlyInterestRate, num_terms)) 
-                    / (Math.pow(1 + monthlyInterestRate, num_terms) - 1);
-            } else {
-                // No interest
-                monthly_payment = remainingAmount / num_terms;
+            // (1) Validate plan
+            if (!order_id || !num_terms || num_terms <= 0) {
+                throw new Error('Thông tin trả góp không hợp lệ');
             }
 
-            // Round to 2 decimal places
-            monthly_payment = Math.round(monthly_payment * 100) / 100;
+            if (total_amount <= 0) {
+                throw new Error('Tổng tiền không hợp lệ');
+            }
+
+            // (2) Tính toán kỳ trả góp - Declining Balance (Dư nợ giảm dần)
+            const principal = total_amount - down_payment; // Số tiền cần trả góp
+            const monthlyInterestRate = interest_rate / 100 / 12;
+            const principalPerMonth = principal / num_terms;
+
+            // Get overdue_fee_percent and installment_fee_percent from policy
+            let finalOverdueFeePercent = overdue_fee_percent_per_day || 0;
+            let installmentFeePercent = 0;
+            
+            if (policy_id) {
+                const policyRows = await query(
+                    'SELECT overdue_fee_percent, installment_fee_percent FROM installment_policies WHERE policy_id = ?',
+                    [policy_id]
+                );
+                if (policyRows.length > 0) {
+                    finalOverdueFeePercent = policyRows[0].overdue_fee_percent || 0;
+                    installmentFeePercent = policyRows[0].installment_fee_percent || 0;
+                }
+            }
+
+            // Calculate payment schedule with declining balance
+            const totalFee = (principal * installmentFeePercent) / 100;
+            const monthlyFee = totalFee / num_terms;
+            
+            let balance = principal;
+            const paymentSchedule = [];
+            
+            for (let i = 1; i <= num_terms; i++) {
+                const openingBalance = balance;
+                const interest = balance * monthlyInterestRate;
+                
+                // Tháng cuối: điều chỉnh principal để balance = 0 chính xác
+                const principalAmount = i === num_terms ? balance : principalPerMonth;
+                
+                const total = Math.round((principalAmount + interest + monthlyFee) * 100) / 100;
+                balance -= principalAmount;
+                
+                paymentSchedule.push({
+                    month: i,
+                    openingBalance: Math.round(openingBalance * 100) / 100,
+                    principal: Math.round(principalAmount * 100) / 100,
+                    interest: Math.round(interest * 100) / 100,
+                    fee: Math.round(monthlyFee * 100) / 100,
+                    total: total,
+                    remainingBalance: Math.round(Math.max(0, balance) * 100) / 100
+                });
+            }
+
+            console.log('📊 Declining balance schedule:', {
+                principal,
+                num_terms: num_terms,
+                monthlyInterestRate,
+                principalPerMonth,
+                firstPayment: paymentSchedule[0].total,
+                lastPayment: paymentSchedule[num_terms - 1].total
+            });
 
             // Calculate end date (start_date + num_terms months)
             const startDateObj = new Date(start_date);
             const endDateObj = new Date(startDateObj);
             endDateObj.setMonth(endDateObj.getMonth() + num_terms);
 
-            // Get overdue_fee_percent from policy if policy_id is provided
-            let finalOverdueFeePercent = overdue_fee_percent_per_day || 0;
-            if (policy_id && !overdue_fee_percent_per_day) {
-                const policyRows = await query(
-                    'SELECT overdue_fee_percent FROM installment_policies WHERE policy_id = ?',
-                    [policy_id]
-                );
-                if (policyRows.length > 0) {
-                    finalOverdueFeePercent = policyRows[0].overdue_fee_percent || 0;
-                }
-            }
+            // Auto-active if down_payment = 0, otherwise set to 'approved' (waiting for down payment)
+            const installmentStatus = down_payment === 0 ? 'active' : 'approved';
+            const downPaymentStatus = down_payment === 0 ? 'not_required' : 'pending';
 
-            // Create installment
+            // Tính monthly_payment trung bình (vì declining balance khác nhau mỗi tháng)
+            const averageMonthlyPayment = Math.round((paymentSchedule.reduce((sum, p) => sum + p.total, 0) / num_terms) * 100) / 100;
+
+            // (3) Tạo bảng installment
             const installment = await Installment.create({
                 order_id,
                 user_id,
                 total_amount,
                 down_payment,
+                down_payment_status: downPaymentStatus,
                 num_terms,
-                monthly_payment,
+                monthly_payment: averageMonthlyPayment, // Lưu giá trị trung bình cho tham khảo
                 overdue_fee_percent_per_day: finalOverdueFeePercent,
                 interest_rate,
                 start_date,
                 end_date: endDateObj,
-                status: 'approved' // pending, approved, active, completed, cancelled,overdue
+                status: installmentStatus
             });
 
-            // Create installment payments
+            console.log('✅ Installment created:', {
+                installmentId: installment.installment_id,
+                status: installmentStatus,
+                downPaymentStatus
+            });
+
+            // (4) Tạo lịch thanh toán (chỉ nếu active)
             const payments = [];
-            for (let i = 1; i <= num_terms; i++) {
-                const dueDate = new Date(startDateObj);
-                dueDate.setMonth(dueDate.getMonth() + i);
+            if (installmentStatus === 'active') {
+                for (let payment of paymentSchedule) {
+                    const dueDate = new Date(startDateObj);
+                    dueDate.setMonth(dueDate.getMonth() + payment.month);
+                    
+                    const paymentRecord = await InstallmentPayment.create({
+                        installment_id: installment.installment_id,
+                        payment_no: payment.month,
+                        due_date: formatDateTimeForMySQL(dueDate),
+                        paid_date: null,
+                        amount: payment.total,
+                        status: 'pending',
+                        note: null
+                    });
+                    payments.push(paymentRecord);
+                }
 
-                const payment = await InstallmentPayment.create({
-                    installment_id: installment.installment_id,
-                    payment_no: i,
-                    due_date: dueDate,
-                    paid_date: null,
-                    amount: monthly_payment,
-                    status: 'pending', // pending, paid, overdue
-                    note: null
-                });
-
-                payments.push(payment);
+                console.log(`✅ Created ${num_terms} payment schedules with declining balance`);
             }
 
+            // (5) Trả kết quả ngược về OrderService
             return {
                 installment,
                 payments
             };
         } catch (error) {
-            throw new Error(`SERVICE Lỗi tạo khoản trả góp: ${error.message}`);
+            throw new Error(`Lỗi tạo khoản trả góp: ${error.message}`);
         }
     }
 
@@ -150,12 +205,17 @@ class InstallmentService {
             
             const totalPaid = totalPaidFromPayments + downPaymentPaid;
             const outstandingPrincipal = parseFloat(installment.total_amount || 0) - totalPaid;
+            
+            // Tính tổng tiền phải trả (bao gồm gốc + lãi + phí)
+            const totalWithInterest = parseFloat(installment.down_payment || 0) + 
+                payments.reduce((sum, p) => sum + parseFloat(p.amount || 0), 0);
 
             return {
                 ...installment,
                 payments,
                 total_paid: totalPaid,
-                outstanding_principal: Math.max(0, outstandingPrincipal)
+                outstanding_principal: Math.max(0, outstandingPrincipal),
+                total_with_interest: Math.round(totalWithInterest * 100) / 100
             };
         } catch (error) {
             throw new Error(`SERVICE Lỗi lấy thông tin trả góp: ${error.message}`);
@@ -194,12 +254,17 @@ class InstallmentService {
                     
                     const totalPaid = totalPaidFromPayments + downPaymentPaid;
                     const outstandingPrincipal = parseFloat(installment.total_amount || 0) - totalPaid;
+                    
+                    // Tính tổng tiền phải trả (bao gồm gốc + lãi + phí)
+                    const totalWithInterest = parseFloat(installment.down_payment || 0) + 
+                        payments.reduce((sum, p) => sum + parseFloat(p.amount || 0), 0);
 
                     return {
                         ...installment,
                         payments,
                         total_paid: totalPaid,
-                        outstanding_principal: Math.max(0, outstandingPrincipal)
+                        outstanding_principal: Math.max(0, outstandingPrincipal),
+                        total_with_interest: Math.round(totalWithInterest * 100) / 100
                     };
                 })
             );
@@ -245,12 +310,17 @@ class InstallmentService {
             
             const totalPaid = totalPaidFromPayments + downPaymentPaid;
             const outstandingPrincipal = parseFloat(installment.total_amount || 0) - totalPaid;
+            
+            // Tính tổng tiền phải trả (bao gồm gốc + lãi + phí)
+            const totalWithInterest = parseFloat(installment.down_payment || 0) + 
+                payments.reduce((sum, p) => sum + parseFloat(p.amount || 0), 0);
 
             return {
                 ...installment,
                 payments,
                 total_paid: totalPaid,
-                outstanding_principal: Math.max(0, outstandingPrincipal)
+                outstanding_principal: Math.max(0, outstandingPrincipal),
+                total_with_interest: Math.round(totalWithInterest * 100) / 100
             };
         } catch (error) {
             throw new Error(`SERVICE Lỗi lấy thông tin trả góp theo order_id: ${error.message}`);
@@ -471,20 +541,60 @@ class InstallmentService {
                 return existingPayments;
             }
 
-            // Generate payments
+            // Get policy to recalculate payment schedule
+            let interestRate = installment.interest_rate || 0;
+            let installmentFeePercent = 0;
+            
+            if (installment.policy_id) {
+                const policyRows = await query(
+                    'SELECT interest_rate, installment_fee_percent FROM installment_policies WHERE policy_id = ?',
+                    [installment.policy_id]
+                );
+                
+                if (policyRows.length > 0) {
+                    interestRate = policyRows[0].interest_rate || interestRate;
+                    installmentFeePercent = policyRows[0].installment_fee_percent || 0;
+                }
+            }
+
+            // Recalculate payment schedule with declining balance
+            const principal = (installment.total_amount || 0) - (installment.down_payment || 0);
+            const numTerms = installment.num_terms || 1;
+            const monthlyInterestRate = interestRate / 100 / 12;
+            const principalPerMonth = principal / numTerms;
+            const totalFee = (principal * installmentFeePercent) / 100;
+            const monthlyFee = totalFee / numTerms;
+            
+            let balance = principal;
+            const paymentSchedule = [];
+            
+            for (let i = 1; i <= numTerms; i++) {
+                const openingBalance = balance;
+                const interest = balance * monthlyInterestRate;
+                const principalAmount = i === numTerms ? balance : principalPerMonth;
+                const total = Math.round((principalAmount + interest + monthlyFee) * 100) / 100;
+                balance -= principalAmount;
+                
+                paymentSchedule.push({
+                    month: i,
+                    total: total
+                });
+            }
+
+            // Generate payments with declining balance amounts
             const startDateObj = new Date(installment.start_date);
             const payments = [];
 
-            for (let i = 1; i <= installment.num_terms; i++) {
+            for (let i = 0; i < paymentSchedule.length; i++) {
                 const dueDate = new Date(startDateObj);
-                dueDate.setMonth(dueDate.getMonth() + i);
+                dueDate.setMonth(dueDate.getMonth() + (i + 1));
 
                 const payment = await InstallmentPayment.create({
-                    installment_id: installment.installment_id,
-                    payment_no: i,
-                    due_date: dueDate,
+                    installment_id: installment.installment_id || null,
+                    payment_no: i + 1,
+                    due_date: formatDateTimeForMySQL(dueDate),
                     paid_date: null,
-                    amount: installment.monthly_payment,
+                    amount: paymentSchedule[i].total || 0,
                     status: 'pending',
                     note: null
                 });
@@ -492,7 +602,7 @@ class InstallmentService {
                 payments.push(payment);
             }
 
-            console.log(`Generated ${payments.length} payments for installment ${installmentId}`);
+            console.log(`Generated ${payments.length} payments with declining balance for installment ${installmentId}`);
             return payments;
         } catch (error) {
             throw new Error(`SERVICE Lỗi tạo payments: ${error.message}`);

@@ -4,7 +4,6 @@ import {
   getAttribute, 
   deleteAttribute,
   listAttributes,
-  getAttributesByType,
   updateAttributeCategories,
   getAttributeCategories,
   removeAttributeCategory,
