@@ -27,6 +27,7 @@ const ProductCard = ({ product }) => {
   // Use local state instead of global store to avoid conflicts
   const [variantImages, setVariantImages] = useState([]);
   const [loadingImages, setLoadingImages] = useState(false);
+  const [variants, setVariants] = useState([]);
   const [successDialog, setSuccessDialog] = useState({ open: false, message: '' });
 
   const formatPrice = (price) => {
@@ -43,7 +44,15 @@ const ProductCard = ({ product }) => {
   const price = product.default_variant_price || product.min_variant_price || product.price || 0;
   const imageUrl = product.image_url || product.image || null;
   const productId = product.product_id || product.id;
-  const isActive = product.is_active !== undefined ? product.is_active : true;
+  
+  // Check stock: prioritize backend total_stock, fallback to variants check
+  const hasStock = product.total_stock !== undefined
+    ? product.total_stock > 0
+    : (variants.length > 0 
+        ? variants.some(v => v.is_active && (v.stock_quantity > 0 || v.stockQuantity > 0))
+        : (product.is_active !== undefined ? product.is_active : true));
+  
+  const isActive = hasStock;
   const isFeatured = product.is_featured || false;
 
   // Get primary image from variantImages, or first image, or fallback to product imageUrl
@@ -64,10 +73,13 @@ const ProductCard = ({ product }) => {
         setLoadingImages(true);
         // Call API directly instead of using global store
         const variantsResponse = await variantService.getVariantsByProductId(productId);
-        const variants = variantsResponse?.data || variantsResponse || [];
+        const loadedVariants = variantsResponse?.data || variantsResponse || [];
         
-        if (variants && variants.length > 0) {
-          const firstVariant = variants.find(v => v.is_default) || variants[0];
+        // Save variants to state for stock checking
+        setVariants(loadedVariants);
+        
+        if (loadedVariants && loadedVariants.length > 0) {
+          const firstVariant = loadedVariants.find(v => v.is_default) || loadedVariants[0];
           if (firstVariant?.variant_id) {
             // Fetch images for the first variant
             try {

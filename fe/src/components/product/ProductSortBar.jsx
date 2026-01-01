@@ -19,7 +19,6 @@ const ProductSortBar = ({ sortValue, onSortChange, productsCount, totalCount }) 
             <SelectItem value="newest">Mới nhất</SelectItem>
             <SelectItem value="price-asc">Giá tăng dần</SelectItem>
             <SelectItem value="price-desc">Giá giảm dần</SelectItem>
-            <SelectItem value="discount">Khuyến mãi</SelectItem>
           </SelectContent>
         </Select>
       </div>
