@@ -31,6 +31,8 @@ import AdminOrder from './pages/admin/AdminOrder';
 import AdminNotification from './pages/admin/AdminNotification';
 import AdminBuild from './pages/admin/AdminBuild';
 import AdminCategoryPage from './pages/admin/CategoryPage/AdminCategoryPage';
+import CategoryPage from './pages/admin/CategoryManagement/CategoryPage';
+import AttributePage from './pages/admin/CategoryManagement/Attributes&ValuesManagement/AttributePage';
 import AdminPost from './pages/admin/AdminBlog';
 import AdminPostDetail from './pages/admin/AdminBlogDetail';
 import AdminWishlist from './pages/admin/AdminWishlist';
@@ -99,7 +101,8 @@ function App() {
             <Route path="coupons" element={<AdminCouponPage />} />
             <Route path="orders" element={<AdminOrder />} />
             <Route path="notifications" element={<AdminNotification />} />
-            <Route path="categories" element={<AdminCategoryPage />} />
+            <Route path="categories" element={<CategoryPage />} />
+            <Route path="categories/:categoryId/attributes" element={<AttributePage />} />
             <Route path="posts" element={<AdminPost />} />
             <Route path="posts/:postId" element={<AdminPostDetail />} />
             <Route path="installments" element={<AdminInstallmentPage />} />

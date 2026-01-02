@@ -11,7 +11,13 @@ import {
   updateCategoryAttributes,
   removeCategoryAttribute,
   uploadCategoryImage,
-  deleteCategoryImage
+  deleteCategoryImage,
+  createAttributeForCategory,
+  updateAttributeCategory,
+  removeAttributeFromCategory,
+  getAttributeValues,
+  addAttributeValue,
+  removeAttributeValue
 } from '../controllers/categoryController.js';
 import { uploadCategoryImage as uploadMiddleware } from '../middlewares/upload.js';
 
@@ -31,7 +37,17 @@ router.post('/delete-image', deleteCategoryImage);
 
 // Attribute management routes
 router.get('/:id/attributes', getCategoryAttributes);
+router.post('/:categoryId/attributes', createAttributeForCategory);
 router.put('/:id/attributes', updateCategoryAttributes);
 router.delete('/:id/attributes/:attributeId', removeCategoryAttribute);
+router.delete('/:categoryId/attributes/:attributeCategoryId', removeAttributeFromCategory);
+
+// Attribute category management
+router.put('/attribute-categories/:attributeCategoryId', updateAttributeCategory);
+
+// Attribute values management
+router.get('/attribute-categories/:attributeCategoryId/values', getAttributeValues);
+router.post('/attribute-categories/:attributeCategoryId/values', addAttributeValue);
+router.delete('/attribute-categories/:attributeCategoryId/values/:valueId', removeAttributeValue);
 
 export default router;

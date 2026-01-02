@@ -19,8 +19,8 @@ import variantRoutes from './variantRoutes.js';
 import variantImageRoutes from './variantImageRoutes.js';
 import variantSerialRoutes from './variantSerial.routes.js';
 import paymentRoutes from './paymentRoutes.js';
-import postRoutes from './postRoutes.js';
-import articleRoutes from './articleRoutes.js';
+//import postRoutes from './postRoutes.js';
+//import articleRoutes from './articleRoutes.js';
 import warrantyRoutes from './warranty.routes.js';
 import serviceRequestRoutes from './serviceRequest.routes.js';
 
@@ -47,8 +47,8 @@ router.use('/variants', variantRoutes);
 router.use('/variant-images', variantImageRoutes);
 router.use('/variant-serials', variantSerialRoutes);
 router.use('/payments', paymentRoutes);
-router.use('/posts', postRoutes);
-router.use('/articles', articleRoutes);
+//router.use('/posts', postRoutes);
+//router.use('/articles', articleRoutes);
 router.use('/warranty', warrantyRoutes);
 router.use('/service-requests', serviceRequestRoutes);
 

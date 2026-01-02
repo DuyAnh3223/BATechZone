@@ -1,5 +1,6 @@
 import Category from '../models/Category.js';
 import { getPublicUrlForCategory, mapPublicUrlToDiskPath } from '../middlewares/upload.js';
+import { db } from '../libs/db.js';
 
 export const createCategory = async (req, res) => {
   try {
@@ -203,8 +204,28 @@ export const getSimpleCategories = async (req, res) => {
 // Get category attributes
 export const getCategoryAttributes = async (req, res) => {
   try {
-    const attributes = await Category.getAttributes(req.params.id);
-    res.json({ attributes });
+    const categoryId = req.params.id;
+    
+    const [attributes] = await db.query(
+      `SELECT 
+        ac.attribute_category_id,
+        ac.attribute_id,
+        a.attribute_name,
+        ac.is_variant_attribute,
+        COUNT(DISTINCT acv.attribute_category_value_id) as value_count
+      FROM attributes_categories ac
+      JOIN attributes a ON ac.attribute_id = a.attribute_id
+      LEFT JOIN attribute_category_values acv ON ac.attribute_category_id = acv.attribute_category_id
+      WHERE ac.category_id = ?
+      GROUP BY ac.attribute_category_id, ac.attribute_id, a.attribute_name, ac.is_variant_attribute
+      ORDER BY a.attribute_name`,
+      [categoryId]
+    );
+    
+    res.json({ 
+      success: true,
+      data: attributes 
+    });
   } catch (error) {
     console.error('Error getting category attributes:', error);
     res.status(500).json({ message: 'Internal server error' });
@@ -334,5 +355,218 @@ export const deleteCategoryImage = async (req, res) => {
       message: 'Internal server error',
       error: error.message
     });
+  }
+};
+
+// Create attribute for category
+export const createAttributeForCategory = async (req, res) => {
+  try {
+    const { categoryId } = req.params;
+    const { attribute_name, is_variant_attribute } = req.body;
+
+    if (!attribute_name) {
+      return res.status(400).json({ message: 'attribute_name is required' });
+    }
+
+    // Check if attribute already exists
+    const [existingAttrs] = await db.query(
+      'SELECT attribute_id FROM attributes WHERE attribute_name = ?',
+      [attribute_name]
+    );
+
+    let attributeId;
+    if (existingAttrs.length > 0) {
+      attributeId = existingAttrs[0].attribute_id;
+    } else {
+      // Create new attribute
+      const [result] = await db.query(
+        'INSERT INTO attributes (attribute_name) VALUES (?)',
+        [attribute_name]
+      );
+      attributeId = result.insertId;
+    }
+
+    // Link to category
+    await db.query(
+      'INSERT INTO attributes_categories (category_id, attribute_id, is_variant_attribute) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE is_variant_attribute = ?',
+      [categoryId, attributeId, is_variant_attribute || 0, is_variant_attribute || 0]
+    );
+
+    res.status(201).json({
+      success: true,
+      message: 'Attribute created successfully',
+      data: { attribute_id: attributeId, attribute_name }
+    });
+  } catch (error) {
+    console.error('Error creating attribute for category:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+// Update attribute category (toggle is_variant_attribute)
+export const updateAttributeCategory = async (req, res) => {
+  try {
+    const { attributeCategoryId } = req.params;
+    const { is_variant_attribute, attribute_name } = req.body;
+
+    const updates = [];
+    const values = [];
+
+    if (is_variant_attribute !== undefined) {
+      updates.push('is_variant_attribute = ?');
+      values.push(is_variant_attribute ? 1 : 0);
+    }
+
+    if (attribute_name !== undefined) {
+      // Update the attribute name in attributes table
+      const [attrCat] = await db.query(
+        'SELECT attribute_id FROM attributes_categories WHERE attribute_category_id = ?',
+        [attributeCategoryId]
+      );
+      
+      if (attrCat.length > 0) {
+        await db.query(
+          'UPDATE attributes SET attribute_name = ? WHERE attribute_id = ?',
+          [attribute_name, attrCat[0].attribute_id]
+        );
+      }
+    }
+
+    if (updates.length > 0) {
+      values.push(attributeCategoryId);
+      await db.query(
+        `UPDATE attributes_categories SET ${updates.join(', ')} WHERE attribute_category_id = ?`,
+        values
+      );
+    }
+
+    res.json({
+      success: true,
+      message: 'Attribute updated successfully'
+    });
+  } catch (error) {
+    console.error('Error updating attribute category:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+// Remove attribute from category
+export const removeAttributeFromCategory = async (req, res) => {
+  try {
+    const { categoryId, attributeCategoryId } = req.params;
+
+    await db.query(
+      'DELETE FROM attributes_categories WHERE attribute_category_id = ? AND category_id = ?',
+      [attributeCategoryId, categoryId]
+    );
+
+    res.json({
+      success: true,
+      message: 'Attribute removed from category successfully'
+    });
+  } catch (error) {
+    console.error('Error removing attribute from category:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+// Get attribute values for a category attribute
+export const getAttributeValues = async (req, res) => {
+  try {
+    const { attributeCategoryId } = req.params;
+
+    const [values] = await db.query(
+      `SELECT acv.*, av.value_name 
+       FROM attribute_category_values acv
+       JOIN attribute_values av ON acv.attribute_value_id = av.attribute_value_id
+       WHERE acv.attribute_category_id = ?
+       ORDER BY av.value_name`,
+      [attributeCategoryId]
+    );
+
+    res.json({
+      success: true,
+      data: values
+    });
+  } catch (error) {
+    console.error('Error getting attribute values:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+// Add attribute value
+export const addAttributeValue = async (req, res) => {
+  try {
+    const { attributeCategoryId } = req.params;
+    const { value_name } = req.body;
+
+    if (!value_name) {
+      return res.status(400).json({ message: 'value_name is required' });
+    }
+
+    // Get attribute_id from attribute_category_id
+    const [attrCat] = await db.query(
+      'SELECT attribute_id FROM attributes_categories WHERE attribute_category_id = ?',
+      [attributeCategoryId]
+    );
+
+    if (attrCat.length === 0) {
+      return res.status(404).json({ message: 'Attribute category not found' });
+    }
+
+    const attributeId = attrCat[0].attribute_id;
+
+    // Check if value already exists for this attribute
+    const [existingValues] = await db.query(
+      'SELECT attribute_value_id FROM attribute_values WHERE attribute_id = ? AND value_name = ?',
+      [attributeId, value_name]
+    );
+
+    let attributeValueId;
+    if (existingValues.length > 0) {
+      attributeValueId = existingValues[0].attribute_value_id;
+    } else {
+      // Create new value
+      const [result] = await db.query(
+        'INSERT INTO attribute_values (attribute_id, value_name) VALUES (?, ?)',
+        [attributeId, value_name]
+      );
+      attributeValueId = result.insertId;
+    }
+
+    // Link to category
+    await db.query(
+      'INSERT IGNORE INTO attribute_category_values (attribute_category_id, attribute_value_id) VALUES (?, ?)',
+      [attributeCategoryId, attributeValueId]
+    );
+
+    res.status(201).json({
+      success: true,
+      message: 'Attribute value added successfully',
+      data: { attribute_value_id: attributeValueId, value_name }
+    });
+  } catch (error) {
+    console.error('Error adding attribute value:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+// Remove attribute value
+export const removeAttributeValue = async (req, res) => {
+  try {
+    const { attributeCategoryId, valueId } = req.params;
+
+    await db.query(
+      'DELETE FROM attribute_category_values WHERE attribute_category_id = ? AND attribute_category_value_id = ?',
+      [attributeCategoryId, valueId]
+    );
+
+    res.json({
+      success: true,
+      message: 'Attribute value removed successfully'
+    });
+  } catch (error) {
+    console.error('Error removing attribute value:', error);
+    res.status(500).json({ message: 'Internal server error' });
   }
 };
