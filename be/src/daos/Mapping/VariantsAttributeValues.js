@@ -1,4 +1,4 @@
-import { query } from "../../libs/db";
+import { query } from '../../libs/db.js';
 
 class VariantsAttributeValues {
     static async create(data) {

@@ -14,7 +14,7 @@ const AddEditCategoryForm = ({ category, onSuccess, onCancel }) => {
   const [imagePreview, setImagePreview] = useState('');
   const [uploading, setUploading] = useState(false);
 
-  const { createCategory, updateCategory, uploadCategoryImage } = useCategoryStore();
+  const { createCategory, updateCategory } = useCategoryStore();
 
   useEffect(() => {
     if (category) {
@@ -78,28 +78,23 @@ const AddEditCategoryForm = ({ category, onSuccess, onCancel }) => {
 
     try {
       setUploading(true);
-      let imageUrl = formData.image_url;
-
-      // Upload image if new file selected
-      if (imageFile) {
-        const uploadResponse = await uploadCategoryImage(imageFile);
-        imageUrl = uploadResponse.imageUrl || uploadResponse.image_url;
-      }
 
       const dataToSubmit = {
         category_name: formData.category_name.trim(),
         description: formData.description.trim(),
-        image_url: imageUrl,
       };
+
+      // Only include image_url if it exists and no new file is being uploaded
+      if (formData.image_url && !imageFile) {
+        dataToSubmit.image_url = formData.image_url;
+      }
 
       if (category) {
         // Update existing category
-        await updateCategory(category.category_id, dataToSubmit);
-        toast.success('Cập nhật danh mục thành công');
+        await updateCategory(category.category_id, dataToSubmit, imageFile);
       } else {
         // Create new category
-        await createCategory(dataToSubmit);
-        toast.success('Thêm danh mục thành công');
+        await createCategory(dataToSubmit, imageFile);
       }
 
       onSuccess?.();

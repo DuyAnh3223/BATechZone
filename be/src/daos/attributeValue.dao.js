@@ -1,4 +1,5 @@
 import { db } from '../libs/db.js';
+import { query } from '../libs/db.js';
 import AttributeValue from '../models/AttributeValue.js';
 
 /**
@@ -6,25 +7,16 @@ import AttributeValue from '../models/AttributeValue.js';
  */
 class AttributeValueDAO {
 
-    async create(valueData) {
-        const [result] = await db.query(
-            `INSERT INTO attribute_values (
-                attribute_id,
-                value_name,
-                color_code,
-                image_url,
-                display_order,
-                is_active
-            ) VALUES (?, ?, ?, ?, ?, ?)`,
-            [
-                valueData.attributeId,
-                valueData.valueName,
-                valueData.colorCode || null,
-                valueData.imageUrl || null,
-                valueData.displayOrder || 0,
-                valueData.isActive ?? 1
-            ]
-        );
+    async create(attribute_id,value_name) {
+       
+        const sql = `INSERT INTO attribute_values (
+                    attribute_id,
+                    value_name
+                    ) VALUES (?, ?)`;
+        
+        const params = [attribute_id, value_name];
+        
+        const result = await query(sql, params);
         return result.insertId;
     }
 
@@ -35,6 +27,17 @@ class AttributeValueDAO {
             JOIN attributes a ON av.attribute_id = a.attribute_id
             WHERE av.attribute_value_id = ?`,
             [valueId]
+        );
+        return values[0] ? new AttributeValue(values[0]) : null;
+    }
+
+    async findByName(attributeId, valueName) {
+        const [values] = await db.query(
+            `SELECT av.*, a.attribute_name
+            FROM attribute_values av
+            JOIN attributes a ON av.attribute_id = a.attribute_id
+            WHERE av.attribute_id = ? AND av.value_name = ?`,
+            [attributeId, valueName]
         );
         return values[0] ? new AttributeValue(values[0]) : null;
     }

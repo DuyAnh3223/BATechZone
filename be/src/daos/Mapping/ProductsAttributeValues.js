@@ -1,4 +1,4 @@
-import { query } from "../../libs/db";
+import { query } from '../../libs/db.js';
 
 class ProductsAttributeValues {
     static async create(data) {

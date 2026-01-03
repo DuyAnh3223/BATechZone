@@ -7,22 +7,15 @@ import {
   updateCategory,
   getSimpleCategories,
   getCategoryTree,
-  getCategoryAttributes,
-  updateCategoryAttributes,
-  removeCategoryAttribute,
-  uploadCategoryImage,
-  deleteCategoryImage,
-  createAttributeForCategory,
-  updateAttributeCategory,
-  removeAttributeFromCategory,
-  getAttributeValues,
-  addAttributeValue,
-  removeAttributeValue
+  uploadCategoryImage as uploadCategoryImageController,
+  deleteCategoryImage
 } from '../controllers/categoryController.js';
+import CategoryController from '../controllers/category.controller.js';
 import { uploadCategoryImage as uploadMiddleware } from '../middlewares/upload.js';
 
 const router = express.Router();
 
+// Basic category routes
 router.get('/tree', getCategoryTree);
 router.get('/simple', getSimpleCategories);
 router.get('/', listCategories);
@@ -32,22 +25,18 @@ router.put('/:id', updateCategory);
 router.delete('/:id', deleteCategory);
 
 // Image management routes
-router.post('/upload-image', uploadMiddleware.single('image'), uploadCategoryImage);
+router.post('/upload-image', uploadMiddleware.single('image'), uploadCategoryImageController);
 router.post('/delete-image', deleteCategoryImage);
 
-// Attribute management routes
-router.get('/:id/attributes', getCategoryAttributes);
-router.post('/:categoryId/attributes', createAttributeForCategory);
-router.put('/:id/attributes', updateCategoryAttributes);
-router.delete('/:id/attributes/:attributeId', removeCategoryAttribute);
-router.delete('/:categoryId/attributes/:attributeCategoryId', removeAttributeFromCategory);
+// Attribute management routes - NEW REFACTORED ENDPOINTS
+router.get('/:id/attributes', CategoryController.getAttributes);
+router.post('/:id/attributes', CategoryController.assignAttribute);
+router.delete('/:id/attributes/:attributeId', CategoryController.removeAttribute);
+router.patch('/:id/attributes/:attributeId', CategoryController.updateIsVariantAttribute);
 
-// Attribute category management
-router.put('/attribute-categories/:attributeCategoryId', updateAttributeCategory);
-
-// Attribute values management
-router.get('/attribute-categories/:attributeCategoryId/values', getAttributeValues);
-router.post('/attribute-categories/:attributeCategoryId/values', addAttributeValue);
-router.delete('/attribute-categories/:attributeCategoryId/values/:valueId', removeAttributeValue);
+// Attribute values management - NEW REFACTORED ENDPOINTS
+router.get('/:id/attributes/:attributeId/values', CategoryController.getAttributeValues);
+router.post('/:id/attributes/:attributeId/values', CategoryController.assignAttributeValues);
+router.delete('/values/:cavId', CategoryController.removeAttributeValue);
 
 export default router;

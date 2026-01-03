@@ -10,7 +10,7 @@ const CategoryItem = ({ category, onEdit, onDelete, onManageAttributes }) => {
     return `${baseUrl}${imageUrl}`;
   };
 
-  const imageUrl = getImageUrl(category.image_url);
+  const imageUrl = getImageUrl(category.imageUrl);
 
   return (
     <div className="bg-white border rounded-lg p-4 hover:shadow-md transition-shadow">
@@ -20,7 +20,7 @@ const CategoryItem = ({ category, onEdit, onDelete, onManageAttributes }) => {
           {imageUrl ? (
             <img
               src={imageUrl}
-              alt={category.category_name}
+              alt={category.name}
               className="w-full h-full object-cover"
               onError={(e) => {
                 e.target.src = 'https://via.placeholder.com/96x96?text=No+Image';
@@ -38,7 +38,7 @@ const CategoryItem = ({ category, onEdit, onDelete, onManageAttributes }) => {
           <div className="flex items-start justify-between mb-2">
             <div>
               <h3 className="text-lg font-semibold text-gray-900">
-                {category.category_name}
+                {category.name}
               </h3>
               {category.description && (
                 <p className="text-sm text-gray-600 mt-1 line-clamp-2">
@@ -53,10 +53,10 @@ const CategoryItem = ({ category, onEdit, onDelete, onManageAttributes }) => {
             <div className="flex items-center gap-2 text-sm">
               <Package className="w-4 h-4 text-gray-400" />
               <span className="text-gray-600">
-                {category.product_count || 0} sản phẩm
+                {category.productCount || 0} sản phẩm
               </span>
             </div>
-            {category.is_active ? (
+            {category.isActive ? (
               <span className="px-2 py-1 text-xs font-medium bg-green-100 text-green-700 rounded-full">
                 Hoạt động
               </span>

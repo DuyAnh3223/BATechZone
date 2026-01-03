@@ -172,8 +172,10 @@ export const useAttributeStore = create((set, get) => ({
         set({ loading: true, error: null });
         try {
             const response = await attributeService.getAttributesByCategory(categoryId);
+            // Handle new API response structure
+            const attributesData = response.success ? response.data.attributes : (response.data || response || []);
             set({ 
-                attributes: response.data || response || [], 
+                attributes: attributesData, 
                 loading: false 
             });
             return response;
@@ -203,10 +205,13 @@ export const useAttributeStore = create((set, get) => ({
     },
 
     // Update attribute category (e.g., is_variant_attribute)
-    updateAttributeCategory: async (attributeCategoryId, data) => {
+    // Now requires categoryId, attributeId, and data
+    updateAttributeCategory: async (categoryId, attributeId, data) => {
         set({ loading: true, error: null });
         try {
-            const response = await attributeService.updateAttributeCategory(attributeCategoryId, data);
+            const response = await attributeService.updateAttributeCategory(categoryId, attributeId, data);
+            // Refresh attributes for this category
+            await get().fetchAttributesByCategory(categoryId);
             set({ loading: false });
             return response;
         } catch (error) {
@@ -218,10 +223,10 @@ export const useAttributeStore = create((set, get) => ({
     },
 
     // Remove attribute from category
-    removeAttributeFromCategory: async (categoryId, attributeCategoryId) => {
+    removeAttributeFromCategory: async (categoryId, attributeId) => {
         set({ loading: true, error: null });
         try {
-            const response = await attributeService.removeAttributeFromCategory(categoryId, attributeCategoryId);
+            const response = await attributeService.removeAttributeFromCategory(categoryId, attributeId);
             // Refresh attributes for this category
             await get().fetchAttributesByCategory(categoryId);
             set({ loading: false });
@@ -235,10 +240,12 @@ export const useAttributeStore = create((set, get) => ({
     },
 
     // Fetch attribute values for a category attribute
-    fetchAttributeValues: async (attributeCategoryId) => {
+    fetchAttributeValues: async (categoryId, attributeId) => {
         try {
-            const response = await attributeService.getAttributeValues(attributeCategoryId);
-            return response.data || response || [];
+            const response = await attributeService.getAttributeValues(categoryId, attributeId);
+            // Handle new response structure
+            const valuesData = response.success ? response.data.values : (response.data || response || []);
+            return valuesData;
         } catch (error) {
             const message = error.response?.data?.message || 'Không thể tải giá trị thuộc tính';
             toast.error(message);
@@ -247,9 +254,9 @@ export const useAttributeStore = create((set, get) => ({
     },
 
     // Add attribute value
-    addAttributeValue: async (attributeCategoryId, valueData) => {
+    addAttributeValue: async (categoryId, attributeId, valueData) => {
         try {
-            const response = await attributeService.addAttributeValue(attributeCategoryId, valueData);
+            const response = await attributeService.addAttributeValue(categoryId, attributeId, valueData);
             return response;
         } catch (error) {
             const message = error.response?.data?.message || 'Có lỗi xảy ra khi thêm giá trị';
@@ -259,9 +266,9 @@ export const useAttributeStore = create((set, get) => ({
     },
 
     // Remove attribute value
-    removeAttributeValue: async (attributeCategoryId, valueId) => {
+    removeAttributeValue: async (cavId) => {
         try {
-            const response = await attributeService.removeAttributeValue(attributeCategoryId, valueId);
+            const response = await attributeService.removeAttributeValue(cavId);
             return response;
         } catch (error) {
             const message = error.response?.data?.message || 'Có lỗi xảy ra khi xóa giá trị';

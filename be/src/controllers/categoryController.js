@@ -205,54 +205,50 @@ export const getSimpleCategories = async (req, res) => {
 export const getCategoryAttributes = async (req, res) => {
   try {
     const categoryId = req.params.id;
-    
-    const [attributes] = await db.query(
-      `SELECT 
-        ac.attribute_category_id,
-        ac.attribute_id,
-        a.attribute_name,
-        ac.is_variant_attribute,
-        COUNT(DISTINCT acv.attribute_category_value_id) as value_count
-      FROM attributes_categories ac
-      JOIN attributes a ON ac.attribute_id = a.attribute_id
-      LEFT JOIN attribute_category_values acv ON ac.attribute_category_id = acv.attribute_category_id
-      WHERE ac.category_id = ?
-      GROUP BY ac.attribute_category_id, ac.attribute_id, a.attribute_name, ac.is_variant_attribute
-      ORDER BY a.attribute_name`,
-      [categoryId]
-    );
+    const result = await CategoryService.getAttributesByCategory(categoryId);
     
     res.json({ 
       success: true,
-      data: attributes 
+      data: result
     });
   } catch (error) {
     console.error('Error getting category attributes:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(400).json({ 
+      success: false,
+      message: error.message 
+    });
   }
 };
 
-// Update category attributes
-export const updateCategoryAttributes = async (req, res) => {
+// Assign attribute to category
+export const assignAttributeToCategory = async (req, res) => {
   try {
-    const { attribute_ids } = req.body;
+    const { attribute_id, is_variant } = req.body;
     const categoryId = req.params.id;
 
-    if (!Array.isArray(attribute_ids)) {
-      return res.status(400).json({ message: 'attribute_ids must be an array' });
+    if (!attribute_id) {
+      return res.status(400).json({ 
+        success: false,
+        message: 'attribute_id là bắt buộc' 
+      });
     }
 
-    await Category.updateAttributes(categoryId, attribute_ids);
-    const attributes = await Category.getAttributes(categoryId);
+    const result = await CategoryService.assignAttributeToCategory(
+      categoryId, 
+      attribute_id, 
+      is_variant || 0
+    );
 
-    res.json({
+    res.status(201).json({
       success: true,
-      message: 'Attributes updated successfully',
-      attributes
+      data: result
     });
   } catch (error) {
-    console.error('Error updating category attributes:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    console.error('Error assigning attribute to category:', error);
+    res.status(400).json({ 
+      success: false,
+      message: error.message 
+    });
   }
 };
 
@@ -260,19 +256,18 @@ export const updateCategoryAttributes = async (req, res) => {
 export const removeCategoryAttribute = async (req, res) => {
   try {
     const { id: categoryId, attributeId } = req.params;
-    const removed = await Category.removeAttribute(categoryId, attributeId);
-    
-    if (!removed) {
-      return res.status(404).json({ message: 'Attribute not found for this category' });
-    }
+    const result = await CategoryService.removeAttributeFromCategory(categoryId, attributeId);
 
     res.json({
       success: true,
-      message: 'Attribute removed successfully'
+      data: result
     });
   } catch (error) {
     console.error('Error removing category attribute:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(400).json({ 
+      success: false,
+      message: error.message 
+    });
   }
 };
 

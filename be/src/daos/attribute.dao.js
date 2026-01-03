@@ -14,7 +14,7 @@ class AttributeDAO {
         return result.insertId;
     }
 
-    async findById(attributeId) {
+    async findAttributeAndValueById(attributeId) {
         const [attributes] = await db.query(
             `SELECT 
                 a.*,
@@ -47,6 +47,15 @@ class AttributeDAO {
         );
         return rows[0] ? new Attribute(rows[0]) : null;
     }
+
+    async findById(attributeId) {
+        const [rows] = await db.query(
+            `SELECT * FROM attributes WHERE attribute_id = ? LIMIT 1`,
+            [attributeId]
+        );
+        return rows[0] ? new Attribute(rows[0]) : null;
+    }
+
 
     async delete(attributeId) {
         const [result] = await db.query(

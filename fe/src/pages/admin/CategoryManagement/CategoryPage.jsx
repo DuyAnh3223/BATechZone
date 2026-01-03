@@ -21,27 +21,21 @@ const CategoryPage = () => {
   const [editingCategory, setEditingCategory] = useState(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [categoryToDelete, setCategoryToDelete] = useState(null);
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
-  const [search, setSearch] = useState('');
 
   const { 
     categories, 
-    loading, 
-    pagination,
+    loading,
     fetchCategories, 
     deleteCategory 
   } = useCategoryStore();
 
   useEffect(() => {
     loadCategories();
-  }, [page, pageSize, search]);
+  }, []);
 
   const loadCategories = async () => {
     try {
-      const params = { page, pageSize };
-      if (search.trim()) params.search = search.trim();
-      await fetchCategories(params);
+      await fetchCategories();
     } catch (error) {
       console.error('Error loading categories:', error);
       toast.error('Không thể tải danh sách danh mục');
@@ -67,8 +61,8 @@ const CategoryPage = () => {
     if (!categoryToDelete) return;
     
     try {
-      await deleteCategory(categoryToDelete.category_id);
-      toast.success(`Đã xóa danh mục "${categoryToDelete.category_name}" thành công`);
+      await deleteCategory(categoryToDelete.id);
+      toast.success(`Đã xóa danh mục "${categoryToDelete.name}" thành công`);
       setDeleteDialogOpen(false);
       setCategoryToDelete(null);
       loadCategories();
@@ -85,7 +79,7 @@ const CategoryPage = () => {
   };
 
   const handleManageAttributes = (category) => {
-    navigate(`/admin/categories/${category.category_id}/attributes`);
+    navigate(`/admin/categories/${category.id}/attributes`);
   };
 
   return (
@@ -104,26 +98,10 @@ const CategoryPage = () => {
         </Button>
       </div>
 
-      {/* Search */}
-      <div className="flex gap-4">
-        <input
-          type="text"
-          placeholder="Tìm kiếm danh mục..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-      </div>
-
       {/* Category List */}
       <CategoryList
         categories={categories}
         loading={loading}
-        pagination={pagination}
-        currentPage={page}
-        pageSize={pageSize}
-        onPageChange={setPage}
-        onPageSizeChange={setPageSize}
         onEdit={handleEdit}
         onDelete={handleDelete}
         onManageAttributes={handleManageAttributes}
@@ -151,7 +129,7 @@ const CategoryPage = () => {
           <DialogHeader>
             <DialogTitle>Xác nhận xóa</DialogTitle>
             <DialogDescription>
-              Bạn có chắc chắn muốn xóa danh mục <strong>"{categoryToDelete?.category_name}"</strong>?
+              Bạn có chắc chắn muốn xóa danh mục <strong>"{categoryToDelete?.name}"</strong>?
               <br />
               Hành động này không thể hoàn tác.
             </DialogDescription>
