@@ -49,13 +49,26 @@ class Product {
       values.push(category_id);
     }
 
-    // Note: Price filtering removed as prices are now stored at variant level
-    // If needed, implement via JOIN with product_variants table
+    // Price filtering using subquery to check variant prices
+    if (minPrice) {
+      conditions.push('(SELECT MIN(pv.price) FROM product_variants pv WHERE pv.product_id = p.product_id AND pv.is_active = 1) >= ?');
+      values.push(minPrice);
+    }
+    
+    if (maxPrice) {
+      conditions.push('(SELECT MIN(pv.price) FROM product_variants pv WHERE pv.product_id = p.product_id AND pv.is_active = 1) <= ?');
+      values.push(maxPrice);
+    }
 
     // Sanitize sortBy to prevent SQL injection
-    const allowedSortColumns = ['product_id', 'product_name', 'created_at', 'view_count', 'rating_average'];
+    const allowedSortColumns = ['product_id', 'product_name', 'created_at', 'view_count', 'rating_average', 'price'];
     const sanitizedSortBy = allowedSortColumns.includes(sortBy) ? sortBy : 'created_at';
     const sanitizedSortOrder = sortOrder.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
+
+    // If sorting by price, use min_variant_price
+    const orderByClause = sanitizedSortBy === 'price' 
+      ? `min_variant_price ${sanitizedSortOrder}`
+      : `p.${sanitizedSortBy} ${sanitizedSortOrder}`;
 
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
     values.push(limit, offset);
@@ -66,11 +79,12 @@ class Product {
         c.category_name,
         (SELECT MIN(pv.price) FROM product_variants pv WHERE pv.product_id = p.product_id AND pv.is_active = 1) AS min_variant_price,
         (SELECT MAX(pv.price) FROM product_variants pv WHERE pv.product_id = p.product_id AND pv.is_active = 1) AS max_variant_price,
-        (SELECT pv.price FROM product_variants pv WHERE pv.product_id = p.product_id AND pv.is_default = 1 LIMIT 1) AS default_variant_price
+        (SELECT pv.price FROM product_variants pv WHERE pv.product_id = p.product_id AND pv.is_default = 1 LIMIT 1) AS default_variant_price,
+        (SELECT SUM(pv.stock_quantity) FROM product_variants pv WHERE pv.product_id = p.product_id AND pv.is_active = 1) AS total_stock
       FROM products p
       LEFT JOIN categories c ON p.category_id = c.category_id
       ${whereClause}
-      ORDER BY p.${sanitizedSortBy} ${sanitizedSortOrder}
+      ORDER BY ${orderByClause}
       LIMIT ? OFFSET ?`,
       values
     );
@@ -102,7 +116,8 @@ class Product {
         c.category_name,
         (SELECT MIN(pv.price) FROM product_variants pv WHERE pv.product_id = p.product_id AND pv.is_active = 1) AS min_variant_price,
         (SELECT MAX(pv.price) FROM product_variants pv WHERE pv.product_id = p.product_id AND pv.is_active = 1) AS max_variant_price,
-        (SELECT pv.price FROM product_variants pv WHERE pv.product_id = p.product_id AND pv.is_default = 1 LIMIT 1) AS default_variant_price
+        (SELECT pv.price FROM product_variants pv WHERE pv.product_id = p.product_id AND pv.is_default = 1 LIMIT 1) AS default_variant_price,
+        (SELECT SUM(pv.stock_quantity) FROM product_variants pv WHERE pv.product_id = p.product_id AND pv.is_active = 1) AS total_stock
       FROM products p
       LEFT JOIN categories c ON p.category_id = c.category_id
       WHERE p.product_id = ?`,
