@@ -1,0 +1,42 @@
+{
+  "product_name": "Samsung 990 PRO NVMe",
+  "category_id": 4,
+  "description": "SSD Samsung 990 PRO, chuẩn NVMe PCIe 4.0, tốc độ đọc lên đến 7000 MB/s",
+  "base_price": 1800000,
+  "is_active": 1,
+  "is_featured": 1,
+  "warranty_period": 60,
+  "attributes": [435, 438],
+  "variant_attributes": [
+    {
+      "variant_name": "512GB",
+      "sku": "990PRO-512GB",
+      "price": 1800000,
+      "stock_quantity": 80,
+      "is_default": 1,
+      "is_active": 1,
+      "warranty_period": 60,
+      "attribute_value_ids": [430]
+    },
+    {
+      "variant_name": "1TB",
+      "sku": "990PRO-1TB",
+      "price": 3200000,
+      "stock_quantity": 120,
+      "is_default": 0,
+      "is_active": 1,
+      "warranty_period": 60,
+      "attribute_value_ids": [431]
+    },
+    {
+      "variant_name": "2TB",
+      "sku": "990PRO-2TB",
+      "price": 6000000,
+      "stock_quantity": 40,
+      "is_default": 0,
+      "is_active": 1,
+      "warranty_period": 60,
+      "attribute_value_ids": [432]
+    }
+  ]
+}

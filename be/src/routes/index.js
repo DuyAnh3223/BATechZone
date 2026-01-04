@@ -12,7 +12,9 @@ import installmentRoutes from './installmentRoutes.js';
 import installmentPolicyRoutes from './installmentPolicyRoutes.js';
 import orderItemRoutes from './orderItemRoutes.js';
 import orderRoutes from './orderRoutes.js';
-import productRoutes from './productRoutes.js';
+//import productRoutes from './productRoutes.js';
+//import productServiceRoutes from './product.routes.js'; // New Service-based routes
+import productRoutes from './product.routes.js';
 import addressRoutes from './addressRoutes.js';
 import profileRoutes from './profileRoutes.js';
 import userRoutes from './userRoutes.js';

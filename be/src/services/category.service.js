@@ -48,11 +48,6 @@ class CategoryService {
         try {
             const categories = await CategoryDAO.getAll();
             
-            // Ensure categories is an array
-            if (!Array.isArray(categories)) {
-                console.error('Categories is not an array:', categories);
-                return [];
-            }
             
             return categories.map(c => ({
                 id: c.category_id,

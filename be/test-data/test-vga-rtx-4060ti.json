@@ -1,0 +1,32 @@
+{
+  "product_name": "NVIDIA GeForce RTX 4060 Ti",
+  "category_id": 2,
+  "description": "Card đồ họa NVIDIA RTX 4060 Ti, hỗ trợ Ray Tracing và DLSS 3.0",
+  "base_price": 9500000,
+  "is_active": 1,
+  "is_featured": 1,
+  "warranty_period": 36,
+  "attributes": [418, 425],
+  "variant_attributes": [
+    {
+      "variant_name": "RTX 4060 Ti 8GB",
+      "sku": "RTX-4060TI-8GB",
+      "price": 9500000,
+      "stock_quantity": 25,
+      "is_default": 1,
+      "is_active": 1,
+      "warranty_period": 36,
+      "attribute_value_ids": [421]
+    },
+    {
+      "variant_name": "RTX 4060 Ti 16GB",
+      "sku": "RTX-4060TI-16GB",
+      "price": 12500000,
+      "stock_quantity": 15,
+      "is_default": 0,
+      "is_active": 1,
+      "warranty_period": 36,
+      "attribute_value_ids": [423]
+    }
+  ]
+}
