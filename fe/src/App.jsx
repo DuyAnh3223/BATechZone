@@ -50,6 +50,7 @@ import InstallmentPendingPage from './pages/user/InstallmentPage/InstallmentPend
 import PaymentSuccess from './pages/user/PaymentSuccess';
 import PaymentCancel from './pages/user/PaymentCancel';
 import OrderTracking from './pages/user/OrderTracking';
+import ProductPage from './pages/admin/Product&VariantManagement/ProductPage';
 
 function App() {
   return (
@@ -94,7 +95,7 @@ function App() {
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin" element={<AdminLayout />}>
             <Route path="dashboard" element={<AdminDashboard />} />
-            <Route path="products" element={<AdminProductPage />} />
+            <Route path="products" element={<ProductPage />} />
             <Route path="products/:productId" element={<AdminProductDetail />} />
             <Route path="users" element={<AdminUserPage />} />
             <Route path="users/:userId" element={<AdminUserDetail />} />

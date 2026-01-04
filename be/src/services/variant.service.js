@@ -43,7 +43,7 @@ class VariantService {
                 warranty_period: data.warranty_period || null
             };
 
-            const variant_id = await VariantDAO.create(variantData);
+            const variant_id = await VariantDAO.createVariant(variantData);
             const createdVariant = await VariantDAO.findById(variant_id);
             
             return createdVariant;
@@ -82,7 +82,7 @@ class VariantService {
             };
 
             // Thực hiện update
-            const updated = await VariantDAO.update(variant_id, updateData);
+            const updated = await VariantDAO.updateVariant(variant_id, updateData);
             if (!updated) {
                 throw new Error("Cập nhật variant thất bại");
             }

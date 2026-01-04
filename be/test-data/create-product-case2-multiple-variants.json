@@ -1,62 +1,42 @@
 {
-  "product_name": "iPhone 15 Pro",
-  "category_id": 2,
-  "description": "iPhone 15 Pro - Chip A17 Pro mạnh mẽ, camera 48MP, khung titanium cao cấp. Hiệu năng đỉnh cao cho mọi tác vụ.",
-  "base_price": 28990000,
+  "product_name": "Kingston Fury Beast DDR5 6000MHZ",
+  "category_id": 35,
+  "description": "RAM Kingston Fury Beast DDR5 6000MHz - Hiệu năng cao, ổn định, tản nhiệt tốt. Hỗ trợ Intel XMP 3.0 và AMD EXPO. Thiết kế tản nhiệt nhôm cao cấp, LED RGB tùy chỉnh. Phù hợp cho gaming và workstation.",
+  "base_price": 2000000,
   "is_active": 1,
   "is_featured": 1,
-  "warranty_period": 12,
-  "attributes": [4, 5, 6],
+  "warranty_period": 36,
+  "attributes": [140, 15, 143],
   "variant_attributes": [
     {
-      "variant_name": "iPhone 15 Pro 128GB - Titan Tự Nhiên",
-      "sku": "IP15P-128-NATURAL",
-      "price": 28990000,
-      "stock_quantity": 3,
-      "warranty_period": 12,
+      "variant_name": "16GB (1 X 16GB)",
+      "sku": "FURY-DDR5-16GB-6000",
+      "price": 2000000,
+      "stock_quantity": 100,
       "is_default": 1,
       "is_active": 1,
-      "attribute_value_ids": [10, 20]
+      "warranty_period": 36,
+      "attribute_value_ids": [80]
     },
     {
-      "variant_name": "iPhone 15 Pro 256GB - Titan Tự Nhiên",
-      "sku": "IP15P-256-NATURAL",
-      "price": 32990000,
-      "stock_quantity": 5,
-      "warranty_period": 12,
+      "variant_name": "32GB (1 X 32GB)",
+      "sku": "FURY-DDR5-32GB-1x32-6000",
+      "price": 3800000,
+      "stock_quantity": 60,
       "is_default": 0,
       "is_active": 1,
-      "attribute_value_ids": [11, 20]
+      "warranty_period": 36,
+      "attribute_value_ids": [82]
     },
     {
-      "variant_name": "iPhone 15 Pro 128GB - Titan Đen",
-      "sku": "IP15P-128-BLACK",
-      "price": 28990000,
-      "stock_quantity": 4,
-      "warranty_period": 12,
+      "variant_name": "32GB (2 X 16GB)",
+      "sku": "FURY-DDR5-32GB-2x16-6000",
+      "price": 3500000,
+      "stock_quantity": 80,
       "is_default": 0,
       "is_active": 1,
-      "attribute_value_ids": [10, 21]
-    },
-    {
-      "variant_name": "iPhone 15 Pro 256GB - Titan Đen",
-      "sku": "IP15P-256-BLACK",
-      "price": 32990000,
-      "stock_quantity": 6,
-      "warranty_period": 12,
-      "is_default": 0,
-      "is_active": 1,
-      "attribute_value_ids": [11, 21]
-    },
-    {
-      "variant_name": "iPhone 15 Pro 512GB - Titan Trắng",
-      "sku": "IP15P-512-WHITE",
-      "price": 36990000,
-      "stock_quantity": 2,
-      "warranty_period": 12,
-      "is_default": 0,
-      "is_active": 1,
-      "attribute_value_ids": [12, 22]
+      "warranty_period": 36,
+      "attribute_value_ids": [83]
     }
   ]
 }

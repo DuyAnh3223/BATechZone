@@ -16,6 +16,7 @@ const productsRoot = path.join(uploadsRoot, 'products');
 const articlesRoot = path.join(uploadsRoot, 'articles');
 const postsRoot = path.join(uploadsRoot, 'posts');
 const warrantyRoot = path.join(uploadsRoot, 'warranty');
+const tempRoot = path.join(uploadsRoot, 'temp');
 
 ensureDir(variantsRoot);
 ensureDir(categoriesRoot);
@@ -23,6 +24,7 @@ ensureDir(productsRoot);
 ensureDir(articlesRoot);
 ensureDir(postsRoot);
 ensureDir(warrantyRoot);
+ensureDir(tempRoot);
 
 const sanitize = (s) => String(s || '').replace(/[^a-zA-Z0-9-_]/g, '');
 

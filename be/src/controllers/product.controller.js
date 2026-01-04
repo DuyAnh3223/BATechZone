@@ -1,6 +1,4 @@
 import ProductService from '../services/product.service.js';
-import ProductDAO from '../daos/product.dao.js';
-import VariantDAO from '../daos/variant.dao.js';
 
 /**
  * Product Controller - Sử dụng ProductService
@@ -33,12 +31,7 @@ async getAllProducts(req, res) {
             }
         });
 
-        const products = await ProductDAO.findWithFilter(filter);
-
-        // Lấy variants cho mỗi product
-        for (const product of products) {
-            product.variants = await VariantDAO.getVariantsByProductId(product.product_id);
-        }
+        const products = await ProductService.getAllProducts(filter);
 
         res.json({
             success: true,
@@ -70,7 +63,7 @@ async getProductById(req, res) {
             });
         }
 
-        const product = await ProductDAO.findById(productId);
+        const product = await ProductService.getProductById(productId);
         
         if (!product) {
             return res.status(404).json({
@@ -78,9 +71,6 @@ async getProductById(req, res) {
                 message: 'Không tìm thấy sản phẩm'
             });
         }
-
-        // Lấy danh sách variants
-        product.variants = await VariantDAO.getVariantsByProductId(productId);
 
         res.json({
             success: true,
@@ -104,6 +94,7 @@ async createProduct(req, res) {
     try {
         console.log('📝 Create product request body:', JSON.stringify(req.body, null, 2));
         console.log('📁 Upload file:', req.file);
+        console.log('📁 Upload files:', req.files);
 
         // Helper function để parse JSON nếu là string, giữ nguyên nếu đã là object/array
         const parseIfString = (value) => {
@@ -133,7 +124,14 @@ async createProduct(req, res) {
             variant_attributes: parseIfString(req.body.variant_attributes)
         };
 
-        const createdProduct = await ProductService.createProduct(productData, req.file);
+        // Phân loại ảnh theo variant
+        // req.files có dạng: { 'image': [file], 'default': [files], 'variant_0': [files], 'variant_1': [files], ... }
+        const variantImages = req.files || {};
+        
+        // Lấy ảnh chính của product (nếu có)
+        const productImage = req.files?.image?.[0] || null;
+
+        const createdProduct = await ProductService.createProduct(productData, productImage, variantImages);
 
         res.status(201).json({
             success: true,
@@ -141,7 +139,7 @@ async createProduct(req, res) {
             data: createdProduct
         });
     } catch (error) {
-        console.error('[ProductController:createProductWithService]', error);
+        console.error('[ProductController:createProduct]', error);
         res.status(500).json({
             success: false,
             message: error.message || 'Lỗi khi tạo sản phẩm',
@@ -154,7 +152,7 @@ async createProduct(req, res) {
  * PUT /products/:id/service
  * Cập nhật thông tin sản phẩm
  */
-async updateProductWithService(req, res) {
+async updateProduct(req, res) {
     try {
         const productId = parseInt(req.params.id);
         
@@ -162,15 +160,6 @@ async updateProductWithService(req, res) {
             return res.status(400).json({
                 success: false,
                 message: 'ID sản phẩm không hợp lệ'
-            });
-        }
-
-        // Kiểm tra product có tồn tại không
-        const existingProduct = await ProductDAO.findById(productId);
-        if (!existingProduct) {
-            return res.status(404).json({
-                success: false,
-                message: 'Không tìm thấy sản phẩm'
             });
         }
 
@@ -190,18 +179,14 @@ async updateProductWithService(req, res) {
             }
         });
 
-        const updated = await ProductDAO.update(productId, updateData);
+        const updatedProduct = await ProductService.updateProduct(productId, updateData);
 
-        if (!updated) {
-            return res.status(500).json({
+        if (!updatedProduct) {
+            return res.status(404).json({
                 success: false,
-                message: 'Cập nhật sản phẩm thất bại'
+                message: 'Không tìm thấy sản phẩm hoặc cập nhật thất bại'
             });
         }
-
-        // Lấy product đã cập nhật
-        const updatedProduct = await ProductDAO.findById(productId);
-        updatedProduct.variants = await VariantDAO.getVariantsByProductId(productId);
 
         res.json({
             success: true,
@@ -209,7 +194,7 @@ async updateProductWithService(req, res) {
             data: updatedProduct
         });
     } catch (error) {
-        console.error('[ProductController:updateProductWithService]', error);
+        console.error('[ProductController:updateProduct]', error);
         res.status(500).json({
             success: false,
             message: 'Lỗi khi cập nhật sản phẩm',
@@ -222,7 +207,7 @@ async updateProductWithService(req, res) {
  * DELETE /products/:id/service
  * Xóa mềm sản phẩm (set is_active = 0)
  */
-async deleteProductWithService(req, res) {
+async deleteProduct(req, res) {
     try {
         const productId = parseInt(req.params.id);
         
@@ -233,20 +218,12 @@ async deleteProductWithService(req, res) {
             });
         }
 
-        const product = await ProductDAO.findById(productId);
-        if (!product) {
-            return res.status(404).json({
-                success: false,
-                message: 'Không tìm thấy sản phẩm'
-            });
-        }
-
-        const deleted = await ProductDAO.softDelete(productId);
+        const deleted = await ProductService.deleteProduct(productId);
 
         if (!deleted) {
-            return res.status(500).json({
+            return res.status(404).json({
                 success: false,
-                message: 'Xóa sản phẩm thất bại'
+                message: 'Không tìm thấy sản phẩm hoặc xóa thất bại'
             });
         }
 
@@ -255,7 +232,7 @@ async deleteProductWithService(req, res) {
             message: 'Xóa sản phẩm thành công'
         });
     } catch (error) {
-        console.error('[ProductController:deleteProductWithService]', error);
+        console.error('[ProductController:deleteProduct]', error);
         res.status(500).json({
             success: false,
             message: 'Lỗi khi xóa sản phẩm',
@@ -301,6 +278,109 @@ async getProductVariants(req, res) {
         res.status(500).json({
             success: false,
             message: 'Lỗi khi lấy danh sách variants',
+            error: error.message
+        });
+    }
+};
+
+// ============ ADDITIONAL FEATURES ============
+
+/**
+ * PUT /products/:id/view
+ * Tăng view count cho sản phẩm
+ */
+async increaseProductView(req, res) {
+    try {
+        const productId = parseInt(req.params.id);
+        
+        if (isNaN(productId)) {
+            return res.status(400).json({
+                success: false,
+                message: 'ID sản phẩm không hợp lệ'
+            });
+        }
+
+        const result = await ProductService.increaseProductView(productId);
+
+        if (!result) {
+            return res.status(404).json({
+                success: false,
+                message: 'Không tìm thấy sản phẩm'
+            });
+        }
+
+        res.json({
+            success: true,
+            message: 'Tăng lượt xem thành công'
+        });
+    } catch (error) {
+        console.error('[ProductController:increaseProductView]', error);
+        res.status(500).json({
+            success: false,
+            message: 'Lỗi khi tăng lượt xem',
+            error: error.message
+        });
+    }
+};
+
+/**
+ * GET /products/filters/options
+ * Lấy filter options cho category (brands, price range, attributes)
+ */
+async getFilterOptions(req, res) {
+    try {
+        const { category_id } = req.query;
+        
+        if (!category_id) {
+            return res.status(400).json({
+                success: false,
+                message: 'category_id là bắt buộc'
+            });
+        }
+
+        const filterOptions = await ProductService.getFilterOptions(category_id);
+
+        res.json({
+            success: true,
+            data: filterOptions
+        });
+    } catch (error) {
+        console.error('[ProductController:getFilterOptions]', error);
+        res.status(500).json({
+            success: false,
+            message: 'Lỗi khi lấy filter options',
+            error: error.message
+        });
+    }
+};
+
+/**
+ * GET /products/build-pc
+ * Lấy products cho Build PC (bao gồm variants và attributes)
+ */
+async getProductsForBuildPC(req, res) {
+    try {
+        const { category_id } = req.query;
+        
+        if (!category_id) {
+            return res.status(400).json({
+                success: false,
+                message: 'category_id là bắt buộc'
+            });
+        }
+
+        const products = await ProductService.getProductsForBuildPC(category_id);
+
+        res.json({
+            success: true,
+            data: products,
+            total: products.length
+        });
+    } catch (error) {
+        console.error('[ProductController:getProductsForBuildPC]', error);
+        res.status(500).json({
+            success: false,
+            message: 'Lỗi khi lấy danh sách sản phẩm cho Build PC',
             error: error.message
         });
     }

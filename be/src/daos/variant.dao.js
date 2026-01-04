@@ -1,7 +1,7 @@
 import { query } from "../libs/db.js";
 
 class VariantDAO {
-    async create(data, connection = null)
+    async createVariant(data, connection = null)
     {
         const sql = `INSERT INTO product_variants (
             product_id,
@@ -36,10 +36,7 @@ class VariantDAO {
         }
     }
 
-    // Alias for backward compatibility
-    async createVariant(data) {
-        return this.create(data);
-    }
+
 
     async getAll()
     {
@@ -48,7 +45,7 @@ class VariantDAO {
         return rows;
     }
 
-    async update(variant_id, data)
+    async updateVariant(variant_id, data)
     {
         const sql = `UPDATE product_variants SET
             sku = ?,
@@ -76,12 +73,8 @@ class VariantDAO {
 
     }
 
-    // Alias for backward compatibility
-    async updateVariant(variant_id, data) {
-        return this.update(variant_id, data);
-    }
 
-    async delete(variant_id)
+    async deleteVariant(variant_id)
     {
         const sql = `DELETE FROM product_variants WHERE variant_id = ?`;
         const params = [variant_id];
@@ -89,10 +82,7 @@ class VariantDAO {
         return result.affectedRows > 0;
     }
 
-    // Alias for backward compatibility
-    async deleteVariant(variant_id) {
-        return this.delete(variant_id);
-    }
+    
 
 
     // Additional methods 

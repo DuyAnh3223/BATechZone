@@ -12,8 +12,11 @@ import { uploadVariantImage as uploadMiddleware } from '../middlewares/upload.js
 
 const router = express.Router();
 
-// Get all images of a variant
+// Get all images of a variant (REST style)
 router.get('/variants/:variantId/images', getVariantImages);
+
+// Get all images of a variant (Alternative route for compatibility)
+router.get('/variant/:variantId', getVariantImages);
 
 // Get primary image of a variant
 router.get('/variants/:variantId/images/primary', getPrimaryImage);
