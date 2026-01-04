@@ -120,16 +120,6 @@ const ProductItem = ({ product, isSelected, onEdit, onManageVariants }) => {
           <Button
             variant="ghost"
             size="sm"
-            className="flex-1 text-purple-600 hover:text-purple-700 hover:bg-purple-50"
-            onClick={onManageVariants}
-          >
-            <Package className="w-3 h-3 mr-1" />
-            Quản lý biến thể
-          </Button>
-
-          <Button
-            variant="ghost"
-            size="sm"
             className="flex-1 text-red-600 hover:text-red-700 hover:bg-red-50"
             onClick={() => setShowDeleteDialog(true)}
           >

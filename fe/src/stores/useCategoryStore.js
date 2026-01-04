@@ -9,18 +9,20 @@ export const useCategoryStore = create((set, get) => ({
     error: null,
 
     // Lấy tất cả danh mục
-    fetchCategories: async () => {
+    fetchCategories: async (params = {}) => {
         set({ loading: true, error: null });
         try {
-            const response = await categoryService.getAllCategories();
+            const response = await categoryService.getAllCategories(params);
+            // New API format: { success: true, data: [...] }
+            const categories = response.data || [];
             set({ 
-                categories: response.data || [], 
+                categories: categories, 
                 loading: false 
             });
             return response;
         } catch (error) {
             const message = error.response?.data?.message || 'Không tải được danh sách danh mục';
-            set({ error: message, loading: false });
+            set({ error: message, loading: false, categories: [] });
             toast.error(message);
             throw error;
         }

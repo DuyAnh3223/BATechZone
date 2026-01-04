@@ -3,7 +3,7 @@
 export const categoryService = {
     // ============ BASIC CRUD ============
     
-    // Lấy tất cả danh mục
+    // Lấy tất cả danh mục (new API - không hỗ trợ params)
     getAllCategories: async () => {
         const response = await api.get('/categories', { 
             withCredentials: true 

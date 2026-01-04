@@ -22,12 +22,21 @@ const RecentlyViewedProducts = () => {
 
         // Lấy thông tin chi tiết của các sản phẩm đã xem (tối đa 12 sản phẩm)
         const productPromises = viewedIds.slice(0, 12).map(id => 
-          productService.getProduct(id).catch(() => null)
+          productService.getProduct(id).catch(err => {
+            console.log(`Product ${id} not found, will be removed from recently viewed`);
+            return null;
+          })
         );
         
         const products = await Promise.all(productPromises);
         // Lọc bỏ các sản phẩm không tồn tại hoặc không active
         const validProducts = products.filter(p => p && p.data && p.data.is_active);
+        
+        // Update localStorage to only keep valid product IDs
+        const validIds = validProducts.map(p => p.data.product_id);
+        if (validIds.length !== viewedIds.length) {
+          localStorage.setItem('recentlyViewedProducts', JSON.stringify(validIds));
+        }
         
         setViewedProducts(validProducts.map(p => p.data));
       } catch (error) {

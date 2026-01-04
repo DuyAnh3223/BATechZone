@@ -41,7 +41,7 @@ const UserLayout = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isCategoryMenuOpen, setIsCategoryMenuOpen] = useState(false);
   const [menuCloseTimeout, setMenuCloseTimeout] = useState(null);
-  const { categoryTree, fetchCategoryTree, categories, fetchCategories, loading: categoriesLoading } = useCategoryStore();
+  const { categories, fetchCategories, loading: categoriesLoading } = useCategoryStore();
   const { notifications, unreadCount, loading: notificationsLoading, fetchNotifications, markAsRead, markAllAsRead } = useNotificationStore();
   const { cartItems, fetchCartItems, reset: resetCartItems } = useCartItemStore();
   const { getOrCreateCart } = useCartStore();
@@ -153,33 +153,11 @@ const UserLayout = () => {
   // Function to load categories (memoized with useCallback)
   const loadCategories = useCallback(async () => {
     try {
-      // Try to fetch tree first
-      const tree = await fetchCategoryTree();
-      // If tree is empty, try to fetch parent categories as fallback
-      if (!tree || tree.length === 0) {
-        console.log('Tree is empty, fetching parent categories as fallback...');
-        await fetchCategories({
-          is_active: true,
-          parentId: null,
-          limit: 100,
-          page: 1
-        });
-      }
+      await fetchCategories();
     } catch (error) {
       console.error('Failed to load categories:', error);
-      // Fallback: try to fetch parent categories
-      try {
-        await fetchCategories({
-          is_active: true,
-          parentId: null,
-          limit: 100,
-          page: 1
-        });
-      } catch (fallbackError) {
-        console.error('Fallback also failed:', fallbackError);
-      }
     }
-  }, [fetchCategoryTree, fetchCategories]);
+  }, [fetchCategories]);
 
   // Fetch category tree on mount
   useEffect(() => {
@@ -843,52 +821,20 @@ const UserLayout = () => {
                     <div className="px-4 py-8 text-center text-gray-500 text-sm">
                       Đang tải danh mục...
                     </div>
-                  ) : (categoryTree && categoryTree.length > 0) ? (
-                    categoryTree.map((parentCategory) => (
-                      <div key={parentCategory.category_id} className="group/sub relative">
+                  ) : (categories && categories.length > 0) ? (
+                    categories
+                      .filter(cat => cat.isActive && !cat.parentId)
+                      .map((parentCategory) => (
+                      <div key={parentCategory.id} className="group/sub relative">
                         <Link
-                          to={`/category/${parentCategory.category_id}`}
+                          to={`/category/${parentCategory.id}`}
                           className="flex items-center justify-between px-4 py-2.5 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors rounded-md mx-1"
                           onClick={() => setIsCategoryMenuOpen(false)}
                         >
-                          <span className="font-medium text-sm">{parentCategory.category_name}</span>
-                          {parentCategory.children && parentCategory.children.length > 0 && (
-                            <ChevronRight className="size-4 text-gray-400 group-hover/sub:text-blue-600 transition-colors" />
-                          )}
+                          <span className="font-medium text-sm">{parentCategory.name}</span>
                         </Link>
-                        
-                        {/* Subcategories */}
-                        {parentCategory.children && parentCategory.children.length > 0 && (
-                          <div className="absolute left-full top-0 ml-1 w-64 bg-white rounded-lg shadow-xl border border-gray-200 opacity-0 invisible group-hover/sub:opacity-100 group-hover/sub:visible transition-all duration-200 py-2 z-50">
-                            {parentCategory.children.map((childCategory) => (
-                              <Link
-                                key={childCategory.category_id}
-                                to={`/category/${childCategory.category_id}`}
-                                className="block px-4 py-2.5 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-sm rounded-md mx-1"
-                                onClick={() => setIsCategoryMenuOpen(false)}
-                              >
-                                {childCategory.category_name}
-                              </Link>
-                            ))}
-                          </div>
-                        )}
                       </div>
                     ))
-                  ) : (categories && categories.length > 0) ? (
-                    // Fallback: Use categories if tree is empty
-                    categories
-                      .filter(cat => !cat.parent_category_id || cat.parent_category_id === null)
-                      .map((category) => (
-                        <div key={category.category_id} className="group/sub relative">
-                          <Link
-                            to={`/category/${category.category_id}`}
-                            className="flex items-center justify-between px-4 py-2.5 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors rounded-md mx-1"
-                            onClick={() => setIsCategoryMenuOpen(false)}
-                          >
-                            <span className="font-medium text-sm">{category.category_name}</span>
-                          </Link>
-                        </div>
-                      ))
                   ) : (
                     <div className="px-4 py-8 text-center text-gray-500 text-sm">
                       Chưa có danh mục nào

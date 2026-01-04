@@ -51,6 +51,7 @@ import PaymentSuccess from './pages/user/PaymentSuccess';
 import PaymentCancel from './pages/user/PaymentCancel';
 import OrderTracking from './pages/user/OrderTracking';
 import ProductPage from './pages/admin/Product&VariantManagement/ProductPage';
+import EditProductPage from './pages/admin/Product&VariantManagement/EditProductPage';
 
 function App() {
   return (
@@ -109,6 +110,7 @@ function App() {
             <Route path="installments" element={<AdminInstallmentPage />} />
             <Route path="warranty" element={<AdminWarrantyPage />} />
             <Route path="service-center" element={<AdminServiceCenter />} />
+            <Route path="products/:productId/edit" element={<EditProductPage />} />
           </Route>
       </Routes>
     </BrowserRouter>

@@ -15,10 +15,14 @@ export const useProductStore = create((set, get) => ({
         set({ loading: true, error: null });
         try {
             const response = await productService.listProducts(params);
+            // New API format: { success: true, data: [...], total: number }
+            const products = response.data || [];
+            const total = response.total || products.length;
+            
             set({ 
-                products: response.data || [], 
-                pagination: response.pagination || null,
-                total: response.pagination?.total || 0,
+                products: products, 
+                pagination: null, // New API doesn't return pagination
+                total: total,
                 loading: false 
             });
             return response;
@@ -35,8 +39,10 @@ export const useProductStore = create((set, get) => ({
         set({ loading: true, error: null });
         try {
             const response = await productService.getProduct(productId);
+            // New API format: { success: true, data: {...} }
+            const product = response.data || response;
             set({ 
-                currentProduct: response.data || response, 
+                currentProduct: product, 
                 loading: false 
             });
             return response;

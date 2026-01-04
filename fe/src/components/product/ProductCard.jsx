@@ -28,6 +28,7 @@ const ProductCard = ({ product }) => {
   const [variantImages, setVariantImages] = useState([]);
   const [loadingImages, setLoadingImages] = useState(false);
   const [successDialog, setSuccessDialog] = useState({ open: false, message: '' });
+  const [defaultVariant, setDefaultVariant] = useState(null);
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat('vi-VN', {
@@ -39,8 +40,8 @@ const ProductCard = ({ product }) => {
   // Map data từ API format
   const productName = product.product_name || product.name;
   const categoryName = product.category_name || product.category;
-  // Lấy giá từ default variant hoặc variant đầu tiên (vì product không còn base_price)
-  const price = product.default_variant_price || product.min_variant_price || product.price || 0;
+  // Lấy giá từ default variant
+  const price = defaultVariant?.price || 0;
   const imageUrl = product.image_url || product.image || null;
   const productId = product.product_id || product.id;
   const isActive = product.is_active !== undefined ? product.is_active : true;
@@ -68,6 +69,8 @@ const ProductCard = ({ product }) => {
         
         if (variants && variants.length > 0) {
           const firstVariant = variants.find(v => v.is_default) || variants[0];
+          setDefaultVariant(firstVariant); // Lưu default variant để lấy giá
+          
           if (firstVariant?.variant_id) {
             // Fetch images for the first variant
             try {

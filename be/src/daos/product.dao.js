@@ -63,6 +63,9 @@ class ProductDAO {
 
     async update(product_id, data)
     {
+        // Auto-generate slug if not provided
+        const slug = data.slug || this.generateSlug(data.product_name);
+        
         const sql = `UPDATE products SET
             product_name = ?,
             slug = ?,
@@ -75,7 +78,7 @@ class ProductDAO {
 
         const params = [
             data.product_name,
-            data.slug,
+            slug,
             data.description || null,
             data.base_price || null,
             data.is_active || 1,
@@ -269,8 +272,7 @@ class ProductDAO {
                     p.description,
                     p.base_price,
                     p.img_path,
-                    c.category_name,
-                    c.slug as category_slug
+                    c.category_name
                 FROM products p
                 LEFT JOIN categories c ON p.category_id = c.category_id
                 WHERE p.category_id = ? AND p.is_active = 1

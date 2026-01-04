@@ -1,4 +1,8 @@
 const ProductMeta = ({ product }) => {
+  // Map data từ API format
+  const categoryName = product?.category_name || product?.category || 'Chưa phân loại';
+  const sku = product?.sku || product?.product_id || 'N/A';
+  const viewCount = product?.view_count || product?.views || 0;
   return (
     <div className="space-y-3 text-sm">
       <div className="flex items-center gap-2">

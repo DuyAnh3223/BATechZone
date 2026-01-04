@@ -1,0 +1,948 @@
+import { useState, useEffect } from 'react';
+import { X, Save, Upload, Plus, Trash2, Image as ImageIcon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { useProductStore } from '@/stores/useProductStore';
+import { toast } from 'sonner';
+import axios from 'axios';
+import AddVariantForm from './AddVariantForm';
+
+/**
+ * EditProductForm - Form sửa sản phẩm
+ * - Nếu có biến thể: 2 tabs (Thông tin SP + Quản lý biến thể)
+ * - Nếu không có biến thể: 1 tab (Thông tin SP đầy đủ)
+ */
+const EditProductForm = ({ productId, onClose, onSaveSuccess }) => {
+  const [activeTab, setActiveTab] = useState('info');
+  const [formData, setFormData] = useState({
+    product_name: '',
+    description: '',
+    is_featured: 0,
+    is_active: 1
+  });
+  const [productImage, setProductImage] = useState(null);
+  const [productImagePreview, setProductImagePreview] = useState(null);
+  const [variants, setVariants] = useState([]);
+  const [variantImages, setVariantImages] = useState({}); // { variantId: [{ image_id, image_url, is_primary, ... }] }
+  const [newVariantImages, setNewVariantImages] = useState({}); // { variantId: [newFiles] }
+  const [newVariantImagePreviews, setNewVariantImagePreviews] = useState({}); // { variantId: [urls] }
+  const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [showAddVariantForm, setShowAddVariantForm] = useState(false);
+
+  const { currentProduct, updateProduct, fetchProduct } = useProductStore();
+
+  // Load product data
+  useEffect(() => {
+    if (productId) {
+      loadProductData();
+    }
+  }, [productId]);
+
+  const loadProductData = async () => {
+    setLoading(true);
+    try {
+      await fetchProduct(productId);
+    } catch (error) {
+      toast.error('Không thể tải thông tin sản phẩm');
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Populate form when currentProduct changes
+  useEffect(() => {
+    if (currentProduct && currentProduct.product_id === productId) {
+      setFormData({
+        product_name: currentProduct.product_name || '',
+        description: currentProduct.description || '',
+        is_featured: currentProduct.is_featured ?? 0,
+        is_active: currentProduct.is_active ?? 1
+      });
+      setProductImagePreview(currentProduct.img_path || null);
+      setVariants(currentProduct.variants || []);
+
+      // Load images for each variant
+      if (currentProduct.variants && currentProduct.variants.length > 0) {
+        currentProduct.variants.forEach(variant => {
+          loadVariantImages(variant.variant_id);
+        });
+      }
+    }
+  }, [currentProduct, productId]);
+
+  // Load variant images
+  const loadVariantImages = async (variantId) => {
+    try {
+      const response = await axios.get(`http://localhost:5001/api/variant-images/variant/${variantId}`);
+      if (response.data.success) {
+        setVariantImages(prev => ({
+          ...prev,
+          [variantId]: response.data.data || []
+        }));
+      }
+    } catch (error) {
+      console.error(`Error loading images for variant ${variantId}:`, error);
+    }
+  };
+
+  const hasVariants = variants.length > 1 || (variants.length === 1 && variants[0].is_default !== 1);
+  const defaultVariant = variants.find(v => v.is_default === 1) || variants[0];
+
+  // Handle form field changes
+  const handleChange = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  // Handle product image upload
+  const handleProductImageChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setProductImage(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setProductImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Handle variant field update
+  const handleUpdateVariant = (index, field, value) => {
+    setVariants(prev => prev.map((variant, i) => 
+      i === index ? { ...variant, [field]: value } : variant
+    ));
+  };
+
+  // Handle set default variant
+  const handleSetDefaultVariant = (index) => {
+    setVariants(prev => prev.map((variant, i) => ({
+      ...variant,
+      is_default: i === index ? 1 : 0
+    })));
+  };
+
+  // Handle variant images upload (new images)
+  const handleVariantImagesChange = (variantId, files) => {
+    const fileList = Array.from(files);
+    if (fileList.length > 10) {
+      toast.warning('Tối đa 10 ảnh cho mỗi biến thể');
+      return;
+    }
+
+    setNewVariantImages(prev => ({
+      ...prev,
+      [variantId]: fileList
+    }));
+
+    // Generate previews
+    const previews = [];
+    fileList.forEach(file => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        previews.push(reader.result);
+        if (previews.length === fileList.length) {
+          setNewVariantImagePreviews(prev => ({
+            ...prev,
+            [variantId]: previews
+          }));
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  // Remove existing variant image
+  const handleRemoveExistingImage = async (variantId, imageId) => {
+    try {
+      const response = await axios.delete(`http://localhost:5001/api/variant-images/images/${imageId}`);
+      if (response.data.success) {
+        toast.success('Đã xóa ảnh');
+        // Reload variant images
+        loadVariantImages(variantId);
+      }
+    } catch (error) {
+      toast.error('Không thể xóa ảnh');
+      console.error(error);
+    }
+  };
+
+  // Set image as primary
+  const handleSetPrimaryImage = async (imageId) => {
+    try {
+      const response = await axios.patch(`http://localhost:5001/api/variant-images/images/${imageId}/set-primary`);
+      if (response.data.success) {
+        toast.success('Đã đặt làm ảnh chính');
+        // Reload all variant images
+        variants.forEach(variant => {
+          loadVariantImages(variant.variant_id);
+        });
+      }
+    } catch (error) {
+      toast.error('Không thể đặt ảnh chính');
+      console.error(error);
+    }
+  };
+
+  // Remove new variant image (before upload)
+  const handleRemoveNewImage = (variantId, imageIndex) => {
+    setNewVariantImages(prev => ({
+      ...prev,
+      [variantId]: prev[variantId]?.filter((_, i) => i !== imageIndex) || []
+    }));
+    setNewVariantImagePreviews(prev => ({
+      ...prev,
+      [variantId]: prev[variantId]?.filter((_, i) => i !== imageIndex) || []
+    }));
+  };
+
+  // Add new variant
+  const handleAddVariant = () => {
+    setShowAddVariantForm(true);
+  };
+
+  // Handle add variant success
+  const handleAddVariantSuccess = async (variantData, images) => {
+    try {
+      setSaving(true);
+      
+      // Create variant via API
+      const response = await axios.post(`http://localhost:5001/api/variants`, variantData);
+      
+      if (response.data.success && response.data.data.variant_id) {
+        const newVariantId = response.data.data.variant_id;
+        
+        // Upload images if any
+        if (images && images.length > 0) {
+          await uploadVariantImages(newVariantId, images);
+        }
+        
+        toast.success('Đã thêm biến thể mới');
+        setShowAddVariantForm(false);
+        
+        // Reload product data
+        await loadProductData();
+      }
+    } catch (error) {
+      console.error('Error adding variant:', error);
+      toast.error(error.response?.data?.message || 'Không thể thêm biến thể');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Delete variant
+  const handleDeleteVariant = async (index) => {
+    const variant = variants[index];
+    
+    if (variant.is_default === 1) {
+      toast.error('Không thể xóa biến thể mặc định');
+      return;
+    }
+
+    if (variant.variant_id && !variant.isNew) {
+      // Delete from server
+      try {
+        const response = await axios.delete(`http://localhost:5001/api/variants/${variant.variant_id}`);
+        if (response.data.success) {
+          toast.success('Đã xóa biến thể');
+          setVariants(prev => prev.filter((_, i) => i !== index));
+        }
+      } catch (error) {
+        toast.error('Không thể xóa biến thể');
+        console.error(error);
+      }
+    } else {
+      // Just remove from local state
+      setVariants(prev => prev.filter((_, i) => i !== index));
+    }
+  };
+
+  // Handle save
+  const handleSave = async () => {
+    // Validation
+    if (!formData.product_name) {
+      toast.error('Vui lòng nhập tên sản phẩm');
+      return;
+    }
+
+    if (!hasVariants) {
+      // Validate default variant
+      if (!defaultVariant?.price || defaultVariant.price <= 0) {
+        toast.error('Vui lòng nhập giá sản phẩm');
+        return;
+      }
+      if (defaultVariant.stock_quantity === undefined || defaultVariant.stock_quantity < 0) {
+        toast.error('Vui lòng nhập số lượng tồn kho');
+        return;
+      }
+    } else {
+      // Validate all variants
+      for (let i = 0; i < variants.length; i++) {
+        const variant = variants[i];
+        if (!variant.price || variant.price <= 0) {
+          toast.error(`Biến thể "${variant.variant_name}" chưa có giá`);
+          return;
+        }
+        if (variant.stock_quantity === undefined || variant.stock_quantity < 0) {
+          toast.error(`Biến thể "${variant.variant_name}" chưa có số lượng tồn kho`);
+          return;
+        }
+      }
+    }
+
+    setSaving(true);
+    try {
+      const submitData = new FormData();
+      
+      // Basic product info
+      submitData.append('product_name', formData.product_name);
+      submitData.append('description', formData.description || '');
+      submitData.append('is_featured', formData.is_featured);
+      submitData.append('is_active', formData.is_active);
+
+      // Product image
+      if (productImage) {
+        submitData.append('image', productImage);
+      }
+
+      if (!hasVariants) {
+        // Update default variant info
+        submitData.append('base_price', defaultVariant.price);
+        submitData.append('warranty_period', defaultVariant.warranty_period || 0);
+        submitData.append('stock_quantity', defaultVariant.stock_quantity || 0);
+      }
+
+      // Update product
+      await updateProduct(productId, submitData);
+
+      // Update variants if has variants
+      if (hasVariants) {
+        for (const variant of variants) {
+          const variantData = {
+            variant_name: variant.variant_name,
+            sku: variant.sku || '',
+            price: parseFloat(variant.price),
+            stock_quantity: parseInt(variant.stock_quantity),
+            warranty_period: parseInt(variant.warranty_period || 0),
+            is_default: variant.is_default,
+            is_active: variant.is_active
+          };
+
+          if (variant.isNew) {
+            // Create new variant
+            const response = await axios.post(`http://localhost:5001/api/variants`, {
+              product_id: productId,
+              ...variantData
+            });
+            
+            if (response.data.success && response.data.data.variant_id) {
+              const newVariantId = response.data.data.variant_id;
+              
+              // Upload new images for this new variant
+              if (newVariantImages[variant.variant_id]?.length > 0) {
+                await uploadVariantImages(newVariantId, newVariantImages[variant.variant_id]);
+              }
+            }
+          } else {
+            // Update existing variant
+            await axios.put(`http://localhost:5001/api/variants/${variant.variant_id}`, variantData);
+            
+            // Upload new images
+            if (newVariantImages[variant.variant_id]?.length > 0) {
+              await uploadVariantImages(variant.variant_id, newVariantImages[variant.variant_id]);
+            }
+          }
+        }
+      } else {
+        // Upload new images for default variant
+        if (defaultVariant?.variant_id && newVariantImages[defaultVariant.variant_id]?.length > 0) {
+          await uploadVariantImages(defaultVariant.variant_id, newVariantImages[defaultVariant.variant_id]);
+        }
+      }
+
+      toast.success('Cập nhật sản phẩm thành công');
+      onSaveSuccess();
+    } catch (error) {
+      console.error('Error updating product:', error);
+      toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi cập nhật sản phẩm');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Upload variant images
+  const uploadVariantImages = async (variantId, files) => {
+    const formData = new FormData();
+    files.forEach(file => {
+      formData.append('images', file);
+    });
+
+    try {
+      await axios.post(
+        `http://localhost:5001/api/variant-images/variants/${variantId}/images/bulk`,
+        formData,
+        { headers: { 'Content-Type': 'multipart/form-data' } }
+      );
+    } catch (error) {
+      console.error(`Error uploading images for variant ${variantId}:`, error);
+      throw error;
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <p className="text-gray-400">Đang tải...</p>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      {/* Add Variant Form Modal */}
+      {showAddVariantForm && (
+        <div className="fixed inset-0 bg-black/50 z-[100] flex items-start justify-center overflow-auto p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-6xl my-8">
+            <AddVariantForm
+              productId={productId}
+              categoryId={currentProduct?.category_id}
+              existingVariants={variants}
+              onClose={() => setShowAddVariantForm(false)}
+              onSuccess={handleAddVariantSuccess}
+            />
+          </div>
+        </div>
+      )}
+
+      <div className="flex flex-col bg-white max-h-[90vh]">
+      {/* Header */}
+      <div className="px-6 py-4 border-b-2 border-gray-100 flex items-center justify-between shrink-0 bg-gradient-to-r from-blue-50 to-white">
+        <h2 className="text-xl font-bold text-gray-800">
+          Sửa Sản Phẩm: <span className="text-blue-600">{currentProduct?.product_name || ''}</span>
+        </h2>
+        <div className="flex gap-3">
+          <Button onClick={handleSave} disabled={saving} className="bg-blue-600 hover:bg-blue-700 shadow-md">
+            <Save className="w-4 h-4 mr-2" />
+            {saving ? 'Đang lưu...' : 'Lưu Thay Đổi'}
+          </Button>
+          <Button onClick={onClose} variant="outline" className="shadow-sm">
+            <X className="w-4 h-4 mr-2" />
+            Đóng
+          </Button>
+        </div>
+      </div>
+
+      {/* Content */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
+        {hasVariants ? (
+          // HAS VARIANTS: 2 Tabs
+          <>
+            <TabsList className="px-6 pt-4 pb-2 shrink-0 bg-gray-50 border-b">
+              <TabsTrigger value="info" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">Thông Tin Sản Phẩm</TabsTrigger>
+              <TabsTrigger value="variants" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">Quản Lý Biến Thể</TabsTrigger>
+            </TabsList>
+
+            <ScrollArea className="flex-1">
+              {/* Tab 1: Product Info */}
+              <TabsContent value="info" className="px-6 py-6 space-y-6">
+                <div className="border-2 border-gray-100 rounded-xl p-8 bg-white shadow-sm">
+                  <div className="flex items-center gap-2 mb-6 pb-4 border-b-2 border-blue-100">
+                    <div className="w-1 h-6 bg-blue-600 rounded"></div>
+                    <h3 className="text-lg font-bold text-gray-800">Thông Tin Cơ Bản</h3>
+                  </div>
+                  
+                  <div className="space-y-6">
+                    <div>
+                      <Label htmlFor="product_name" className="text-sm font-semibold text-gray-700">Tên Sản Phẩm *</Label>
+                      <Input
+                        id="product_name"
+                        value={formData.product_name}
+                        onChange={(e) => handleChange('product_name', e.target.value)}
+                        placeholder="Nhập tên sản phẩm"
+                        className="mt-2 h-12 border-gray-300 focus:border-blue-500"
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="description" className="text-sm font-semibold text-gray-700">Mô Tả</Label>
+                      <Textarea
+                        id="description"
+                        value={formData.description}
+                        onChange={(e) => handleChange('description', e.target.value)}
+                        placeholder="Mô tả chi tiết về sản phẩm..."
+                        rows={8}
+                        className="mt-2 border-gray-300 focus:border-blue-500 resize-none"
+                      />
+                    </div>
+
+                    <div className="flex items-center gap-8 pt-2 px-4 py-4 bg-gray-50 rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <Checkbox
+                          id="is_featured"
+                          checked={formData.is_featured === 1}
+                          onCheckedChange={(checked) => handleChange('is_featured', checked ? 1 : 0)}
+                          className="w-5 h-5"
+                        />
+                        <Label htmlFor="is_featured" className="cursor-pointer text-sm font-medium">🌟 Sản Phẩm Nổi Bật</Label>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <Checkbox
+                          id="is_active"
+                          checked={formData.is_active === 1}
+                          onCheckedChange={(checked) => handleChange('is_active', checked ? 1 : 0)}
+                          className="w-5 h-5"
+                        />
+                        <Label htmlFor="is_active" className="cursor-pointer text-sm font-medium">✓ Đang Kích Hoạt</Label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </TabsContent>
+
+              {/* Tab 2: Variant Management */}
+              <TabsContent value="variants" className="px-6 py-6">
+                <div className="border-2 border-gray-100 rounded-xl p-6 bg-white shadow-sm">
+                  <div className="flex items-center justify-between mb-6 pb-4 border-b-2 border-blue-100">
+                    <div className="flex items-center gap-2">
+                      <div className="w-1 h-6 bg-blue-600 rounded"></div>
+                      <h3 className="text-lg font-bold text-gray-800">Danh Sách Biến Thể</h3>
+                      <span className="ml-2 px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold">{variants.length} biến thể</span>
+                    </div>
+                    <Button onClick={handleAddVariant} size="sm" className="bg-green-600 hover:bg-green-700 shadow-md">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Thêm Biến Thể
+                    </Button>
+                  </div>
+
+                  <div className="space-y-4 max-h-[calc(90vh-300px)] overflow-y-auto pr-2 custom-scrollbar">
+                    {variants.map((variant, index) => (
+                      <div key={variant.variant_id || index} className="border-2 border-gray-200 rounded-xl p-5 bg-gradient-to-br from-white to-gray-50 hover:shadow-md transition-shadow">
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="flex items-center gap-2">
+                            <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-lg text-xs font-bold">#{index + 1}</span>
+                            {variant.is_default === 1 && (
+                              <span className="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-lg text-xs font-bold">⭐ Mặc định</span>
+                            )}
+                          </div>
+                          {variant.is_default !== 1 && (
+                            <Button
+                              onClick={() => handleDeleteVariant(index)}
+                              variant="ghost"
+                              size="sm"
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            >
+                              <Trash2 className="w-4 h-4 mr-1" />
+                              Xóa
+                            </Button>
+                          )}
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                          {/* Variant Name */}
+                          <div className="md:col-span-2">
+                            <Label className="text-xs font-semibold text-gray-700">Tên Biến Thể *</Label>
+                            <Input
+                              value={variant.variant_name}
+                              onChange={(e) => handleUpdateVariant(index, 'variant_name', e.target.value)}
+                              className="mt-1.5 h-10 border-gray-300"
+                              placeholder="VD: RAM 8GB, Màu Đỏ..."
+                            />
+                          </div>
+
+                          {/* Price */}
+                          <div>
+                            <Label className="text-xs font-semibold text-gray-700">Giá (VNĐ) *</Label>
+                            <Input
+                              type="number"
+                              value={variant.price}
+                              onChange={(e) => handleUpdateVariant(index, 'price', e.target.value)}
+                              className="mt-1.5 h-10 border-gray-300"
+                              placeholder="0"
+                            />
+                          </div>
+
+                          {/* Stock */}
+                          <div>
+                            <Label className="text-xs font-semibold text-gray-700">Tồn Kho *</Label>
+                            <Input
+                              type="number"
+                              value={variant.stock_quantity}
+                              onChange={(e) => handleUpdateVariant(index, 'stock_quantity', e.target.value)}
+                              className="mt-1.5 h-10 border-gray-300"
+                              placeholder="0"
+                            />
+                          </div>
+
+                          {/* Warranty */}
+                          <div>
+                            <Label className="text-xs font-semibold text-gray-700">Bảo Hành (tháng)</Label>
+                            <Input
+                              type="number"
+                              value={variant.warranty_period || 0}
+                              onChange={(e) => handleUpdateVariant(index, 'warranty_period', e.target.value)}
+                              className="mt-1.5 h-10 border-gray-300"
+                              placeholder="0"
+                            />
+                          </div>
+
+                          {/* Checkboxes */}
+                          <div className="flex items-center gap-6 md:col-span-2 px-3 py-2 bg-white rounded-lg border">
+                            <div className="flex items-center space-x-2">
+                              <Checkbox
+                                id={`default-${index}`}
+                                checked={variant.is_default === 1}
+                                onCheckedChange={() => handleSetDefaultVariant(index)}
+                                className="w-4 h-4"
+                              />
+                              <Label htmlFor={`default-${index}`} className="text-xs cursor-pointer font-medium">Đặt làm mặc định</Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <Checkbox
+                                id={`active-${index}`}
+                                checked={variant.is_active === 1}
+                                onCheckedChange={(checked) => handleUpdateVariant(index, 'is_active', checked ? 1 : 0)}
+                                className="w-4 h-4"
+                              />
+                              <Label htmlFor={`active-${index}`} className="text-xs cursor-pointer font-medium">Kích hoạt</Label>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Variant Images */}
+                        <div className="mt-5 pt-5 border-t-2 border-gray-200">
+                          <div className="flex items-center gap-2 mb-3">
+                            <ImageIcon className="w-4 h-4 text-blue-600" />
+                            <Label className="text-sm font-semibold text-gray-700">Quản Lý Hình Ảnh</Label>
+                          </div>
+                          
+                          {/* Existing Images */}
+                          {variantImages[variant.variant_id] && variantImages[variant.variant_id].length > 0 && (
+                            <div className="mb-4">
+                              <p className="text-xs font-medium text-gray-600 mb-2.5">📷 Ảnh hiện tại ({variantImages[variant.variant_id].length})</p>
+                              <div className="grid grid-cols-6 gap-3">
+                                {variantImages[variant.variant_id].map((img) => (
+                                  <div key={img.image_id} className="relative group">
+                                    <img 
+                                      src={img.image_url.startsWith('http') ? img.image_url : `http://localhost:5001${img.image_url}`}
+                                      alt={img.alt_text}
+                                      className="w-full h-20 object-cover rounded border-2 border-gray-200"
+                                    />
+                                    {img.is_primary === 1 && (
+                                      <span className="absolute top-1 left-1 bg-blue-600 text-white text-xs px-2 py-0.5 rounded">
+                                        Primary
+                                      </span>
+                                    )}
+                                    <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 flex gap-1">
+                                      {img.is_primary !== 1 && (
+                                        <Button
+                                          type="button"
+                                          size="sm"
+                                          onClick={() => handleSetPrimaryImage(img.image_id)}
+                                          className="bg-blue-500 text-white h-6 w-6 p-0"
+                                          title="Đặt làm ảnh chính"
+                                        >
+                                          <ImageIcon className="h-3 w-3" />
+                                        </Button>
+                                      )}
+                                      <Button
+                                        type="button"
+                                        size="sm"
+                                        onClick={() => handleRemoveExistingImage(variant.variant_id, img.image_id)}
+                                        className="bg-red-500 text-white h-6 w-6 p-0"
+                                      >
+                                        <X className="h-3 w-3" />
+                                      </Button>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Upload New Images */}
+                          <Input
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            onChange={(e) => handleVariantImagesChange(variant.variant_id || `new-${index}`, e.target.files)}
+                            className="mt-2"
+                          />
+
+                          {/* New Images Preview */}
+                          {newVariantImagePreviews[variant.variant_id || `new-${index}`] && 
+                           newVariantImagePreviews[variant.variant_id || `new-${index}`].length > 0 && (
+                            <div className="mt-4">
+                              <p className="text-xs font-medium text-green-700 mb-2.5">🆕 Ảnh mới - chưa lưu ({newVariantImagePreviews[variant.variant_id || `new-${index}`].length})</p>
+                              <div className="grid grid-cols-6 gap-3">
+                                {newVariantImagePreviews[variant.variant_id || `new-${index}`].map((preview, imgIdx) => (
+                                  <div key={imgIdx} className="relative group">
+                                    <img 
+                                      src={preview}
+                                      alt={`New ${imgIdx + 1}`}
+                                      className="w-full h-20 object-cover rounded border-2 border-green-200"
+                                    />
+                                    {imgIdx === 0 && (
+                                      <span className="absolute top-1 left-1 bg-green-600 text-white text-xs px-2 py-0.5 rounded">
+                                        Primary
+                                      </span>
+                                    )}
+                                    <Button
+                                      type="button"
+                                      size="sm"
+                                      onClick={() => handleRemoveNewImage(variant.variant_id || `new-${index}`, imgIdx)}
+                                      className="absolute top-1 right-1 bg-red-500 text-white h-6 w-6 p-0 opacity-0 group-hover:opacity-100"
+                                    >
+                                      <X className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </TabsContent>
+            </ScrollArea>
+          </>
+        ) : (
+          // NO VARIANTS: 1 Tab
+          <>
+            <TabsList className="px-6 pt-4 pb-2 shrink-0 bg-gray-50 border-b">
+              <TabsTrigger value="info" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">Thông Tin Sản Phẩm</TabsTrigger>
+            </TabsList>
+
+            <ScrollArea className="flex-1">
+              <TabsContent value="info" className="px-6 py-6 space-y-6">
+                <div className="border-2 border-gray-100 rounded-xl p-8 bg-white shadow-sm">
+                  <div className="flex items-center gap-2 mb-6 pb-4 border-b-2 border-blue-100">
+                    <div className="w-1 h-6 bg-blue-600 rounded"></div>
+                    <h3 className="text-lg font-bold text-gray-800">Thông Tin Sản Phẩm</h3>
+                  </div>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    {/* Left Column */}
+                    <div className="space-y-5">
+                      <div>
+                        <Label htmlFor="product_name" className="text-sm font-semibold text-gray-700">Tên Sản Phẩm *</Label>
+                        <Input
+                          id="product_name"
+                          value={formData.product_name}
+                          onChange={(e) => handleChange('product_name', e.target.value)}
+                          placeholder="Nhập tên sản phẩm"
+                          className="mt-2 h-12 border-gray-300 focus:border-blue-500"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="price" className="text-sm font-semibold text-gray-700">Giá (VNĐ) *</Label>
+                          <Input
+                            id="price"
+                            type="number"
+                            value={defaultVariant?.price || ''}
+                            onChange={(e) => handleUpdateVariant(0, 'price', e.target.value)}
+                            placeholder="0"
+                            className="mt-2 h-12 border-gray-300 focus:border-blue-500"
+                          />
+                        </div>
+
+                        <div>
+                          <Label htmlFor="stock" className="text-sm font-semibold text-gray-700">Tồn Kho *</Label>
+                          <Input
+                            id="stock"
+                            type="number"
+                            value={defaultVariant?.stock_quantity || 0}
+                            onChange={(e) => handleUpdateVariant(0, 'stock_quantity', e.target.value)}
+                            placeholder="0"
+                            className="mt-2 h-12 border-gray-300 focus:border-blue-500"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label htmlFor="warranty" className="text-sm font-semibold text-gray-700">Bảo Hành (tháng)</Label>
+                        <Input
+                          id="warranty"
+                          type="number"
+                          value={defaultVariant?.warranty_period || 0}
+                          onChange={(e) => handleUpdateVariant(0, 'warranty_period', e.target.value)}
+                          placeholder="0"
+                          className="mt-2 h-12 border-gray-300 focus:border-blue-500"
+                        />
+                      </div>
+
+                      <div>
+                        <Label htmlFor="description_no_var" className="text-sm font-semibold text-gray-700">Mô Tả</Label>
+                        <Textarea
+                          id="description_no_var"
+                          value={formData.description}
+                          onChange={(e) => handleChange('description', e.target.value)}
+                          placeholder="Mô tả chi tiết về sản phẩm..."
+                          rows={6}
+                          className="mt-2 border-gray-300 focus:border-blue-500 resize-none"
+                        />
+                      </div>
+
+                      <div className="flex items-center gap-8 pt-2 px-4 py-4 bg-gray-50 rounded-lg">
+                        <div className="flex items-center space-x-3">
+                          <Checkbox
+                            id="is_featured_no_var"
+                            checked={formData.is_featured === 1}
+                            onCheckedChange={(checked) => handleChange('is_featured', checked ? 1 : 0)}
+                            className="w-5 h-5"
+                          />
+                          <Label htmlFor="is_featured_no_var" className="cursor-pointer text-sm font-medium">🌟 Sản Phẩm Nổi Bật</Label>
+                        </div>
+                        <div className="flex items-center space-x-3">
+                          <Checkbox
+                            id="is_active_no_var"
+                            checked={formData.is_active === 1}
+                            onCheckedChange={(checked) => handleChange('is_active', checked ? 1 : 0)}
+                            className="w-5 h-5"
+                          />
+                          <Label htmlFor="is_active_no_var" className="cursor-pointer text-sm font-medium">✓ Đang Kích Hoạt</Label>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Right Column */}
+                    <div className="space-y-4">
+                      {/* Product Image
+                      <div>
+                        <Label className="text-base">Hình Ảnh Sản Phẩm</Label>
+                        <div className="mt-2">
+                          {productImagePreview && (
+                            <div className="mb-4">
+                              <img 
+                                src={productImagePreview.startsWith('http') ? productImagePreview : `http://localhost:5001${productImagePreview}`}
+                                alt="Preview" 
+                                className="w-48 h-48 object-cover rounded-lg border-2 border-gray-200 shadow-sm"
+                              />
+                            </div>
+                          )}
+                          <Input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleProductImageChange}
+                            className="h-11"
+                          />
+                        </div>
+                      </div> */}
+
+                      {/* Variant Images */}
+                      {defaultVariant && (
+                        <div>
+                          <div className="flex items-center gap-2 mb-4">
+                            <ImageIcon className="w-5 h-5 text-blue-600" />
+                            <Label className="text-sm font-semibold text-gray-700">Quản lý Hình Ảnh</Label>
+                            <span className="text-xs text-gray-500">(tối đa 10 ảnh)</span>
+                          </div>
+                          
+                          {/* Existing Images */}
+                          {variantImages[defaultVariant.variant_id] && variantImages[defaultVariant.variant_id].length > 0 && (
+                            <div className="mb-4">
+                              <p className="text-xs font-medium text-gray-600 mb-2.5">📷 Ảnh hiện tại ({variantImages[defaultVariant.variant_id].length})</p>
+                              <div className="grid grid-cols-5 gap-3">
+                                {variantImages[defaultVariant.variant_id].map((img) => (
+                                  <div key={img.image_id} className="relative group">
+                                    <img 
+                                      src={img.image_url.startsWith('http') ? img.image_url : `http://localhost:5001${img.image_url}`}
+                                      alt={img.alt_text}
+                                      className="w-full h-20 object-cover rounded border-2 border-gray-200"
+                                    />
+                                    {img.is_primary === 1 && (
+                                      <span className="absolute top-1 left-1 bg-blue-600 text-white text-xs px-2 py-0.5 rounded">
+                                        Primary
+                                      </span>
+                                    )}
+                                    <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 flex gap-1">
+                                      {img.is_primary !== 1 && (
+                                        <Button
+                                          type="button"
+                                          size="sm"
+                                          onClick={() => handleSetPrimaryImage(img.image_id)}
+                                          className="bg-blue-500 text-white h-6 w-6 p-0"
+                                          title="Đặt làm ảnh chính"
+                                        >
+                                          <ImageIcon className="h-3 w-3" />
+                                        </Button>
+                                      )}
+                                      <Button
+                                        type="button"
+                                        size="sm"
+                                        onClick={() => handleRemoveExistingImage(defaultVariant.variant_id, img.image_id)}
+                                        className="bg-red-500 text-white h-6 w-6 p-0"
+                                      >
+                                        <X className="h-3 w-3" />
+                                      </Button>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          <Input
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            onChange={(e) => handleVariantImagesChange(defaultVariant.variant_id, e.target.files)}
+                            className="h-11"
+                          />
+
+                          {/* New Images Preview */}
+                          {newVariantImagePreviews[defaultVariant.variant_id] && 
+                           newVariantImagePreviews[defaultVariant.variant_id].length > 0 && (
+                            <div className="mt-3">
+                              <p className="text-xs text-gray-500 mb-2">Ảnh mới (chưa lưu):</p>
+                              <div className="grid grid-cols-5 gap-2">
+                                {newVariantImagePreviews[defaultVariant.variant_id].map((preview, idx) => (
+                                  <div key={idx} className="relative group">
+                                    <img 
+                                      src={preview}
+                                      alt={`New ${idx + 1}`}
+                                      className="w-full h-20 object-cover rounded border-2 border-green-200"
+                                    />
+                                    {idx === 0 && (
+                                      <span className="absolute top-1 left-1 bg-green-600 text-white text-xs px-2 py-0.5 rounded">
+                                        Primary
+                                      </span>
+                                    )}
+                                    <Button
+                                      type="button"
+                                      size="sm"
+                                      onClick={() => handleRemoveNewImage(defaultVariant.variant_id, idx)}
+                                      className="absolute top-1 right-1 bg-red-500 text-white h-6 w-6 p-0 opacity-0 group-hover:opacity-100"
+                                    >
+                                      <X className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </TabsContent>
+            </ScrollArea>
+          </>
+        )}
+      </Tabs>
+    </div>
+    </>
+  );
+};
+
+export default EditProductForm;

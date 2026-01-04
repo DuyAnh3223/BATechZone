@@ -27,12 +27,8 @@ const Home = () => {
     const loadFeaturedProducts = async () => {
       try {
         await fetchProducts({
-          is_active: true,
-          is_featured: true,
-          limit: 8,
-          page: 1,
-          sortBy: 'created_at',
-          sortOrder: 'DESC'
+          is_active: 1,
+          is_featured: 1
         });
       } catch (error) {
         console.error('Error loading featured products:', error);
@@ -45,12 +41,8 @@ const Home = () => {
   // Function to load featured categories (memoized with useCallback)
   const loadFeaturedCategories = useCallback(async () => {
     try {
-      await fetchCategories({
-        is_active: true,
-        parentId: null, // Chỉ lấy parent categories (null = không có parent)
-        limit: 8,
-        page: 1
-      });
+      await fetchCategories();
+      // Filter active parent categories will be done in render
     } catch (error) {
       console.error('Error loading categories:', error);
     }

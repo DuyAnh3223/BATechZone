@@ -5,6 +5,7 @@ import AdminLayout from '../layouts/AdminLayout';
 import AdminProduct from '../pages/admin/AdminProduct_old';
 import AdminProductDetail from '../pages/admin/AdminProductDetail_old';
 import ProductPage from '../pages/admin/Product&VariantManagement/ProductPage';
+import EditProductPage from '../pages/admin/Product&VariantManagement/EditProductPage';
 import AdminUserPage from '../pages/admin/UserPage/AdminUserPage';
 import AdminUserDetail from '../pages/admin/AdminUserDetail';
 import AdminCouponPage from '../pages/admin/CouponPage/AdminCouponPage';
@@ -31,6 +32,7 @@ const AdminRoutes = () => (
       <Route path="products-old" element={<AdminProduct />} />
       <Route path="products-old/:productId" element={<AdminProductDetail />} />
       <Route path="products" element={<ProductPage />} />
+      <Route path="products/:productId/edit" element={<EditProductPage />} />
       <Route path="users" element={<AdminUserPage />} />
       <Route path="users/:userId" element={<AdminUserDetail />} />
       <Route path="coupons" element={<AdminCouponPage />} />

@@ -6,6 +6,7 @@ import ProductGrid from "@/components/product/ProductGrid";
 import ProductPagination from "@/components/product/ProductPagination";
 import { useProductStore } from "@/stores/useProductStore";
 import { useCategoryStore } from "@/stores/useCategoryStore";
+import { toast } from "sonner";
 
 const ProductList = () => {
   const { categoryId } = useParams();
@@ -29,11 +30,7 @@ const ProductList = () => {
   useEffect(() => {
     const loadCategories = async () => {
       try {
-        await fetchCategories({
-          is_active: true,
-          limit: 100,
-          page: 1
-        });
+        await fetchCategories();
       } catch (error) {
         console.error('Error loading categories:', error);
       }
@@ -57,9 +54,7 @@ const ProductList = () => {
     const loadProducts = async () => {
       try {
         const params = {
-          is_active: true,
-          page: filters.page,
-          limit: 12,
+          is_active: 1
         };
 
         // Add category filter
@@ -67,39 +62,24 @@ const ProductList = () => {
           params.category_id = filters.category;
         }
 
-        // Add search filter
+        // Add search filter (keyword or search)
         if (filters.search) {
-          params.search = filters.search;
+          params.keyword = filters.search;
         }
 
         // Add price range filter
         if (filters.priceRange[0] > 0) {
-          params.minPrice = filters.priceRange[0];
+          params.min_price = filters.priceRange[0];
         }
         if (filters.priceRange[1] < 50000000) {
-          params.maxPrice = filters.priceRange[1];
+          params.max_price = filters.priceRange[1];
         }
 
-        // Add sort
-        switch (filters.sort) {
-          case "price-asc":
-            // Price sorting removed as products no longer have base_price
-            // Sorting by variant price would require JOIN
-            break;
-          case "price-desc":
-            // Price sorting removed as products no longer have base_price
-            // Sorting by variant price would require JOIN
-            break;
-          case "newest":
-          default:
-            params.sortBy = 'created_at';
-            params.sortOrder = 'DESC';
-            break;
-        }
-
-        await fetchProducts(params);
+        const response = await fetchProducts(params);
+        // New API format: { success: true, data: [...], total: number }
       } catch (error) {
         console.error('Error loading products:', error);
+        toast.error('Không thể tải danh sách sản phẩm');
       }
     };
 
@@ -131,8 +111,12 @@ const ProductList = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Calculate total pages
-  const totalPages = Math.ceil((total || 0) / 12);
+  // Client-side pagination since backend returns all products
+  const itemsPerPage = 12;
+  const totalPages = Math.ceil((total || 0) / itemsPerPage);
+  const startIndex = (filters.page - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedProducts = products.slice(startIndex, endIndex);
 
   const handleReset = () => {
     setFilters({
@@ -160,12 +144,12 @@ const ProductList = () => {
           <ProductSortBar
             sortValue={filters.sort}
             onSortChange={(value) => handleFilterChange("sort", value)}
-            productsCount={products.length}
+            productsCount={paginatedProducts.length}
             totalCount={total}
           />
 
           <ProductGrid
-            products={products}
+            products={paginatedProducts}
             loading={productsLoading}
           />
 

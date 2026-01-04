@@ -1,4 +1,6 @@
 import ProductService from '../services/product.service.js';
+import ProductDAO from '../daos/product.dao.js';
+import VariantDAO from '../daos/variant.dao.js';
 
 /**
  * Product Controller - Sử dụng ProductService

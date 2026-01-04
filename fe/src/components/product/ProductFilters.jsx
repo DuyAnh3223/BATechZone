@@ -24,9 +24,9 @@ const ProductFilters = ({ filters, categories, onFilterChange, onReset }) => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Tất cả</SelectItem>
-              {categories.map((category) => (
-                <SelectItem key={category.category_id} value={String(category.category_id)}>
-                  {category.category_name}
+              {categories && categories.filter(cat => cat.isActive).map((category) => (
+                <SelectItem key={category.id} value={String(category.id)}>
+                  {category.name}
                 </SelectItem>
               ))}
             </SelectContent>

@@ -237,16 +237,6 @@ const ProductList = ({ onAddProduct, onEditProduct, onManageVariants, selectedPr
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => onManageVariants(product.product_id)}
-                          className="text-purple-600 hover:text-purple-700 hover:bg-purple-50"
-                        >
-                          <Package className="w-4 h-4 mr-1" />
-                          Biến Thể
-                        </Button>
-
-                        <Button
-                          variant="ghost"
-                          size="sm"
                           onClick={() => setDeleteProductId(product.product_id)}
                           className="text-red-600 hover:text-red-700 hover:bg-red-50"
                         >
