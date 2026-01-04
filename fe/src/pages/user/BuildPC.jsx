@@ -854,21 +854,21 @@ const BuildPC = () => {
     );
   };
 
-  const handleAttributeToggle = (attributeName, valueId) => {
+  const handleAttributeToggle = (attributeId, valueId) => {
     setAttributeFilters((prev) => {
-      const current = prev[attributeName] || [];
+      const current = prev[attributeId] || [];
       const newValues = current.includes(valueId)
         ? current.filter((v) => v !== valueId)
         : [...current, valueId];
       
       if (newValues.length === 0) {
-        const { [attributeName]: _, ...rest } = prev;
+        const { [attributeId]: _, ...rest } = prev;
         return rest;
       }
       
       return {
         ...prev,
-        [attributeName]: newValues
+        [attributeId]: newValues
       };
     });
   };
@@ -1126,17 +1126,21 @@ const BuildPC = () => {
     // Filter by dynamic attributes
     if (Object.keys(attributeFilters).length > 0) {
       items = items.filter((item) => {
-        return Object.entries(attributeFilters).every(([attrName, valueIds]) => {
+        return Object.entries(attributeFilters).every(([attributeId, valueIds]) => {
           if (!valueIds || valueIds.length === 0) return true;
           
-          // Check if item has any of the selected values for this attribute
-          const itemAttrValue = item.attributes?.[attrName];
-          if (!itemAttrValue) return false;
+          // Find attribute info from filterOptions
+          const attribute = filterOptions?.attributes?.find(a => String(a.attribute_id) === String(attributeId));
+          if (!attribute) return false;
           
-          // Match by value name (since we display value names in UI)
-          const matchingValue = filterOptions?.attributes
-            ?.find(a => a.attributeName === attrName)
-            ?.values.find(v => valueIds.includes(v.valueId) && v.valueName === itemAttrValue);
+          // Get the attribute value name from item
+          const itemValueName = item.attributes?.[attribute.attribute_name];
+          if (!itemValueName) return false;
+          
+          // Check if item's value matches any of the selected value IDs
+          const matchingValue = attribute.values.find(v => 
+            valueIds.includes(v.attribute_value_id) && v.value_name === itemValueName
+          );
           
           return !!matchingValue;
         });
@@ -1389,8 +1393,11 @@ const BuildPC = () => {
               <div className="bg-blue-700 px-3 py-2 text-white font-semibold flex-shrink-0 text-sm">
                 Bộ lọc
               </div>
-              <ScrollArea className="flex-1 px-3 py-3">
-                <div className="space-y-4 pr-2 w-full">
+              <div className="flex-1 overflow-y-auto px-3 py-3" style={{ 
+                scrollbarWidth: 'thin',
+                scrollbarColor: '#94a3b8 #f1f5f9'
+              }}>
+                <div className="space-y-4 pr-1 w-full">
                   {/* Price Range Filter */}
                   <section className="space-y-3">
                     <div className="flex items-center justify-between text-xs text-muted-foreground">
@@ -1436,19 +1443,19 @@ const BuildPC = () => {
 
                   {/* Dynamic Attribute Filters */}
                   {filterOptions?.attributes && filterOptions.attributes.map((attr) => (
-                    <section key={attr.attributeId} className="space-y-3">
-                      <p className="text-sm font-semibold">{attr.attributeName}</p>
+                    <section key={attr.attribute_id} className="space-y-3">
+                      <p className="text-sm font-semibold">{attr.attribute_name}</p>
                       <div className="space-y-2">
                         {attr.values.map((value) => (
                           <label
-                            key={value.valueId}
+                            key={value.attribute_value_id}
                             className="flex items-center gap-2 text-sm font-medium text-slate-700 cursor-pointer"
                           >
                             <Checkbox
-                              checked={attributeFilters[attr.attributeName]?.includes(value.valueId) || false}
-                              onCheckedChange={() => handleAttributeToggle(attr.attributeName, value.valueId)}
+                              checked={attributeFilters[attr.attribute_id]?.includes(value.attribute_value_id) || false}
+                              onCheckedChange={() => handleAttributeToggle(attr.attribute_id, value.attribute_value_id)}
                             />
-                            {value.valueName}
+                            {value.value_name}
                           </label>
                         ))}
                       </div>
@@ -1459,7 +1466,7 @@ const BuildPC = () => {
                     Đặt lại bộ lọc
                   </Button>
                 </div>
-              </ScrollArea>
+              </div>
             </div>
 
             {/* Right: Products */}

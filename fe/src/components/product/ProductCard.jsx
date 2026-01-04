@@ -76,8 +76,11 @@ const ProductCard = ({ product }) => {
         const variantsResponse = await variantService.getVariantsByProductId(productId);
         const loadedVariants = variantsResponse?.data || variantsResponse || [];
         
-        if (variants && variants.length > 0) {
-          const firstVariant = variants.find(v => v.is_default) || variants[0];
+        // Lưu variants vào state
+        setVariants(loadedVariants);
+        
+        if (loadedVariants && loadedVariants.length > 0) {
+          const firstVariant = loadedVariants.find(v => v.is_default) || loadedVariants[0];
           setDefaultVariant(firstVariant); // Lưu default variant để lấy giá
           
           if (firstVariant?.variant_id) {
