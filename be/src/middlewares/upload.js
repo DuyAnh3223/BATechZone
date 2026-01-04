@@ -12,15 +12,19 @@ const uploadsRoot = path.resolve(process.cwd(), 'uploads');
 
 const variantsRoot = path.join(uploadsRoot, 'variants');
 const categoriesRoot = path.join(uploadsRoot, 'categories');
+const productsRoot = path.join(uploadsRoot, 'products');
 const articlesRoot = path.join(uploadsRoot, 'articles');
 const postsRoot = path.join(uploadsRoot, 'posts');
 const warrantyRoot = path.join(uploadsRoot, 'warranty');
+const tempRoot = path.join(uploadsRoot, 'temp');
 
 ensureDir(variantsRoot);
 ensureDir(categoriesRoot);
+ensureDir(productsRoot);
 ensureDir(articlesRoot);
 ensureDir(postsRoot);
 ensureDir(warrantyRoot);
+ensureDir(tempRoot);
 
 const sanitize = (s) => String(s || '').replace(/[^a-zA-Z0-9-_]/g, '');
 
@@ -63,6 +67,26 @@ const storageCategoryImage = multer.diskStorage({
 
 export const uploadCategoryImage = multer({ 
     storage: storageCategoryImage, 
+    fileFilter, 
+    limits: { fileSize: 5 * 1024 * 1024 } 
+});
+
+// Storage for product images
+const storageProductImage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        ensureDir(productsRoot);
+        cb(null, productsRoot);
+    },
+    filename: function (req, file, cb) {
+        const ext = path.extname(file.originalname).toLowerCase();
+        const base = path.basename(file.originalname, ext).replace(/[^a-zA-Z0-9-_]/g, '') || 'product';
+        const unique = Date.now() + '-' + Math.round(Math.random() * 1e9);
+        cb(null, `${base}-${unique}${ext}`);
+    }
+});
+
+export const uploadProductImage = multer({ 
+    storage: storageProductImage, 
     fileFilter, 
     limits: { fileSize: 5 * 1024 * 1024 } 
 });
@@ -119,6 +143,10 @@ export const getPublicUrlForVariant = (variantId, filename) => {
 
 export const getPublicUrlForCategory = (filename) => {
     return `/uploads/categories/${filename}`;
+};
+
+export const getPublicUrlForProduct = (filename) => {
+    return `/uploads/products/${filename}`;
 };
 
 export const getPublicUrlForPost = (postId, filename) => {

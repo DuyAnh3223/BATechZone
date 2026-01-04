@@ -14,7 +14,7 @@ class AttributeDAO {
         return result.insertId;
     }
 
-    async findById(attributeId) {
+    async findAttributeAndValueById(attributeId) {
         const [attributes] = await db.query(
             `SELECT 
                 a.*,
@@ -47,6 +47,15 @@ class AttributeDAO {
         );
         return rows[0] ? new Attribute(rows[0]) : null;
     }
+
+    async findById(attributeId) {
+        const [rows] = await db.query(
+            `SELECT * FROM attributes WHERE attribute_id = ? LIMIT 1`,
+            [attributeId]
+        );
+        return rows[0] ? new Attribute(rows[0]) : null;
+    }
+
 
     async delete(attributeId) {
         const [result] = await db.query(
@@ -90,7 +99,7 @@ class AttributeDAO {
         const countValues = [...values];
 
         if (category_id) {
-            conditions.push('EXISTS (SELECT 1 FROM attribute_categories ac WHERE ac.attribute_id = a.attribute_id AND ac.category_id = ?)');
+            conditions.push('EXISTS (SELECT 1 FROM attributes_categories ac WHERE ac.attribute_id = a.attribute_id AND ac.category_id = ?)');
             values.push(category_id);
             countValues.push(category_id);
         }
@@ -147,7 +156,7 @@ class AttributeDAO {
         const [categories] = await db.query(
             `SELECT c.category_id, c.category_name
             FROM categories c
-            INNER JOIN attribute_categories ac ON c.category_id = ac.category_id
+            INNER JOIN attributes_categories ac ON c.category_id = ac.category_id
             WHERE ac.attribute_id = ?`,
             [attributeId]
         );
@@ -159,14 +168,14 @@ class AttributeDAO {
 
         const values = categoryIds.map(categoryId => [categoryId, attributeId]);
         await db.query(
-            `INSERT IGNORE INTO attribute_categories (category_id, attribute_id) VALUES ?`,
+            `INSERT IGNORE INTO attributes_categories (category_id, attribute_id) VALUES ?`,
             [values]
         );
     }
 
     async removeCategory(attributeId, categoryId) {
         const [result] = await db.query(
-            `DELETE FROM attribute_categories WHERE attribute_id = ? AND category_id = ?`,
+            `DELETE FROM attributes_categories WHERE attribute_id = ? AND category_id = ?`,
             [attributeId, categoryId]
         );
         return result.affectedRows > 0;
@@ -174,7 +183,7 @@ class AttributeDAO {
 
     async updateCategories(attributeId, categoryIds) {
         await db.query(
-            `DELETE FROM attribute_categories WHERE attribute_id = ?`,
+            `DELETE FROM attributes_categories WHERE attribute_id = ?`,
             [attributeId]
         );
         

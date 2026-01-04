@@ -10,16 +10,14 @@ class Category {
       const [result] = await conn.query(
         `INSERT INTO categories (
           category_name,
-          slug,
           description,
           parent_category_id,
           image_url,
           is_active,
           display_order
-        ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        ) VALUES (?, ?, ?, ?, ?, ?)`,
         [
           categoryData.categoryName,
-          categoryData.slug || null,
           categoryData.description || null,
           categoryData.parentId || null,
           categoryData.imageUrl || null,
@@ -67,10 +65,6 @@ class Category {
       if (categoryData.categoryName !== undefined) {
         updateFields.push('category_name = ?');
         updateValues.push(categoryData.categoryName);
-      }
-      if (categoryData.slug !== undefined) {
-        updateFields.push('slug = ?');
-        updateValues.push(categoryData.slug || null);
       }
       if (categoryData.description !== undefined) {
         updateFields.push('description = ?');
@@ -176,7 +170,7 @@ async delete(categoryId) {
     } = params;
 
     // Sanitize sortBy to prevent SQL injection
-    const allowedSortColumns = ['category_id', 'category_name', 'created_at', 'display_order', 'is_active', 'slug'];
+    const allowedSortColumns = ['category_id', 'category_name', 'created_at', 'display_order', 'is_active'];
     const sanitizedSortBy = allowedSortColumns.includes(sortBy) ? sortBy : 'display_order';
     const sanitizedSortOrder = sortOrder.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
 
@@ -218,7 +212,6 @@ async delete(categoryId) {
               JSON_OBJECT(
                 'categoryId', child.category_id,
                 'categoryName', child.category_name,
-                'slug', child.slug,
                 'imageUrl', child.image_url,
                 'isActive', child.is_active
               )
@@ -295,7 +288,6 @@ async delete(categoryId) {
           category_id,
           category_name,
           parent_category_id as parent_id,
-          slug,
           image_url,
           display_order,
           is_active,
@@ -309,7 +301,6 @@ async delete(categoryId) {
           c.category_id,
           c.category_name,
           c.parent_category_id as parent_id,
-          c.slug,
           c.image_url,
           c.display_order,
           c.is_active,
@@ -378,8 +369,7 @@ async delete(categoryId) {
       `SELECT 
         category_id,
         category_name,
-        parent_category_id,
-        slug
+        parent_category_id
       FROM categories
       WHERE is_active = 1
       ORDER BY display_order ASC, category_name ASC`
@@ -392,7 +382,7 @@ async delete(categoryId) {
     const [attributes] = await db.query(
       `SELECT a.attribute_id, a.attribute_name
       FROM attributes a
-      INNER JOIN attribute_categories ac ON a.attribute_id = ac.attribute_id
+      INNER JOIN attributes_categories ac ON a.attribute_id = ac.attribute_id
       WHERE ac.category_id = ?`,
       [categoryId]
     );
@@ -405,7 +395,7 @@ async delete(categoryId) {
 
     const values = attributeIds.map(attributeId => [categoryId, attributeId]);
     await db.query(
-      `INSERT IGNORE INTO attribute_categories (category_id, attribute_id) VALUES ?`,
+      `INSERT IGNORE INTO attributes_categories (category_id, attribute_id) VALUES ?`,
       [values]
     );
   }
@@ -413,7 +403,7 @@ async delete(categoryId) {
   // Remove an attribute from category
   async removeAttribute(categoryId, attributeId) {
     const [result] = await db.query(
-      `DELETE FROM attribute_categories WHERE category_id = ? AND attribute_id = ?`,
+      `DELETE FROM attributes_categories WHERE category_id = ? AND attribute_id = ?`,
       [categoryId, attributeId]
     );
     return result.affectedRows > 0;
@@ -423,7 +413,7 @@ async delete(categoryId) {
   async updateAttributes(categoryId, attributeIds) {
     // Delete existing relationships
     await db.query(
-      `DELETE FROM attribute_categories WHERE category_id = ?`,
+      `DELETE FROM attributes_categories WHERE category_id = ?`,
       [categoryId]
     );
 

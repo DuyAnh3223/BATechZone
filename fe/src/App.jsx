@@ -31,6 +31,8 @@ import AdminOrder from './pages/admin/AdminOrder';
 import AdminNotification from './pages/admin/AdminNotification';
 import AdminBuild from './pages/admin/AdminBuild';
 import AdminCategoryPage from './pages/admin/CategoryPage/AdminCategoryPage';
+import CategoryPage from './pages/admin/CategoryManagement/CategoryPage';
+import AttributePage from './pages/admin/CategoryManagement/Attributes&ValuesManagement/AttributePage';
 import AdminPost from './pages/admin/AdminBlog';
 import AdminPostDetail from './pages/admin/AdminBlogDetail';
 import AdminWishlist from './pages/admin/AdminWishlist';
@@ -48,6 +50,7 @@ import InstallmentPendingPage from './pages/user/InstallmentPage/InstallmentPend
 import PaymentSuccess from './pages/user/PaymentSuccess';
 import PaymentCancel from './pages/user/PaymentCancel';
 import OrderTracking from './pages/user/OrderTracking';
+import ProductPage from './pages/admin/Product&VariantManagement/ProductPage';
 
 function App() {
   return (
@@ -92,14 +95,15 @@ function App() {
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin" element={<AdminLayout />}>
             <Route path="dashboard" element={<AdminDashboard />} />
-            <Route path="products" element={<AdminProductPage />} />
+            <Route path="products" element={<ProductPage />} />
             <Route path="products/:productId" element={<AdminProductDetail />} />
             <Route path="users" element={<AdminUserPage />} />
             <Route path="users/:userId" element={<AdminUserDetail />} />
             <Route path="coupons" element={<AdminCouponPage />} />
             <Route path="orders" element={<AdminOrder />} />
             <Route path="notifications" element={<AdminNotification />} />
-            <Route path="categories" element={<AdminCategoryPage />} />
+            <Route path="categories" element={<CategoryPage />} />
+            <Route path="categories/:categoryId/attributes" element={<AttributePage />} />
             <Route path="posts" element={<AdminPost />} />
             <Route path="posts/:postId" element={<AdminPostDetail />} />
             <Route path="installments" element={<AdminInstallmentPage />} />

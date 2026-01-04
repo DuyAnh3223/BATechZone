@@ -165,5 +165,115 @@ export const useAttributeStore = create((set, get) => ({
         total: 0,
         loading: false, 
         error: null 
-    })
+    }),
+
+    // Fetch attributes by category
+    fetchAttributesByCategory: async (categoryId) => {
+        set({ loading: true, error: null });
+        try {
+            const response = await attributeService.getAttributesByCategory(categoryId);
+            // Handle new API response structure
+            const attributesData = response.success ? response.data.attributes : (response.data || response || []);
+            set({ 
+                attributes: attributesData, 
+                loading: false 
+            });
+            return response;
+        } catch (error) {
+            const message = error.response?.data?.message || 'Không thể tải thuộc tính của danh mục';
+            set({ error: message, loading: false });
+            toast.error(message);
+            throw error;
+        }
+    },
+
+    // Create attribute for category
+    createAttributeForCategory: async (categoryId, attributeData) => {
+        set({ loading: true, error: null });
+        try {
+            const response = await attributeService.createAttributeForCategory(categoryId, attributeData);
+            // Refresh attributes for this category
+            await get().fetchAttributesByCategory(categoryId);
+            set({ loading: false });
+            return response;
+        } catch (error) {
+            const message = error.response?.data?.message || 'Có lỗi xảy ra khi thêm thuộc tính';
+            set({ error: message, loading: false });
+            toast.error(message);
+            throw error;
+        }
+    },
+
+    // Update attribute category (e.g., is_variant_attribute)
+    // Now requires categoryId, attributeId, and data
+    updateAttributeCategory: async (categoryId, attributeId, data) => {
+        set({ loading: true, error: null });
+        try {
+            const response = await attributeService.updateAttributeCategory(categoryId, attributeId, data);
+            // Refresh attributes for this category
+            await get().fetchAttributesByCategory(categoryId);
+            set({ loading: false });
+            return response;
+        } catch (error) {
+            const message = error.response?.data?.message || 'Có lỗi xảy ra khi cập nhật thuộc tính';
+            set({ error: message, loading: false });
+            toast.error(message);
+            throw error;
+        }
+    },
+
+    // Remove attribute from category
+    removeAttributeFromCategory: async (categoryId, attributeId) => {
+        set({ loading: true, error: null });
+        try {
+            const response = await attributeService.removeAttributeFromCategory(categoryId, attributeId);
+            // Refresh attributes for this category
+            await get().fetchAttributesByCategory(categoryId);
+            set({ loading: false });
+            return response;
+        } catch (error) {
+            const message = error.response?.data?.message || 'Có lỗi xảy ra khi xóa thuộc tính';
+            set({ error: message, loading: false });
+            toast.error(message);
+            throw error;
+        }
+    },
+
+    // Fetch attribute values for a category attribute
+    fetchAttributeValues: async (categoryId, attributeId) => {
+        try {
+            const response = await attributeService.getAttributeValues(categoryId, attributeId);
+            // Handle new response structure
+            const valuesData = response.success ? response.data.values : (response.data || response || []);
+            return valuesData;
+        } catch (error) {
+            const message = error.response?.data?.message || 'Không thể tải giá trị thuộc tính';
+            toast.error(message);
+            throw error;
+        }
+    },
+
+    // Add attribute value
+    addAttributeValue: async (categoryId, attributeId, valueData) => {
+        try {
+            const response = await attributeService.addAttributeValue(categoryId, attributeId, valueData);
+            return response;
+        } catch (error) {
+            const message = error.response?.data?.message || 'Có lỗi xảy ra khi thêm giá trị';
+            toast.error(message);
+            throw error;
+        }
+    },
+
+    // Remove attribute value
+    removeAttributeValue: async (cavId) => {
+        try {
+            const response = await attributeService.removeAttributeValue(cavId);
+            return response;
+        } catch (error) {
+            const message = error.response?.data?.message || 'Có lỗi xảy ra khi xóa giá trị';
+            toast.error(message);
+            throw error;
+        }
+    }
 }));

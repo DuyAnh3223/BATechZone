@@ -4,23 +4,17 @@ import { categoryService } from '@/services/categoryService';
 
 export const useCategoryStore = create((set, get) => ({
     categories: [],
-    parentCategories: [],
-    categoryTree: [],
     currentCategory: null,
-    pagination: null,
-    total: 0,
     loading: false,
     error: null,
 
-    // Lấy danh sách categories
-    fetchCategories: async (params = {}) => {
+    // Lấy tất cả danh mục
+    fetchCategories: async () => {
         set({ loading: true, error: null });
         try {
-            const response = await categoryService.listCategories(params);
+            const response = await categoryService.getAllCategories();
             set({ 
                 categories: response.data || [], 
-                pagination: response.pagination || null,
-                total: response.pagination?.total || 0,
                 loading: false 
             });
             return response;
@@ -32,11 +26,11 @@ export const useCategoryStore = create((set, get) => ({
         }
     },
 
-    // Lấy category theo ID
+    // Lấy danh mục theo ID
     fetchCategory: async (categoryId) => {
         set({ loading: true, error: null });
         try {
-            const response = await categoryService.getCategory(categoryId);
+            const response = await categoryService.getCategoryById(categoryId);
             set({ 
                 currentCategory: response.data || response, 
                 loading: false 
@@ -50,41 +44,12 @@ export const useCategoryStore = create((set, get) => ({
         }
     },
 
-    // Lấy danh sách categories đơn giản (cho parent categories)
-    fetchSimpleCategories: async () => {
-        try {
-            const response = await categoryService.getSimpleCategories();
-            set({ parentCategories: response.data || [] });
-            return response;
-        } catch (error) {
-            console.error('Error loading parent categories:', error);
-            set({ parentCategories: [] });
-            return { data: [] };
-        }
-    },
-
-    // Lấy category tree
-    fetchCategoryTree: async () => {
-        try {
-            const response = await categoryService.getCategoryTree();
-            // Handle different response formats
-            const tree = Array.isArray(response) ? response : (response?.data || response || []);
-            // Category tree fetched successfully
-            set({ categoryTree: tree });
-            return tree;
-        } catch (error) {
-            console.error('Error loading category tree:', error);
-            console.error('Error details:', error.response?.data);
-            set({ categoryTree: [] });
-            return [];
-        }
-    },
-
-    // Tạo category mới
-    createCategory: async (data) => {
+    // Tạo danh mục mới
+    createCategory: async (data, imageFile = null) => {
         set({ loading: true, error: null });
         try {
-            const response = await categoryService.createCategory(data);
+            const response = await categoryService.createCategory(data, imageFile);
+            toast.success('Tạo danh mục thành công!');
             set({ loading: false });
             return response;
         } catch (error) {
@@ -95,15 +60,16 @@ export const useCategoryStore = create((set, get) => ({
         }
     },
 
-    // Cập nhật category
-    updateCategory: async (categoryId, data) => {
+    // Cập nhật danh mục
+    updateCategory: async (categoryId, data, imageFile = null) => {
         set({ loading: true, error: null });
         try {
-            const response = await categoryService.updateCategory(categoryId, data);
+            const response = await categoryService.updateCategory(categoryId, data, imageFile);
+            toast.success('Cập nhật danh mục thành công!');
             // Cập nhật category trong danh sách nếu có
             set((state) => ({
                 categories: state.categories.map(cat =>
-                    cat.category_id === parseInt(categoryId) 
+                    cat.id === parseInt(categoryId) 
                         ? (response.data || cat) 
                         : cat
                 ),
@@ -119,44 +85,19 @@ export const useCategoryStore = create((set, get) => ({
         }
     },
 
-    // Deactivate category (soft delete)
-    deactivateCategory: async (categoryId) => {
-        set({ loading: true, error: null });
-        try {
-            const response = await categoryService.updateCategory(categoryId, { is_active: false });
-            
-            // Update local state to reflect the deactivation
-            set((state) => ({
-                categories: state.categories.map(cat =>
-                    parseInt(cat.category_id) === parseInt(categoryId)
-                        ? { ...cat, is_active: false }
-                        : cat
-                ),
-                loading: false
-            }));
-            return response;
-        } catch (error) {
-            const message = error.response?.data?.message || 'Có lỗi xảy ra khi vô hiệu hóa danh mục';
-            set({ error: message, loading: false });
-            toast.error(message);
-            throw error;
-        }
-    },
-
-    // Xóa category
+    // Xóa danh mục
     deleteCategory: async (categoryId) => {
         set({ loading: true, error: null });
         try {
             const idToDelete = parseInt(categoryId);
             const response = await categoryService.deleteCategory(categoryId);
+            toast.success('Xóa danh mục thành công!');
             // Cập nhật local state - remove category khỏi danh sách
             set((state) => ({
                 categories: state.categories.filter(cat => {
-                    // So sánh cả number và string để đảm bảo match chính xác
-                    const catId = parseInt(cat.category_id);
+                    const catId = parseInt(cat.id || cat.category_id);
                     return catId !== idToDelete;
                 }),
-                total: Math.max(0, (state.total || 0) - 1),
                 loading: false
             }));
             return response;
@@ -168,11 +109,13 @@ export const useCategoryStore = create((set, get) => ({
         }
     },
 
-    // Lấy attributes của category
+    // ========== QUẢN LÝ THUỘC TÍNH ==========
+
+    // Lấy danh sách thuộc tính của danh mục
     fetchCategoryAttributes: async (categoryId) => {
         set({ loading: true, error: null });
         try {
-            const response = await categoryService.getCategoryAttributes(categoryId);
+            const response = await categoryService.getAttributesByCategory(categoryId);
             set({ loading: false });
             return response;
         } catch (error) {
@@ -183,37 +126,29 @@ export const useCategoryStore = create((set, get) => ({
         }
     },
 
-    // Cập nhật attributes cho category
-    updateCategoryAttributes: async (categoryId, attributeIds) => {
+    // Thêm thuộc tính mới cho danh mục
+    createAttributeForCategory: async (categoryId, attributeName, isVariantAttribute = 0) => {
         set({ loading: true, error: null });
         try {
-            const response = await categoryService.updateCategoryAttributes(categoryId, attributeIds);
-            toast.success('Cập nhật thuộc tính thành công!');
+            const response = await categoryService.createAttributeForCategory(categoryId, attributeName, isVariantAttribute);
+            toast.success('Thêm thuộc tính thành công!');
             set({ loading: false });
-            // Refresh current category if it's the one being updated
-            if (get().currentCategory?.category_id === categoryId) {
-                await get().fetchCategory(categoryId);
-            }
             return response;
         } catch (error) {
-            const message = error.response?.data?.message || 'Có lỗi xảy ra khi cập nhật thuộc tính';
+            const message = error.response?.data?.message || 'Có lỗi xảy ra khi thêm thuộc tính';
             set({ error: message, loading: false });
             toast.error(message);
             throw error;
         }
     },
 
-    // Xóa attribute khỏi category
-    removeCategoryAttribute: async (categoryId, attributeId) => {
+    // Xóa thuộc tính khỏi danh mục
+    deleteAttributeForCategory: async (categoryId, attributeId) => {
         set({ loading: true, error: null });
         try {
-            const response = await categoryService.removeCategoryAttribute(categoryId, attributeId);
-            toast.success('Xóa thuộc tính khỏi danh mục thành công!');
+            const response = await categoryService.deleteAttributeForCategory(categoryId, attributeId);
+            toast.success('Xóa thuộc tính thành công!');
             set({ loading: false });
-            // Refresh current category if it's the one being updated
-            if (get().currentCategory?.category_id === categoryId) {
-                await get().fetchCategory(categoryId);
-            }
             return response;
         } catch (error) {
             const message = error.response?.data?.message || 'Có lỗi xảy ra khi xóa thuộc tính';
@@ -223,31 +158,62 @@ export const useCategoryStore = create((set, get) => ({
         }
     },
 
-    // Upload ảnh category
-    uploadCategoryImage: async (file) => {
+    // Cập nhật isVariant cho thuộc tính
+    updateAttributeIsVariant: async (categoryId, attributeId, isVariant) => {
+        try {
+            const response = await categoryService.updateAttributeIsVariant(categoryId, attributeId, isVariant);
+            toast.success(`Đã ${isVariant === 1 ? 'bật' : 'tắt'} thuộc tính biến thể`);
+            return response;
+        } catch (error) {
+            const message = error.response?.data?.message || 'Có lỗi xảy ra khi cập nhật thuộc tính';
+            toast.error(message);
+            throw error;
+        }
+    },
+
+    // ========== QUẢN LÝ GIÁ TRỊ THUỘC TÍNH ==========
+
+    // Lấy giá trị thuộc tính
+    fetchAttributeValues: async (categoryId, attributeId) => {
         set({ loading: true, error: null });
         try {
-            const response = await categoryService.uploadCategoryImage(file);
-            toast.success('Upload ảnh thành công!');
+            const response = await categoryService.getAttributeValuesForCategory(categoryId, attributeId);
             set({ loading: false });
             return response;
         } catch (error) {
-            const message = error.response?.data?.message || 'Có lỗi xảy ra khi upload ảnh';
+            const message = error.response?.data?.message || 'Không thể tải giá trị thuộc tính';
             set({ error: message, loading: false });
             toast.error(message);
             throw error;
         }
     },
 
-    deleteCategoryImage: async (imageUrl) => {
+    // Thêm giá trị thuộc tính mới
+    createAttributeValueForCategory: async (categoryId, attributeId, valueName) => {
         set({ loading: true, error: null });
         try {
-            const response = await categoryService.deleteCategoryImage(imageUrl);
-            toast.success('Xóa ảnh thành công!');
+            const response = await categoryService.createAttributeValueForCategory(categoryId, attributeId, valueName);
+            toast.success('Thêm giá trị thuộc tính thành công!');
             set({ loading: false });
             return response;
         } catch (error) {
-            const message = error.response?.data?.message || 'Có lỗi xảy ra khi xóa ảnh';
+            const message = error.response?.data?.message || 'Có lỗi xảy ra khi thêm giá trị';
+            set({ error: message, loading: false });
+            toast.error(message);
+            throw error;
+        }
+    },
+
+    // Xóa giá trị thuộc tính
+    deleteAttributeValueForCategory: async (categoryId, attributeId, valueId) => {
+        set({ loading: true, error: null });
+        try {
+            const response = await categoryService.deleteAttributeValueForCategory(categoryId, attributeId, valueId);
+            toast.success('Xóa giá trị thuộc tính thành công!');
+            set({ loading: false });
+            return response;
+        } catch (error) {
+            const message = error.response?.data?.message || 'Có lỗi xảy ra khi xóa giá trị';
             set({ error: message, loading: false });
             toast.error(message);
             throw error;
@@ -260,10 +226,7 @@ export const useCategoryStore = create((set, get) => ({
     // Reset state
     reset: () => set({ 
         categories: [], 
-        parentCategories: [],
-        categoryTree: [],
         currentCategory: null,
-        total: 0,
         loading: false, 
         error: null 
     })

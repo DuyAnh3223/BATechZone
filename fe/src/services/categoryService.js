@@ -1,48 +1,75 @@
 ﻿import api, { adminApi } from '@/lib/axios';
 
 export const categoryService = {
-    // Láº¥y danh sÃ¡ch categories (public - used by users to browse)
-    listCategories: async (params = {}) => {
+    // ============ BASIC CRUD ============
+    
+    // Lấy tất cả danh mục
+    getAllCategories: async () => {
         const response = await api.get('/categories', { 
-            params,
             withCredentials: true 
         });
         return response.data;
     },
 
-    // Láº¥y category theo ID (public - used by users)
-    getCategory: async (categoryId) => {
+    // Lấy danh mục theo ID
+    getCategoryById: async (categoryId) => {
         const response = await api.get(`/categories/${categoryId}`, { 
             withCredentials: true 
         });
         return response.data;
     },
 
-    // Láº¥y danh sÃ¡ch categories Ä'Æ¡n giáº£n (public - used by users for navigation)
-    getSimpleCategories: async () => {
-        const response = await api.get('/categories/simple', { 
+    // Tạo danh mục mới (có upload ảnh)
+    createCategory: async (data, imageFile = null) => {
+        const formData = new FormData();
+        
+        // Append category data
+        Object.keys(data).forEach(key => {
+            if (data[key] !== null && data[key] !== undefined) {
+                formData.append(key, data[key]);
+            }
+        });
+        
+        // Append image if provided
+        if (imageFile) {
+            formData.append('image', imageFile);
+        }
+        
+        const response = await adminApi.post('/categories', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            },
             withCredentials: true 
         });
         return response.data;
     },
 
-    // Táº¡o category má»›i
-    createCategory: async (data) => {
-        const response = await adminApi.post('/categories', data, { 
+    // Cập nhật danh mục (có upload ảnh)
+    updateCategory: async (categoryId, data, imageFile = null) => {
+        const formData = new FormData();
+        
+        // Append category data
+        Object.keys(data).forEach(key => {
+            if (data[key] !== null && data[key] !== undefined) {
+                formData.append(key, data[key]);
+            }
+        });
+        
+        // Append image if provided
+        if (imageFile) {
+            formData.append('image', imageFile);
+        }
+        
+        const response = await adminApi.put(`/categories/${categoryId}`, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            },
             withCredentials: true 
         });
         return response.data;
     },
 
-    // Cáº­p nháº­t category
-    updateCategory: async (categoryId, data) => {
-        const response = await adminApi.put(`/categories/${categoryId}`, data, { 
-            withCredentials: true 
-        });
-        return response.data;
-    },
-
-    // XÃ³a category
+    // Xóa danh mục
     deleteCategory: async (categoryId) => {
         const response = await adminApi.delete(`/categories/${categoryId}`, { 
             withCredentials: true 
@@ -50,62 +77,68 @@ export const categoryService = {
         return response.data;
     },
 
-    // Láº¥y category tree (public - used for navigation)
-    getCategoryTree: async () => {
-        const response = await api.get('/categories/tree', { 
-            withCredentials: true 
-        });
-        // Handle both formats: { success: true, data: [...] } or [...]
-        if (response.data?.success && response.data?.data) {
-            return response.data.data;
-        }
-        return response.data || [];
-    },
-    // Láº¥y attributes cá»§a category
-    getCategoryAttributes: async (categoryId) => {
+    // ============ QUẢN LÝ THUỘC TÍNH ============
+
+    // Lấy danh sách thuộc tính của danh mục
+    getAttributesByCategory: async (categoryId) => {
         const response = await adminApi.get(`/categories/${categoryId}/attributes`, {
             withCredentials: true
         });
         return response.data;
     },
 
-    // Cáº­p nháº­t attributes cho category
-    updateCategoryAttributes: async (categoryId, attributeIds) => {
-        const response = await adminApi.put(`/categories/${categoryId}/attributes`, {
-            attribute_ids: attributeIds
+    // Thêm thuộc tính mới cho danh mục
+    createAttributeForCategory: async (categoryId, attributeName, isVariantAttribute = 0) => {
+        const response = await adminApi.post(`/categories/${categoryId}/attributes`, {
+            attribute_name: attributeName,
+            is_variant_attribute: isVariantAttribute
         }, {
             withCredentials: true
         });
         return response.data;
     },
 
-    // XÃ³a má»™t attribute khá»i category
-    removeCategoryAttribute: async (categoryId, attributeId) => {
+    // Xóa thuộc tính khỏi danh mục
+    deleteAttributeForCategory: async (categoryId, attributeId) => {
         const response = await adminApi.delete(`/categories/${categoryId}/attributes/${attributeId}`, {
             withCredentials: true
         });
         return response.data;
     },
 
-    // Upload áº£nh category
-    uploadCategoryImage: async (file) => {
-        const formData = new FormData();
-        formData.append('image', file);
-        
-        const response = await adminApi.post('/categories/upload-image', formData, {
-            headers: {
-                'Content-Type': 'multipart/form-data'
-            },
+    // Cập nhật isVariant cho thuộc tính
+    updateAttributeIsVariant: async (categoryId, attributeId, isVariant) => {
+        const response = await adminApi.put(`/categories/${categoryId}/attributes/${attributeId}/variant`, {
+            is_variant_attribute: isVariant
+        }, {
             withCredentials: true
         });
         return response.data;
     },
 
-    // XÃ³a áº£nh category
-    deleteCategoryImage: async (imageUrl) => {
-        const response = await adminApi.post('/categories/delete-image', {
-            imageUrl
+    // ============ QUẢN LÝ GIÁ TRỊ THUỘC TÍNH ============
+
+    // Lấy giá trị thuộc tính
+    getAttributeValuesForCategory: async (categoryId, attributeId) => {
+        const response = await adminApi.get(`/categories/${categoryId}/attributes/${attributeId}/values`, {
+            withCredentials: true
+        });
+        return response.data;
+    },
+
+    // Thêm giá trị thuộc tính mới
+    createAttributeValueForCategory: async (categoryId, attributeId, valueName) => {
+        const response = await adminApi.post(`/categories/${categoryId}/attributes/${attributeId}/values`, {
+            value_name: valueName
         }, {
+            withCredentials: true
+        });
+        return response.data;
+    },
+
+    // Xóa giá trị thuộc tính
+    deleteAttributeValueForCategory: async (categoryId, attributeId, valueId) => {
+        const response = await adminApi.delete(`/categories/${categoryId}/attributes/${attributeId}/values/${valueId}`, {
             withCredentials: true
         });
         return response.data;
