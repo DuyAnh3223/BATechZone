@@ -758,17 +758,26 @@ const BuildPC = () => {
 
     try {
       setLoading(true);
-      const response = await productService.getProductsForBuildPC(categoryId);
+      const response = await productService.getProductsWithAttributes({ category_id: categoryId, is_active: 1 });
       
       if (response.success && response.data) {
-        // Transform API data to match mock format - SHOW ALL VARIANTS
+        // Transform API data to match mock format - SHOW ALL VARIANTS with ATTRIBUTES
         const transformedProducts = [];
         
         for (const product of response.data) {
           // Nếu có variants, tạo entry cho mỗi variant
           if (product.variants?.length > 0) {
             for (const variant of product.variants) {
-              const attrs = variant.attributes || {};
+              // Build attributes object for display from variant or product
+              const attributesArray = variant.attribute_values?.length > 0 
+                ? variant.attribute_values 
+                : product.attributes || [];
+              
+              const attrs = {};
+              attributesArray.forEach(attr => {
+                attrs[attr.attribute_name] = attr.value_name;
+              });
+              
               const brand = attrs['Hãng'] || attrs['Nhà sản xuất'] || attrs['Thương hiệu'] || 'N/A';
               
               // Lấy hình ảnh của variant từ variant images
@@ -804,11 +813,18 @@ const BuildPC = () => {
                 image: imageUrl,
                 description: product.description || '',
                 highlights: [],
-                attributes: attrs,
+                attributes: attrs, // Object for display
+                attributesRaw: attributesArray, // Raw array for filtering
               });
             }
           } else {
             // Nếu không có variants, dùng thông tin product
+            const attributesArray = product.attributes || [];
+            const attributesObj = {};
+            attributesArray.forEach(attr => {
+              attributesObj[attr.attribute_name] = attr.value_name;
+            });
+            
             let imageUrl = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="80" height="80"%3E%3Crect width="80" height="80" fill="%23ddd"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%23999" font-family="Arial" font-size="14"%3ENo Image%3C/text%3E%3C/svg%3E';
             
             if (product.img_path) {
@@ -827,6 +843,8 @@ const BuildPC = () => {
               image: imageUrl,
               description: product.description || '',
               highlights: [],
+              attributes: attributesObj,
+              attributesRaw: attributesArray, // Raw array for filtering
             });
           }
         }
@@ -1123,27 +1141,29 @@ const BuildPC = () => {
       items = items.filter((item) => brandFilters.includes(item.brand));
     }
 
-    // Filter by dynamic attributes
+    // Filter by dynamic attributes (giống ProductList.jsx)
     if (Object.keys(attributeFilters).length > 0) {
       items = items.filter((item) => {
-        return Object.entries(attributeFilters).every(([attributeId, valueIds]) => {
-          if (!valueIds || valueIds.length === 0) return true;
-          
-          // Find attribute info from filterOptions
-          const attribute = filterOptions?.attributes?.find(a => String(a.attribute_id) === String(attributeId));
-          if (!attribute) return false;
-          
-          // Get the attribute value name from item
-          const itemValueName = item.attributes?.[attribute.attribute_name];
-          if (!itemValueName) return false;
-          
-          // Check if item's value matches any of the selected value IDs
-          const matchingValue = attribute.values.find(v => 
-            valueIds.includes(v.attribute_value_id) && v.value_name === itemValueName
-          );
-          
-          return !!matchingValue;
+        const itemAttributes = item.attributesRaw || [];
+        
+        if (itemAttributes.length === 0) {
+          return false;
+        }
+        
+        // Check if item satisfies all selected attribute filters
+        const matchesAllFilters = Object.entries(attributeFilters).every(([attributeId, selectedValueIds]) => {
+          return selectedValueIds.some(selectedValueId => {
+            return itemAttributes.some(attr => {
+              const attrId = attr.attribute_id;
+              const attrValueId = attr.attribute_value_id;
+              const attributeMatches = String(attrId) === String(attributeId);
+              const valueMatches = String(attrValueId) === String(selectedValueId);
+              return attributeMatches && valueMatches;
+            });
+          });
         });
+        
+        return matchesAllFilters;
       });
     }
 
@@ -1564,7 +1584,7 @@ const BuildPC = () => {
                                 ))}
                               </div>
                               <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-emerald-600">
-                                <span>{item.stock > 0 ? "Còn" : "Liên hệ"}</span>
+                                <span>{item.stock > 0 ? "Còn hàng" : "Liên hệ"}</span>
                                 {item.warranty && <span>BH: {item.warranty}</span>}
                               </div>
                             </div>

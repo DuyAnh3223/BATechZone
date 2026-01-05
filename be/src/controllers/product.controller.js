@@ -387,6 +387,43 @@ async getProductsForBuildPC(req, res) {
         });
     }
 };
+
+/**
+ * GET /products/with-attributes
+ * Lấy products kèm đầy đủ attributes và values (cho filtering)
+ */
+async getProductsWithAttributes(req, res) {
+    try {
+        const filter = {
+            category_id: req.query.category_id,
+            is_active: req.query.is_active !== undefined ? parseInt(req.query.is_active) : undefined,
+            keyword: req.query.keyword || req.query.search,
+            is_featured: req.query.is_featured !== undefined ? parseInt(req.query.is_featured) : undefined
+        };
+
+        // Remove undefined values
+        Object.keys(filter).forEach(key => {
+            if (filter[key] === undefined) {
+                delete filter[key];
+            }
+        });
+
+        const products = await ProductService.getProductsWithAttributes(filter);
+
+        res.json({
+            success: true,
+            data: products,
+            total: products.length
+        });
+    } catch (error) {
+        console.error('[ProductController:getProductsWithAttributes]', error);
+        res.status(500).json({
+            success: false,
+            message: 'Lỗi khi lấy danh sách sản phẩm với attributes',
+            error: error.message
+        });
+    }
+};
 }
 
 export default new ProductController();

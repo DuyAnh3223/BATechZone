@@ -81,7 +81,7 @@ export const categoryService = {
 
     // Lấy danh sách thuộc tính của danh mục
     getAttributesByCategory: async (categoryId) => {
-        const response = await adminApi.get(`/categories/${categoryId}/attributes`, {
+        const response = await api.get(`/categories/${categoryId}/attributes`, {
             withCredentials: true
         });
         return response.data;
@@ -120,7 +120,7 @@ export const categoryService = {
 
     // Lấy giá trị thuộc tính
     getAttributeValuesForCategory: async (categoryId, attributeId) => {
-        const response = await adminApi.get(`/categories/${categoryId}/attributes/${attributeId}/values`, {
+        const response = await api.get(`/categories/${categoryId}/attributes/${attributeId}/values`, {
             withCredentials: true
         });
         return response.data;

@@ -381,6 +381,20 @@ class ProductService {
         }
     }
 
+    /**
+     * Lấy products với đầy đủ attributes cho filtering
+     */
+    async getProductsWithAttributes(filter = {})
+    {
+        try {
+            const products = await ProductDAO.getProductsWithAttributes(filter);
+            return products;
+        } catch (error) {
+            console.error("[ProductService:getProductsWithAttributes]", error);
+            throw error;
+        }
+    }
+
 }
 
 export default new ProductService();

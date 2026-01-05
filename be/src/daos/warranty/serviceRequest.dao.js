@@ -139,7 +139,7 @@ class ServiceRequestDAO {
                 vs.warranty_id,
                 p.product_name,
                 pv.sku,
-                w.period as warranty_period,
+                w.warranty_period as warranty_period,
                 w.start_date as warranty_start_date,
                 w.end_date as warranty_end_date,
                 w.created_at as purchase_date,

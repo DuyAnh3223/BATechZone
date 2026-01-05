@@ -34,6 +34,31 @@ export const useProductStore = create((set, get) => ({
         }
     },
 
+    // Lấy products kèm đầy đủ attributes (cho filtering)
+    fetchProductsWithAttributes: async (params = {}) => {
+        set({ loading: true, error: null });
+        try {
+            const response = await productService.getProductsWithAttributes(params);
+            console.log('✅ Fetched products with attributes:', response);
+            
+            const products = response.data || [];
+            const total = response.total || products.length;
+            
+            set({ 
+                products: products, 
+                pagination: null,
+                total: total,
+                loading: false 
+            });
+            return response;
+        } catch (error) {
+            const message = error.response?.data?.message || 'Không tải được danh sách sản phẩm';
+            set({ error: message, loading: false });
+            toast.error(message);
+            throw error;
+        }
+    },
+
     // Lấy product theo ID
     fetchProduct: async (productId) => {
         set({ loading: true, error: null });

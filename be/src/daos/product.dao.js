@@ -315,6 +315,128 @@ class ProductDAO {
         }
     }
 
+    /**
+     * Lấy products kèm đầy đủ attributes và values (cho filtering)
+     * Bao gồm cả default variant và multiple variants
+     */
+    async getProductsWithAttributes(filter = {})
+    {
+        try {
+            console.log('🔵 getProductsWithAttributes called with filter:', filter);
+            
+            // Build WHERE conditions
+            const conditions = ['p.is_active = 1'];
+            const params = [];
+
+            if (filter.category_id) {
+                conditions.push('p.category_id = ?');
+                params.push(filter.category_id);
+            }
+
+            if (filter.keyword) {
+                conditions.push('(p.product_name LIKE ? OR p.slug LIKE ?)');
+                params.push(`%${filter.keyword}%`, `%${filter.keyword}%`);
+            }
+
+            if (filter.is_featured !== undefined) {
+                conditions.push('p.is_featured = ?');
+                params.push(filter.is_featured);
+            }
+
+            const whereClause = conditions.join(' AND ');
+
+            // Lấy products
+            const productsQuery = `
+                SELECT 
+                    p.product_id,
+                    p.category_id,
+                    p.product_name,
+                    p.slug,
+                    p.description,
+                    p.base_price,
+                    p.img_path,
+                    p.is_featured,
+                    p.is_active,
+                    p.view_count,
+                    p.rating_average,
+                    c.category_name
+                FROM products p
+                LEFT JOIN categories c ON p.category_id = c.category_id
+                WHERE ${whereClause}
+                ORDER BY p.is_featured DESC, p.created_at DESC
+            `;
+            const products = await query(productsQuery, params);
+            
+
+            // Lấy variants và attributes cho mỗi product
+            const productsWithData = await Promise.all(products.map(async (product) => {
+                // 1. Get variants
+                const variantsQuery = `
+                    SELECT 
+                        v.variant_id,
+                        v.product_id,
+                        v.sku,
+                        v.variant_name,
+                        v.price,
+                        v.stock_quantity,
+                        v.is_default,
+                        v.is_active
+                    FROM product_variants v
+                    WHERE v.product_id = ? AND v.is_active = 1
+                    ORDER BY v.is_default DESC, v.variant_name ASC
+                `;
+                const variants = await query(variantsQuery, [product.product_id]);
+
+                // 2. Get product-level attributes (từ products_attribute_values)
+                const productAttributesQuery = `
+                    SELECT 
+                        av.attribute_id,
+                        pav.attribute_value_id,
+                        a.attribute_name,
+                        av.value_name
+                    FROM products_attribute_values pav
+                    JOIN attribute_values av ON pav.attribute_value_id = av.attribute_value_id
+                    JOIN attributes a ON av.attribute_id = a.attribute_id
+                    WHERE pav.product_id = ?
+                `;
+                const productAttributes = await query(productAttributesQuery, [product.product_id]);
+
+                // 3. Get variant attributes cho mỗi variant
+                const variantsWithAttributes = await Promise.all(variants.map(async (variant) => {
+                    const variantAttributesQuery = `
+                        SELECT 
+                            av.attribute_id,
+                            va.attribute_value_id,
+                            a.attribute_name,
+                            av.value_name
+                        FROM variants_attribute_values va
+                        JOIN attribute_values av ON va.attribute_value_id = av.attribute_value_id
+                        JOIN attributes a ON av.attribute_id = a.attribute_id
+                        WHERE va.variant_id = ?
+                    `;
+                    const variantAttributes = await query(variantAttributesQuery, [variant.variant_id]);
+
+                    return {
+                        ...variant,
+                        attribute_values: variantAttributes
+                    };
+                }));
+
+                return {
+                    ...product,
+                    attributes: productAttributes,
+                    attribute_values: productAttributes, // Alias for compatibility
+                    variants: variantsWithAttributes
+                };
+            }));
+
+            return productsWithData;
+        } catch (error) {
+            console.error('[ProductDAO:getProductsWithAttributes]', error);
+            throw error;
+        }
+    }
+
 
 }
 

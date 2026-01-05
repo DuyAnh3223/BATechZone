@@ -50,6 +50,9 @@ const uploadVariantImagesForProduct = multer({
 
 // ============ SPECIAL ROUTES (phải đặt trước dynamic routes) ============
 
+// GET /products/with-attributes - Lấy products với đầy đủ attributes (cho filtering)
+router.get('/with-attributes', ProductController.getProductsWithAttributes);
+
 // GET /products/build-pc - Lấy products cho Build PC
 router.get('/build-pc', ProductController.getProductsForBuildPC);
 

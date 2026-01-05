@@ -66,6 +66,16 @@ export const productService = {
         return response.data;
     },
 
+    // Lấy products với đầy đủ attributes (cho filtering - public, no auth)
+    // Response: { success: true, data: [...products with attributes & variants...], total: number }
+    getProductsWithAttributes: async (params = {}) => {
+        const response = await api.get('/products/with-attributes', {
+            params,
+            withCredentials: true
+        });
+        return response.data;
+    },
+
     // Lấy filter options cho một category (public - no auth)
     // Response: { success: true, data: {priceRange, brands, attributes} }
     getFilterOptions: async (categoryId) => {

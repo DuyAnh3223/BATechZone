@@ -4,8 +4,11 @@ import ProductFilters from "@/components/product/ProductFilters";
 import ProductSortBar from "@/components/product/ProductSortBar";
 import ProductGrid from "@/components/product/ProductGrid";
 import ProductPagination from "@/components/product/ProductPagination";
+import HorizontalAttributeFilters from "@/components/product/HorizontalAttributeFilters";
+import SelectedFiltersChips from "@/components/product/SelectedFiltersChips";
 import { useProductStore } from "@/stores/useProductStore";
 import { useCategoryStore } from "@/stores/useCategoryStore";
+import { categoryService } from "@/services/categoryService";
 import { toast } from "sonner";
 
 const ProductList = () => {
@@ -13,6 +16,11 @@ const ProductList = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { products, loading: productsLoading, total, fetchProducts } = useProductStore();
   const { categories, fetchCategories } = useCategoryStore();
+  
+  // State for category attributes
+  const [categoryAttributes, setCategoryAttributes] = useState([]);
+  const [loadingAttributes, setLoadingAttributes] = useState(false);
+  const [selectedAttributeFilters, setSelectedAttributeFilters] = useState({});
   
   const [filters, setFilters] = useState({
     category: categoryId || searchParams.get('category') || "all",
@@ -46,8 +54,75 @@ const ProductList = () => {
         category: categoryId,
         page: 1, // Reset to first page when category changes
       }));
+      // Reset attribute filters when category changes
+      setSelectedAttributeFilters({});
     }
   }, [categoryId]);
+
+  // Fetch attributes when category changes
+  useEffect(() => {
+    const loadCategoryAttributes = async () => {
+      if (!filters.category || filters.category === "all") {
+        setCategoryAttributes([]);
+        return;
+      }
+
+      setLoadingAttributes(true);
+      try {
+        const response = await categoryService.getAttributesByCategory(filters.category);
+        const attributes = response.data || [];
+        
+        // Fetch values for each attribute
+        const attributesWithValues = await Promise.all(
+          attributes.map(async (attr) => {
+            try {
+              const valuesResponse = await categoryService.getAttributeValuesForCategory(
+                filters.category,
+                attr.id
+              );
+              console.log(`Values response for attribute ${attr.name}:`, valuesResponse);
+              console.log(`Values data:`, valuesResponse.data);
+              
+              const mappedValues = (valuesResponse.data || []).map(val => {
+                console.log('Raw value from API:', val);
+                return {
+                  id: val.id,           // Backend returns 'id', not 'attribute_value_id'
+                  name: val.name        // Backend returns 'name', not 'value_name'
+                };
+              });
+              
+              console.log(`Mapped values for ${attr.name}:`, mappedValues);
+              
+              return {
+                id: attr.id,
+                name: attr.name,
+                isVariant: attr.isVariant,
+                values: mappedValues
+              };
+            } catch (error) {
+              console.error(`Error loading values for attribute ${attr.id}:`, error);
+              return {
+                id: attr.id,
+                name: attr.name,
+                isVariant: attr.isVariant,
+                values: []
+              };
+            }
+          })
+        );
+
+        console.log('Final attributesWithValues:', attributesWithValues);
+        setCategoryAttributes(attributesWithValues);
+      } catch (error) {
+        console.error('Error loading category attributes:', error);
+        setCategoryAttributes([]);
+      } finally {
+        setLoadingAttributes(false);
+      }
+    };
+
+    loadCategoryAttributes();
+  }, [filters.category]);
 
   // Fetch products when filters change
   useEffect(() => {
@@ -67,16 +142,9 @@ const ProductList = () => {
           params.keyword = filters.search;
         }
 
-        // Add price range filter
-        if (filters.priceRange[0] > 0) {
-          params.min_price = filters.priceRange[0];
-        }
-        if (filters.priceRange[1] < 50000000) {
-          params.max_price = filters.priceRange[1];
-        }
-
-        const response = await fetchProducts(params);
-        // New API format: { success: true, data: [...], total: number }
+        // Use new API with attributes
+        const response = await useProductStore.getState().fetchProductsWithAttributes(params);
+        console.log('✅ Loaded products with attributes:', response);
       } catch (error) {
         console.error('Error loading products:', error);
         toast.error('Không thể tải danh sách sản phẩm');
@@ -84,7 +152,7 @@ const ProductList = () => {
     };
 
     loadProducts();
-  }, [filters, fetchProducts]);
+  }, [filters]);
 
   const handleFilterChange = (key, value) => {
     setFilters((prev) => ({
@@ -103,6 +171,49 @@ const ProductList = () => {
     setSearchParams(newSearchParams);
   };
 
+  const handleAttributeValueToggle = (attributeId, valueId) => {
+    console.log('handleAttributeValueToggle called:', { attributeId, valueId, type: typeof valueId });
+    
+    setSelectedAttributeFilters((prev) => {
+      console.log('Previous state:', prev);
+      const current = prev[attributeId] || [];
+      console.log('Current values for attribute:', current);
+      
+      // Ensure consistent type comparison
+      const isSelected = current.some(id => String(id) === String(valueId));
+      console.log('Is selected:', isSelected);
+
+      if (isSelected) {
+        // Remove value
+        const newValues = current.filter(id => String(id) !== String(valueId));
+        console.log('Removing value, new values:', newValues);
+        
+        if (newValues.length === 0) {
+          const { [attributeId]: _, ...rest } = prev;
+          return rest;
+        }
+        return { ...prev, [attributeId]: newValues };
+      } else {
+        // Add value
+        const newState = { ...prev, [attributeId]: [...current, valueId] };
+        console.log('Adding value, new state:', newState);
+        return newState;
+      }
+    });
+
+    // Reset to first page
+    setFilters(prev => ({ ...prev, page: 1 }));
+  };
+
+  const handleRemoveAttributeValue = (attributeId, valueId) => {
+    handleAttributeValueToggle(attributeId, valueId);
+  };
+
+  const handleClearAllAttributeFilters = () => {
+    setSelectedAttributeFilters({});
+    setFilters(prev => ({ ...prev, page: 1 }));
+  };
+
   const handlePageChange = (newPage) => {
     setFilters((prev) => ({
       ...prev,
@@ -113,10 +224,84 @@ const ProductList = () => {
 
   // Client-side pagination since backend returns all products
   const itemsPerPage = 12;
-  const totalPages = Math.ceil((total || 0) / itemsPerPage);
+  
+  // Filter products by selected attributes (client-side)
+  const filteredProducts = products.filter(product => {
+    // If no attribute filters selected, show all products
+    if (Object.keys(selectedAttributeFilters).length === 0) {
+      return true;
+    }
+
+    console.log('=== Filtering product:', product.product_name);
+    console.log('Product attributes:', product.attributes);
+    console.log('Selected filters:', selectedAttributeFilters);
+
+    // Check product-level attributes (from products_attribute_values)
+    const productAttributes = product.attributes || product.attribute_values || [];
+    
+    if (productAttributes.length > 0) {
+      console.log('✅ Using product-level attributes:', productAttributes);
+      // Check if product satisfies all selected attribute filters
+      const matchesAllFilters = Object.entries(selectedAttributeFilters).every(([attributeId, selectedValueIds]) => {
+        return selectedValueIds.some(selectedValueId => {
+          return productAttributes.some(attr => {
+            const attrId = attr.attribute_id;
+            const attrValueId = attr.attribute_value_id;
+            const attributeMatches = String(attrId) === String(attributeId);
+            const valueMatches = String(attrValueId) === String(selectedValueId);
+            console.log(`  Checking: attr ${attrId} == ${attributeId}? ${attributeMatches}, value ${attrValueId} == ${selectedValueId}? ${valueMatches}`);
+            return attributeMatches && valueMatches;
+          });
+        });
+      });
+      
+      console.log('Product matches:', matchesAllFilters ? '✅' : '❌');
+      return matchesAllFilters;
+    }
+
+    // Fallback: check variant attributes
+    if (!product.variants || product.variants.length === 0) {
+      console.log('❌ No variants');
+      return false;
+    }
+
+    const hasMatchingVariant = product.variants.some((variant) => {
+      const variantAttributes = variant.attribute_values || [];
+      
+      if (variantAttributes.length === 0) {
+        return false;
+      }
+      
+      console.log('  Checking variant attributes:', variantAttributes);
+      
+      const matchesAllFilters = Object.entries(selectedAttributeFilters).every(([attributeId, selectedValueIds]) => {
+        return selectedValueIds.some(selectedValueId => {
+          return variantAttributes.some(attr => {
+            const attrId = attr.attribute_id;
+            const attrValueId = attr.attribute_value_id;
+            const attributeMatches = String(attrId) === String(attributeId);
+            const valueMatches = String(attrValueId) === String(selectedValueId);
+            return attributeMatches && valueMatches;
+          });
+        });
+      });
+      
+      return matchesAllFilters;
+    });
+
+    console.log('Result:', hasMatchingVariant ? '✅ SHOW' : '❌ HIDE');
+    return hasMatchingVariant;
+  });
+
+  const totalPages = Math.ceil((filteredProducts.length || 0) / itemsPerPage);
   const startIndex = (filters.page - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const paginatedProducts = products.slice(startIndex, endIndex);
+  const paginatedProducts = filteredProducts.slice(startIndex, endIndex);
+
+  console.log('Products count:', products.length);
+  console.log('Filtered products count:', filteredProducts.length);
+  console.log('Paginated products count:', paginatedProducts.length);
+  console.log('Selected attribute filters:', selectedAttributeFilters);
 
   const handleReset = () => {
     setFilters({
@@ -127,6 +312,7 @@ const ProductList = () => {
       search: "",
       page: 1,
     });
+    setSelectedAttributeFilters({});
     setSearchParams({});
   };
 
@@ -135,22 +321,46 @@ const ProductList = () => {
       <div className="flex gap-6">
         <ProductFilters
           filters={filters}
-          categories={categories}
           onFilterChange={handleFilterChange}
-          onReset={handleReset}
         />
 
         <div className="flex-1">
+          {/* Title: Category Name */}
+          {filters.category && filters.category !== "all" && (
+            <div className="mb-6">
+              <h1 className="text-3xl font-bold">
+                {categories.find(cat => String(cat.id) === String(filters.category))?.name || "Sản phẩm"}
+              </h1>
+            </div>
+          )}
+
+          {/* Selected Filters Chips */}
+          <SelectedFiltersChips
+            selectedAttributeFilters={selectedAttributeFilters}
+            attributes={categoryAttributes}
+            onRemoveValue={handleRemoveAttributeValue}
+            onClearAll={handleClearAllAttributeFilters}
+          />
+
+          {/* Horizontal Attribute Filters */}
+          <HorizontalAttributeFilters
+            attributes={categoryAttributes}
+            selectedAttributeFilters={selectedAttributeFilters}
+            onValueToggle={handleAttributeValueToggle}
+            onApplyFilters={() => setFilters(prev => ({ ...prev, page: 1 }))}
+            onReset={handleClearAllAttributeFilters}
+          />
+          
           <ProductSortBar
             sortValue={filters.sort}
             onSortChange={(value) => handleFilterChange("sort", value)}
             productsCount={paginatedProducts.length}
-            totalCount={total}
+            totalCount={filteredProducts.length}
           />
 
           <ProductGrid
             products={paginatedProducts}
-            loading={productsLoading}
+            loading={productsLoading || loadingAttributes}
           />
 
           {totalPages > 1 && (
