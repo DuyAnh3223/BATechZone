@@ -164,7 +164,8 @@ class Order {
       // Tạo bản ghi payment
       const paymentMethodForPayment = orderData.payment_method || orderData.paymentMethod || 'cod';
       const paymentStatusForPayment = paymentMethodForPayment === 'cod' ? 'paid' : (orderData.payment_status || 'pending');
-      const paymentGateway = paymentMethodForPayment === 'momo' ? 'momo' : null;
+      const paymentGateway = paymentMethodForPayment === 'momo' ? 'momo' : 
+                             paymentMethodForPayment === 'vnpay' ? 'vnpay' : null;
       const paidAt = paymentStatusForPayment === 'paid' ? new Date() : null;
       
       // Tạo transaction_id tự động

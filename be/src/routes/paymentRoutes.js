@@ -3,7 +3,10 @@ import {
   createPaymentLink,
   paymentWebhook,
   checkPaymentStatus,
-  cancelPaymentLink
+  cancelPaymentLink,
+  createVNPayPaymentLink,
+  vnpayWebhook,
+  vnpayReturn
 } from '../controllers/paymentController.js';
 
 const router = express.Router();
@@ -13,6 +16,15 @@ router.post('/create-payment-link', createPaymentLink);
 
 // Webhook từ Momo
 router.post('/momo/webhook', paymentWebhook);
+
+// Tạo payment URL VNPay
+router.post('/create-vnpay-payment', createVNPayPaymentLink);
+
+// Webhook từ VNPay (IPN)
+router.get('/vnpay/webhook', vnpayWebhook);
+
+// Return URL từ VNPay (sau khi thanh toán)
+router.get('/vnpay/return', vnpayReturn);
 
 // Kiểm tra trạng thái thanh toán
 router.get('/status/:orderId', checkPaymentStatus);

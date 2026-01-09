@@ -1,0 +1,31 @@
+🧪 Thông tin thẻ test VNPay (Sandbox):
+Ngân hàng: NCB
+Số thẻ:       9704198526191432198
+Tên chủ thẻ:  NGUYEN VAN A
+Ngày phát hành: 07/15
+Mã OTP:       123456
+
+Hoặc thử ngân hàng khác:
+
+Vietcombank (VCB):
+Số thẻ:       9704060000000001
+Tên chủ thẻ:  NGUYEN VAN A
+Ngày phát hành: 07/15
+Mã OTP:       123456
+
+Techcombank (TCB):
+Số thẻ:       9704000000000018
+Tên chủ thẻ:  NGUYEN VAN A
+Ngày phát hành: 07/15
+Mã OTP:       123456
+
+📋 Các bước test:
+Refresh trang hoặc quay lại checkout
+Chọn VNPay và đặt hàng lại
+Tại trang VNPay:
+Chọn ngân hàng: NCB (hoặc VCB, TCB)
+Nhập số thẻ: 9704198526191432198 (hoặc số khác ở trên)
+Tên: NGUYEN VAN A
+Ngày: 07/15
+OTP: 123456
+Click "Thanh toán"

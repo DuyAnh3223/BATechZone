@@ -46,7 +46,7 @@ import { useOrderStore } from "@/stores/useOrderStore";
 import { couponService } from "@/services/couponService";
 import { toast } from "sonner";
 import { useEffect } from "react";
-import { X, Tag, Wallet } from "lucide-react";
+import { X, Tag, Wallet, CreditCard } from "lucide-react";
 
 const Checkout = () => {
   const navigate = useNavigate();
@@ -333,6 +333,78 @@ const Checkout = () => {
         }
       }
 
+      // Nếu chọn VNPay, tạo payment link
+      if (formData.paymentMethod === 'vnpay') {
+        const amount = calculateTotal();
+        const description = `Thanh toán đơn hàng BATechZone - ${formData.fullName}`;
+        const buyerName = formData.fullName;
+        const buyerEmail = formData.email || `user_${Date.now()}@batechzone.com`;
+        const buyerPhone = formData.phone;
+        const buyerAddress = `${formData.address}, ${formData.district}, ${formData.province}`;
+        
+        // Cập nhật payment_method, payment_status và order_status cho online payment
+        const vnpayOrderData = {
+          ...orderData,
+          payment_method: 'vnpay',
+          payment_status: 'paid', // Thanh toán online thành công = đã thanh toán
+          order_status: 'shipping' // Đã thanh toán online -> Đang giao hàng
+        };
+        
+        // Lưu thông tin order vào localStorage để tạo sau khi thanh toán
+        localStorage.setItem('pending_order', JSON.stringify({
+          orderData: vnpayOrderData,
+          shippingAddress,
+          items
+        }));
+
+        try {
+          const paymentResponse = await fetch('http://localhost:5001/api/payments/create-vnpay-payment', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            credentials: 'include',
+            body: JSON.stringify({
+              amount,
+              description,
+              buyerName,
+              buyerEmail,
+              buyerPhone,
+              buyerAddress
+            })
+          });
+
+          const result = await paymentResponse.json();
+
+          if (result.success && result.data?.paymentUrl) {
+            // Lưu orderId từ VNPay vào vnpayOrderData để dùng làm transaction_id
+            const vnpayOrderDataWithTxn = {
+              ...vnpayOrderData,
+              transaction_id: result.data.orderId // Lấy orderId từ VNPay
+            };
+            
+            // Cập nhật lại localStorage với transaction_id
+            localStorage.setItem('pending_order', JSON.stringify({
+              orderData: vnpayOrderDataWithTxn,
+              shippingAddress,
+              items
+            }));
+            
+            toast.success('Đang chuyển đến trang thanh toán VNPay...');
+            // Chuyển hướng đến trang thanh toán VNPay
+            window.location.href = result.data.paymentUrl;
+            return; // Dừng thực thi
+          } else {
+            throw new Error(result.message || 'Không thể tạo link thanh toán VNPay');
+          }
+        } catch (error) {
+          console.error('VNPay payment error:', error);
+          toast.error(error.message || 'Không thể tạo link thanh toán VNPay');
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
       // Gọi API tạo đơn hàng (chỉ cho COD và các phương thức khác)
       const response = await createOrder({
         orderData,
@@ -592,6 +664,23 @@ const Checkout = () => {
                                     </span>
                                     <span className="text-sm text-gray-500">
                                       Quét mã QR hoặc thanh toán bằng thẻ ATM
+                                    </span>
+                                  </div>
+                                </label>
+                              </div>
+                              <div className="flex items-center space-x-2 border rounded-lg p-4">
+                                <RadioGroupItem value="vnpay" id="vnpay" />
+                                <label
+                                  htmlFor="vnpay"
+                                  className="flex items-center gap-2 cursor-pointer w-full"
+                                >
+                                  <CreditCard className="h-5 w-5 text-blue-600" />
+                                  <div className="flex flex-col">
+                                    <span className="font-medium">
+                                      Thanh toán qua VNPay
+                                    </span>
+                                    <span className="text-sm text-gray-500">
+                                      Thanh toán qua thẻ ATM, thẻ tín dụng, ví điện tử
                                     </span>
                                   </div>
                                 </label>

@@ -7,6 +7,8 @@ import { paymentService } from '@/services/paymentService';
 import { useOrderStore } from '@/stores/useOrderStore';
 import { useCartStore } from '@/stores/useCartStore';
 import { useCartItemStore } from '@/stores/useCartItemStore';
+import { useUserAuthStore } from '@/stores/useUserAuthStore';
+import { userApi } from '@/lib/axios';
 import { toast } from 'sonner';
 
 const PaymentSuccess = () => {
@@ -18,19 +20,62 @@ const PaymentSuccess = () => {
   const { createOrder } = useOrderStore();
   const { cart, clearCart } = useCartStore();
   const { reset: resetCartItems } = useCartItemStore();
+  const { user } = useUserAuthStore();
   const processedRef = useRef(false); // Đánh dấu đã xử lý
 
   useEffect(() => {
-    const processPayment = async () => {
-      // Ngăn chặn chạy 2 lần
-      if (processedRef.current) {
-        return;
-      }
-      processedRef.current = true;
+    // Ngăn chặn xử lý nhiều lần
+    if (processedRef.current) {
+      return;
+    }
 
+    const processPayment = async () => {
       try {
+        // Xác định payment gateway và kiểm tra kết quả thanh toán
+        const vnpResponseCode = searchParams.get('vnp_ResponseCode');
+        const momoResultCode = searchParams.get('resultCode');
+        
+        // Kiểm tra VNPay payment result
+        if (vnpResponseCode) {
+          if (vnpResponseCode !== '00') {
+            // VNPay payment failed or cancelled
+            console.log('[PaymentSuccess] VNPay payment failed or cancelled. Response code:', vnpResponseCode);
+            localStorage.removeItem('pending_installment_payment');
+            localStorage.removeItem('pending_order');
+            setError('Thanh toán bị hủy hoặc thất bại. Vui lòng thử lại.');
+            setLoading(false);
+            return;
+          }
+        }
+        
+        // Kiểm tra Momo payment result
+        if (momoResultCode !== null && momoResultCode !== undefined) {
+          if (momoResultCode !== '0') {
+            // Momo payment failed or cancelled
+            console.log('[PaymentSuccess] Momo payment failed or cancelled. Result code:', momoResultCode);
+            localStorage.removeItem('pending_installment_payment');
+            localStorage.removeItem('pending_order');
+            setError('Thanh toán bị hủy hoặc thất bại. Vui lòng thử lại.');
+            setLoading(false);
+            return;
+          }
+        }
+        
         // Kiểm tra xem có phải thanh toán trả góp không
         const pendingInstallmentStr = localStorage.getItem('pending_installment_payment');
+        
+        // Nếu có installment payment, phải đợi user được authenticate
+        if (pendingInstallmentStr && !user) {
+          console.log('[PaymentSuccess] Waiting for user authentication...');
+          return; // Chưa có user, đợi useEffect chạy lại khi user thay đổi
+        }
+        
+        // Đánh dấu đã bắt đầu xử lý để không chạy lại
+        processedRef.current = true;
+        
+        // Xác định payment gateway từ URL params
+        const paymentGateway = searchParams.get('vnp_TxnRef') ? 'VNPay' : 
+                              searchParams.get('orderId') ? 'Momo' : 'Unknown';
         
         if (pendingInstallmentStr) {
           // Xử lý thanh toán trả góp
@@ -40,53 +85,48 @@ const PaymentSuccess = () => {
           try {
             if (pendingInstallment.type === 'down_payment') {
               // Thanh toán trả trước
-              const response = await fetch(`http://localhost:5001/api/installments/${pendingInstallment.installmentId}/pay-down-payment`, {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json'
-                },
-                credentials: 'include',
-                body: JSON.stringify({
-                  paid_date: new Date().toISOString(),
-                  note: 'Thanh toán trả trước qua Momo'
-                })
+              console.log('[PaymentSuccess] Processing down_payment for installment:', pendingInstallment.installmentId);
+              const response = await userApi.post(`/installments/${pendingInstallment.installmentId}/pay-down-payment`, {
+                paid_date: new Date().toISOString(),
+                note: `Thanh toán trả trước qua ${paymentGateway}`
               });
               
-              if (!response.ok) throw new Error('Thanh toán trả trước thất bại');
+              if (response.status !== 200 && response.status !== 201) {
+                console.error('[PaymentSuccess] Down payment failed:', response.status, response.data);
+                throw new Error(response.data?.message || `Thanh toán trả trước thất bại (${response.status})`);
+              }
               
               toast.success('Thanh toán trả trước thành công!');
               setPaymentInfo({
-                orderCode: `Hợp đồng #${pendingInstallment.installmentId}`,
+                orderCode: pendingInstallment.installmentId,
                 amount: pendingInstallment.amount,
                 type: 'down_payment'
               });
             } else if (pendingInstallment.type === 'installment') {
               // Thanh toán từng kỳ
-              const response = await fetch(`http://localhost:5001/api/installments/payments/${pendingInstallment.paymentId}/pay`, {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json'
-                },
-                credentials: 'include',
-                body: JSON.stringify({
-                  paid_date: new Date().toISOString(),
-                  note: 'Thanh toán qua Momo'
-                })
+              console.log('[PaymentSuccess] Processing installment payment:', pendingInstallment.paymentId);
+              const response = await userApi.post(`/installments/payments/${pendingInstallment.paymentId}/pay`, {
+                paid_date: new Date().toISOString(),
+                note: `Thanh toán qua ${paymentGateway}`
               });
               
-              if (!response.ok) throw new Error('Thanh toán thất bại');
+              if (response.status !== 200 && response.status !== 201) {
+                console.error('[PaymentSuccess] Installment payment failed:', response.status, response.data);
+                throw new Error(response.data?.message || `Thanh toán thất bại (${response.status})`);
+              }
               
               toast.success('Thanh toán kỳ trả góp thành công!');
               setPaymentInfo({
-                orderCode: `Hợp đồng #${pendingInstallment.installmentId}`,
+                orderCode: pendingInstallment.installmentId,
                 amount: pendingInstallment.amount,
                 type: 'installment'
               });
             }
           } catch (err) {
             console.error('Error processing installment payment:', err);
-            setError('Không thể xử lý thanh toán trả góp. Vui lòng liên hệ hỗ trợ.');
-            toast.error('Lỗi khi xử lý thanh toán');
+            const errorMessage = err.message || 'Không thể xử lý thanh toán trả góp';
+            setError(`${errorMessage}. Vui lòng liên hệ hỗ trợ.`);
+            toast.error(errorMessage);
           }
           setLoading(false);
           return;
@@ -143,7 +183,7 @@ const PaymentSuccess = () => {
     };
 
     processPayment();
-  }, []); // Empty dependency array - chỉ chạy 1 lần
+  }, [user]); // Re-run when user changes
 
   if (loading) {
     return (

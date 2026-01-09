@@ -33,6 +33,7 @@ export const translatePaymentMethod = (method) => {
     'credit_card': 'Thẻ tín dụng',
     'e_wallet': 'Ví điện tử (Momo)',
     'momo': 'Ví điện tử (Momo)',
+    'vnpay': 'VNPay',
     'installment': 'Trả góp'
   };
   return map[method] || method;

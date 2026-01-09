@@ -8,7 +8,7 @@ const PaymentMethodSelector = ({
   type = 'installment' // 'installment' or 'down_payment'
 }) => {
   const paymentMethodLabels = {
-    bank_transfer: 'Chuyển khoản',
+    vnpay: 'VNPay',
     e_wallet: 'Ví điện tử',
     cod: 'Tiền mặt'
   };
@@ -29,15 +29,15 @@ const PaymentMethodSelector = ({
       {/* Method Selection */}
       <div className="grid grid-cols-3 gap-3 mb-4">
         <button
-          onClick={() => onChange('bank_transfer')}
+          onClick={() => onChange('vnpay')}
           className={`p-4 border-2 rounded-lg text-center transition-all ${
-            value === 'bank_transfer'
+            value === 'vnpay'
               ? 'border-blue-600 bg-blue-50'
               : 'border-gray-200 hover:border-gray-300'
           }`}
         >
-          <div className="font-medium mb-1">Chuyển khoản</div>
-          <div className="text-xs text-gray-600">Ngân hàng</div>
+          <div className="font-medium mb-1">VNPay</div>
+          <div className="text-xs text-gray-600">Cổng thanh toán</div>
         </button>
         <button
           onClick={() => onChange('e_wallet')}
@@ -48,7 +48,7 @@ const PaymentMethodSelector = ({
           }`}
         >
           <div className="font-medium mb-1">Ví điện tử</div>
-          <div className="text-xs text-gray-600">Momo, ZaloPay</div>
+          <div className="text-xs text-gray-600">Momo</div>
         </button>
         <button
           onClick={() => onChange('cod')}
@@ -63,14 +63,13 @@ const PaymentMethodSelector = ({
         </button>
       </div>
 
-      {/* Bank Transfer Instructions */}
-      {value === 'bank_transfer' && (
+      {/* VNPay Instructions */}
+      {value === 'vnpay' && (
         <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm">
-          <p className="font-medium text-blue-900 mb-2">Thông tin chuyển khoản:</p>
+          <p className="font-medium text-blue-900 mb-2">Thanh toán qua VNPay:</p>
           <div className="space-y-1 text-blue-800">
-            <p>• Ngân hàng: <strong>Vietcombank</strong></p>
-            <p>• STK: <strong>1234567890</strong></p>
-            <p>• Tên TK: <strong>CONG TY TNHH BATECH</strong></p>
+            <p>• Nhấn <strong>Thanh toán</strong> để chuyển đến trang VNPay</p>
+            <p>• Hỗ trợ: <strong>Thẻ ATM, Visa, MasterCard, JCB</strong></p>
             <p>• Nội dung: <strong>{getTransferContent()}</strong></p>
           </div>
         </div>
@@ -81,8 +80,7 @@ const PaymentMethodSelector = ({
         <div className="p-3 bg-purple-50 border border-purple-200 rounded-lg text-sm">
           <p className="font-medium text-purple-900 mb-2">Thanh toán qua ví điện tử:</p>
           <div className="space-y-1 text-purple-800">
-            <p>• Momo: <strong>0123456789</strong></p>
-            <p>• ZaloPay: <strong>0123456789</strong></p>
+            <p>• Nhấn <strong>Thanh toán</strong> để chuyển đến trang Momo</p>
             <p>• Nội dung: <strong>{getTransferContent()}</strong></p>
           </div>
         </div>

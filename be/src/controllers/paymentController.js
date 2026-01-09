@@ -1,5 +1,6 @@
 import { db } from '../libs/db.js';
 import crypto from 'crypto';
+import querystring from 'querystring';
 
 // Momo Payment Configuration
 const MOMO_CONFIG = {
@@ -11,7 +12,17 @@ const MOMO_CONFIG = {
   ipnUrl: process.env.MOMO_IPN_URL || 'http://localhost:5001/api/payments/momo/webhook'
 };
 
+// VNPay Payment Configuration
+const VNPAY_CONFIG = {
+  tmnCode: process.env.VNPAY_TMN_CODE || 'VNPAY_TMN_CODE',
+  hashSecret: process.env.VNPAY_HASH_SECRET || 'VNPAY_HASH_SECRET',
+  url: process.env.VNPAY_URL || 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html',
+  returnUrl: process.env.VNPAY_RETURN_URL || 'http://localhost:3000/payment/success',
+  ipnUrl: process.env.VNPAY_IPN_URL || 'http://localhost:5001/api/payments/vnpay/webhook'
+};
+
 console.log('✅ Momo payment configuration loaded');
+console.log('✅ VNPay payment configuration loaded');
 
 // Tạo signature cho Momo request
 const createMomoSignature = (rawData) => {
@@ -19,6 +30,45 @@ const createMomoSignature = (rawData) => {
     .update(rawData)
     .digest('hex');
 };
+
+// Tạo signature cho VNPay request (SHA512)
+const createVNPaySignature = (data, secretKey) => {
+  return crypto.createHmac('sha512', secretKey)
+    .update(Buffer.from(data, 'utf-8'))
+    .digest('hex');
+};
+
+// Sắp xếp object theo key (cho VNPay) - sửa lại logic
+const sortObject = (obj) => {
+  let sorted = {};
+  let str = [];
+  let key;
+  
+  // Lấy tất cả keys
+  for (key in obj) {
+    if (obj.hasOwnProperty(key)) {
+      str.push(key);
+    }
+  }
+  
+  // Sort keys
+  str.sort();
+  
+  // Tạo object mới với keys đã sort
+  for (key = 0; key < str.length; key++) {
+    sorted[str[key]] = obj[str[key]];
+  }
+  
+  return sorted;
+};
+
+// Convert object to query string với encoding (cho VNPay)
+const toQueryString = (obj) => {
+  return Object.keys(obj)
+    .map(key => `${encodeURIComponent(key)}=${encodeURIComponent(obj[key]).replace(/%20/g, '+')}`)
+    .join('&');
+};
+
 
 // Tạo payment link Momo
 export const createPaymentLink = async (req, res) => {
@@ -287,3 +337,280 @@ export const cancelPaymentLink = async (req, res) => {
     });
   }
 };
+
+// ==================== VNPay Payment Functions ====================
+
+// Tạo payment URL VNPay
+export const createVNPayPaymentLink = async (req, res) => {
+  try {
+    const { amount, description, buyerName, buyerEmail, buyerPhone, buyerAddress, bankCode } = req.body;
+
+    // Validate input
+    if (!amount) {
+      return res.status(400).json({
+        success: false,
+        message: 'Thiếu thông tin số tiền'
+      });
+    }
+
+    // Parse amount to integer (VNPay chỉ nhận số nguyên, nhân 100)
+    const parsedAmount = Math.round(parseFloat(amount));
+    
+    if (isNaN(parsedAmount) || parsedAmount <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Số tiền không hợp lệ'
+      });
+    }
+
+    console.log('📊 Creating VNPay payment link with amount:', parsedAmount);
+
+    // Set timezone
+    process.env.TZ = 'Asia/Ho_Chi_Minh';
+    const date = new Date();
+    
+    // Tạo các tham số
+    const createDate = date.toISOString().replace(/[-:TZ.]/g, '').slice(0, 14);
+    const orderId = `VNPAY_${Date.now()}`;
+    
+    // Lấy IP address
+    const ipAddr = req.headers['x-forwarded-for'] ||
+      req.connection.remoteAddress ||
+      req.socket.remoteAddress ||
+      req.connection.socket?.remoteAddress ||
+      '127.0.0.1';
+
+    // Tạo VNPay params
+    let vnp_Params = {};
+    vnp_Params['vnp_Version'] = '2.1.0';
+    vnp_Params['vnp_Command'] = 'pay';
+    vnp_Params['vnp_TmnCode'] = VNPAY_CONFIG.tmnCode;
+    vnp_Params['vnp_Locale'] = 'vn';
+    vnp_Params['vnp_CurrCode'] = 'VND';
+    vnp_Params['vnp_TxnRef'] = orderId;
+    vnp_Params['vnp_OrderInfo'] = description || `Thanh toán đơn hàng BATechZone - ${orderId}`;
+    vnp_Params['vnp_OrderType'] = 'other';
+    vnp_Params['vnp_Amount'] = parsedAmount * 100; // VNPay yêu cầu nhân 100
+    vnp_Params['vnp_ReturnUrl'] = VNPAY_CONFIG.returnUrl;
+    vnp_Params['vnp_IpAddr'] = ipAddr;
+    vnp_Params['vnp_CreateDate'] = createDate;
+    
+    // Thêm bankCode nếu có (cho thanh toán qua ngân hàng cụ thể)
+    if (bankCode && bankCode !== '') {
+      vnp_Params['vnp_BankCode'] = bankCode;
+    }
+
+    // Sắp xếp params theo key
+    const sortedParams = sortObject(vnp_Params);
+
+    // Tạo signData và signature
+    const signData = toQueryString(sortedParams);
+    console.log('🔐 SignData:', signData);
+    
+    const signature = createVNPaySignature(signData, VNPAY_CONFIG.hashSecret);
+    console.log('✅ Signature:', signature);
+    
+    // Thêm signature vào sorted params
+    sortedParams['vnp_SecureHash'] = signature;
+
+    // Tạo payment URL với signature
+    const paymentUrl = VNPAY_CONFIG.url + '?' + toQueryString(sortedParams);
+
+    console.log('📝 Order ID:', orderId);
+    console.log('💰 Amount:', parsedAmount * 100, 'VND');
+    console.log('🌐 Payment URL:', paymentUrl.substring(0, 150) + '...');
+
+    // Lưu thông tin payment vào database
+    try {
+      await db.query(
+        `INSERT INTO payments (order_id, payment_method, amount, payment_status, transaction_id) 
+         VALUES (?, ?, ?, ?, ?)`,
+        [orderId, 'vnpay', parsedAmount, 'pending', orderId]
+      );
+    } catch (dbError) {
+      console.warn('Failed to save payment to database:', dbError.message);
+    }
+
+    res.json({
+      success: true,
+      data: {
+        paymentUrl: paymentUrl,
+        orderId: orderId
+      }
+    });
+
+  } catch (error) {
+    console.error('💥 Error creating VNPay payment:', error);
+    console.error('Stack:', error.stack);
+    res.status(500).json({
+      success: false,
+      message: 'Không thể tạo link thanh toán VNPay',
+      error: error.message
+    });
+  }
+};
+
+// Webhook để nhận thông báo từ VNPay (IPN)
+export const vnpayWebhook = async (req, res) => {
+  try {
+    let vnp_Params = req.query;
+    const secureHash = vnp_Params['vnp_SecureHash'];
+
+    console.log('VNPay Webhook received:', vnp_Params);
+
+    // Xóa các trường không cần thiết
+    delete vnp_Params['vnp_SecureHash'];
+    delete vnp_Params['vnp_SecureHashType'];
+
+    // Sắp xếp params
+    vnp_Params = sortObject(vnp_Params);
+
+    // Verify signature
+    const signData = toQueryString(vnp_Params);
+    const checkSignature = createVNPaySignature(signData, VNPAY_CONFIG.hashSecret);
+
+    if (secureHash !== checkSignature) {
+      console.error('Invalid VNPay webhook signature');
+      return res.status(200).json({
+        RspCode: '97',
+        Message: 'Invalid Signature'
+      });
+    }
+
+    const orderId = vnp_Params['vnp_TxnRef'];
+    const rspCode = vnp_Params['vnp_ResponseCode'];
+    const transactionNo = vnp_Params['vnp_TransactionNo'];
+    const amount = vnp_Params['vnp_Amount'] / 100; // Chia 100 để về số tiền thực
+
+    // Kiểm tra mã đơn hàng có tồn tại không
+    const [payments] = await db.query(
+      `SELECT * FROM payments WHERE transaction_id = ?`,
+      [orderId]
+    );
+
+    if (!payments || payments.length === 0) {
+      return res.status(200).json({
+        RspCode: '01',
+        Message: 'Order not found'
+      });
+    }
+
+    const payment = payments[0];
+
+    // Kiểm tra số tiền
+    if (payment.amount !== amount) {
+      return res.status(200).json({
+        RspCode: '04',
+        Message: 'Invalid Amount'
+      });
+    }
+
+    // Kiểm tra trạng thái đơn hàng
+    if (payment.payment_status !== 'pending') {
+      return res.status(200).json({
+        RspCode: '02',
+        Message: 'Order already confirmed'
+      });
+    }
+
+    // rspCode = '00' nghĩa là thanh toán thành công
+    if (rspCode === '00') {
+      // Cập nhật payment status
+      await db.query(
+        `UPDATE payments 
+         SET payment_status = 'paid', 
+             transaction_id = ?,
+             paid_at = NOW()
+         WHERE transaction_id = ?`,
+        [transactionNo, orderId]
+      );
+
+      // Lấy order_id từ payment
+      const [orderRows] = await db.query(
+        `SELECT order_id FROM payments WHERE transaction_id = ?`,
+        [orderId]
+      );
+
+      if (orderRows && orderRows.length > 0) {
+        const dbOrderId = orderRows[0].order_id;
+        
+        // Cập nhật order status
+        await db.query(
+          `UPDATE orders 
+           SET payment_status = 'paid',
+               order_status = 'shipping',
+               updated_at = NOW()
+           WHERE order_id = ?`,
+          [dbOrderId]
+        );
+
+        console.log(`✅ VNPay payment successful for order ${dbOrderId}`);
+      }
+
+      return res.status(200).json({
+        RspCode: '00',
+        Message: 'Success'
+      });
+    } else {
+      // Thanh toán thất bại
+      await db.query(
+        `UPDATE payments 
+         SET payment_status = 'failed'
+         WHERE transaction_id = ?`,
+        [orderId]
+      );
+
+      console.log(`❌ VNPay payment failed for order ${orderId}, code: ${rspCode}`);
+
+      return res.status(200).json({
+        RspCode: '00',
+        Message: 'Success'
+      });
+    }
+
+  } catch (error) {
+    console.error('Error processing VNPay webhook:', error);
+    return res.status(200).json({
+      RspCode: '99',
+      Message: 'Unknown error'
+    });
+  }
+};
+
+// Xử lý return URL từ VNPay (khi người dùng thanh toán xong)
+export const vnpayReturn = async (req, res) => {
+  try {
+    let vnp_Params = req.query;
+    const secureHash = vnp_Params['vnp_SecureHash'];
+
+    delete vnp_Params['vnp_SecureHash'];
+    delete vnp_Params['vnp_SecureHashType'];
+
+    vnp_Params = sortObject(vnp_Params);
+
+    const signData = toQueryString(vnp_Params);
+    const checkSignature = createVNPaySignature(signData, VNPAY_CONFIG.hashSecret);
+
+    if (secureHash === checkSignature) {
+      res.json({
+        success: true,
+        code: vnp_Params['vnp_ResponseCode'],
+        orderId: vnp_Params['vnp_TxnRef'],
+        amount: vnp_Params['vnp_Amount'] / 100
+      });
+    } else {
+      res.json({
+        success: false,
+        code: '97',
+        message: 'Invalid signature'
+      });
+    }
+  } catch (error) {
+    console.error('Error processing VNPay return:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error processing payment return'
+    });
+  }
+};
+
