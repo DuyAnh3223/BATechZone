@@ -74,9 +74,9 @@ class Order {
       const subtotal = items.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
       const totalAmount = subtotal - (orderData.discountAmount || 0) + (orderData.shippingFee || 0) + (orderData.taxAmount || 0);
 
-      // Xác định payment status - COD sẽ là 'paid' ngay khi đặt hàng
+      // Xác định payment status - Mặc định là 'pending' (chờ thanh toán)
       const paymentMethod = orderData.payment_method || orderData.paymentMethod || 'cod';
-      const paymentStatus = paymentMethod === 'cod' ? 'paid' : (orderData.payment_status || 'unpaid');
+      const paymentStatus = orderData.payment_status || 'pending';
       
       // Xác định order status - COD sẽ là 'confirmed' ngay khi đặt hàng
       const orderStatus = paymentMethod === 'cod' ? 'confirmed' : (orderData.order_status || 'pending');

@@ -52,8 +52,10 @@ const getOrderStatusClass = (status) => {
 
 const getPaymentStatusClass = (status) => {
   switch (status) {
-    case 'paid': return 'bg-green-100 text-green-700';
+    case 'paid':
+    case 'completed': return 'bg-green-100 text-green-700';
     case 'unpaid': return 'bg-pink-100 text-pink-700';
+    case 'pending': return 'bg-yellow-100 text-yellow-700';
     default: return 'bg-gray-100 text-gray-500';
   }
 };
@@ -128,6 +130,12 @@ const AdminOrder = () => {
       const orderId = order.order_id || order.orderId;
       const response = await fetchOrderById(orderId);
       const orderData = response.data || response;
+      
+      // Lấy payment status từ payments array nếu order.paymentStatus trống
+      if (orderData.payments && orderData.payments.length > 0 && !orderData.paymentStatus) {
+        orderData.paymentStatus = orderData.payments[0].paymentStatus || orderData.payments[0].payment_status;
+      }
+      
       setOrderDetail(orderData);
       
       // Check if this is an installment order by checking payment method
@@ -203,6 +211,12 @@ const AdminOrder = () => {
       // Refresh order detail
       const updatedResponse = await fetchOrderById(orderId);
       const updatedOrderData = updatedResponse.data || updatedResponse;
+      
+      // Lấy payment status từ payments array nếu order.paymentStatus trống
+      if (updatedOrderData.payments && updatedOrderData.payments.length > 0 && !updatedOrderData.paymentStatus) {
+        updatedOrderData.paymentStatus = updatedOrderData.payments[0].paymentStatus || updatedOrderData.payments[0].payment_status;
+      }
+      
       setOrderDetail(updatedOrderData);
       
       // Refresh orders list
@@ -608,8 +622,12 @@ const AdminOrder = () => {
                   <div className="border rounded p-3">
                     <div className="text-gray-500 mb-2">Thanh toán</div>
                     <div>
-                      <span className={`px-3 py-0.5 rounded-full text-xs font-semibold ${getPaymentStatusClass(orderDetail.payment_status || orderDetail.paymentStatus)}`}>
-                        {translatePaymentStatus(orderDetail.payment_status || orderDetail.paymentStatus)}
+                      <span className={`px-3 py-0.5 rounded-full text-xs font-semibold ${getPaymentStatusClass(
+                        (orderDetail.order_status === 'delivered' || orderDetail.orderStatus === 'delivered') ? 'paid' : 'pending'
+                      )}`}>
+                        {translatePaymentStatus(
+                          (orderDetail.order_status === 'delivered' || orderDetail.orderStatus === 'delivered') ? 'paid' : 'pending'
+                        )}
                       </span>
                     </div>
                   </div>

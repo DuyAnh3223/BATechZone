@@ -88,8 +88,10 @@ const Orders = () => {
 
   const getPaymentStatusBadge = (status) => {
     const statusMap = {
+      pending: { label: "Chờ thanh toán", className: "bg-yellow-100 text-yellow-800" },
       unpaid: { label: "Chưa thanh toán", className: "bg-red-100 text-red-800" },
       paid: { label: "Đã thanh toán", className: "bg-green-100 text-green-800" },
+      completed: { label: "Đã thanh toán", className: "bg-green-100 text-green-800" },
       refunded: { label: "Đã hoàn tiền", className: "bg-orange-100 text-orange-800" },
     };
     return statusMap[status] || { label: status, className: "bg-gray-100 text-gray-800" };
