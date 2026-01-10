@@ -92,13 +92,13 @@ const ImageGallery = ({ mainImage, productName, variantImages = [], isActive, is
         />
         
         {/* Primary Badge on Main Image */}
-        {selectedImageObj?.is_primary && (
+        {/* {selectedImageObj?.is_primary && (
           <div className={styles.statusBadgeContainer}>
             <div className="bg-yellow-500 text-white px-3 py-1 rounded-full flex items-center gap-1 text-xs font-medium shadow-lg">
               ⭐ Ảnh chính
             </div>
           </div>
-        )}
+        )} */}
         
         {/* Status Badge */}
         <div className={styles.statusBadgeContainer}>
@@ -145,18 +145,12 @@ const ImageGallery = ({ mainImage, productName, variantImages = [], isActive, is
                   }}
                 />
                 {/* Primary Badge on Thumbnail */}
-                {img.is_primary && (
+                {/* {img.is_primary && (
                   <div className="absolute top-0 right-0 bg-yellow-500 text-white text-xs px-1 py-0.5 rounded">
                     ⭐
                   </div>
-                )}
+                )} */}
               </button>
-              {/* Alt Text Display */}
-              {img.alt_text && (
-                <p className="text-xs text-gray-600 mt-1 truncate" title={img.alt_text}>
-                  {img.alt_text}
-                </p>
-              )}
             </div>
           ))}
         </div>

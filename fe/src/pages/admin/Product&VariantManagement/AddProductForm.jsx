@@ -14,6 +14,18 @@ import { attributeService } from '@/services/attributeService';
 import { toast } from 'sonner';
 
 /**
+ * Remove Vietnamese diacritics from string
+ */
+const removeDiacritics = (str) => {
+  if (!str) return '';
+  return str
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/Đ/g, 'D');
+};
+
+/**
  * AddProductForm - Form thêm sản phẩm với tabs:
  */
 const AddEditProductForm = ({ productId, isAddingNew, onClose, onSaveSuccess, defaultTab = 'basic' }) => {
@@ -26,7 +38,10 @@ const AddEditProductForm = ({ productId, isAddingNew, onClose, onSaveSuccess, de
     is_active: 1,
     is_featured: 0,
     warranty_period: '',
-    stock_quantity: 0
+    stock_quantity: 0,
+    discount_percent: '',
+    discount_start_date: '',
+    discount_end_date: ''
   });
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
@@ -80,7 +95,10 @@ const AddEditProductForm = ({ productId, isAddingNew, onClose, onSaveSuccess, de
         is_active: currentProduct.is_active ?? 1,
         is_featured: currentProduct.is_featured ?? 0,
         warranty_period: currentProduct.warranty_period || '',
-        stock_quantity: currentProduct.stock_quantity || 0
+        stock_quantity: currentProduct.stock_quantity || 0,
+        discount_percent: currentProduct.discount_percent || '',
+        discount_start_date: currentProduct.discount_start_date || '',
+        discount_end_date: currentProduct.discount_end_date || ''
       });
       setImagePreview(currentProduct.img_path || null);
       setVariants(currentProduct.variants || []);
@@ -201,10 +219,11 @@ const AddEditProductForm = ({ productId, isAddingNew, onClose, onSaveSuccess, de
       
       // Tạo SKU từ product name và variant values
       const skuBase = formData.product_name 
-        ? formData.product_name.substring(0, 3).toUpperCase()
+        ? removeDiacritics(formData.product_name).substring(0, 3).toUpperCase()
         : 'PRD';
-      const skuSuffix = combo.map(item => 
-        item.valueName.substring(0, 2).toUpperCase()
+      
+        const skuSuffix = combo.map(item => 
+        removeDiacritics(item.valueName).substring(0, 2).toUpperCase()
       ).join('');
       const sku = `${skuBase}-${skuSuffix}-${index + 1}`;
 
@@ -450,6 +469,9 @@ const AddEditProductForm = ({ productId, isAddingNew, onClose, onSaveSuccess, de
           is_default: v.is_default || 0,
           is_active: v.is_active !== undefined ? v.is_active : 1,
           warranty_period: v.warranty_period || formData.warranty_period || 0,
+          discount_percent: v.discount_percent !== undefined && v.discount_percent !== '' ? parseFloat(v.discount_percent) : (formData.discount_percent || null),
+          discount_start_date: v.discount_start_date || formData.discount_start_date || null,
+          discount_end_date: v.discount_end_date || formData.discount_end_date || null,
           attribute_value_ids: v.attribute_value_ids || []
         }))));
       } else {
@@ -457,6 +479,9 @@ const AddEditProductForm = ({ productId, isAddingNew, onClose, onSaveSuccess, de
         submitData.append('base_price', formData.base_price);
         submitData.append('warranty_period', formData.warranty_period || 0);
         submitData.append('stock_quantity', formData.stock_quantity || 0);
+        submitData.append('discount_percent', formData.discount_percent || 0);
+        submitData.append('discount_start_date', formData.discount_start_date || '');
+        submitData.append('discount_end_date', formData.discount_end_date || '');
         
         // Tất cả các giá trị thuộc tính đã chọn (kể cả variant và non-variant)
         const allAttributeValues = [];
@@ -691,6 +716,9 @@ const AddEditProductForm = ({ productId, isAddingNew, onClose, onSaveSuccess, de
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Giá</th>
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Tồn Kho</th>
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Bảo Hành</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">KM (%)</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Từ Ngày</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Đến Ngày</th>
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Mặc Định</th>
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Ảnh</th>
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Hành Động</th>
@@ -730,6 +758,34 @@ const AddEditProductForm = ({ productId, isAddingNew, onClose, onSaveSuccess, de
                               onChange={(e) => handleUpdateVariant(index, 'warranty_period', e.target.value)}
                               className="w-24"
                               placeholder={formData.warranty_period || "0"}
+                            />
+                          </td>
+                          <td className="px-4 py-3">
+                            <Input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              max="100"
+                              value={variant.discount_percent ?? formData.discount_percent ?? ''}
+                              onChange={(e) => handleUpdateVariant(index, 'discount_percent', e.target.value)}
+                              className="w-20"
+                              placeholder="0"
+                            />
+                          </td>
+                          <td className="px-4 py-3">
+                            <Input
+                              type="date"
+                              value={variant.discount_start_date || formData.discount_start_date || ''}
+                              onChange={(e) => handleUpdateVariant(index, 'discount_start_date', e.target.value)}
+                              className="w-36"
+                            />
+                          </td>
+                          <td className="px-4 py-3">
+                            <Input
+                              type="date"
+                              value={variant.discount_end_date || formData.discount_end_date || ''}
+                              onChange={(e) => handleUpdateVariant(index, 'discount_end_date', e.target.value)}
+                              className="w-36"
                             />
                           </td>
                           <td className="px-4 py-3">
@@ -857,6 +913,48 @@ const AddEditProductForm = ({ productId, isAddingNew, onClose, onSaveSuccess, de
                         className="mt-2 h-11"
                       />
                     </div>
+                  )}
+
+                  {/* Discount Fields - Only show when NO variants */}
+                  {!willGenerateVariants() && (
+                    <>
+                      <div>
+                        <Label htmlFor="discount_percent" className="text-base">Khuyến Mãi (%)</Label>
+                        <Input
+                          id="discount_percent"
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          max="100"
+                          value={formData.discount_percent}
+                          onChange={(e) => handleChange('discount_percent', e.target.value)}
+                          placeholder="0"
+                          className="mt-2 h-11"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="discount_start_date" className="text-base">Từ Ngày</Label>
+                          <Input
+                            id="discount_start_date"
+                            type="date"
+                            value={formData.discount_start_date}
+                            onChange={(e) => handleChange('discount_start_date', e.target.value)}
+                            className="mt-2 h-11"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="discount_end_date" className="text-base">Đến Ngày</Label>
+                          <Input
+                            id="discount_end_date"
+                            type="date"
+                            value={formData.discount_end_date}
+                            onChange={(e) => handleChange('discount_end_date', e.target.value)}
+                            className="mt-2 h-11"
+                          />
+                        </div>
+                      </div>
+                    </>
                   )}
 
                   {/* Checkboxes */}

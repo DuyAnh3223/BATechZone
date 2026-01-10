@@ -92,14 +92,11 @@ class ProductService {
                     img_path: imgageFile ? imgageFile.path : null
                 }, connection);
 
-                console.log(`✅ Created product with ID: ${productId}`);
-
                 // 3.1 Gán Attribute Values cho product (Products_Attribute_Values)
                 if (data.attributes && data.attributes.length > 0) {
                     for (const valueId of data.attributes) {
                         await ProductsAttributeValues.assignAttributeValueForProduct(productId, valueId, connection);
                     }
-                    console.log(`✅ Assigned ${data.attributes.length} attributes to product ${productId}`);
                 }
 
                 // 3.2 Trường hợp 1: không có thuộc tính variant_attributes => Tạo variant mặc định
@@ -116,10 +113,12 @@ class ProductService {
                         stock_quantity: defaultStock,
                         is_default: 1,
                         is_active: 1,
-                        warranty_period: data.warranty_period || null
+                        warranty_period: data.warranty_period || null,
+                        discount_percent: data.discount_percent || null,
+                        discount_start_date: data.discount_start_date || null,
+                        discount_end_date: data.discount_end_date || null
                     }, connection);
 
-                    console.log(`✅ Created default variant with ID: ${defaultVariantId}`);
 
                     // 3.2.1 Xử lý upload ảnh cho default variant (nếu có)
                     const variantImageTasks = [];
@@ -158,7 +157,10 @@ class ProductService {
                         stock_quantity: variantStock,
                         is_default: combo.is_default || 0,
                         is_active: combo.is_active !== undefined ? combo.is_active : 1,
-                        warranty_period: combo.warranty_period || data.warranty_period || null
+                        warranty_period: combo.warranty_period || data.warranty_period || null,
+                        discount_percent: combo.discount_percent !== undefined ? combo.discount_percent : (data.discount_percent || null),
+                        discount_start_date: combo.discount_start_date || data.discount_start_date || null,
+                        discount_end_date: combo.discount_end_date || data.discount_end_date || null
                     }, connection);
 
                     createdVariantIds.push(variantId);
@@ -279,8 +281,11 @@ class ProductService {
             const product = await ProductDAO.findById(product_id);
             
             if (product) {
-                // Lấy danh sách variants
-                product.variants = await VariantDAO.getVariantsByProductId(product_id);
+                // Lấy danh sách variants with attributes
+                product.variants = await VariantService.getVariantsByProductId(product_id);
+                
+                // Lấy product-level attributes (thông số chung của sản phẩm)
+                product.product_attributes = await ProductsAttributeValues.getAttributesWithDetails(product_id);
             }
             
             return product;

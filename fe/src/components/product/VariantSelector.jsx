@@ -14,12 +14,12 @@ const VariantSelector = ({ variants, selectedVariant, onSelectVariant }) => {
   }
 
   return (
-    <div className="border-t border-b py-6 space-y-4">
+    <div className="border-t border-b py-3 space-y-2">
       <div>
-        <h3 className="text-lg font-semibold mb-4">Chọn biến thể</h3>
+        <h3 className="text-base font-semibold mb-2">Chọn biến thể</h3>
         
         {/* Variants List */}
-        <div className="space-y-3">
+        <div className="space-y-2">
           {variants.map((variant) => {
             const variantLabel = (variant.attributes || variant.attribute_values || []).map((attr) => 
               attr.value_name || attr.attribute_value_name || attr.attribute_value_id
@@ -33,7 +33,7 @@ const VariantSelector = ({ variants, selectedVariant, onSelectVariant }) => {
                 key={variant.variant_id}
                 onClick={() => onSelectVariant(variant)}
                 disabled={!isAvailable}
-                className={`w-full p-4 border-2 rounded-lg text-left transition-all ${
+                className={`w-full p-2 border-2 rounded-lg text-left transition-all ${
                   isSelected
                     ? 'border-blue-500 bg-blue-50'
                     : isAvailable
@@ -43,8 +43,8 @@ const VariantSelector = ({ variants, selectedVariant, onSelectVariant }) => {
               >
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
-                    <div className="font-medium text-gray-900">{variantLabel}</div>
-                    <div className="flex items-center gap-4 mt-2 text-sm">
+                    <div className="text-sm font-medium text-gray-900">{variantLabel}</div>
+                    <div className="flex items-center gap-2 mt-1 text-xs">
                       <span className="text-gray-600">
                         Giá: <span className="font-semibold text-red-600">{formatPrice(variant.price || 0)}</span>
                       </span>
@@ -59,7 +59,7 @@ const VariantSelector = ({ variants, selectedVariant, onSelectVariant }) => {
                     </div>
                   </div>
                   {isSelected && (
-                    <Check className="w-5 h-5 text-blue-500" />
+                    <Check className="w-4 h-4 text-blue-500" />
                   )}
                   {!isAvailable && (
                     <Badge variant="secondary" className="text-xs">Hết hàng</Badge>

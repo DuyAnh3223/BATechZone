@@ -39,6 +39,17 @@ const EditProductPage = () => {
 
   const { currentProduct, updateProduct, fetchProduct } = useProductStore();
 
+  // Helper function để convert datetime sang YYYY-MM-DD format cho input date
+  const formatDateForInput = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return '';
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   useEffect(() => {
     if (productId) {
       loadProductData();
@@ -283,6 +294,9 @@ const EditProductPage = () => {
             price: parseFloat(variant.price),
             stock_quantity: parseInt(variant.stock_quantity),
             warranty_period: parseInt(variant.warranty_period || 0),
+            discount_percent: variant.discount_percent ? parseFloat(variant.discount_percent) : null,
+            discount_start_date: variant.discount_start_date || null,
+            discount_end_date: variant.discount_end_date || null,
             is_default: variant.is_default,
             is_active: variant.is_active
           };
@@ -564,6 +578,40 @@ const EditProductPage = () => {
                               />
                             </div>
 
+                            <div>
+                              <Label className="text-xs font-semibold text-gray-700">Khuyến Mãi (%)</Label>
+                              <Input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                max="100"
+                                value={variant.discount_percent || ''}
+                                onChange={(e) => handleUpdateVariant(index, 'discount_percent', e.target.value)}
+                                className="mt-1.5 h-10 border-gray-300"
+                                placeholder="0"
+                              />
+                            </div>
+
+                            <div>
+                              <Label className="text-xs font-semibold text-gray-700">KM Từ Ngày</Label>
+                              <Input
+                                type="date"
+                                value={formatDateForInput(variant.discount_start_date)}
+                                onChange={(e) => handleUpdateVariant(index, 'discount_start_date', e.target.value)}
+                                className="mt-1.5 h-10 border-gray-300"
+                              />
+                            </div>
+
+                            <div>
+                              <Label className="text-xs font-semibold text-gray-700">KM Đến Ngày</Label>
+                              <Input
+                                type="date"
+                                value={formatDateForInput(variant.discount_end_date)}
+                                onChange={(e) => handleUpdateVariant(index, 'discount_end_date', e.target.value)}
+                                className="mt-1.5 h-10 border-gray-300"
+                              />
+                            </div>
+
                             <div className="flex items-center gap-6 md:col-span-2 px-3 py-2 bg-white rounded-lg border">
                               <div className="flex items-center space-x-2">
                                 <Checkbox
@@ -753,6 +801,44 @@ const EditProductPage = () => {
                             placeholder="0"
                             className="mt-2 h-12 border-gray-300 focus:border-blue-500"
                           />
+                        </div>
+
+                        <div>
+                          <Label htmlFor="discount_percent" className="text-sm font-semibold text-gray-700">Khuyến Mãi (%)</Label>
+                          <Input
+                            id="discount_percent"
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            max="100"
+                            value={defaultVariant?.discount_percent || ''}
+                            onChange={(e) => handleUpdateVariant(0, 'discount_percent', e.target.value)}
+                            placeholder="0"
+                            className="mt-2 h-12 border-gray-300 focus:border-blue-500"
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <Label htmlFor="discount_start" className="text-sm font-semibold text-gray-700">KM Từ Ngày</Label>
+                            <Input
+                              id="discount_start"
+                              type="date"
+                              value={formatDateForInput(defaultVariant?.discount_start_date)}
+                              onChange={(e) => handleUpdateVariant(0, 'discount_start_date', e.target.value)}
+                              className="mt-2 h-12 border-gray-300 focus:border-blue-500"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="discount_end" className="text-sm font-semibold text-gray-700">KM Đến Ngày</Label>
+                            <Input
+                              id="discount_end"
+                              type="date"
+                              value={formatDateForInput(defaultVariant?.discount_end_date)}
+                              onChange={(e) => handleUpdateVariant(0, 'discount_end_date', e.target.value)}
+                              className="mt-2 h-12 border-gray-300 focus:border-blue-500"
+                            />
+                          </div>
                         </div>
 
                         <div>

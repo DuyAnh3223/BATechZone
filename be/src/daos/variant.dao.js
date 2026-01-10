@@ -11,8 +11,11 @@ class VariantDAO {
             stock_quantity,
             is_active,
             is_default,
-            warranty_period
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
+            warranty_period,
+            discount_percent,
+            discount_start_date,
+            discount_end_date
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
         const params = [
             data.product_id,
@@ -22,7 +25,10 @@ class VariantDAO {
             data.stock_quantity || 0,
             data.is_active !== undefined ? data.is_active : 1,
             data.is_default || 0,
-            data.warranty_period || null
+            data.warranty_period || null,
+            data.discount_percent || 0,
+            data.discount_start_date || null,
+            data.discount_end_date || null
         ]
 
         // Nếu có connection (transaction), dùng connection.execute

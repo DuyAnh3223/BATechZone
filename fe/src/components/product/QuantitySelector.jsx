@@ -9,22 +9,22 @@ const QuantitySelector = ({
   currentStock 
 }) => {
   return (
-    <div className="border-t border-b py-6 space-y-4">
-      <div className="flex items-center gap-4">
-        <span className="text-sm font-medium text-gray-700 min-w-[100px]">
+    <div className="border-t border-b py-4 space-y-3">
+      <div className="flex items-center gap-3">
+        <span className="text-sm font-medium text-gray-700 min-w-[80px]">
           Số lượng:
         </span>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <Button
             variant="outline"
             size="icon"
             onClick={() => onQuantityChange("decrease")}
             disabled={quantity <= 1 || !isAvailable}
-            className="h-10 w-10"
+            className="h-8 w-8"
           >
-            <MinusIcon className="h-4 w-4" />
+            <MinusIcon className="h-3 w-3" />
           </Button>
-          <span className="w-16 text-center text-lg font-semibold">
+          <span className="w-12 text-center text-base font-semibold">
             {quantity}
           </span>
           <Button
@@ -32,17 +32,16 @@ const QuantitySelector = ({
             size="icon"
             onClick={() => onQuantityChange("increase")}
             disabled={!isAvailable || (currentStock !== null && quantity >= currentStock)}
-            className="h-10 w-10"
+            className="h-8 w-8"
           >
-            <PlusIcon className="h-4 w-4" />
+            <PlusIcon className="h-3 w-3" />
           </Button>
         </div>
       </div>
 
       {/* Add to Cart Button */}
       <Button
-        className="w-full h-12 text-base font-semibold"
-        size="lg"
+        className="w-full h-10 text-sm font-semibold"
         onClick={onAddToCart}
         disabled={!isAvailable}
         style={{
@@ -50,7 +49,7 @@ const QuantitySelector = ({
           color: '#ffffff'
         }}
       >
-        <ShoppingCart className="w-5 h-5 mr-2" />
+        <ShoppingCart className="w-4 h-4 mr-2" />
         {isAvailable ? 'Thêm vào giỏ hàng' : 'Hết hàng'}
       </Button>
     </div>

@@ -1,5 +1,6 @@
 import VariantDAO from "../daos/variant.dao.js";
 import ProductDAO from "../daos/product.dao.js";
+import VariantsAttributeValues from "../daos/Mapping/VariantsAttributeValues.js";
 
 class VariantService {
 
@@ -114,8 +115,36 @@ class VariantService {
     async getVariantsByProductId(product_id)
     {
         try {
+            // Get variants
             const variants = await VariantDAO.getVariantsByProductId(product_id);
-            return variants;
+            
+            if (variants.length === 0) {
+                return variants;
+            }
+            
+            // Get attributes for all variants using DAO
+            const variantIds = variants.map(v => v.variant_id);
+            const attributes = await VariantsAttributeValues.getAttributesWithDetailsByVariantIds(variantIds);
+            
+            // Attach attributes to each variant
+            const variantsWithAttributes = variants.map(variant => {
+                const variantAttributes = attributes
+                    .filter(attr => attr.variant_id === variant.variant_id)
+                    .map(attr => ({
+                        attribute_id: attr.attribute_id,
+                        attribute_name: attr.attribute_name,
+                        attribute_value_id: attr.attribute_value_id,
+                        value_name: attr.value_name
+                    }));
+                
+                return {
+                    ...variant,
+                    attributes: variantAttributes,
+                    attribute_values: variantAttributes // Alias for compatibility
+                };
+            });
+            
+            return variantsWithAttributes;
         } catch (error) {
             console.error("[VariantService:getVariantsByProductId]", error);
             throw error;

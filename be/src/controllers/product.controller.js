@@ -94,10 +94,7 @@ async getProductById(req, res) {
  */
 async createProduct(req, res) {
     try {
-        console.log('📝 Create product request body:', JSON.stringify(req.body, null, 2));
-        console.log('📁 Upload file:', req.file);
-        console.log('📁 Upload files:', req.files);
-
+        
         // Helper function để parse JSON nếu là string, giữ nguyên nếu đã là object/array
         const parseIfString = (value) => {
             if (!value) return [];
@@ -120,6 +117,10 @@ async createProduct(req, res) {
             is_featured: req.body.is_featured !== undefined ? parseInt(req.body.is_featured) : 0,
             warranty_period: req.body.warranty_period ? parseInt(req.body.warranty_period) : null,
             stock_quantity: req.body.stock_quantity ? parseInt(req.body.stock_quantity) : 0,
+            // Discount fields (for default variant or all variants)
+            discount_percent: req.body.discount_percent ? parseFloat(req.body.discount_percent) : null,
+            discount_start_date: req.body.discount_start_date || null,
+            discount_end_date: req.body.discount_end_date || null,
             // Attributes (non-variant) - Parse nếu là string (form-data), giữ nguyên nếu là array (JSON)
             attributes: parseIfString(req.body.attributes),
             // Variant attributes combinations - Parse nếu là string (form-data), giữ nguyên nếu là array (JSON)

@@ -1,7 +1,9 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Package } from "lucide-react";
 
-const TechnicalSpecs = ({ selectedVariant, variants }) => {
+const TechnicalSpecs = ({ selectedVariant, variants, product }) => {
+ 
+  
   // Get variant label for display
   const variantLabel = selectedVariant 
     ? (selectedVariant.attributes || selectedVariant.attribute_values || []).map((attr) => 
@@ -9,13 +11,32 @@ const TechnicalSpecs = ({ selectedVariant, variants }) => {
       ).join(' / ') || selectedVariant.variant_name || `Biến thể #${selectedVariant.variant_id}`
     : null;
   
-  // Get specifications ONLY from selected variant
+  // Get specifications from:
+  // 1. Product-level attributes (common specs for all variants)
+  // 2. Variant-specific attributes (variant distinguishing attributes)
+  const productSpecs = product?.product_attributes || [];
   const variantSpecs = selectedVariant?.attributes || selectedVariant?.attribute_values || [];
+  
   
   // Group by attribute name
   const specMap = new Map();
   
-  // Only get specs from variant attributes
+  // Add product-level attributes (common specs)
+  if (productSpecs && Array.isArray(productSpecs) && productSpecs.length > 0) {
+    productSpecs.forEach(attr => {
+      const attrName = attr.attribute_name || 'Thuộc tính';
+      const valueName = attr.value_name || String(attr.attribute_value_id);
+      
+      if (!specMap.has(attrName)) {
+        specMap.set(attrName, []);
+      }
+      if (!specMap.get(attrName).includes(valueName)) {
+        specMap.get(attrName).push(valueName);
+      }
+    });
+  }
+  
+  // Add variant-specific attributes (if exists)
   if (variantSpecs && Array.isArray(variantSpecs) && variantSpecs.length > 0) {
     variantSpecs.forEach(attr => {
       const attrName = attr.attribute_name || 'Thuộc tính';

@@ -66,6 +66,24 @@ class ProductsAttributeValues {
         return rows;
     }
 
+    static async getAttributesWithDetails(product_id) {
+        const sql = `
+            SELECT 
+                a.attribute_id,
+                a.attribute_name,
+                av.attribute_value_id,
+                av.value_name
+            FROM products_attribute_values pav
+            JOIN attribute_values av ON pav.attribute_value_id = av.attribute_value_id
+            JOIN attributes a ON av.attribute_id = a.attribute_id
+            WHERE pav.product_id = ?
+            ORDER BY a.attribute_name
+        `;
+        const params = [product_id];
+        const rows = await query(sql, params);
+        return rows;
+    }
+
 
 
     

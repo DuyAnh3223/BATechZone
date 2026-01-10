@@ -147,6 +147,9 @@ const ProductList = ({ onAddProduct, onEditProduct, onManageVariants, selectedPr
                   Giá
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Khuyến Mãi
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Tồn Kho
                 </th>
                 <th className="px-6 py-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-48">
@@ -159,6 +162,7 @@ const ProductList = ({ onAddProduct, onEditProduct, onManageVariants, selectedPr
                 const defaultVariant = getDefaultVariant(product);
                 const price = defaultVariant?.price || 0;
                 const stock = defaultVariant?.stock_quantity || 0;
+                const discountPercent = defaultVariant?.discount_percent || 0;
                 const variantImageUrl = defaultVariant?.variant_id ? variantImages[defaultVariant.variant_id] : null;
                 const displayImage = variantImageUrl || product.img_path;
 
@@ -208,6 +212,17 @@ const ProductList = ({ onAddProduct, onEditProduct, onManageVariants, selectedPr
                       <div className="text-sm font-semibold text-blue-600">
                         {formatPrice(price)}
                       </div>
+                    </td>
+
+                    {/* Discount */}
+                    <td className="px-6 py-5">
+                      {discountPercent > 0 ? (
+                        <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-800">
+                          {discountPercent}%
+                        </span>
+                      ) : (
+                        <span className="text-sm text-gray-400">-</span>
+                      )}
                     </td>
 
                     {/* Stock */}

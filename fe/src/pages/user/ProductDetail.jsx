@@ -182,6 +182,25 @@ const ProductDetail = () => {
     return currentProduct?.default_variant_price || currentProduct?.min_variant_price || 0;
   };
 
+  // Get discount info for current variant
+  const getDiscountInfo = () => {
+    if (!selectedVariant) return { isDiscountActive: false, discountPercent: 0, discountPrice: 0 };
+    
+    const discountPercent = selectedVariant.discount_percent || 0;
+    const discountStartDate = selectedVariant.discount_start_date ? new Date(selectedVariant.discount_start_date) : null;
+    const discountEndDate = selectedVariant.discount_end_date ? new Date(selectedVariant.discount_end_date) : null;
+    const currentDate = new Date();
+    
+    const isDiscountActive = discountPercent > 0 && 
+      (!discountStartDate || currentDate >= discountStartDate) &&
+      (!discountEndDate || currentDate <= discountEndDate);
+    
+    const price = selectedVariant.price || 0;
+    const discountPrice = isDiscountActive ? price * (1 - discountPercent / 100) : price;
+    
+    return { isDiscountActive, discountPercent, discountPrice, originalPrice: price };
+  };
+
   // Get current stock
   const getCurrentStock = () => {
     if (selectedVariant) {
@@ -243,7 +262,7 @@ const ProductDetail = () => {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Product Images */}
         <ProductImage
           key={productId}
@@ -264,19 +283,23 @@ const ProductDetail = () => {
               minPrice={currentProduct.min_variant_price}
               maxPrice={currentProduct.max_variant_price}
               selectedVariant={selectedVariant}
+              discountInfo={getDiscountInfo()}
             />
 
-            <StockStatus
+            {/* <StockStatus
               isAvailable={isCurrentAvailable()}
               currentStock={getCurrentStock()}
               selectedVariant={selectedVariant}
-            />
+            /> */}
 
-            <VariantSelector
-              variants={variants}
-              selectedVariant={selectedVariant}
-              onSelectVariant={setSelectedVariant}
-            />
+            {/* Only show variant selector if there are multiple variants or not default variant */}
+            {variants && variants.length > 0 && !(variants.length === 1 && variants[0].is_default === 1) && (
+              <VariantSelector
+                variants={variants}
+                selectedVariant={selectedVariant}
+                onSelectVariant={setSelectedVariant}
+              />
+            )}
 
             <QuantitySelector
               quantity={quantity}
@@ -292,7 +315,7 @@ const ProductDetail = () => {
       </div>
 
       {/* Product Details Tabs */}
-      <div className="mt-12">
+      <div className="mt-8">
         <Tabs defaultValue="description" className="w-full">
           <TabsList className={`grid w-full max-w-2xl ${variants && variants.length > 0 ? 'grid-cols-3' : 'grid-cols-2'}`}>
             <TabsTrigger value="description">Mô tả sản phẩm</TabsTrigger>
@@ -306,6 +329,7 @@ const ProductDetail = () => {
           <TechnicalSpecs
             selectedVariant={selectedVariant}
             variants={variants}
+            product={currentProduct}
           />
           {variants && variants.length > 0 && <VariantsList variants={variants} />}
         </Tabs>
@@ -336,7 +360,8 @@ const ProductDetail = () => {
         </DialogContent>
       </Dialog>
     </div>
-  );
+  );    
 };
+
 
 export default ProductDetail;

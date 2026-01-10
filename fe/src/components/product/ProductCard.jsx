@@ -46,6 +46,19 @@ const ProductCard = ({ product }) => {
   const imageUrl = product.image_url || product.image || null;
   const productId = product.product_id || product.id;
   
+  // Tính toán khuyến mãi
+  const discountPercent = defaultVariant?.discount_percent || 0;
+  const discountStartDate = defaultVariant?.discount_start_date ? new Date(defaultVariant.discount_start_date) : null;
+  const discountEndDate = defaultVariant?.discount_end_date ? new Date(defaultVariant.discount_end_date) : null;
+  const currentDate = new Date();
+  
+  // Kiểm tra khuyến mãi có active không
+  const isDiscountActive = discountPercent > 0 && 
+    (!discountStartDate || currentDate >= discountStartDate) &&
+    (!discountEndDate || currentDate <= discountEndDate);
+  
+  const discountPrice = isDiscountActive ? price * (1 - discountPercent / 100) : price;
+  
   // Check stock: prioritize backend total_stock, fallback to variants check
   const hasStock = product.total_stock !== undefined
     ? product.total_stock > 0
@@ -253,11 +266,29 @@ const ProductCard = ({ product }) => {
 
         {/* Price Section */}
         <div className="mb-4">
-          <div className="flex items-baseline gap-2 flex-wrap">
-            <span className="text-2xl font-bold text-red-600 tracking-tight">
-              {formatPrice(price)}
-            </span>
-          </div>
+          {isDiscountActive ? (
+            <div className="space-y-1">
+              {/* Giá gốc bị gạch + % tiết kiệm */}
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-500 line-through">
+                  {formatPrice(price)}
+                </span>
+                <Badge className="bg-red-100 text-red-700 hover:bg-red-100 px-2 py-0.5 text-xs font-semibold border-0">
+                  Tiết kiệm {Math.round(discountPercent)}%
+                </Badge>
+              </div>
+              {/* Giá khuyến mãi */}
+              <div className="text-2xl font-bold text-red-600 tracking-tight">
+                {formatPrice(discountPrice)}
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-baseline gap-2 flex-wrap">
+              <span className="text-2xl font-bold text-red-600 tracking-tight">
+                {formatPrice(price)}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Add to Cart Button */}

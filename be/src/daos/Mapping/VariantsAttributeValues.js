@@ -65,6 +65,29 @@ class VariantsAttributeValues {
         return rows;
     }
 
+    static async getAttributesWithDetailsByVariantIds(variantIds) {
+        if (!variantIds || variantIds.length === 0) {
+            return [];
+        }
+        
+        const placeholders = variantIds.map(() => '?').join(',');
+        const sql = `
+            SELECT 
+                va.variant_id,
+                a.attribute_id,
+                a.attribute_name,
+                av.attribute_value_id,
+                av.value_name
+            FROM variants_attribute_values va
+            JOIN attribute_values av ON va.attribute_value_id = av.attribute_value_id
+            JOIN attributes a ON av.attribute_id = a.attribute_id
+            WHERE va.variant_id IN (${placeholders})
+            ORDER BY va.variant_id, a.attribute_name
+        `;
+        const rows = await query(sql, variantIds);
+        return rows;
+    }
+
     
 
     

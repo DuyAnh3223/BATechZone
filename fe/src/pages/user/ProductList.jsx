@@ -232,15 +232,11 @@ const ProductList = () => {
       return true;
     }
 
-    console.log('=== Filtering product:', product.product_name);
-    console.log('Product attributes:', product.attributes);
-    console.log('Selected filters:', selectedAttributeFilters);
 
     // Check product-level attributes (from products_attribute_values)
     const productAttributes = product.attributes || product.attribute_values || [];
     
     if (productAttributes.length > 0) {
-      console.log('✅ Using product-level attributes:', productAttributes);
       // Check if product satisfies all selected attribute filters
       const matchesAllFilters = Object.entries(selectedAttributeFilters).every(([attributeId, selectedValueIds]) => {
         return selectedValueIds.some(selectedValueId => {
@@ -249,19 +245,16 @@ const ProductList = () => {
             const attrValueId = attr.attribute_value_id;
             const attributeMatches = String(attrId) === String(attributeId);
             const valueMatches = String(attrValueId) === String(selectedValueId);
-            console.log(`  Checking: attr ${attrId} == ${attributeId}? ${attributeMatches}, value ${attrValueId} == ${selectedValueId}? ${valueMatches}`);
-            return attributeMatches && valueMatches;
+             return attributeMatches && valueMatches;
           });
         });
       });
       
-      console.log('Product matches:', matchesAllFilters ? '✅' : '❌');
       return matchesAllFilters;
     }
 
     // Fallback: check variant attributes
     if (!product.variants || product.variants.length === 0) {
-      console.log('❌ No variants');
       return false;
     }
 
@@ -272,7 +265,6 @@ const ProductList = () => {
         return false;
       }
       
-      console.log('  Checking variant attributes:', variantAttributes);
       
       const matchesAllFilters = Object.entries(selectedAttributeFilters).every(([attributeId, selectedValueIds]) => {
         return selectedValueIds.some(selectedValueId => {
@@ -289,7 +281,6 @@ const ProductList = () => {
       return matchesAllFilters;
     });
 
-    console.log('Result:', hasMatchingVariant ? '✅ SHOW' : '❌ HIDE');
     return hasMatchingVariant;
   });
 
@@ -298,10 +289,6 @@ const ProductList = () => {
   const endIndex = startIndex + itemsPerPage;
   const paginatedProducts = filteredProducts.slice(startIndex, endIndex);
 
-  console.log('Products count:', products.length);
-  console.log('Filtered products count:', filteredProducts.length);
-  console.log('Paginated products count:', paginatedProducts.length);
-  console.log('Selected attribute filters:', selectedAttributeFilters);
 
   const handleReset = () => {
     setFilters({
