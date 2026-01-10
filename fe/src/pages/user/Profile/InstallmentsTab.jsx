@@ -28,7 +28,7 @@ const InstallmentsTab = () => {
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [isDownPaymentDialogOpen, setIsDownPaymentDialogOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState('bank_transfer'); // bank_transfer, e_wallet, cod
+  const [paymentMethod, setPaymentMethod] = useState('vnpay'); // vnpay, e_wallet, cod
 
   useEffect(() => {
     fetchMyInstallments();
@@ -96,6 +96,52 @@ const handleViewDetail = async (installment) => {
 
     setIsProcessing(true);
     try {
+      // Nếu chọn VNPay, tạo payment link VNPay
+      if (paymentMethod === 'vnpay') {
+        const amount = selectedInstallment.down_payment;
+        const description = `Thanh toan tra truoc hop dong #${selectedInstallment.installment_id}`;
+        const buyerName = user?.full_name || user?.fullName || user?.username || 'Khach hang';
+        
+        // Lưu thông tin installment vào localStorage để xử lý sau khi thanh toán
+        localStorage.setItem('pending_installment_payment', JSON.stringify({
+          installmentId: selectedInstallment.installment_id,
+          type: 'down_payment',
+          amount: amount
+        }));
+
+        try {
+          const paymentResponse = await fetch('http://localhost:5001/api/payments/create-vnpay-payment', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            credentials: 'include',
+            body: JSON.stringify({
+              amount,
+              description,
+              buyerName,
+              bankCode: '' // Để trống để hiển thị tất cả phương thức
+            })
+          });
+
+          const result = await paymentResponse.json();
+
+          if (result.success && result.data?.paymentUrl) {
+            toast.success('Đang chuyển đến trang thanh toán VNPay...');
+            // Chuyển hướng đến trang thanh toán VNPay
+            window.location.href = result.data.paymentUrl;
+            return;
+          } else {
+            throw new Error(result.message || 'Không thể tạo link thanh toán VNPay');
+          }
+        } catch (error) {
+          console.error('VNPay payment error:', error);
+          toast.error(error.message || 'Không thể tạo link thanh toán VNPay');
+          setIsProcessing(false);
+          return;
+        }
+      }
+
       // Nếu chọn Momo (e_wallet), tạo payment link
       if (paymentMethod === 'e_wallet') {
         const amount = selectedInstallment.down_payment;
@@ -148,8 +194,8 @@ const handleViewDetail = async (installment) => {
         }
       }
 
-      // Thanh toán bằng phương thức khác (bank_transfer, cod)
-      const paymentNote = `Thanh toán trả trước qua ${paymentMethod === 'bank_transfer' ? 'Chuyển khoản' : paymentMethod === 'e_wallet' ? 'Ví điện tử' : 'Tiền mặt'}`;
+      // Thanh toán bằng phương thức khác (cod)
+      const paymentNote = `Thanh toán trả trước qua ${paymentMethod === 'vnpay' ? 'VNPay' : paymentMethod === 'e_wallet' ? 'Ví điện tử' : 'Tiền mặt'}`;
       
       await makeDownPayment(selectedInstallment.installment_id, {
         paid_date: new Date().toISOString(),
@@ -158,7 +204,7 @@ const handleViewDetail = async (installment) => {
       
       toast.success('Thanh toán trả trước thành công! Vui lòng chờ xác nhận từ hệ thống.');
       setIsDownPaymentDialogOpen(false);
-      setPaymentMethod('bank_transfer');
+      setPaymentMethod('vnpay');
       
       // Refresh detail
       const updated = await fetchInstallmentById(selectedInstallment.installment_id);
@@ -179,6 +225,60 @@ const handleViewDetail = async (installment) => {
 
     setIsProcessing(true);
     try {
+      // Nếu chọn VNPay, tạo payment link VNPay
+      if (paymentMethod === 'vnpay') {
+        const amount = selectedPayment.payment_amount || selectedPayment.amount;
+        
+        // Validate amount
+        if (!amount || parseFloat(amount) <= 0) {
+          toast.error('Số tiền thanh toán không hợp lệ');
+          setIsProcessing(false);
+          return;
+        }
+        
+        const description = `Thanh toan ky ${selectedPayment.payment_no} - Hop dong #${selectedInstallment.installment_id}`;
+        const buyerName = user?.full_name || user?.fullName || user?.username || 'Khach hang';
+        
+        // Lưu thông tin installment payment vào localStorage
+        localStorage.setItem('pending_installment_payment', JSON.stringify({
+          installmentId: selectedInstallment.installment_id,
+          paymentId: selectedPayment.payment_id,
+          type: 'installment',
+          amount: amount
+        }));
+
+        try {
+          const paymentResponse = await fetch('http://localhost:5001/api/payments/create-vnpay-payment', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            credentials: 'include',
+            body: JSON.stringify({
+              amount,
+              description,
+              buyerName,
+              bankCode: '' // Để trống để hiển thị tất cả phương thức
+            })
+          });
+
+          const result = await paymentResponse.json();
+
+          if (result.success && result.data?.paymentUrl) {
+            toast.success('Đang chuyển đến trang thanh toán VNPay...');
+            window.location.href = result.data.paymentUrl;
+            return;
+          } else {
+            throw new Error(result.message || 'Không thể tạo link thanh toán VNPay');
+          }
+        } catch (error) {
+          console.error('VNPay payment error:', error);
+          toast.error(error.message || 'Không thể tạo link thanh toán VNPay');
+          setIsProcessing(false);
+          return;
+        }
+      }
+
       // Nếu chọn Momo (e_wallet), tạo payment link
       if (paymentMethod === 'e_wallet') {
         const amount = selectedPayment.payment_amount || selectedPayment.amount;
@@ -239,8 +339,8 @@ const handleViewDetail = async (installment) => {
         }
       }
 
-      // Thanh toán bằng phương thức khác (bank_transfer, cod)
-      const paymentNote = `Thanh toán qua ${paymentMethod === 'bank_transfer' ? 'Chuyển khoản' : paymentMethod === 'e_wallet' ? 'Ví điện tử' : 'Tiền mặt'}`;
+      // Thanh toán bằng phương thức khác (cod)
+      const paymentNote = `Thanh toán qua ${paymentMethod === 'vnpay' ? 'VNPay' : paymentMethod === 'e_wallet' ? 'Ví điện tử' : 'Tiền mặt'}`;
       
       await makePayment(selectedPayment.payment_id, {
         paid_date: new Date().toISOString(),
@@ -249,7 +349,7 @@ const handleViewDetail = async (installment) => {
       
       toast.success('Thanh toán thành công! Vui lòng chờ xác nhận từ hệ thống.');
       setIsPaymentDialogOpen(false);
-      setPaymentMethod('bank_transfer'); // Reset to default
+      setPaymentMethod('vnpay'); // Reset to default
       
       // Refresh detail
       if (selectedInstallment) {

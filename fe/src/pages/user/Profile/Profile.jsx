@@ -403,6 +403,12 @@ const Profile = () => {
       const fullOrderData = await fetchOrderById(order.orderId || order.order_id);
       console.log('Full Order Data:', fullOrderData);
       
+      // Lấy payment status từ payments array nếu order.paymentStatus trống
+      if (fullOrderData.payments && fullOrderData.payments.length > 0 && !fullOrderData.paymentStatus) {
+        fullOrderData.paymentStatus = fullOrderData.payments[0].paymentStatus || fullOrderData.payments[0].payment_status;
+      }
+      console.log('Payment Status:', fullOrderData.paymentStatus, fullOrderData.payment_status);
+      
       setSelectedOrder(fullOrderData);
     } catch (error) {
       console.error('Error fetching order details:', error);
@@ -450,9 +456,11 @@ const Profile = () => {
   const getPaymentStatusColor = (status) => {
     const colors = {
       pending: 'bg-yellow-100 text-yellow-800',
+      unpaid: 'bg-red-100 text-red-800',
       paid: 'bg-green-100 text-green-800',
+      completed: 'bg-green-100 text-green-800',
       failed: 'bg-red-100 text-red-800',
-      refunded: 'bg-gray-100 text-gray-800'
+      refunded: 'bg-orange-100 text-orange-800'
     };
     return colors[status] || 'bg-gray-100 text-gray-800';
   };
@@ -1226,7 +1234,6 @@ const Profile = () => {
                         <TableHead>Ngày đặt</TableHead>
                         <TableHead>Tổng tiền</TableHead>
                         <TableHead>Trạng thái đơn</TableHead>
-                        
                         <TableHead className="text-right">Thao tác</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -1310,8 +1317,12 @@ const Profile = () => {
                   </div>
                   <div className="flex-1">
                     <p className="text-sm text-gray-500 mb-1">Trạng thái thanh toán</p>
-                    <Badge className={getPaymentStatusColor(selectedOrder.paymentStatus || selectedOrder.payment_status)}>
-                      {getPaymentStatusLabel(selectedOrder.paymentStatus || selectedOrder.payment_status)}
+                    <Badge className={getPaymentStatusColor(
+                      (selectedOrder.orderStatus === 'delivered' || selectedOrder.order_status === 'delivered') ? 'paid' : 'pending'
+                    )}>
+                      {getPaymentStatusLabel(
+                        (selectedOrder.orderStatus === 'delivered' || selectedOrder.order_status === 'delivered') ? 'paid' : 'pending'
+                      )}
                     </Badge>
                   </div>
                 </div>
@@ -1326,20 +1337,21 @@ const Profile = () => {
                       <div className="space-y-2">
                         {selectedOrder.payments.map((payment, index) => {
                           const paymentMethod = payment.paymentMethod || payment.payment_method;
+                          const paymentStatus = payment.paymentStatus || payment.payment_status;
                           const transactionId = payment.transactionId || payment.transaction_id;
                           
                           return (
                             <div key={index} className="p-4 bg-gray-50 rounded-lg">
                               <div>
-                                <p className="text-base text-gray-600">Phương thức thanh toán</p>
-                                <p className="font-medium text-lg">
+                                <p className="text-sm text-gray-600 mb-1">Phương thức thanh toán</p>
+                                <p className="font-medium text-base">
                                   {translatePaymentMethod(paymentMethod || 'cod')}
                                 </p>
                               </div>
                               {transactionId && (
                                 <div className="mt-2 pt-2 border-t">
-                                  <p className="text-base text-gray-500">Mã giao dịch</p>
-                                  <p className="text-base font-mono bg-white px-2 py-1 rounded mt-1">
+                                  <p className="text-sm text-gray-600 mb-1">Mã giao dịch</p>
+                                  <p className="text-sm font-mono bg-white px-2 py-1 rounded">
                                     {transactionId}
                                   </p>
                                 </div>

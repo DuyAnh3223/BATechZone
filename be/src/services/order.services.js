@@ -429,7 +429,7 @@ class OrderService {
       const params = [newStatus];
       
       if (newStatus === 'delivered') {
-        updateQuery += ', delivered_at = NOW()';
+        updateQuery += ', delivered_at = NOW(), payment_status = "paid"';
       } else if (newStatus === 'confirmed') {
         updateQuery += ', confirmed_at = NOW()';
       } else if (newStatus === 'shipping') {
