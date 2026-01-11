@@ -437,6 +437,95 @@ class ProductDAO {
         }
     }
 
+    /**
+     * Lấy product với attributes theo variant ID (cho compatibility checking)
+     */
+    async getProductByVariantId(variant_id)
+    {
+        try {
+            console.log('🔵 getProductByVariantId called with variant_id:', variant_id);
+            
+            // Get variant info
+            const variantQuery = `
+                SELECT 
+                    v.variant_id,
+                    v.product_id,
+                    v.sku,
+                    v.variant_name,
+                    v.price,
+                    v.stock_quantity,
+                    v.is_default,
+                    p.product_name,
+                    p.slug,
+                    p.description,
+                    p.category_id,
+                    c.category_name
+                FROM product_variants v
+                JOIN products p ON v.product_id = p.product_id
+                LEFT JOIN categories c ON p.category_id = c.category_id
+                WHERE v.variant_id = ? AND v.is_active = 1 AND p.is_active = 1
+            `;
+            const variantResult = await query(variantQuery, [variant_id]);
+            
+            if (!variantResult || variantResult.length === 0) {
+                return null;
+            }
+
+            const variant = variantResult[0];
+
+            // Get product-level attributes
+            const productAttributesQuery = `
+                SELECT 
+                    av.attribute_id,
+                    pav.attribute_value_id,
+                    a.attribute_name,
+                    av.value_name
+                FROM products_attribute_values pav
+                JOIN attribute_values av ON pav.attribute_value_id = av.attribute_value_id
+                JOIN attributes a ON av.attribute_id = a.attribute_id
+                WHERE pav.product_id = ?
+            `;
+            const productAttributes = await query(productAttributesQuery, [variant.product_id]);
+
+            // Get variant-level attributes
+            const variantAttributesQuery = `
+                SELECT 
+                    av.attribute_id,
+                    va.attribute_value_id,
+                    a.attribute_name,
+                    av.value_name
+                FROM variants_attribute_values va
+                JOIN attribute_values av ON va.attribute_value_id = av.attribute_value_id
+                JOIN attributes a ON av.attribute_id = a.attribute_id
+                WHERE va.variant_id = ?
+            `;
+            const variantAttributes = await query(variantAttributesQuery, [variant_id]);
+
+            // Combine product and variant attributes (variant attributes override product)
+            const attributeMap = new Map();
+            
+            // Add product attributes first
+            productAttributes.forEach(attr => {
+                attributeMap.set(attr.attribute_name, attr);
+            });
+            
+            // Override with variant attributes if exists
+            variantAttributes.forEach(attr => {
+                attributeMap.set(attr.attribute_name, attr);
+            });
+
+            const combinedAttributes = Array.from(attributeMap.values());
+
+            return {
+                ...variant,
+                attributes: combinedAttributes
+            };
+        } catch (error) {
+            console.error('[ProductDAO:getProductByVariantId]', error);
+            throw error;
+        }
+    }
+
 
 }
 

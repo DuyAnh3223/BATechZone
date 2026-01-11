@@ -26,6 +26,7 @@ import paymentRoutes from './paymentRoutes.js';
 //import articleRoutes from './articleRoutes.js';
 import warrantyRoutes from './warranty.routes.js';
 import serviceRequestRoutes from './serviceRequest.routes.js';
+import compatibilityRoutes from './compatibilityRoutes.js';
 
 
 
@@ -55,6 +56,7 @@ router.use('/payments', paymentRoutes);
 //router.use('/articles', articleRoutes);
 router.use('/warranty', warrantyRoutes);
 router.use('/service-requests', serviceRequestRoutes);
+router.use('/compatibility', compatibilityRoutes);
 
 
 

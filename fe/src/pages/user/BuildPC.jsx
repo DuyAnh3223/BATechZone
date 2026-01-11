@@ -59,6 +59,7 @@ import {
 } from "lucide-react";
 import { productService } from "@/services/productService";
 import { variantService } from "@/services/variantService";
+import { compatibilityService } from "@/services/compatibilityService";
 import { useCartStore } from "@/stores/useCartStore";
 import { useCartItemStore } from "@/stores/useCartItemStore";
 import { useUserAuthStore } from "@/stores/useUserAuthStore";
@@ -88,573 +89,573 @@ const CATEGORY_MAP = {
   customWater: 49,  // Custom Water (sub của Cooling)
 };
 
-const mockCatalog = {
-  cpu: [
-    {
-      id: "cpu-intel-core-i5-14600kf",
-      variantId: 336,
-      sku: "intel-core-i5-14600kf-default",
-      name: "CPU Intel Core i5-14600KF (up to 5.3GHz, 14 nhân 20 luồng, 24MB Cache)",
-      brand: "Intel",
-      socket: "LGA1700",
-      generation: "Raptor Lake",
-      price: 4500000,
-      stock: 59,
-      warranty: "36 tháng",
-      image: "https://via.placeholder.com/80?text=CPU",
-      description:
-        "Mẫu CPU đang bán tại B.A Tech Zone với 14 nhân hiệu năng cao, phù hợp gaming và làm việc.",
-      highlights: ["14 nhân / 20 luồng", "Turbo 5.3GHz", "TDP 125W"],
-    },
-    {
-      id: "cpu-amd-ryzen-5-3400g",
-      variantId: 9991,
-      sku: "cpu-amd-ryzen-5-3400g",
-      name: "CPU AMD Ryzen 5 3400G (3.7GHz Upto 4.2GHz, 4C/8T, Radeon Vega 11)",
-      brand: "AMD",
-      socket: "AM4",
-      generation: "Ryzen 3000",
-      price: 1799000,
-      stock: 24,
-      warranty: "36 tháng",
-      image: "https://via.placeholder.com/80?text=CPU",
-      description:
-        "APU tích hợp Radeon Vega 11, phù hợp các cấu hình văn phòng hoặc gaming eSports.",
-      highlights: ["iGPU Vega 11", "65W TDP", "Unlocked"],
-    },
-  ],
-  mainboard: [
-    {
-      id: "mb-asus-b760m-e-tuf",
-      variantId: 338,
-      sku: "asus-b760m-e-tuf-default",
-      name: "Mainboard ASUS B760M-E TUF Gaming WiFi",
-      brand: "ASUS",
-      socket: "LGA1700",
-      chipset: "Intel B760",
-      form: "mATX",
-      price: 6999000,
-      stock: 20,
-      warranty: "36 tháng",
-      image: "https://via.placeholder.com/80?text=MB",
-      description:
-        "Bo mạch chủ dòng TUF với VRM 8+1, hỗ trợ DDR5 và WiFi 6 sẵn sàng cho CPU Intel Gen 14.",
-      highlights: ["WiFi 6", "PCIe 4.0", "DDR5 7200MHz"],
-    },
-    {
-      id: "mb-msi-b550-gaming-edge",
-      variantId: 9992,
-      sku: "msi-b550-gaming-edge",
-      name: "Mainboard MSI MPG B550 Gaming Edge WiFi",
-      brand: "MSI",
-      socket: "AM4",
-      chipset: "AMD B550",
-      form: "ATX",
-      price: 4499000,
-      stock: 14,
-      warranty: "36 tháng",
-      image: "https://via.placeholder.com/80?text=MB",
-      description:
-        "Mainboard phổ thông hỗ trợ Ryzen 5000 cùng trang bị tản nhiệt VRM lớn.",
-      highlights: ["WiFi 6", "M.2 Shield Frozr", "12+2 Duet Rail Power"],
-    },
-  ],
-  ram: [
-    {
-      id: "ram-gskill-trident-z-32gb",
-      variantId: 347,
-      sku: "gskill-trident-z-default",
-      name: "RAM G.Skill Trident Z RGB 32GB (2x16GB) DDR4 3600MHz",
-      brand: "G.Skill",
-      type: "DDR4",
-      capacity: "32GB",
-      speed: "3600MHz",
-      price: 3290000,
-      stock: 20,
-      warranty: "60 tháng",
-      image: "https://via.placeholder.com/80?text=RAM",
-      description: "Bộ nhớ có XMP 2.0, tản nhiệt nhôm và dải RGB đồng bộ.",
-      highlights: ["CL16", "RGB Sync", "XMP 2.0"],
-    },
-    {
-      id: "ram-corsair-vengeance-32",
-      variantId: 9993,
-      sku: "corsair-vengeance-rgb-32",
-      name: "RAM Corsair Vengeance RGB Pro 32GB (2x16GB) DDR4 3200MHz",
-      brand: "Corsair",
-      type: "DDR4",
-      capacity: "32GB",
-      speed: "3200MHz",
-      price: 3090000,
-      stock: 35,
-      warranty: "60 tháng",
-      image: "https://via.placeholder.com/80?text=RAM",
-      description: "Lựa chọn phổ biến cho cấu hình gaming RGB với khả năng OC ổn định.",
-      highlights: ["CL16", "iCUE Sync", "Tản nhiệt nhôm"],
-    },
-  ],
-  vga: [
-    {
-      id: "gpu-asus-rtx-5060ti",
-      variantId: 337,
-      sku: "asus-rtx-5060ti-default",
-      name: "VGA ASUS Dual RTX 5060 Ti 8GB",
-      brand: "ASUS",
-      chipset: "NVIDIA RTX 5060 Ti",
-      memory: "8GB GDDR6",
-      price: 8000000,
-      stock: 596,
-      warranty: "36 tháng",
-      image: "https://via.placeholder.com/80?text=GPU",
-      description: "Tản nhiệt 2 fan Axial-tech, hỗ trợ DLSS 3 cho trải nghiệm gaming mượt.",
-      highlights: ["DLSS 3", "8GB GDDR6", "Axial-tech"],
-    },
-    {
-      id: "gpu-asus-rtx-5070",
-      variantId: 349,
-      sku: "asus-rtx-5070-default",
-      name: "VGA ASUS Dual RTX 5070 12GB",
-      brand: "ASUS",
-      chipset: "NVIDIA RTX 5070",
-      memory: "12GB GDDR6",
-      price: 12000000,
-      stock: 5,
-      warranty: "36 tháng",
-      image: "https://via.placeholder.com/80?text=GPU",
-      description: "Chuẩn bị cho 2K 165Hz với hiệu năng vượt trội và thiết kế 2.5 slot.",
-      highlights: ["12GB VRAM", "Ada Lovelace", "HDMI 2.1"],
-    },
-  ],
-  ssd: [
-    {
-      id: "ssd-samsung-980pro-1tb",
-      variantId: 6001,
-      sku: "ssd-samsung-980pro-1tb",
-      name: "SSD Samsung 980 PRO 1TB NVMe PCIe 4.0",
-      brand: "Samsung",
-      type: "NVMe M.2",
-      capacity: "1TB",
-      price: 2990000,
-      stock: 80,
-      warranty: "60 tháng",
-      image: "https://via.placeholder.com/80?text=SSD",
-      description: "Tốc độ đọc lên tới 7000 MB/s, tối ưu cho gaming và dựng video.",
-      highlights: ["PCIe 4.0", "7000 MB/s", "Dynamic Thermal Guard"],
-    },
-    {
-      id: "ssd-kingston-nv2-512",
-      variantId: 6002,
-      sku: "ssd-kingston-nv2-512",
-      name: "SSD Kingston NV2 512GB NVMe PCIe 4.0",
-      brand: "Kingston",
-      type: "NVMe M.2",
-      capacity: "512GB",
-      price: 1190000,
-      stock: 120,
-      warranty: "36 tháng",
-      image: "https://via.placeholder.com/80?text=SSD",
-      description: "Giải pháp lưu trữ giá tốt, phù hợp cấu hình phổ thông.",
-      highlights: ["PCIe 4.0 x4", "Tốc độ 3500 MB/s", "Bảo hành 36 tháng"],
-    },
-  ],
-  hdd: [
-    {
-      id: "hdd-seagate-barracuda-2tb",
-      variantId: 355,
-      sku: "Seagate-1TB-5400RPM",
-      name: "HDD Seagate Barracuda 2TB 5400RPM",
-      brand: "Seagate",
-      type: "3.5 inch",
-      capacity: "2TB",
-      price: 1690000,
-      stock: 42,
-      warranty: "24 tháng",
-      image: "https://via.placeholder.com/80?text=HDD",
-      description: "Ổ cứng lưu trữ dung lượng lớn, độ bền cao.",
-      highlights: ["Cache 256MB", "Multi-Tier Caching", "Bảo hành 24 tháng"],
-    },
-  ],
-  psu: [
-    {
-      id: "psu-corsair-rm750e",
-      variantId: 7001,
-      sku: "corsair-rm750e-80plus-gold",
-      name: "PSU Corsair RM750e 750W 80 Plus Gold (ATX 3.0)",
-      brand: "Corsair",
-      wattage: "750W",
-      certification: "80 Plus Gold",
-      price: 3290000,
-      stock: 60,
-      warranty: "84 tháng",
-      image: "https://via.placeholder.com/80?text=PSU",
-      description: "Nguồn đạt chuẩn ATX 3.0 kèm cáp 12VHPWR, phù hợp RTX 40 series.",
-      highlights: ["ATX 3.0", "Full Modular", "80 Plus Gold"],
-    },
-    {
-      id: "psu-cooler-master-gx650",
-      variantId: 7002,
-      sku: "cooler-master-gx650",
-      name: "PSU Cooler Master GX II Gold 650W",
-      brand: "Cooler Master",
-      wattage: "650W",
-      certification: "80 Plus Gold",
-      price: 2390000,
-      stock: 75,
-      warranty: "60 tháng",
-      image: "https://via.placeholder.com/80?text=PSU",
-      description: "Nguồn Gold giá tốt, dây bán modular dễ đi dây.",
-      highlights: ["80 Plus Gold", "DC-to-DC", "Fan 120mm FDB"],
-    },
-  ],
-  case: [
-    {
-      id: "case-nzxt-h7-flow",
-      variantId: 8001,
-      sku: "nzxt-h7-flow",
-      name: "Vỏ Case NZXT H7 Flow",
-      brand: "NZXT",
-      form: "ATX Mid Tower",
-      price: 2890000,
-      stock: 25,
-      warranty: "24 tháng",
-      image: "https://via.placeholder.com/80?text=CASE",
-      description: "Thiết kế Airflow tối ưu với mặt trước dạng mesh.",
-      highlights: ["Airflow tốt", "Hỗ trợ 360mm", "Kính cường lực"],
-    },
-    {
-      id: "case-cooler-master-td500",
-      variantId: 8002,
-      sku: "cooler-master-td500",
-      name: "Vỏ Case Cooler Master TD500 Mesh V2",
-      brand: "Cooler Master",
-      form: "ATX Mid Tower",
-      price: 2490000,
-      stock: 30,
-      warranty: "24 tháng",
-      image: "https://via.placeholder.com/80?text=CASE",
-      description: "Mặt trước 3D độc đáo kèm 3 quạt ARGB sẵn.",
-      highlights: ["ARGB Sync", "Hỗ trợ 360mm", "USB-C front panel"],
-    },
-  ],
-  cooling: [
-    {
-      id: "cooling-lianli-galahad-240",
-      variantId: 9001,
-      sku: "lianli-galahad-240-argb",
-      name: "Tản nhiệt nước AIO Lian Li Galahad 240 ARGB",
-      brand: "Lian Li",
-      type: "AIO",
-      size: "240mm",
-      price: 2990000,
-      stock: 40,
-      warranty: "36 tháng",
-      image: "https://via.placeholder.com/80?text=AIO",
-      description: "Block nhôm phay xước kèm vòng ARGB sang trọng.",
-      highlights: ["Ống bọc lưới", "ARGB Sync", "Pump Asetek Gen7"],
-    },
-    {
-      id: "cooling-deepcool-ak620",
-      variantId: 9002,
-      sku: "deepcool-ak620",
-      name: "Tản nhiệt khí Deepcool AK620 Digital",
-      brand: "Deepcool",
-      type: "Air",
-      size: "Dual tower",
-      price: 2690000,
-      stock: 50,
-      warranty: "36 tháng",
-      image: "https://via.placeholder.com/80?text=AIR",
-      description: "Tháp đôi đi kèm màn hình LED hiển thị nhiệt độ CPU.",
-      highlights: ["Dual Tower", "Màn LED", "Fan FDB 1850RPM"],
-    },
-  ],
-  monitor: [
-    {
-      id: "monitor-lg-27gn800",
-      variantId: 9501,
-      sku: "lg-27gn800-b",
-      name: "Màn hình LG UltraGear 27GN800-B 27\" QHD 144Hz",
-      brand: "LG",
-      size: '27"',
-      panel: "IPS",
-      refresh: "144Hz",
-      price: 8490000,
-      stock: 25,
-      warranty: "24 tháng",
-      image: "https://via.placeholder.com/120?text=Monitor",
-      description: "Tốc độ làm tươi 144Hz, G-Sync Compatible dành cho game thủ.",
-      highlights: ["QHD 144Hz", "sRGB 99%", "1ms GtG"],
-    },
-    {
-      id: "monitor-dell-s3220dgf",
-      variantId: 9502,
-      sku: "dell-s3220dgf",
-      name: "Màn hình Dell S3220DGF 32\" QHD 165Hz VA",
-      brand: "Dell",
-      size: '32"',
-      panel: "VA",
-      refresh: "165Hz",
-      price: 9990000,
-      stock: 18,
-      warranty: "24 tháng",
-      image: "https://via.placeholder.com/120?text=Monitor",
-      description: "Màn hình gaming 32 inch với độ sáng cao, tốc độ làm tươi 165Hz.",
-      highlights: ["QHD 165Hz", "VA Panel", "HDR"],
-    },
-  ],
-  keyboard: [
-    {
-      id: "keyboard-ikbc-c87",
-      variantId: 9601,
-      sku: "ikbc-c87",
-      name: "Bàn phím cơ iKBC CD87 Cherry MX Red",
-      brand: "iKBC",
-      price: 1890000,
-      stock: 40,
-      warranty: "12 tháng",
-      image: "https://via.placeholder.com/120?text=Keyboard",
-      description: "Layout TKL nhỏ gọn, switch Cherry MX, keycap PBT dye-sub.",
-      highlights: ["Cherry MX Red", "Keycap PBT", "N-key rollover"],
-    },
-    {
-      id: "keyboard-corsair-k95",
-      variantId: 9602,
-      sku: "corsair-k95-platinum",
-      name: "Bàn phím Corsair K95 Platinum XT Mechanical",
-      brand: "Corsair",
-      price: 3890000,
-      stock: 25,
-      warranty: "12 tháng",
-      image: "https://via.placeholder.com/120?text=Keyboard",
-      description: "Bàn phím full-size gaming cao cấp với Cherry MX Speed, RGB per-key.",
-      highlights: ["Cherry MX Speed", "RGB", "Aluminum Frame"],
-    },
-  ],
-  mouse: [
-    {
-      id: "mouse-logi-g304",
-      variantId: 9701,
-      sku: "logitech-g304",
-      name: "Chuột Logitech G304 Lightspeed Wireless",
-      brand: "Logitech",
-      price: 990000,
-      stock: 60,
-      warranty: "24 tháng",
-      image: "https://via.placeholder.com/120?text=Mouse",
-      description: "Chuột không dây LIGHTSPEED với cảm biến HERO 12K.",
-      highlights: ["Wireless", "HERO 12K", "6 nút lập trình"],
-    },
-    {
-      id: "mouse-razer-viper-ultimate",
-      variantId: 9702,
-      sku: "razer-viper-ultimate",
-      name: "Chuột Razer Viper Ultimate Wireless",
-      brand: "Razer",
-      price: 2990000,
-      stock: 30,
-      warranty: "24 tháng",
-      image: "https://via.placeholder.com/120?text=Mouse",
-      description: "Chuột gaming nhẹ nhất, Focus Pro 30K sensor, tốc độ reaction tức thì.",
-      highlights: ["Wireless", "30K DPI", "70g"],
-    },
-  ],
-  headphone: [
-    {
-      id: "headphone-hyperx-cloud",
-      variantId: 9801,
-      sku: "hyperx-cloud-2",
-      name: "Tai nghe HyperX Cloud II Gaming",
-      brand: "HyperX",
-      price: 2390000,
-      stock: 35,
-      warranty: "24 tháng",
-      image: "https://via.placeholder.com/120?text=Headphone",
-      description: "Âm thanh 7.1 giả lập, micro chống ồn, đệm tai êm ái.",
-      highlights: ["7.1 Surround", "Micro tháo rời", "Khung nhôm"],
-    },
-    {
-      id: "headphone-sennheiser-gsx1000",
-      variantId: 9802,
-      sku: "sennheiser-gsx1000",
-      name: "Tai nghe Sennheiser GSX 1200 Pro Gaming",
-      brand: "Sennheiser",
-      price: 5290000,
-      stock: 20,
-      warranty: "24 tháng",
-      image: "https://via.placeholder.com/120?text=Headphone",
-      description: "Tai nghe gaming chuyên nghiệp với âm thanh đỏ tuyệt vời và siêu thoải mái.",
-      highlights: ["7.1 Surround", "Pro Grade", "Siêu thoải mái"],
-    },
-  ],
-  speaker: [
-    {
-      id: "speaker-logi-z906",
-      variantId: 9901,
-      sku: "logitech-z906",
-      name: "Loa Logitech Z906 5.1",
-      brand: "Logitech",
-      price: 6590000,
-      stock: 15,
-      warranty: "24 tháng",
-      image: "https://via.placeholder.com/120?text=Speaker",
-      description: "Hệ thống loa 5.1 chuẩn THX, công suất 500W.",
-      highlights: ["5.1 THX", "500W RMS", "Nhiều ngõ vào"],
-    },
-    {
-      id: "speaker-jbl-lsr305",
-      variantId: 9902,
-      sku: "jbl-lsr305-studio",
-      name: "Loa JBL LSR305 Studio Monitor",
-      brand: "JBL",
-      price: 4990000,
-      stock: 22,
-      warranty: "24 tháng",
-      image: "https://via.placeholder.com/120?text=Speaker",
-      description: "Loa studio chuyên nghiệp với âm thanh chuẩn, phù hợp gaming và sản xuất.",
-      highlights: ["Studio Grade", "Flat Response", "120W"],
-    },
-  ],
-  gamingChair: [
-    {
-      id: "chair-secretlab-titan",
-      variantId: 9951,
-      sku: "secretlab-titan-evo",
-      name: "Ghế Secretlab TITAN Evo 2022",
-      brand: "Secretlab",
-      price: 13490000,
-      stock: 10,
-      warranty: "36 tháng",
-      image: "https://via.placeholder.com/120?text=Chair",
-      description: "Ghế gaming cao cấp với đệm lạnh, hỗ trợ lưng công thái học.",
-      highlights: ["Magnetic Head Pillow", "4D Armrest", "SeatBase đúc"],
-    },
-    {
-      id: "chair-herman-miller-embody",
-      variantId: 9952,
-      sku: "herman-miller-embody-gaming",
-      name: "Ghế Herman Miller Embody Gaming Edition",
-      brand: "Herman Miller",
-      price: 18990000,
-      stock: 8,
-      warranty: "36 tháng",
-      image: "https://via.placeholder.com/120?text=Chair",
-      description: "Ghế gaming hạng sang với công thái học tối ưu, hỗ trợ ngồi 8+ giờ.",
-      highlights: ["PostureFit", "12D Adjustable", "Logitech Integration"],
-    },
-  ],
-  caseFan: [
-    {
-      id: "fan-lianli-uni-120",
-      variantId: 9961,
-      sku: "lianli-uni-fan-sl120",
-      name: "Bộ 3 quạt Lian Li UNI FAN SL120 V2",
-      brand: "Lian Li",
-      price: 2290000,
-      stock: 40,
-      warranty: "12 tháng",
-      image: "https://via.placeholder.com/120?text=Fan",
-      description: "Quạt modular kết nối nhanh, LED ARGB đồng bộ.",
-      highlights: ["ARGB", "Modular", "2500RPM"],
-    },
-    {
-      id: "fan-corsair-sp120-elite",
-      variantId: 9962,
-      sku: "corsair-sp120-elite",
-      name: "Bộ 3 quạt Corsair SP120 Elite RGB",
-      brand: "Corsair",
-      price: 1690000,
-      stock: 50,
-      warranty: "12 tháng",
-      image: "https://via.placeholder.com/120?text=Fan",
-      description: "Quạt case với RGB tích hợp, airflow tốt, tĩnh lặng.",
-      highlights: ["RGB", "PWM", "2400RPM"],
-    },
-  ],
-  airCooler: [
-    {
-      id: "aircooler-bequiet-darkrock",
-      variantId: 9971,
-      sku: "bequiet-dark-rock4",
-      name: "Tản nhiệt khí be quiet! Dark Rock 4",
-      brand: "be quiet!",
-      price: 2390000,
-      stock: 18,
-      warranty: "36 tháng",
-      image: "https://via.placeholder.com/120?text=Air+Cooler",
-      description: "Tản khí cao cấp, hoạt động êm, TDP 200W.",
-      highlights: ["Silent Wings 135mm", "6 heatpipe", "TDP 200W"],
-    },
-    {
-      id: "aircooler-noctua-nh-d15",
-      variantId: 9972,
-      sku: "noctua-nh-d15",
-      name: "Tản nhiệt khí Noctua NH-D15 Chromax Black",
-      brand: "Noctua",
-      price: 3490000,
-      stock: 15,
-      warranty: "36 tháng",
-      image: "https://via.placeholder.com/120?text=Air+Cooler",
-      description: "Tản nhiệt khí dual tower tốt nhất, tĩnh lặng, TDP 250W.",
-      highlights: ["Dual Tower", "6 heatpipe", "TDP 250W"],
-    },
-  ],
-  aioCooler: [
-    {
-      id: "aio-nzxt-kraken-360",
-      variantId: 9981,
-      sku: "nzxt-kraken-360",
-      name: "Tản nước AIO NZXT Kraken 360 RGB",
-      brand: "NZXT",
-      price: 5490000,
-      stock: 22,
-      warranty: "36 tháng",
-      image: "https://via.placeholder.com/120?text=AIO",
-      description: "Mặt gương vô cực, màn LCD, hiệu năng cao.",
-      highlights: ["LCD Display", "Radiator 360mm", "ARGB Fan"],
-    },
-    {
-      id: "aio-corsair-h150i-elite",
-      variantId: 9982,
-      sku: "corsair-h150i-elite",
-      name: "Tản nước AIO Corsair H150i Elite Capellix XT",
-      brand: "Corsair",
-      price: 4890000,
-      stock: 28,
-      warranty: "36 tháng",
-      image: "https://via.placeholder.com/120?text=AIO",
-      description: "Tản nước AIO 360mm với pump hiệu năng cao, RGB đầy đủ.",
-      highlights: ["Radiator 360mm", "RGB", "iCUE Compatible"],
-    },
-  ],
-  customWater: [
-    {
-      id: "custom-ek-kit",
-      variantId: 9991,
-      sku: "ek-quantum-custom",
-      name: "Bộ kit tản nhiệt nước Custom EK-Quantum",
-      brand: "EKWB",
-      price: 11990000,
-      stock: 5,
-      warranty: "12 tháng",
-      image: "https://via.placeholder.com/120?text=Custom+Loop",
-      description: "Full kit custom loop với block CPU, pump/res, radiator 360mm.",
-      highlights: ["Block Nickel", "Pump D5", "Ống cứng PMMA"],
-    },
-    {
-      id: "custom-alphacool-eiswolf",
-      variantId: 9992,
-      sku: "alphacool-eiswolf-pro",
-      name: "Bộ kit tản nước Custom Alphacool Eiswolf Pro",
-      brand: "Alphacool",
-      price: 9990000,
-      stock: 8,
-      warranty: "12 tháng",
-      image: "https://via.placeholder.com/120?text=Custom+Loop",
-      description: "Kit custom loop chất lượng với block CPU+VGA, bơm DDC, radiator 360mm.",
-      highlights: ["CPU+GPU Block", "Pump DDC", "Radiator 360mm"],
-    },
-  ],
-};
+// const mockCatalog = {
+//   cpu: [
+//     {
+//       id: "cpu-intel-core-i5-14600kf",
+//       variantId: 336,
+//       sku: "intel-core-i5-14600kf-default",
+//       name: "CPU Intel Core i5-14600KF (up to 5.3GHz, 14 nhân 20 luồng, 24MB Cache)",
+//       brand: "Intel",
+//       socket: "LGA1700",
+//       generation: "Raptor Lake",
+//       price: 4500000,
+//       stock: 59,
+//       warranty: "36 tháng",
+//       image: "https://via.placeholder.com/80?text=CPU",
+//       description:
+//         "Mẫu CPU đang bán tại B.A Tech Zone với 14 nhân hiệu năng cao, phù hợp gaming và làm việc.",
+//       highlights: ["14 nhân / 20 luồng", "Turbo 5.3GHz", "TDP 125W"],
+//     },
+//     {
+//       id: "cpu-amd-ryzen-5-3400g",
+//       variantId: 9991,
+//       sku: "cpu-amd-ryzen-5-3400g",
+//       name: "CPU AMD Ryzen 5 3400G (3.7GHz Upto 4.2GHz, 4C/8T, Radeon Vega 11)",
+//       brand: "AMD",
+//       socket: "AM4",
+//       generation: "Ryzen 3000",
+//       price: 1799000,
+//       stock: 24,
+//       warranty: "36 tháng",
+//       image: "https://via.placeholder.com/80?text=CPU",
+//       description:
+//         "APU tích hợp Radeon Vega 11, phù hợp các cấu hình văn phòng hoặc gaming eSports.",
+//       highlights: ["iGPU Vega 11", "65W TDP", "Unlocked"],
+//     },
+//   ],
+//   mainboard: [
+//     {
+//       id: "mb-asus-b760m-e-tuf",
+//       variantId: 338,
+//       sku: "asus-b760m-e-tuf-default",
+//       name: "Mainboard ASUS B760M-E TUF Gaming WiFi",
+//       brand: "ASUS",
+//       socket: "LGA1700",
+//       chipset: "Intel B760",
+//       form: "mATX",
+//       price: 6999000,
+//       stock: 20,
+//       warranty: "36 tháng",
+//       image: "https://via.placeholder.com/80?text=MB",
+//       description:
+//         "Bo mạch chủ dòng TUF với VRM 8+1, hỗ trợ DDR5 và WiFi 6 sẵn sàng cho CPU Intel Gen 14.",
+//       highlights: ["WiFi 6", "PCIe 4.0", "DDR5 7200MHz"],
+//     },
+//     {
+//       id: "mb-msi-b550-gaming-edge",
+//       variantId: 9992,
+//       sku: "msi-b550-gaming-edge",
+//       name: "Mainboard MSI MPG B550 Gaming Edge WiFi",
+//       brand: "MSI",
+//       socket: "AM4",
+//       chipset: "AMD B550",
+//       form: "ATX",
+//       price: 4499000,
+//       stock: 14,
+//       warranty: "36 tháng",
+//       image: "https://via.placeholder.com/80?text=MB",
+//       description:
+//         "Mainboard phổ thông hỗ trợ Ryzen 5000 cùng trang bị tản nhiệt VRM lớn.",
+//       highlights: ["WiFi 6", "M.2 Shield Frozr", "12+2 Duet Rail Power"],
+//     },
+//   ],
+//   ram: [
+//     {
+//       id: "ram-gskill-trident-z-32gb",
+//       variantId: 347,
+//       sku: "gskill-trident-z-default",
+//       name: "RAM G.Skill Trident Z RGB 32GB (2x16GB) DDR4 3600MHz",
+//       brand: "G.Skill",
+//       type: "DDR4",
+//       capacity: "32GB",
+//       speed: "3600MHz",
+//       price: 3290000,
+//       stock: 20,
+//       warranty: "60 tháng",
+//       image: "https://via.placeholder.com/80?text=RAM",
+//       description: "Bộ nhớ có XMP 2.0, tản nhiệt nhôm và dải RGB đồng bộ.",
+//       highlights: ["CL16", "RGB Sync", "XMP 2.0"],
+//     },
+//     {
+//       id: "ram-corsair-vengeance-32",
+//       variantId: 9993,
+//       sku: "corsair-vengeance-rgb-32",
+//       name: "RAM Corsair Vengeance RGB Pro 32GB (2x16GB) DDR4 3200MHz",
+//       brand: "Corsair",
+//       type: "DDR4",
+//       capacity: "32GB",
+//       speed: "3200MHz",
+//       price: 3090000,
+//       stock: 35,
+//       warranty: "60 tháng",
+//       image: "https://via.placeholder.com/80?text=RAM",
+//       description: "Lựa chọn phổ biến cho cấu hình gaming RGB với khả năng OC ổn định.",
+//       highlights: ["CL16", "iCUE Sync", "Tản nhiệt nhôm"],
+//     },
+//   ],
+//   vga: [
+//     {
+//       id: "gpu-asus-rtx-5060ti",
+//       variantId: 337,
+//       sku: "asus-rtx-5060ti-default",
+//       name: "VGA ASUS Dual RTX 5060 Ti 8GB",
+//       brand: "ASUS",
+//       chipset: "NVIDIA RTX 5060 Ti",
+//       memory: "8GB GDDR6",
+//       price: 8000000,
+//       stock: 596,
+//       warranty: "36 tháng",
+//       image: "https://via.placeholder.com/80?text=GPU",
+//       description: "Tản nhiệt 2 fan Axial-tech, hỗ trợ DLSS 3 cho trải nghiệm gaming mượt.",
+//       highlights: ["DLSS 3", "8GB GDDR6", "Axial-tech"],
+//     },
+//     {
+//       id: "gpu-asus-rtx-5070",
+//       variantId: 349,
+//       sku: "asus-rtx-5070-default",
+//       name: "VGA ASUS Dual RTX 5070 12GB",
+//       brand: "ASUS",
+//       chipset: "NVIDIA RTX 5070",
+//       memory: "12GB GDDR6",
+//       price: 12000000,
+//       stock: 5,
+//       warranty: "36 tháng",
+//       image: "https://via.placeholder.com/80?text=GPU",
+//       description: "Chuẩn bị cho 2K 165Hz với hiệu năng vượt trội và thiết kế 2.5 slot.",
+//       highlights: ["12GB VRAM", "Ada Lovelace", "HDMI 2.1"],
+//     },
+//   ],
+//   ssd: [
+//     {
+//       id: "ssd-samsung-980pro-1tb",
+//       variantId: 6001,
+//       sku: "ssd-samsung-980pro-1tb",
+//       name: "SSD Samsung 980 PRO 1TB NVMe PCIe 4.0",
+//       brand: "Samsung",
+//       type: "NVMe M.2",
+//       capacity: "1TB",
+//       price: 2990000,
+//       stock: 80,
+//       warranty: "60 tháng",
+//       image: "https://via.placeholder.com/80?text=SSD",
+//       description: "Tốc độ đọc lên tới 7000 MB/s, tối ưu cho gaming và dựng video.",
+//       highlights: ["PCIe 4.0", "7000 MB/s", "Dynamic Thermal Guard"],
+//     },
+//     {
+//       id: "ssd-kingston-nv2-512",
+//       variantId: 6002,
+//       sku: "ssd-kingston-nv2-512",
+//       name: "SSD Kingston NV2 512GB NVMe PCIe 4.0",
+//       brand: "Kingston",
+//       type: "NVMe M.2",
+//       capacity: "512GB",
+//       price: 1190000,
+//       stock: 120,
+//       warranty: "36 tháng",
+//       image: "https://via.placeholder.com/80?text=SSD",
+//       description: "Giải pháp lưu trữ giá tốt, phù hợp cấu hình phổ thông.",
+//       highlights: ["PCIe 4.0 x4", "Tốc độ 3500 MB/s", "Bảo hành 36 tháng"],
+//     },
+//   ],
+//   hdd: [
+//     {
+//       id: "hdd-seagate-barracuda-2tb",
+//       variantId: 355,
+//       sku: "Seagate-1TB-5400RPM",
+//       name: "HDD Seagate Barracuda 2TB 5400RPM",
+//       brand: "Seagate",
+//       type: "3.5 inch",
+//       capacity: "2TB",
+//       price: 1690000,
+//       stock: 42,
+//       warranty: "24 tháng",
+//       image: "https://via.placeholder.com/80?text=HDD",
+//       description: "Ổ cứng lưu trữ dung lượng lớn, độ bền cao.",
+//       highlights: ["Cache 256MB", "Multi-Tier Caching", "Bảo hành 24 tháng"],
+//     },
+//   ],
+//   psu: [
+//     {
+//       id: "psu-corsair-rm750e",
+//       variantId: 7001,
+//       sku: "corsair-rm750e-80plus-gold",
+//       name: "PSU Corsair RM750e 750W 80 Plus Gold (ATX 3.0)",
+//       brand: "Corsair",
+//       wattage: "750W",
+//       certification: "80 Plus Gold",
+//       price: 3290000,
+//       stock: 60,
+//       warranty: "84 tháng",
+//       image: "https://via.placeholder.com/80?text=PSU",
+//       description: "Nguồn đạt chuẩn ATX 3.0 kèm cáp 12VHPWR, phù hợp RTX 40 series.",
+//       highlights: ["ATX 3.0", "Full Modular", "80 Plus Gold"],
+//     },
+//     {
+//       id: "psu-cooler-master-gx650",
+//       variantId: 7002,
+//       sku: "cooler-master-gx650",
+//       name: "PSU Cooler Master GX II Gold 650W",
+//       brand: "Cooler Master",
+//       wattage: "650W",
+//       certification: "80 Plus Gold",
+//       price: 2390000,
+//       stock: 75,
+//       warranty: "60 tháng",
+//       image: "https://via.placeholder.com/80?text=PSU",
+//       description: "Nguồn Gold giá tốt, dây bán modular dễ đi dây.",
+//       highlights: ["80 Plus Gold", "DC-to-DC", "Fan 120mm FDB"],
+//     },
+//   ],
+//   case: [
+//     {
+//       id: "case-nzxt-h7-flow",
+//       variantId: 8001,
+//       sku: "nzxt-h7-flow",
+//       name: "Vỏ Case NZXT H7 Flow",
+//       brand: "NZXT",
+//       form: "ATX Mid Tower",
+//       price: 2890000,
+//       stock: 25,
+//       warranty: "24 tháng",
+//       image: "https://via.placeholder.com/80?text=CASE",
+//       description: "Thiết kế Airflow tối ưu với mặt trước dạng mesh.",
+//       highlights: ["Airflow tốt", "Hỗ trợ 360mm", "Kính cường lực"],
+//     },
+//     {
+//       id: "case-cooler-master-td500",
+//       variantId: 8002,
+//       sku: "cooler-master-td500",
+//       name: "Vỏ Case Cooler Master TD500 Mesh V2",
+//       brand: "Cooler Master",
+//       form: "ATX Mid Tower",
+//       price: 2490000,
+//       stock: 30,
+//       warranty: "24 tháng",
+//       image: "https://via.placeholder.com/80?text=CASE",
+//       description: "Mặt trước 3D độc đáo kèm 3 quạt ARGB sẵn.",
+//       highlights: ["ARGB Sync", "Hỗ trợ 360mm", "USB-C front panel"],
+//     },
+//   ],
+//   cooling: [
+//     {
+//       id: "cooling-lianli-galahad-240",
+//       variantId: 9001,
+//       sku: "lianli-galahad-240-argb",
+//       name: "Tản nhiệt nước AIO Lian Li Galahad 240 ARGB",
+//       brand: "Lian Li",
+//       type: "AIO",
+//       size: "240mm",
+//       price: 2990000,
+//       stock: 40,
+//       warranty: "36 tháng",
+//       image: "https://via.placeholder.com/80?text=AIO",
+//       description: "Block nhôm phay xước kèm vòng ARGB sang trọng.",
+//       highlights: ["Ống bọc lưới", "ARGB Sync", "Pump Asetek Gen7"],
+//     },
+//     {
+//       id: "cooling-deepcool-ak620",
+//       variantId: 9002,
+//       sku: "deepcool-ak620",
+//       name: "Tản nhiệt khí Deepcool AK620 Digital",
+//       brand: "Deepcool",
+//       type: "Air",
+//       size: "Dual tower",
+//       price: 2690000,
+//       stock: 50,
+//       warranty: "36 tháng",
+//       image: "https://via.placeholder.com/80?text=AIR",
+//       description: "Tháp đôi đi kèm màn hình LED hiển thị nhiệt độ CPU.",
+//       highlights: ["Dual Tower", "Màn LED", "Fan FDB 1850RPM"],
+//     },
+//   ],
+//   monitor: [
+//     {
+//       id: "monitor-lg-27gn800",
+//       variantId: 9501,
+//       sku: "lg-27gn800-b",
+//       name: "Màn hình LG UltraGear 27GN800-B 27\" QHD 144Hz",
+//       brand: "LG",
+//       size: '27"',
+//       panel: "IPS",
+//       refresh: "144Hz",
+//       price: 8490000,
+//       stock: 25,
+//       warranty: "24 tháng",
+//       image: "https://via.placeholder.com/120?text=Monitor",
+//       description: "Tốc độ làm tươi 144Hz, G-Sync Compatible dành cho game thủ.",
+//       highlights: ["QHD 144Hz", "sRGB 99%", "1ms GtG"],
+//     },
+//     {
+//       id: "monitor-dell-s3220dgf",
+//       variantId: 9502,
+//       sku: "dell-s3220dgf",
+//       name: "Màn hình Dell S3220DGF 32\" QHD 165Hz VA",
+//       brand: "Dell",
+//       size: '32"',
+//       panel: "VA",
+//       refresh: "165Hz",
+//       price: 9990000,
+//       stock: 18,
+//       warranty: "24 tháng",
+//       image: "https://via.placeholder.com/120?text=Monitor",
+//       description: "Màn hình gaming 32 inch với độ sáng cao, tốc độ làm tươi 165Hz.",
+//       highlights: ["QHD 165Hz", "VA Panel", "HDR"],
+//     },
+//   ],
+//   keyboard: [
+//     {
+//       id: "keyboard-ikbc-c87",
+//       variantId: 9601,
+//       sku: "ikbc-c87",
+//       name: "Bàn phím cơ iKBC CD87 Cherry MX Red",
+//       brand: "iKBC",
+//       price: 1890000,
+//       stock: 40,
+//       warranty: "12 tháng",
+//       image: "https://via.placeholder.com/120?text=Keyboard",
+//       description: "Layout TKL nhỏ gọn, switch Cherry MX, keycap PBT dye-sub.",
+//       highlights: ["Cherry MX Red", "Keycap PBT", "N-key rollover"],
+//     },
+//     {
+//       id: "keyboard-corsair-k95",
+//       variantId: 9602,
+//       sku: "corsair-k95-platinum",
+//       name: "Bàn phím Corsair K95 Platinum XT Mechanical",
+//       brand: "Corsair",
+//       price: 3890000,
+//       stock: 25,
+//       warranty: "12 tháng",
+//       image: "https://via.placeholder.com/120?text=Keyboard",
+//       description: "Bàn phím full-size gaming cao cấp với Cherry MX Speed, RGB per-key.",
+//       highlights: ["Cherry MX Speed", "RGB", "Aluminum Frame"],
+//     },
+//   ],
+//   mouse: [
+//     {
+//       id: "mouse-logi-g304",
+//       variantId: 9701,
+//       sku: "logitech-g304",
+//       name: "Chuột Logitech G304 Lightspeed Wireless",
+//       brand: "Logitech",
+//       price: 990000,
+//       stock: 60,
+//       warranty: "24 tháng",
+//       image: "https://via.placeholder.com/120?text=Mouse",
+//       description: "Chuột không dây LIGHTSPEED với cảm biến HERO 12K.",
+//       highlights: ["Wireless", "HERO 12K", "6 nút lập trình"],
+//     },
+//     {
+//       id: "mouse-razer-viper-ultimate",
+//       variantId: 9702,
+//       sku: "razer-viper-ultimate",
+//       name: "Chuột Razer Viper Ultimate Wireless",
+//       brand: "Razer",
+//       price: 2990000,
+//       stock: 30,
+//       warranty: "24 tháng",
+//       image: "https://via.placeholder.com/120?text=Mouse",
+//       description: "Chuột gaming nhẹ nhất, Focus Pro 30K sensor, tốc độ reaction tức thì.",
+//       highlights: ["Wireless", "30K DPI", "70g"],
+//     },
+//   ],
+//   headphone: [
+//     {
+//       id: "headphone-hyperx-cloud",
+//       variantId: 9801,
+//       sku: "hyperx-cloud-2",
+//       name: "Tai nghe HyperX Cloud II Gaming",
+//       brand: "HyperX",
+//       price: 2390000,
+//       stock: 35,
+//       warranty: "24 tháng",
+//       image: "https://via.placeholder.com/120?text=Headphone",
+//       description: "Âm thanh 7.1 giả lập, micro chống ồn, đệm tai êm ái.",
+//       highlights: ["7.1 Surround", "Micro tháo rời", "Khung nhôm"],
+//     },
+//     {
+//       id: "headphone-sennheiser-gsx1000",
+//       variantId: 9802,
+//       sku: "sennheiser-gsx1000",
+//       name: "Tai nghe Sennheiser GSX 1200 Pro Gaming",
+//       brand: "Sennheiser",
+//       price: 5290000,
+//       stock: 20,
+//       warranty: "24 tháng",
+//       image: "https://via.placeholder.com/120?text=Headphone",
+//       description: "Tai nghe gaming chuyên nghiệp với âm thanh đỏ tuyệt vời và siêu thoải mái.",
+//       highlights: ["7.1 Surround", "Pro Grade", "Siêu thoải mái"],
+//     },
+//   ],
+//   speaker: [
+//     {
+//       id: "speaker-logi-z906",
+//       variantId: 9901,
+//       sku: "logitech-z906",
+//       name: "Loa Logitech Z906 5.1",
+//       brand: "Logitech",
+//       price: 6590000,
+//       stock: 15,
+//       warranty: "24 tháng",
+//       image: "https://via.placeholder.com/120?text=Speaker",
+//       description: "Hệ thống loa 5.1 chuẩn THX, công suất 500W.",
+//       highlights: ["5.1 THX", "500W RMS", "Nhiều ngõ vào"],
+//     },
+//     {
+//       id: "speaker-jbl-lsr305",
+//       variantId: 9902,
+//       sku: "jbl-lsr305-studio",
+//       name: "Loa JBL LSR305 Studio Monitor",
+//       brand: "JBL",
+//       price: 4990000,
+//       stock: 22,
+//       warranty: "24 tháng",
+//       image: "https://via.placeholder.com/120?text=Speaker",
+//       description: "Loa studio chuyên nghiệp với âm thanh chuẩn, phù hợp gaming và sản xuất.",
+//       highlights: ["Studio Grade", "Flat Response", "120W"],
+//     },
+//   ],
+//   gamingChair: [
+//     {
+//       id: "chair-secretlab-titan",
+//       variantId: 9951,
+//       sku: "secretlab-titan-evo",
+//       name: "Ghế Secretlab TITAN Evo 2022",
+//       brand: "Secretlab",
+//       price: 13490000,
+//       stock: 10,
+//       warranty: "36 tháng",
+//       image: "https://via.placeholder.com/120?text=Chair",
+//       description: "Ghế gaming cao cấp với đệm lạnh, hỗ trợ lưng công thái học.",
+//       highlights: ["Magnetic Head Pillow", "4D Armrest", "SeatBase đúc"],
+//     },
+//     {
+//       id: "chair-herman-miller-embody",
+//       variantId: 9952,
+//       sku: "herman-miller-embody-gaming",
+//       name: "Ghế Herman Miller Embody Gaming Edition",
+//       brand: "Herman Miller",
+//       price: 18990000,
+//       stock: 8,
+//       warranty: "36 tháng",
+//       image: "https://via.placeholder.com/120?text=Chair",
+//       description: "Ghế gaming hạng sang với công thái học tối ưu, hỗ trợ ngồi 8+ giờ.",
+//       highlights: ["PostureFit", "12D Adjustable", "Logitech Integration"],
+//     },
+//   ],
+//   caseFan: [
+//     {
+//       id: "fan-lianli-uni-120",
+//       variantId: 9961,
+//       sku: "lianli-uni-fan-sl120",
+//       name: "Bộ 3 quạt Lian Li UNI FAN SL120 V2",
+//       brand: "Lian Li",
+//       price: 2290000,
+//       stock: 40,
+//       warranty: "12 tháng",
+//       image: "https://via.placeholder.com/120?text=Fan",
+//       description: "Quạt modular kết nối nhanh, LED ARGB đồng bộ.",
+//       highlights: ["ARGB", "Modular", "2500RPM"],
+//     },
+//     {
+//       id: "fan-corsair-sp120-elite",
+//       variantId: 9962,
+//       sku: "corsair-sp120-elite",
+//       name: "Bộ 3 quạt Corsair SP120 Elite RGB",
+//       brand: "Corsair",
+//       price: 1690000,
+//       stock: 50,
+//       warranty: "12 tháng",
+//       image: "https://via.placeholder.com/120?text=Fan",
+//       description: "Quạt case với RGB tích hợp, airflow tốt, tĩnh lặng.",
+//       highlights: ["RGB", "PWM", "2400RPM"],
+//     },
+//   ],
+//   airCooler: [
+//     {
+//       id: "aircooler-bequiet-darkrock",
+//       variantId: 9971,
+//       sku: "bequiet-dark-rock4",
+//       name: "Tản nhiệt khí be quiet! Dark Rock 4",
+//       brand: "be quiet!",
+//       price: 2390000,
+//       stock: 18,
+//       warranty: "36 tháng",
+//       image: "https://via.placeholder.com/120?text=Air+Cooler",
+//       description: "Tản khí cao cấp, hoạt động êm, TDP 200W.",
+//       highlights: ["Silent Wings 135mm", "6 heatpipe", "TDP 200W"],
+//     },
+//     {
+//       id: "aircooler-noctua-nh-d15",
+//       variantId: 9972,
+//       sku: "noctua-nh-d15",
+//       name: "Tản nhiệt khí Noctua NH-D15 Chromax Black",
+//       brand: "Noctua",
+//       price: 3490000,
+//       stock: 15,
+//       warranty: "36 tháng",
+//       image: "https://via.placeholder.com/120?text=Air+Cooler",
+//       description: "Tản nhiệt khí dual tower tốt nhất, tĩnh lặng, TDP 250W.",
+//       highlights: ["Dual Tower", "6 heatpipe", "TDP 250W"],
+//     },
+//   ],
+//   aioCooler: [
+//     {
+//       id: "aio-nzxt-kraken-360",
+//       variantId: 9981,
+//       sku: "nzxt-kraken-360",
+//       name: "Tản nước AIO NZXT Kraken 360 RGB",
+//       brand: "NZXT",
+//       price: 5490000,
+//       stock: 22,
+//       warranty: "36 tháng",
+//       image: "https://via.placeholder.com/120?text=AIO",
+//       description: "Mặt gương vô cực, màn LCD, hiệu năng cao.",
+//       highlights: ["LCD Display", "Radiator 360mm", "ARGB Fan"],
+//     },
+//     {
+//       id: "aio-corsair-h150i-elite",
+//       variantId: 9982,
+//       sku: "corsair-h150i-elite",
+//       name: "Tản nước AIO Corsair H150i Elite Capellix XT",
+//       brand: "Corsair",
+//       price: 4890000,
+//       stock: 28,
+//       warranty: "36 tháng",
+//       image: "https://via.placeholder.com/120?text=AIO",
+//       description: "Tản nước AIO 360mm với pump hiệu năng cao, RGB đầy đủ.",
+//       highlights: ["Radiator 360mm", "RGB", "iCUE Compatible"],
+//     },
+//   ],
+//   customWater: [
+//     {
+//       id: "custom-ek-kit",
+//       variantId: 9991,
+//       sku: "ek-quantum-custom",
+//       name: "Bộ kit tản nhiệt nước Custom EK-Quantum",
+//       brand: "EKWB",
+//       price: 11990000,
+//       stock: 5,
+//       warranty: "12 tháng",
+//       image: "https://via.placeholder.com/120?text=Custom+Loop",
+//       description: "Full kit custom loop với block CPU, pump/res, radiator 360mm.",
+//       highlights: ["Block Nickel", "Pump D5", "Ống cứng PMMA"],
+//     },
+//     {
+//       id: "custom-alphacool-eiswolf",
+//       variantId: 9992,
+//       sku: "alphacool-eiswolf-pro",
+//       name: "Bộ kit tản nước Custom Alphacool Eiswolf Pro",
+//       brand: "Alphacool",
+//       price: 9990000,
+//       stock: 8,
+//       warranty: "12 tháng",
+//       image: "https://via.placeholder.com/120?text=Custom+Loop",
+//       description: "Kit custom loop chất lượng với block CPU+VGA, bơm DDC, radiator 360mm.",
+//       highlights: ["CPU+GPU Block", "Pump DDC", "Radiator 360mm"],
+//     },
+//   ],
+// };
 
 const componentTypes = [
   { id: "cpu", name: "Bộ vi xử lý", description: "Trái tim của hệ thống.", required: true },
@@ -694,6 +695,15 @@ const BuildPC = () => {
   const { addToCart } = useCartItemStore();
   
   const [selectedComponents, setSelectedComponents] = useState({});
+  // Track compatibility: store variant IDs for core components
+  const [compatibilityTracking, setCompatibilityTracking] = useState({
+    cpu: null,
+    mainboard: null,
+    ram: null,
+    vga: null,
+    case: null,
+  });
+  const [compatibilityFiltersData, setCompatibilityFiltersData] = useState(null);
   const [pickerState, setPickerState] = useState(defaultPickerState);
   const [quantities, setQuantities] = useState({});
   const [currentPage, setCurrentPage] = useState(1);
@@ -742,6 +752,30 @@ const BuildPC = () => {
       setLoading(false);
     }
   }, []);
+
+  // Fetch compatibility filters from backend
+  const fetchCompatibilityFilters = useCallback(async (typeId) => {
+    // Only check for core components
+    if (!['cpu', 'mainboard', 'ram', 'vga', 'case'].includes(typeId)) {
+      setCompatibilityFiltersData(null);
+      return;
+    }
+
+    try {
+      const response = await compatibilityService.getCompatibilityFilters(
+        typeId,
+        compatibilityTracking
+      );
+      
+      if (response.success && response.data) {
+        setCompatibilityFiltersData(response.data);
+        console.log('✅ Compatibility filters loaded:', response.data);
+      }
+    } catch (error) {
+      console.error(`Error fetching compatibility filters for ${typeId}:`, error);
+      setCompatibilityFiltersData(null);
+    }
+  }, [compatibilityTracking]);
 
   // Fetch products từ API khi mở picker
   const fetchProductsForType = useCallback(async (typeId) => {
@@ -918,8 +952,9 @@ const BuildPC = () => {
   );
 
   const openPicker = async (type) => {
-    // Fetch filter options and products when opening picker
+    // Fetch filter options, compatibility filters, and products when opening picker
     await fetchFilterOptions(type);
+    await fetchCompatibilityFilters(type);
     await fetchProductsForType(type);
     
     setPickerState({
@@ -937,6 +972,7 @@ const BuildPC = () => {
     setBrandFilters([]);
     setAttributeFilters({});
     setFilterOptions(null);
+    setCompatibilityFiltersData(null);
   };
 
   const handleAddComponent = (component) => {
@@ -953,6 +989,15 @@ const BuildPC = () => {
       ...prev,
       [pickerState.type]: prev[pickerState.type] || 1,
     }));
+    
+    // Update compatibility tracking for core components
+    if (['cpu', 'mainboard', 'ram', 'vga', 'case'].includes(pickerState.type)) {
+      setCompatibilityTracking((prev) => ({
+        ...prev,
+        [pickerState.type]: component.variantId,
+      }));
+    }
+    
     closePicker();
     
     // Hiển thị success dialog
@@ -1000,6 +1045,13 @@ const BuildPC = () => {
   const confirmClearConfiguration = () => {
     setSelectedComponents({});
     setQuantities({});
+    setCompatibilityTracking({
+      cpu: null,
+      mainboard: null,
+      ram: null,
+      vga: null,
+      case: null,
+    });
     setClearConfirm(false);
     setSuccessDialog({ open: true, message: 'Đã xóa toàn bộ cấu hình thành công!' });
   };
@@ -1020,6 +1072,14 @@ const BuildPC = () => {
       delete next[type];
       return next;
     });
+    
+    // Clear compatibility tracking
+    if (['cpu', 'mainboard', 'ram', 'vga', 'case'].includes(type)) {
+      setCompatibilityTracking((prev) => ({
+        ...prev,
+        [type]: null,
+      }));
+    }
     
     setDeleteConfirm({ open: false, typeId: null });
     
@@ -1121,6 +1181,28 @@ const BuildPC = () => {
     if (!pickerState.type) return [];
     let items = [...catalogItems];
 
+    // Apply compatibility filters from backend FIRST
+    if (compatibilityFiltersData?.filters && compatibilityFiltersData.filters.length > 0) {
+      items = items.filter((item) => {
+        const itemAttributes = item.attributesRaw || [];
+        
+        // Item must match ALL compatibility filters
+        return compatibilityFiltersData.filters.every((filter) => {
+          return itemAttributes.some((attr) => {
+            return (
+              attr.attribute_name === filter.attributeName &&
+              filter.values.some(val => {
+                // Normalize for comparison
+                const attrVal = attr.value_name?.trim().replace(/\s+/g, ' ').replace(/–/g, '-').replace(/\s*-\s*/g, '-');
+                const filterVal = val?.trim().replace(/\s+/g, ' ').replace(/–/g, '-').replace(/\s*-\s*/g, '-');
+                return attrVal === filterVal;
+              })
+            );
+          });
+        });
+      });
+    }
+
     if (pickerState.search) {
       const query = pickerState.search.toLowerCase();
       items = items.filter(
@@ -1176,7 +1258,7 @@ const BuildPC = () => {
     }
 
     return items;
-  }, [catalogItems, pickerState.search, pickerState.sort, priceRange, brandFilters, attributeFilters, filterOptions]);
+  }, [catalogItems, pickerState.search, pickerState.sort, priceRange, brandFilters, attributeFilters, filterOptions, compatibilityFiltersData]);
 
   const brandOptions = useMemo(() => {
     return filterOptions?.brands || [];
@@ -1492,6 +1574,23 @@ const BuildPC = () => {
             {/* Right: Products */}
             <div className="flex flex-col overflow-hidden min-w-0 h-full bg-white">
               <div className="flex-shrink-0 border-b bg-white p-3 space-y-2">
+                {/* Compatibility Info Banner */}
+                {compatibilityFiltersData?.filters && compatibilityFiltersData.filters.length > 0 && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-md p-3 mb-2">
+                    <div className="flex items-start gap-2">
+                      <CheckCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                      <div className="flex-1">
+                        <p className="text-sm font-semibold text-blue-900 mb-1">Lọc theo tương thích</p>
+                        {compatibilityFiltersData.filters.map((filter, index) => (
+                          <p key={index} className="text-xs text-blue-700">
+                            • {filter.reason}
+                          </p>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <div className="relative flex-1">
                   <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input

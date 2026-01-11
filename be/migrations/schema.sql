@@ -8,7 +8,7 @@ CREATE TABLE `attributes` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Đang đổ dữ liệu cho bảng `attributes`
+-- Dumping data for table `attributes`
 --
 
 INSERT INTO `attributes` (`attribute_id`, `attribute_name`, `display_order`, `is_active`, `created_at`) VALUES
@@ -37,7 +37,33 @@ INSERT INTO `attributes` (`attribute_id`, `attribute_name`, `display_order`, `is
 (23, 'Tần Số Quét', 23, 1, '2026-01-04 12:31:19'),
 (24, 'Độ Phân Giải', 24, 1, '2026-01-04 12:31:19'),
 (25, 'Tấm Nền', 25, 1, '2026-01-04 12:31:19'),
-(26, 'Kích Thước', 26, 1, '2026-01-04 12:31:19');
+(26, 'Kích Thước', 26, 1, '2026-01-04 12:31:19'),
+(27, 'Thế hệ bộ nhớ', 0, 1, '2026-01-11 03:18:00'),
+(28, 'Loại RAM Hỗ Trợ', 0, 1, '2026-01-11 03:18:58'),
+(29, 'Độ dài GPU tối đa (mm)', 0, 1, '2026-01-11 03:26:46'),
+(30, 'Độ dài GPU (mm)', 0, 1, '2026-01-11 03:27:03');
+
+--
+-- Indexes for dumped tables
+--
+
+--
+-- Indexes for table `attributes`
+--
+ALTER TABLE `attributes`
+  ADD PRIMARY KEY (`attribute_id`);
+
+--
+-- AUTO_INCREMENT for dumped tables
+--
+
+--
+-- AUTO_INCREMENT for table `attributes`
+--
+ALTER TABLE `attributes`
+  MODIFY `attribute_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=31;
+COMMIT;
+
 
 
 CREATE TABLE `attributes_categories` (
@@ -48,7 +74,7 @@ CREATE TABLE `attributes_categories` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Đang đổ dữ liệu cho bảng `attributes_categories`
+-- Dumping data for table `attributes_categories`
 --
 
 INSERT INTO `attributes_categories` (`attribute_category_id`, `attribute_id`, `category_id`, `is_variant_attribute`) VALUES
@@ -87,13 +113,45 @@ INSERT INTO `attributes_categories` (`attribute_category_id`, `attribute_id`, `c
 (33, 23, 40, 0),
 (34, 24, 40, 0),
 (35, 25, 40, 0),
-(36, 26, 40, 0);
-
--- --------------------------------------------------------
+(36, 26, 40, 0),
+(38, 28, 5, 0),
+(40, 29, 7, 0),
+(41, 30, 2, 0);
 
 --
--- Cấu trúc bảng cho bảng `attribute_values`
+-- Indexes for dumped tables
 --
+
+--
+-- Indexes for table `attributes_categories`
+--
+ALTER TABLE `attributes_categories`
+  ADD PRIMARY KEY (`attribute_category_id`),
+  ADD KEY `attribute_categories_ibfk_1` (`attribute_id`),
+  ADD KEY `attribute_categories_ibfk_2` (`category_id`);
+
+--
+-- AUTO_INCREMENT for dumped tables
+--
+
+--
+-- AUTO_INCREMENT for table `attributes_categories`
+--
+ALTER TABLE `attributes_categories`
+  MODIFY `attribute_category_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=42;
+
+--
+-- Constraints for dumped tables
+--
+
+--
+-- Constraints for table `attributes_categories`
+--
+ALTER TABLE `attributes_categories`
+  ADD CONSTRAINT `attributes_categories_ibfk_1` FOREIGN KEY (`attribute_id`) REFERENCES `attributes` (`attribute_id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `attributes_categories_ibfk_2` FOREIGN KEY (`category_id`) REFERENCES `categories` (`category_id`) ON DELETE CASCADE;
+COMMIT;
+
 
 CREATE TABLE `attribute_values` (
   `attribute_value_id` int(11) NOT NULL,
@@ -105,7 +163,7 @@ CREATE TABLE `attribute_values` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Đang đổ dữ liệu cho bảng `attribute_values`
+-- Dumping data for table `attribute_values`
 --
 
 INSERT INTO `attribute_values` (`attribute_value_id`, `attribute_id`, `value_name`, `display_order`, `is_active`, `created_at`) VALUES
@@ -276,12 +334,133 @@ INSERT INTO `attribute_values` (`attribute_value_id`, `attribute_id`, `value_nam
 (165, 26, '23.8 inch', 3, 1, '2026-01-04 12:31:19'),
 (166, 26, '24.5 inch', 4, 1, '2026-01-04 12:31:19'),
 (167, 26, '27 inch', 5, 1, '2026-01-04 12:31:19'),
-(168, 26, '32 inch', 6, 1, '2026-01-04 12:31:19');
+(168, 26, '32 inch', 6, 1, '2026-01-04 12:31:19'),
+(169, 4, 'AMD Zen 4', 0, 1, '2026-01-11 03:12:10'),
+(170, 4, 'AMD Zen 5', 0, 1, '2026-01-11 03:12:18'),
+(171, 4, 'AMD Zen 3', 0, 1, '2026-01-11 03:12:52'),
+(172, 4, 'AMD Zen 3 ( Ryzen 5000 series)', 0, 1, '2026-01-11 03:13:20'),
+(173, 4, 'AMD Zen 4 (Ryzen 7000 series)', 0, 1, '2026-01-11 03:14:01'),
+(174, 28, 'DDR4', 0, 1, '2026-01-11 03:19:25'),
+(175, 28, 'DDR5', 0, 1, '2026-01-11 03:19:29'),
+(176, 13, 'Mini - ITX', 0, 1, '2026-01-11 04:02:20'),
+(177, 13, 'Mini-ITX', 0, 1, '2026-01-11 04:02:33'),
+(178, 13, 'M - ATX', 0, 1, '2026-01-11 04:03:01'),
+(179, 13, 'E - ATX', 0, 1, '2026-01-11 04:03:08'),
+(180, 19, 'Mini - ITX', 0, 1, '2026-01-11 04:03:26'),
+(181, 19, 'M - ATX', 0, 1, '2026-01-11 04:03:30'),
+(182, 19, 'E - ATX', 0, 1, '2026-01-11 04:03:40');
+
+--
+-- Indexes for dumped tables
+--
+
+--
+-- Indexes for table `attribute_values`
+--
+ALTER TABLE `attribute_values`
+  ADD PRIMARY KEY (`attribute_value_id`),
+  ADD UNIQUE KEY `unique_attribute_value` (`attribute_id`,`value_name`),
+  ADD UNIQUE KEY `uk_attribute_value` (`attribute_id`,`value_name`),
+  ADD KEY `idx_attribute_id` (`attribute_id`);
+
+--
+-- AUTO_INCREMENT for dumped tables
+--
+
+--
+-- AUTO_INCREMENT for table `attribute_values`
+--
+ALTER TABLE `attribute_values`
+  MODIFY `attribute_value_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=183;
+
+--
+-- Constraints for dumped tables
+--
+
+--
+-- Constraints for table `attribute_values`
+--
+ALTER TABLE `attribute_values`
+  ADD CONSTRAINT `attribute_values_ibfk_1` FOREIGN KEY (`attribute_id`) REFERENCES `attributes` (`attribute_id`) ON DELETE CASCADE;
+COMMIT;
 
 
 --
--- Cấu trúc bảng cho bảng `categories_attributes_values`
+-- Table structure for table `categories`
 --
+
+CREATE TABLE `categories` (
+  `category_id` int(11) NOT NULL,
+  `category_name` varchar(100) NOT NULL,
+  `description` text DEFAULT NULL,
+  `parent_category_id` int(11) DEFAULT NULL,
+  `image_url` varchar(255) DEFAULT NULL,
+  `icon` varchar(100) DEFAULT NULL,
+  `is_active` tinyint(1) DEFAULT 1,
+  `display_order` int(11) DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `categories`
+--
+
+INSERT INTO `categories` (`category_id`, `category_name`, `description`, `parent_category_id`, `image_url`, `icon`, `is_active`, `display_order`, `created_at`, `updated_at`) VALUES
+(1, 'CPU', 'Bộ vi xử lý trung tâm (Central Processing Unit) - Lựa chọn CPU phù hợp cho hệ thống của bạn', NULL, '/uploads/categories/CPU-1763457142421-41099656.webp', NULL, 1, 1, '2025-11-05 12:37:11', '2025-11-18 09:12:22'),
+(2, 'VGA', 'Card đồ họa (Video Graphics Array) - Card màn hình cao cấp cho gaming và đồ họa', NULL, '/uploads/categories/VGA-1763457150324-84510626.webp', NULL, 1, 2, '2025-11-05 12:37:11', '2025-11-18 09:12:30'),
+(4, 'SSD', 'Ổ cứng thể rắn (Solid State Drive) - SSD NVMe, SATA tốc độ cao', NULL, '/uploads/categories/SSD-1763457167579-214129801.webp', NULL, 1, 4, '2025-11-05 12:37:11', '2025-11-18 09:12:47'),
+(5, 'Mainboard', 'Bo mạch chủ (Motherboard) - Mainboard Intel, AMD các dòng ATX, mATX, ITX', NULL, '/uploads/categories/MAINBOARD-1763457180313-19278038.webp', NULL, 1, 5, '2025-11-05 12:37:11', '2025-11-18 09:13:00'),
+(6, 'PSU', 'Bộ nguồn máy tính (Power Supply Unit) - PSU 80 Plus Bronze, Gold, Platinum', NULL, '/uploads/categories/PSU-1763457190031-894247274.webp', NULL, 1, 6, '2025-11-05 12:37:11', '2025-11-18 09:13:10'),
+(7, 'Case', 'Vỏ máy tính (Computer Case) - Case PC ATX, mATX, ITX với quạt RGB, tản nhiệt tốt', NULL, '/uploads/categories/CASE-1763457197140-926410204.webp', NULL, 1, 7, '2025-11-05 12:37:11', '2025-11-18 09:13:17'),
+(8, 'Cooling', 'Tản nhiệt và làm mát - Quạt case, tản nhiệt CPU, tản nhiệt nước AIO', NULL, '/uploads/categories/cooling-1763787556488-628471150.jpg', NULL, 1, 8, '2025-11-05 12:37:11', '2025-11-22 04:59:16'),
+(13, 'HDD', 'Ổ đĩa cứng (Hard Disk Drive) là thiết bị lưu trữ dữ liệu chính cho máy tính', NULL, '/uploads/categories/hdd-1763456945816-496007346.jpg', NULL, 1, 0, '2025-11-08 14:08:34', '2025-11-18 09:09:05'),
+(35, 'RAM', NULL, NULL, '/uploads/categories/RAM-1763457131288-611013067.webp', NULL, 1, 0, '2025-11-16 13:14:05', '2025-11-18 09:12:11'),
+(40, 'Monitor', 'Màn hình máy tính - Gaming monitor, màn hình văn phòng', NULL, '/uploads/categories/monitor-1764063376896-496519534.jpg', NULL, 1, 40, '2025-11-25 08:58:13', '2025-11-25 09:36:16'),
+(41, 'Keyboard', 'Bàn phím - Bàn phím cơ, bàn phím gaming', NULL, '/uploads/categories/keyboard-1764062589551-543344518.jpg', NULL, 1, 41, '2025-11-25 08:58:13', '2025-11-25 09:23:09'),
+(42, 'Mouse', 'Chuột máy tính - Chuột gaming, chuột văn phòng', NULL, '/uploads/categories/mousewebp-1764063346830-923804201.jpg', NULL, 1, 42, '2025-11-25 08:58:13', '2025-11-25 09:35:46'),
+(43, 'Headphone', 'Tai nghe - Tai nghe gaming, tai nghe văn phòng', NULL, '/uploads/categories/headphone-1764063358432-185276737.jpg', NULL, 1, 43, '2025-11-25 08:58:13', '2025-11-25 09:35:58'),
+(44, 'Speaker', 'Loa máy tính - Loa 2.0, 2.1, 5.1', NULL, '/uploads/categories/speaker-1764063399190-71396739.jpg', NULL, 1, 44, '2025-11-25 08:58:13', '2025-11-25 09:36:39'),
+(45, 'Gaming Chair', 'Ghế gaming - Ghế công thái học, ghế gaming cao cấp', NULL, '/uploads/categories/gaming_chair-1764062273403-428459301.jpg', NULL, 1, 45, '2025-11-25 08:58:13', '2025-11-25 09:17:53'),
+(46, 'Case Fan', 'Quạt case - Quạt tản nhiệt RGB, quạt PWM', NULL, '/uploads/categories/case_fan-1764062438647-791625777.jpg', NULL, 1, 46, '2025-11-25 08:58:13', '2025-11-25 09:20:38'),
+(47, 'Air Cooler', 'Tản nhiệt khí - Tản nhiệt CPU tower, dual tower', 8, '/uploads/categories/air_cooler-1764063453689-131504214.jpg', NULL, 1, 47, '2025-11-25 08:58:13', '2025-11-25 09:37:33'),
+(48, 'AIO Cooler', 'Tản nhiệt nước AIO - Tản nước 240mm, 360mm', 8, '/uploads/categories/aio_cooler-1764063468237-385237851.jpg', NULL, 1, 48, '2025-11-25 08:58:13', '2025-11-25 09:37:48'),
+(49, 'Custom Water', 'Tản nhiệt nước custom - Bộ kit tản nước custom loop', 8, '/uploads/categories/custom_water-1764063311202-157641460.jpg', NULL, 1, 49, '2025-11-25 08:58:13', '2025-11-25 10:40:27');
+
+--
+-- Indexes for dumped tables
+--
+
+--
+-- Indexes for table `categories`
+--
+ALTER TABLE `categories`
+  ADD PRIMARY KEY (`category_id`),
+  ADD KEY `idx_parent_category` (`parent_category_id`),
+  ADD KEY `idx_is_active` (`is_active`);
+
+--
+-- AUTO_INCREMENT for dumped tables
+--
+
+--
+-- AUTO_INCREMENT for table `categories`
+--
+ALTER TABLE `categories`
+  MODIFY `category_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=57;
+
+--
+-- Constraints for dumped tables
+--
+
+--
+-- Constraints for table `categories`
+--
+ALTER TABLE `categories`
+  ADD CONSTRAINT `categories_ibfk_1` FOREIGN KEY (`parent_category_id`) REFERENCES `categories` (`category_id`) ON DELETE SET NULL;
+COMMIT;
+
+-
 
 CREATE TABLE `categories_attributes_values` (
   `cav_id` int(11) NOT NULL,
@@ -291,7 +470,7 @@ CREATE TABLE `categories_attributes_values` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Đang đổ dữ liệu cho bảng `categories_attributes_values`
+-- Dumping data for table `categories_attributes_values`
 --
 
 INSERT INTO `categories_attributes_values` (`cav_id`, `category_id`, `attribute_id`, `attribute_value_id`) VALUES
@@ -315,10 +494,6 @@ INSERT INTO `categories_attributes_values` (`cav_id`, `category_id`, `attribute_
 (28, 1, 4, 50),
 (29, 1, 4, 51),
 (30, 1, 4, 52),
-(31, 1, 4, 53),
-(32, 1, 4, 54),
-(33, 1, 4, 55),
-(34, 1, 4, 56),
 (41, 2, 1, 2),
 (42, 2, 1, 7),
 (43, 2, 1, 4),
@@ -385,10 +560,6 @@ INSERT INTO `categories_attributes_values` (`cav_id`, `category_id`, `attribute_
 (125, 5, 12, 105),
 (126, 5, 12, 106),
 (127, 5, 12, 107),
-(130, 5, 13, 108),
-(131, 5, 13, 109),
-(132, 5, 13, 110),
-(133, 5, 13, 111),
 (137, 5, 14, 112),
 (138, 5, 14, 113),
 (139, 5, 14, 114),
@@ -425,10 +596,6 @@ INSERT INTO `categories_attributes_values` (`cav_id`, `category_id`, `attribute_
 (180, 7, 18, 130),
 (181, 7, 18, 131),
 (182, 7, 18, 132),
-(186, 7, 19, 133),
-(187, 7, 19, 134),
-(188, 7, 19, 135),
-(189, 7, 19, 136),
 (193, 13, 1, 18),
 (194, 13, 1, 19),
 (195, 13, 1, 12),
@@ -491,7 +658,55 @@ INSERT INTO `categories_attributes_values` (`cav_id`, `category_id`, `attribute_
 (280, 40, 26, 165),
 (281, 40, 26, 166),
 (282, 40, 26, 167),
-(283, 40, 26, 168);
+(283, 40, 26, 168),
+(288, 1, 4, 172),
+(289, 1, 4, 173),
+(290, 5, 28, 174),
+(291, 5, 28, 175),
+(295, 5, 13, 176),
+(296, 5, 13, 178),
+(297, 5, 13, 110),
+(298, 5, 13, 179),
+(299, 7, 19, 180),
+(300, 7, 19, 181),
+(301, 7, 19, 135),
+(302, 7, 19, 182);
+
+--
+-- Indexes for dumped tables
+--
+
+--
+-- Indexes for table `categories_attributes_values`
+--
+ALTER TABLE `categories_attributes_values`
+  ADD PRIMARY KEY (`cav_id`),
+  ADD KEY `category_id` (`category_id`),
+  ADD KEY `attribute_id` (`attribute_id`),
+  ADD KEY `attribute_value_id` (`attribute_value_id`);
+
+--
+-- AUTO_INCREMENT for dumped tables
+--
+
+--
+-- AUTO_INCREMENT for table `categories_attributes_values`
+--
+ALTER TABLE `categories_attributes_values`
+  MODIFY `cav_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=303;
+
+--
+-- Constraints for dumped tables
+--
+
+--
+-- Constraints for table `categories_attributes_values`
+--
+ALTER TABLE `categories_attributes_values`
+  ADD CONSTRAINT `categories_attributes_values_ibfk_1` FOREIGN KEY (`category_id`) REFERENCES `categories` (`category_id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `categories_attributes_values_ibfk_2` FOREIGN KEY (`attribute_id`) REFERENCES `attributes` (`attribute_id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `categories_attributes_values_ibfk_3` FOREIGN KEY (`attribute_value_id`) REFERENCES `attribute_values` (`attribute_value_id`) ON DELETE CASCADE;
+COMMIT;
 
 
 CREATE TABLE `products` (
@@ -512,35 +727,73 @@ CREATE TABLE `products` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Đang đổ dữ liệu cho bảng `products`
+-- Dumping data for table `products`
 --
 
 INSERT INTO `products` (`product_id`, `category_id`, `product_name`, `slug`, `description`, `base_price`, `is_active`, `is_featured`, `view_count`, `rating_average`, `review_count`, `created_at`, `updated_at`, `img_path`) VALUES
-(395, 13, 'Seagate 500GB', 'seagate-500gb', 'Mô tả Seagate 500GB', 0.00, 1, 1, 0, 0.00, 0, '2026-01-04 16:36:19', '2026-01-04 16:36:19', NULL),
-(396, 1, 'AMD Ryzen 5 5700X3D', 'amd-ryzen-5-5700x3d', 'Mắc quá đi', 4700000.00, 1, 1, 0, 0.00, 0, '2026-01-04 16:43:50', '2026-01-04 16:43:50', NULL),
+(395, 13, 'Seagate 500GB', 'seagate-500gb', 'Mô tả Seagate 500GB', 0.00, 0, 1, 0, 0.00, 0, '2026-01-04 16:36:19', '2026-01-04 19:12:01', NULL),
+(396, 1, 'AMD Ryzen 5 5700X3D', 'amd-ryzen-5-5700x3d', 'Mắc quá đi', 4700000.00, 0, 1, 0, 0.00, 0, '2026-01-04 16:43:50', '2026-01-04 19:12:10', NULL),
 (397, 1, 'CPU Intel Core i5-12400F (Up to 4.4Ghz, 6 Nhân 12 Luồng, 18MB Cache, Socket Intel LGA 1700)', 'cpu-intel-core-i5-12400f-up-to-44ghz-6-nhan-12-luong-18mb-cache-socket-intel-lga-1700', 'CPU Intel Core i5-12400F - CPU thuộc thế hệ thứ 12 (Alder Lake) thiết kế tối ưu cho các game thủ và những người sáng tạo nội dung bán chuyên.', 2900000.00, 1, 1, 0, 0.00, 0, '2026-01-04 17:15:45', '2026-01-04 17:15:45', NULL),
 (398, 1, 'CPU Intel Core i5-12400 (Upto 4.4Ghz, 6 nhân 12 luồng, 18MB Cache, 65W) - Socket Intel LGA 1700)', 'cpu-intel-core-i5-12400-upto-44ghz-6-nhan-12-luong-18mb-cache-65w-socket-intel-lga-1700', 'CPU Intel Core i5-12400 là bước nhảy vọt của Intel ở thế hệ thứ 12, mang trong mình sức mạnh bền bỉ, sẵn sàng cùng bạn chinh chiến mọi tựa game AAA hay xử lý chồng chất những deadline đồ họa phức tạp', 4400000.00, 1, 0, 0, 0.00, 0, '2026-01-04 17:25:43', '2026-01-04 17:25:43', NULL),
 (399, 1, 'CPU Intel Core i5-13400 (up to 4.6Ghz, 10 nhân 16 luồng, 20MB Cache, 65W) - Socket Intel LGA 1700/Raptor Lake) ', 'cpu-intel-core-i5-13400-up-to-46ghz-10-nhan-16-luong-20mb-cache-65w-socket-intel-lga-1700raptor-lake', 'CPU Intel Core i5-13400 - Bộ vi xử lý không quá cao cấp để gây lãng phí, nhưng cũng không hề yếu để phải đắn đo khi làm việc nặng hay chơi game.', 5100000.00, 1, 0, 0, 0.00, 0, '2026-01-04 17:34:58', '2026-01-04 17:34:58', NULL),
-(400, 13, 'Ổ Cứng HDD SEAGATE Barracuda 4TB 3.5 inch 5400RPM, SATA III, 256MB Cache', 'o-cung-hdd-seagate-barracuda-4tb-35-inch-5400rpm-sata-iii-256mb-cache-st4000dm004', 'Ổ cứng truyền thống HDD với ưu thế là độ bền và dung lượng cao vẫn là một phần không thể thiếu được trong một chiếc máy tính. Đặc biệt là trong thời đại công nghệ hiện nay.', 3600000.00, 1, 1, 0, 0.00, 0, '2026-01-04 17:41:50', '2026-01-04 17:43:47', NULL),
-(401, 13, 'Ổ Cứng HDD SEAGATE IronWolf 10TB 3.5 inch, 7200RPM ,SATA III3, 256MB Cache', 'o-cung-hdd-seagate-ironwolf-10tb-35-inch-7200rpm-sata-iii3-256mb-cache', 'Ổ cứng Seagate IronWolf 10TB — lưu trữ dữ liệu lớn, chạy ổn định, phù hợp cho PC, NAS, server nhỏ. Tốc độ quay cao và bộ nhớ đệm lớn giúp truy xuất dữ liệu nhanh, đáng tin cậy cho công việc và giải trí.', 10300000.00, 1, 0, 0, 0.00, 0, '2026-01-04 17:48:16', '2026-01-04 17:48:16', NULL),
-(402, 13, 'Ổ Cứng HDD Toshiba P300 4TB 3.5 inch, 5400RPM, SATA III, 128MB Cache', 'o-cung-hdd-toshiba-p300-4tb-35-inch-5400rpm-sata-iii-128mb-cache', 'Thiết kế này giúp cho tốc độ đọc và ghi chính xác hơn, nhanh hơn và truy cập nhanh vào dữ liệu của bạn.', 3400000.00, 1, 0, 0, 0.00, 0, '2026-01-04 17:51:09', '2026-01-04 17:51:09', NULL),
+(400, 13, 'Ổ Cứng HDD SEAGATE Barracuda 4TB 3.5 inch 5400RPM, SATA III, 256MB Cache', 'o-cung-hdd-seagate-barracuda-4tb-35-inch-5400rpm-sata-iii-256mb-cache-st4000dm004', 'Ổ cứng truyền thống HDD với ưu thế là độ bền và dung lượng cao vẫn là một phần không thể thiếu được trong một chiếc máy tính. Đặc biệt là trong thời đại công nghệ hiện nay.', 3600000.00, 1, 1, 6, 0.00, 0, '2026-01-04 17:41:50', '2026-01-10 15:05:19', NULL),
+(401, 13, 'Ổ Cứng HDD SEAGATE IronWolf 10TB 3.5 inch, 7200RPM ,SATA III3, 256MB Cache', 'o-cung-hdd-seagate-ironwolf-10tb-35-inch-7200rpm-sata-iii3-256mb-cache', 'Ổ cứng Seagate IronWolf 10TB — lưu trữ dữ liệu lớn, chạy ổn định, phù hợp cho PC, NAS, server nhỏ. Tốc độ quay cao và bộ nhớ đệm lớn giúp truy xuất dữ liệu nhanh, đáng tin cậy cho công việc và giải trí.', 10300000.00, 1, 0, 2, 0.00, 0, '2026-01-04 17:48:16', '2026-01-04 19:17:04', NULL),
+(402, 13, 'Ổ Cứng HDD Toshiba P300 4TB 3.5 inch, 5400RPM, SATA III, 128MB Cache', 'o-cung-hdd-toshiba-p300-4tb-35-inch-5400rpm-sata-iii-128mb-cache', 'Thiết kế này giúp cho tốc độ đọc và ghi chính xác hơn, nhanh hơn và truy cập nhanh vào dữ liệu của bạn.', 3400000.00, 1, 0, 2, 0.00, 0, '2026-01-04 17:51:09', '2026-01-04 19:17:10', NULL),
 (403, 35, 'RAM Desktop Kingston Fury Beast 16GB (1x16GB) DDR4 3200MHz', 'ram-desktop-kingston-fury-beast-16gb-1x16gb-ddr4-3200mhz', 'Ram Desktop Kingston Fury là dòng Ram phổ thông nhắm đến hiệu năng/ giá bán được nhiều khách hàng tin dùng. Phiên bản Kingston Fury mới được thay đổi nhẹ về thiết kế để bắt mắt hơn.', 3100000.00, 1, 1, 0, 0.00, 0, '2026-01-04 17:56:56', '2026-01-04 17:56:56', NULL),
 (404, 35, 'RAM Desktop Kingston Fury Beast 16GB (1x16GB) DDR5 5600MHz', 'ram-desktop-kingston-fury-beast-16gb-1x16gb-ddr5-5600mhz', 'Ram Desktop Kingston Fury Beast là dòng RAM hiệu năng cao của Kingston trên nền tảng DDR5 mới nhất cho tốc độ cực nhanh. ', 5300000.00, 1, 0, 0, 0.00, 0, '2026-01-04 18:01:00', '2026-01-04 18:01:00', NULL),
 (405, 35, 'RAM Desktop Kingston Fury Beast RGB EXPO 32GB (1x32GB) DDR5 6000MHz', 'ram-desktop-kingston-fury-beast-rgb-expo-32gb-1x32gb-ddr5-6000mhz', 'RAM và kit RAM DDR5 của Kingston FURY có tích hợp AMD EXPO (Công nghệ Extended Profiles của AMD để ép xung) được tự xác nhận trên bo mạch chủ AM5', 11000000.00, 1, 0, 0, 0.00, 0, '2026-01-04 18:06:06', '2026-01-04 18:06:06', NULL),
 (406, 2, 'Card màn hình Asus DUAL-RTX 3050-6G', 'card-man-hinh-asus-dual-rtx-3050-6g', 'ASUS Dual RTX 3050 6GB GDDR6 là một sản phẩm đáng chú ý trong phân khúc card đồ họa tầm trung, có khả năng xử lý đồ họa 3D mượt mà, hỗ trợ công nghệ ray tracing và DLSS.', 4650000.00, 1, 0, 0, 0.00, 0, '2026-01-04 18:12:25', '2026-01-04 18:12:25', NULL),
-(407, 2, 'Card màn hình Gigabyte RTX 3050 WINFORCE OC V2-6G', 'card-man-hinh-gigabyte-rtx-3050-winforce-oc-v2-6g', 'Card màn hình Gigabyte GeForce RTX 3050 WINDFORCE OC 6G được thiết kế với phong cách tối giản, phù hợp với mọi cấu hình máy tính.', 4700000.00, 1, 0, 0, 0.00, 0, '2026-01-04 18:16:29', '2026-01-04 18:16:29', NULL),
-(408, 2, 'Card màn hình MSI RTX 5060 8G VENTUS 2X OC GDDR7', 'card-man-hinh-msi-rtx-5060-8g-ventus-2x-oc-gddr7', 'MSI RTX 5060 8G VENTUS 2X OC là card đồ họa tầm trung mới nhất từ NVIDIA RTX 50-series, trang bị 8GB VRAM GDDR7 cho hiệu năng mạnh mẽ, đặc biệt trong chơi game, đồ họa và làm việc sáng tạo.', 9100000.00, 1, 0, 0, 0.00, 0, '2026-01-04 18:22:03', '2026-01-04 18:22:03', NULL),
+(407, 2, 'Card màn hình Gigabyte RTX 3050 WINFORCE OC V2-6G', 'card-man-hinh-gigabyte-rtx-3050-winforce-oc-v2-6g', 'Card màn hình Gigabyte GeForce RTX 3050 WINDFORCE OC 6G được thiết kế với phong cách tối giản, phù hợp với mọi cấu hình máy tính.', 4700000.00, 1, 0, 6, 0.00, 0, '2026-01-04 18:16:29', '2026-01-10 15:23:04', NULL),
+(408, 2, 'Card màn hình MSI RTX 5060 8G VENTUS 2X OC GDDR7', 'card-man-hinh-msi-rtx-5060-8g-ventus-2x-oc-gddr7', 'MSI RTX 5060 8G VENTUS 2X OC là card đồ họa tầm trung mới nhất từ NVIDIA RTX 50-series, trang bị 8GB VRAM GDDR7 cho hiệu năng mạnh mẽ, đặc biệt trong chơi game, đồ họa và làm việc sáng tạo.', 9100000.00, 1, 0, 4, 0.00, 0, '2026-01-04 18:22:03', '2026-01-10 15:36:42', NULL),
 (409, 4, 'Ổ Cứng SSD Samsung 980 500GB – M.2 2280 PCIe Gen3 x4 (Đọc 3100MB/s - Ghi 2600MB/s)', 'o-cung-ssd-samsung-980-500gb-m2-2280-pcie-gen3-x4-doc-3100mbs-ghi-2600mbs', 'Ổ cứng SSD Samsung 980 là dòng sản phẩm SSD M.2 NVME PCIe Gen 3 mới nhất của Samsung. Đây là dòng ổ cứng hàng đầu thích hợp cho nhu cầu lưu trữ tốc độ cao: edit ảnh, video, chơi games,..', 3000000.00, 1, 0, 0, 0.00, 0, '2026-01-04 18:29:18', '2026-01-04 18:29:18', NULL),
 (410, 4, 'Ổ Cứng SSD CORSAIR MP600 CORE XT 1TB – M.2 2280 PCIe Gen4 x4 (Đọc 5900MB/s - Ghi 5000MB/s)', 'o-cung-ssd-corsair-mp600-core-xt-1tb-m2-2280-pcie-gen4-x4-doc-5900mbs-ghi-5000mbs', 'Ổ cứng SSD Corsair MP600 CORE XT là một sản phẩm cao cấp của thương hiệu nổi tiếng CORSAIR. Với dung lượng lưu trữ 1TB, giao diện NVMe PCIe Gen4 x4 và kích thước M.2 2280, ổ cứng này hứa hẹn mang đến hiệu năng và tốc độ đáng chú ý cho người dùng.', 3800000.00, 1, 0, 0, 0.00, 0, '2026-01-04 18:32:28', '2026-01-04 18:32:28', NULL),
 (411, 4, 'Ổ Cứng SSD Gigabyte 4000E 1TB – M.2 2280 PCIe Gen4 x4 (Đọc 4000MB/s - Ghi 3900MB/s)', 'o-cung-ssd-gigabyte-4000e-1tb-m2-2280-pcie-gen4-x4-doc-4000mbs-ghi-3900mbs', 'Ổ cứng SSD Gigabyte 4000E là một bước đột phá trong công nghệ lưu trữ, mang đến hiệu năng vượt trội với giao diện PCIe 4.0 x4 và chuẩn NVMe 1.4. Với thiết kế M.2 2280 nhỏ gọn.', 3500000.00, 1, 0, 0, 0.00, 0, '2026-01-04 18:46:00', '2026-01-04 18:46:00', NULL),
 (412, 5, 'Mainboard ASUS TUF GAMING Z790 PLUS WIFI DDR5', 'mainboard-asus-tuf-gaming-z790-plus-wifi-ddr5', 'Mainboard Asus TUF Gaming Z790 PLUS Wifi DDR5 là một bo mạch chủ có tất cả các yếu tố thiết yếu của bộ xử lý Intel® mới nhất và kết hợp chúng với các tính năng sẵn sàng cho nhu cầu gaming.', 7000000.00, 1, 0, 0, 0.00, 0, '2026-01-04 18:49:52', '2026-01-04 18:49:52', NULL),
 (413, 5, 'Mainboard MSI PRO B760M-E DDR4', 'mainboard-msi-pro-b760m-e-ddr4', 'Tốc độ truyền tải dữ liệu nhanh hơn: Rút ngắn thời gian truyền tải giữa RAM, CPU và các thành phần khác, giúp thiết bị của bạn hoạt động nhanh nhạy hơn.', 2300000.00, 1, 0, 0, 0.00, 0, '2026-01-04 18:55:07', '2026-01-04 18:55:07', NULL),
-(414, 5, 'Mainboard Gigabyte Z890M AORUS ELITE WIFI7', 'mainboard-gigabyte-z890m-aorus-elite-wifi7', 'Mainboard Gigabyte Z890M AORUS ELITE WIFI7 là bo mạch chủ Micro-ATX DDR5 cao cấp dành cho CPU Intel Core Ultra (Socket LGA1851), phù hợp cho PC gaming & làm việc hiệu năng cao.', 6100000.00, 1, 0, 0, 0.00, 0, '2026-01-04 19:01:46', '2026-01-04 19:01:46', NULL);
-
--- --------------------------------------------------------
+(414, 5, 'Mainboard Gigabyte Z890M AORUS ELITE WIFI7', 'mainboard-gigabyte-z890m-aorus-elite-wifi7', 'Mainboard Gigabyte Z890M AORUS ELITE WIFI7 là bo mạch chủ Micro-ATX DDR5 cao cấp dành cho CPU Intel Core Ultra (Socket LGA1851), phù hợp cho PC gaming & làm việc hiệu năng cao.', 6100000.00, 1, 0, 0, 0.00, 0, '2026-01-04 19:01:46', '2026-01-04 19:01:46', NULL),
+(416, 1, 'Intel Core I3 13100F ', 'intel-core-i3-13100f', NULL, 2100000.00, 1, 1, 12, 0.00, 0, '2026-01-10 14:25:14', '2026-01-10 15:26:50', NULL),
+(417, 35, 'Corsair DDR4 Buss 3200MHZ', 'corsair-ddr4-buss-3200mhz', NULL, 0.00, 1, 1, 20, 0.00, 0, '2026-01-10 14:29:16', '2026-01-10 15:37:16', NULL);
 
 --
--- Cấu trúc bảng cho bảng `products_attribute_values`
+-- Indexes for dumped tables
+--
+
+--
+-- Indexes for table `products`
+--
+ALTER TABLE `products`
+  ADD PRIMARY KEY (`product_id`),
+  ADD UNIQUE KEY `slug` (`slug`),
+  ADD KEY `idx_category_id` (`category_id`),
+  ADD KEY `idx_slug` (`slug`),
+  ADD KEY `idx_is_active` (`is_active`),
+  ADD KEY `idx_is_featured` (`is_featured`);
+ALTER TABLE `products` ADD FULLTEXT KEY `idx_search` (`product_name`,`description`);
+
+--
+-- AUTO_INCREMENT for dumped tables
+--
+
+--
+-- AUTO_INCREMENT for table `products`
+--
+ALTER TABLE `products`
+  MODIFY `product_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=418;
+
+--
+-- Constraints for dumped tables
+--
+
+--
+-- Constraints for table `products`
+--
+ALTER TABLE `products`
+  ADD CONSTRAINT `products_ibfk_1` FOREIGN KEY (`category_id`) REFERENCES `categories` (`category_id`);
+COMMIT;
+
+
+--
+-- Table structure for table `products_attribute_values`
 --
 
 CREATE TABLE `products_attribute_values` (
@@ -549,7 +802,7 @@ CREATE TABLE `products_attribute_values` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Đang đổ dữ liệu cho bảng `products_attribute_values`
+-- Dumping data for table `products_attribute_values`
 --
 
 INSERT INTO `products_attribute_values` (`product_id`, `attribute_value_id`) VALUES
@@ -630,12 +883,40 @@ INSERT INTO `products_attribute_values` (`product_id`, `attribute_value_id`) VAL
 (414, 92),
 (414, 102),
 (414, 109),
-(414, 113);
-
--- --------------------------------------------------------
+(414, 113),
+(416, 1),
+(416, 35),
+(416, 44),
+(416, 50),
+(417, 11),
+(417, 139),
+(417, 141);
 
 --
--- Cấu trúc bảng cho bảng `product_variants`
+-- Indexes for dumped tables
+--
+
+--
+-- Indexes for table `products_attribute_values`
+--
+ALTER TABLE `products_attribute_values`
+  ADD PRIMARY KEY (`product_id`,`attribute_value_id`),
+  ADD KEY `products_attribute_values_ibfk_2` (`attribute_value_id`);
+
+--
+-- Constraints for dumped tables
+--
+
+--
+-- Constraints for table `products_attribute_values`
+--
+ALTER TABLE `products_attribute_values`
+  ADD CONSTRAINT `products_attribute_values_ibfk_1` FOREIGN KEY (`product_id`) REFERENCES `products` (`product_id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `products_attribute_values_ibfk_2` FOREIGN KEY (`attribute_value_id`) REFERENCES `attribute_values` (`attribute_value_id`);
+COMMIT;
+
+--
+-- Table structure for table `product_variants`
 --
 
 CREATE TABLE `product_variants` (
@@ -649,114 +930,49 @@ CREATE TABLE `product_variants` (
   `is_default` tinyint(1) DEFAULT 0,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  `warranty_period` int(11) DEFAULT NULL
+  `warranty_period` int(11) DEFAULT NULL,
+  `discount_percent` decimal(12,2) DEFAULT 0.00,
+  `discount_start_date` datetime DEFAULT NULL,
+  `discount_end_date` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Đang đổ dữ liệu cho bảng `product_variants`
+-- Dumping data for table `product_variants`
 --
 
-INSERT INTO `product_variants` (`variant_id`, `product_id`, `sku`, `variant_name`, `price`, `stock_quantity`, `is_active`, `is_default`, `created_at`, `updated_at`, `warranty_period`) VALUES
-(597, 395, 'PRD-1T-1', '1TB', 700000.00, 3, 1, 1, '2026-01-04 16:36:19', '2026-01-04 16:36:19', 12),
-(598, 395, 'PRD-2T-2', '2TB', 700000.00, 3, 1, 0, '2026-01-04 16:36:19', '2026-01-04 16:36:19', 12),
-(599, 395, 'PRD-4T-3', '4TB', 700000.00, 3, 1, 0, '2026-01-04 16:36:19', '2026-01-04 16:36:19', 121),
-(600, 396, 'AR5-396-030666', 'Mặc định', 4700000.00, 3, 1, 1, '2026-01-04 16:43:50', '2026-01-04 16:43:50', 36),
-(601, 397, 'CIC-397-945039', 'Mặc định', 2900000.00, 3, 1, 1, '2026-01-04 17:15:45', '2026-01-04 17:15:45', 36),
-(602, 398, 'CIC-398-543739', 'Mặc định', 4400000.00, 3, 1, 1, '2026-01-04 17:25:43', '2026-01-04 17:25:43', 36),
-(603, 399, 'CIC-399-098537', 'Mặc định', 5100000.00, 3, 1, 1, '2026-01-04 17:34:58', '2026-01-04 17:34:58', 36),
-(604, 400, 'ỔCH-400-510127', 'Mặc định', 3600000.00, 3, 1, 1, '2026-01-04 17:41:50', '2026-01-04 17:41:50', 24),
-(605, 401, 'ỔCH-401-896349', 'Mặc định', 10300000.00, 3, 1, 1, '2026-01-04 17:48:16', '2026-01-04 17:48:16', 36),
-(606, 402, 'ỔCH-402-069368', 'Mặc định', 3400000.00, 3, 1, 1, '2026-01-04 17:51:09', '2026-01-04 17:51:09', 24),
-(607, 403, 'RDK-403-416369', 'Mặc định', 3100000.00, 3, 1, 1, '2026-01-04 17:56:56', '2026-01-04 17:56:56', 36),
-(608, 404, 'RDK-404-660059', 'Mặc định', 5300000.00, 3, 1, 1, '2026-01-04 18:01:00', '2026-01-04 18:01:00', 36),
-(609, 405, 'RDK-405-966067', 'Mặc định', 11000000.00, 3, 1, 1, '2026-01-04 18:06:06', '2026-01-04 18:06:06', 36),
-(610, 406, 'CMH-406-345662', 'Mặc định', 4650000.00, 3, 1, 1, '2026-01-04 18:12:25', '2026-01-04 18:12:25', 36),
-(611, 407, 'CMH-407-589830', 'Mặc định', 4700000.00, 3, 1, 1, '2026-01-04 18:16:29', '2026-01-04 18:16:29', 36),
-(612, 408, 'CMH-408-923104', 'Mặc định', 9100000.00, 3, 1, 1, '2026-01-04 18:22:03', '2026-01-04 18:22:03', 36),
-(613, 409, 'ỔCS-409-358366', 'Mặc định', 3000000.00, 3, 1, 1, '2026-01-04 18:29:18', '2026-01-04 18:29:18', 60),
-(614, 410, 'ỔCS-410-548425', 'Mặc định', 3800000.00, 3, 1, 1, '2026-01-04 18:32:28', '2026-01-04 18:32:28', 60),
-(615, 411, 'ỔCS-411-360417', 'Mặc định', 3500000.00, 3, 1, 1, '2026-01-04 18:46:00', '2026-01-04 18:46:00', 36),
-(616, 412, 'MAT-412-592586', 'Mặc định', 7000000.00, 3, 1, 1, '2026-01-04 18:49:52', '2026-01-04 18:49:52', 36),
-(617, 413, 'MMP-413-907513', 'Mặc định', 2300000.00, 3, 1, 1, '2026-01-04 18:55:07', '2026-01-04 18:55:07', 36),
-(618, 414, 'MGZ-414-306460', 'Mặc định', 6100000.00, 3, 1, 1, '2026-01-04 19:01:46', '2026-01-04 19:01:46', 36);
-
-
-CREATE TABLE `variants_attribute_values` (
-  `variant_id` int(11) NOT NULL,
-  `attribute_value_id` int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+INSERT INTO `product_variants` (`variant_id`, `product_id`, `sku`, `variant_name`, `price`, `stock_quantity`, `is_active`, `is_default`, `created_at`, `updated_at`, `warranty_period`, `discount_percent`, `discount_start_date`, `discount_end_date`) VALUES
+(597, 395, 'PRD-1T-1', '1TB', 700000.00, 3, 1, 1, '2026-01-04 16:36:19', '2026-01-04 16:36:19', 12, 0.00, NULL, NULL),
+(598, 395, 'PRD-2T-2', '2TB', 700000.00, 3, 1, 0, '2026-01-04 16:36:19', '2026-01-04 16:36:19', 12, 0.00, NULL, NULL),
+(599, 395, 'PRD-4T-3', '4TB', 700000.00, 3, 1, 0, '2026-01-04 16:36:19', '2026-01-04 16:36:19', 121, 0.00, NULL, NULL),
+(600, 396, 'AR5-396-030666', 'Mặc định', 4700000.00, 3, 1, 1, '2026-01-04 16:43:50', '2026-01-04 16:43:50', 36, 0.00, NULL, NULL),
+(601, 397, 'CIC-397-945039', 'Mặc định', 2900000.00, 3, 1, 1, '2026-01-04 17:15:45', '2026-01-04 17:15:45', 36, 0.00, NULL, NULL),
+(602, 398, 'CIC-398-543739', 'Mặc định', 4400000.00, 3, 1, 1, '2026-01-04 17:25:43', '2026-01-04 17:25:43', 36, 0.00, NULL, NULL),
+(603, 399, 'CIC-399-098537', 'Mặc định', 5100000.00, 3, 1, 1, '2026-01-04 17:34:58', '2026-01-04 17:34:58', 36, 0.00, NULL, NULL),
+(604, 400, 'ỔCH-400-510127', 'Mặc định', 3600000.00, 3, 1, 1, '2026-01-04 17:41:50', '2026-01-04 17:41:50', 24, 0.00, NULL, NULL),
+(605, 401, 'ỔCH-401-896349', 'Mặc định', 10300000.00, 3, 1, 1, '2026-01-04 17:48:16', '2026-01-04 17:48:16', 36, 0.00, NULL, NULL),
+(606, 402, 'ỔCH-402-069368', 'Mặc định', 3400000.00, 2, 1, 1, '2026-01-04 17:51:09', '2026-01-04 19:26:00', 24, 0.00, NULL, NULL),
+(607, 403, 'RDK-403-416369', 'Mặc định', 3100000.00, 3, 1, 1, '2026-01-04 17:56:56', '2026-01-04 17:56:56', 36, 0.00, NULL, NULL),
+(608, 404, 'RDK-404-660059', 'Mặc định', 5300000.00, 3, 1, 1, '2026-01-04 18:01:00', '2026-01-04 18:01:00', 36, 0.00, NULL, NULL),
+(609, 405, 'RDK-405-966067', 'Mặc định', 11000000.00, 3, 1, 1, '2026-01-04 18:06:06', '2026-01-04 18:06:06', 36, 0.00, NULL, NULL),
+(610, 406, 'CMH-406-345662', 'Mặc định', 4650000.00, 3, 1, 1, '2026-01-04 18:12:25', '2026-01-04 18:12:25', 36, 0.00, NULL, NULL),
+(611, 407, 'CMH-407-589830', 'Mặc định', 4700000.00, 3, 1, 1, '2026-01-04 18:16:29', '2026-01-04 18:16:29', 36, 0.00, NULL, NULL),
+(612, 408, 'CMH-408-923104', 'Mặc định', 9100000.00, 3, 1, 1, '2026-01-04 18:22:03', '2026-01-04 18:22:03', 36, 0.00, NULL, NULL),
+(613, 409, 'ỔCS-409-358366', 'Mặc định', 3000000.00, 3, 1, 1, '2026-01-04 18:29:18', '2026-01-04 18:29:18', 60, 0.00, NULL, NULL),
+(614, 410, 'ỔCS-410-548425', 'Mặc định', 3800000.00, 3, 1, 1, '2026-01-04 18:32:28', '2026-01-04 18:32:28', 60, 0.00, NULL, NULL),
+(615, 411, 'ỔCS-411-360417', 'Mặc định', 3500000.00, 3, 1, 1, '2026-01-04 18:46:00', '2026-01-04 18:46:00', 36, 0.00, NULL, NULL),
+(616, 412, 'MAT-412-592586', 'Mặc định', 7000000.00, 3, 1, 1, '2026-01-04 18:49:52', '2026-01-04 18:49:52', 36, 0.00, NULL, NULL),
+(617, 413, 'MMP-413-907513', 'Mặc định', 2300000.00, 3, 1, 1, '2026-01-04 18:55:07', '2026-01-04 18:55:07', 36, 0.00, NULL, NULL),
+(618, 414, 'MGZ-414-306460', 'Mặc định', 6100000.00, 3, 1, 1, '2026-01-04 19:01:46', '2026-01-04 19:01:46', 36, 0.00, NULL, NULL),
+(619, 416, 'ICI-416-114599', 'Mặc định', 2100000.00, 3, 1, 1, '2026-01-10 14:25:14', '2026-01-10 14:25:14', 36, 20.00, '2026-01-10 00:00:00', '2026-01-20 00:00:00'),
+(620, 417, 'PRD-16-1', '16GB (1 X 16GB)', 800000.00, 2, 1, 1, '2026-01-10 14:29:16', '2026-01-10 14:29:16', 36, 10.00, '2026-01-10 00:00:00', '2026-01-20 00:00:00'),
+(621, 417, 'PRD-16-2', '16GB (2 X 8GB)', 1000000.00, 2, 1, 0, '2026-01-10 14:29:16', '2026-01-10 14:29:16', 36, 20.00, '2026-01-10 00:00:00', '2026-01-30 00:00:00');
 
 --
--- Đang đổ dữ liệu cho bảng `variants_attribute_values`
+-- Indexes for dumped tables
 --
 
-INSERT INTO `variants_attribute_values` (`variant_id`, `attribute_value_id`) VALUES
-(597, 73),
-(598, 74),
-(599, 75);
-
-
 --
--- Chỉ mục cho bảng `attributes`
---
-ALTER TABLE `attributes`
-  ADD PRIMARY KEY (`attribute_id`);
-
---
--- Chỉ mục cho bảng `attributes_categories`
---
-ALTER TABLE `attributes_categories`
-  ADD PRIMARY KEY (`attribute_category_id`),
-  ADD KEY `attribute_categories_ibfk_1` (`attribute_id`),
-  ADD KEY `attribute_categories_ibfk_2` (`category_id`);
-
---
--- Chỉ mục cho bảng `attribute_values`
---
-ALTER TABLE `attribute_values`
-  ADD PRIMARY KEY (`attribute_value_id`),
-  ADD UNIQUE KEY `unique_attribute_value` (`attribute_id`,`value_name`),
-  ADD UNIQUE KEY `uk_attribute_value` (`attribute_id`,`value_name`),
-  ADD KEY `idx_attribute_id` (`attribute_id`);
-
---
--- Chỉ mục cho bảng `categories`
---
-ALTER TABLE `categories`
-  ADD PRIMARY KEY (`category_id`),
-  ADD KEY `idx_parent_category` (`parent_category_id`),
-  ADD KEY `idx_is_active` (`is_active`);
-
---
--- Chỉ mục cho bảng `categories_attributes_values`
---
-ALTER TABLE `categories_attributes_values`
-  ADD PRIMARY KEY (`cav_id`),
-  ADD KEY `category_id` (`category_id`),
-  ADD KEY `attribute_id` (`attribute_id`),
-  ADD KEY `attribute_value_id` (`attribute_value_id`);
-
---
--- Chỉ mục cho bảng `products`
---
-ALTER TABLE `products`
-  ADD PRIMARY KEY (`product_id`),
-  ADD UNIQUE KEY `slug` (`slug`),
-  ADD KEY `idx_category_id` (`category_id`),
-  ADD KEY `idx_slug` (`slug`),
-  ADD KEY `idx_is_active` (`is_active`),
-  ADD KEY `idx_is_featured` (`is_featured`);
-ALTER TABLE `products` ADD FULLTEXT KEY `idx_search` (`product_name`,`description`);
-
---
--- Chỉ mục cho bảng `products_attribute_values`
---
-ALTER TABLE `products_attribute_values`
-  ADD PRIMARY KEY (`product_id`,`attribute_value_id`),
-  ADD KEY `products_attribute_values_ibfk_2` (`attribute_value_id`);
-
---
--- Chỉ mục cho bảng `product_variants`
+-- Indexes for table `product_variants`
 --
 ALTER TABLE `product_variants`
   ADD PRIMARY KEY (`variant_id`),
@@ -765,8 +981,49 @@ ALTER TABLE `product_variants`
   ADD KEY `idx_sku` (`sku`),
   ADD KEY `idx_is_active` (`is_active`);
 
-  
--- Chỉ mục cho bảng `variants_attribute_values`
+--
+-- AUTO_INCREMENT for dumped tables
+--
+
+--
+-- AUTO_INCREMENT for table `product_variants`
+--
+ALTER TABLE `product_variants`
+  MODIFY `variant_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=622;
+
+--
+-- Constraints for dumped tables
+--
+
+--
+-- Constraints for table `product_variants`
+--
+ALTER TABLE `product_variants`
+  ADD CONSTRAINT `product_variants_ibfk_1` FOREIGN KEY (`product_id`) REFERENCES `products` (`product_id`) ON DELETE CASCADE;
+COMMIT;
+
+CREATE TABLE `variants_attribute_values` (
+  `variant_id` int(11) NOT NULL,
+  `attribute_value_id` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `variants_attribute_values`
+--
+
+INSERT INTO `variants_attribute_values` (`variant_id`, `attribute_value_id`) VALUES
+(597, 73),
+(598, 74),
+(599, 75),
+(620, 80),
+(621, 81);
+
+--
+-- Indexes for dumped tables
+--
+
+--
+-- Indexes for table `variants_attribute_values`
 --
 ALTER TABLE `variants_attribute_values`
   ADD PRIMARY KEY (`variant_id`,`attribute_value_id`),
@@ -774,53 +1031,13 @@ ALTER TABLE `variants_attribute_values`
   ADD KEY `idx_attribute_value_id` (`attribute_value_id`);
 
 --
--- Các ràng buộc cho bảng `attributes_categories`
+-- Constraints for dumped tables
 --
-ALTER TABLE `attributes_categories`
-  ADD CONSTRAINT `attributes_categories_ibfk_1` FOREIGN KEY (`attribute_id`) REFERENCES `attributes` (`attribute_id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `attributes_categories_ibfk_2` FOREIGN KEY (`category_id`) REFERENCES `categories` (`category_id`) ON DELETE CASCADE;
 
 --
--- Các ràng buộc cho bảng `attribute_values`
---
-ALTER TABLE `attribute_values`
-  ADD CONSTRAINT `attribute_values_ibfk_1` FOREIGN KEY (`attribute_id`) REFERENCES `attributes` (`attribute_id`) ON DELETE CASCADE;
-
---
--- Các ràng buộc cho bảng `categories`
---
-ALTER TABLE `categories`
-  ADD CONSTRAINT `categories_ibfk_1` FOREIGN KEY (`parent_category_id`) REFERENCES `categories` (`category_id`) ON DELETE SET NULL;
-
---
--- Các ràng buộc cho bảng `categories_attributes_values`
---
-ALTER TABLE `categories_attributes_values`
-  ADD CONSTRAINT `categories_attributes_values_ibfk_1` FOREIGN KEY (`category_id`) REFERENCES `categories` (`category_id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `categories_attributes_values_ibfk_2` FOREIGN KEY (`attribute_id`) REFERENCES `attributes` (`attribute_id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `categories_attributes_values_ibfk_3` FOREIGN KEY (`attribute_value_id`) REFERENCES `attribute_values` (`attribute_value_id`) ON DELETE CASCADE;
-
---
--- Các ràng buộc cho bảng `products`
---
-ALTER TABLE `products`
-  ADD CONSTRAINT `products_ibfk_1` FOREIGN KEY (`category_id`) REFERENCES `categories` (`category_id`);
-
---
--- Các ràng buộc cho bảng `products_attribute_values`
---
-ALTER TABLE `products_attribute_values`
-  ADD CONSTRAINT `products_attribute_values_ibfk_1` FOREIGN KEY (`product_id`) REFERENCES `products` (`product_id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `products_attribute_values_ibfk_2` FOREIGN KEY (`attribute_value_id`) REFERENCES `attribute_values` (`attribute_value_id`);
-
---
--- Các ràng buộc cho bảng `product_variants`
---
-ALTER TABLE `product_variants`
-  ADD CONSTRAINT `product_variants_ibfk_1` FOREIGN KEY (`product_id`) REFERENCES `products` (`product_id`) ON DELETE CASCADE;
-
--- Các ràng buộc cho bảng `variants_attribute_values`
+-- Constraints for table `variants_attribute_values`
 --
 ALTER TABLE `variants_attribute_values`
   ADD CONSTRAINT `variants_attribute_values_ibfk_1` FOREIGN KEY (`variant_id`) REFERENCES `product_variants` (`variant_id`) ON DELETE CASCADE,
   ADD CONSTRAINT `variants_attribute_values_ibfk_2` FOREIGN KEY (`attribute_value_id`) REFERENCES `attribute_values` (`attribute_value_id`) ON DELETE CASCADE;
+COMMIT;
