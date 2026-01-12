@@ -1,19 +1,11 @@
-import CartItem from '../models/CartItem.js';
+import cartItemService from '../services/cartItem.service.js';
 
 // Thêm sản phẩm vào giỏ hàng
 export const addToCart = async (req, res) => {
   try {
     const { cartId, variantId, quantity } = req.body;
 
-    if (!cartId || !variantId) {
-      return res.status(400).json({
-        success: false,
-        message: 'Vui lòng cung cấp cartId và variantId'
-      });
-    }
-
-    const cartItem = new CartItem();
-    const result = await cartItem.add(cartId, variantId, quantity || 1);
+    const result = await cartItemService.add(cartId, variantId, quantity || 1);
 
     res.status(201).json({
       success: true,
@@ -22,7 +14,9 @@ export const addToCart = async (req, res) => {
     });
   } catch (error) {
     console.error('Error adding to cart:', error);
-    res.status(400).json({
+    const status = error.message.includes('Thiếu') ? 400 : 
+                   error.message.includes('Không tìm thấy') ? 404 : 400;
+    res.status(status).json({
       success: false,
       message: error.message
     });
@@ -35,22 +29,7 @@ export const updateCartItemQuantity = async (req, res) => {
     const { id } = req.params;
     const { quantity } = req.body;
 
-    if (!quantity || quantity < 1) {
-      return res.status(400).json({
-        success: false,
-        message: 'Số lượng phải lớn hơn 0'
-      });
-    }
-
-    const cartItem = new CartItem();
-    const success = await cartItem.updateQuantity(id, quantity);
-
-    if (!success) {
-      return res.status(404).json({
-        success: false,
-        message: 'Không tìm thấy sản phẩm trong giỏ hàng'
-      });
-    }
+    await cartItemService.updateQuantity(id, quantity);
 
     res.json({
       success: true,
@@ -58,7 +37,9 @@ export const updateCartItemQuantity = async (req, res) => {
     });
   } catch (error) {
     console.error('Error updating cart item quantity:', error);
-    res.status(400).json({
+    const status = error.message.includes('Thiếu') || error.message.includes('Số lượng') ? 400 : 
+                   error.message.includes('Không tìm thấy') ? 404 : 400;
+    res.status(status).json({
       success: false,
       message: error.message
     });
@@ -70,15 +51,7 @@ export const removeCartItem = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const cartItem = new CartItem();
-    const success = await cartItem.remove(id);
-
-    if (!success) {
-      return res.status(404).json({
-        success: false,
-        message: 'Không tìm thấy sản phẩm trong giỏ hàng'
-      });
-    }
+    await cartItemService.remove(id);
 
     res.json({
       success: true,
@@ -86,10 +59,9 @@ export const removeCartItem = async (req, res) => {
     });
   } catch (error) {
     console.error('Error removing cart item:', error);
-    res.status(500).json({
+    res.status(error.message.includes('Không tìm thấy') ? 404 : 500).json({
       success: false,
-      message: 'Lỗi khi xóa sản phẩm',
-      error: error.message
+      message: error.message
     });
   }
 };
@@ -99,15 +71,7 @@ export const removeCartItemByVariant = async (req, res) => {
   try {
     const { cartId, variantId } = req.params;
 
-    const cartItem = new CartItem();
-    const success = await cartItem.removeByVariant(cartId, variantId);
-
-    if (!success) {
-      return res.status(404).json({
-        success: false,
-        message: 'Không tìm thấy sản phẩm trong giỏ hàng'
-      });
-    }
+    await cartItemService.removeByVariant(cartId, variantId);
 
     res.json({
       success: true,
@@ -115,10 +79,9 @@ export const removeCartItemByVariant = async (req, res) => {
     });
   } catch (error) {
     console.error('Error removing cart item by variant:', error);
-    res.status(500).json({
+    res.status(error.message.includes('Không tìm thấy') ? 404 : 500).json({
       success: false,
-      message: 'Lỗi khi xóa sản phẩm',
-      error: error.message
+      message: error.message
     });
   }
 };
@@ -128,15 +91,7 @@ export const getCartItemById = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const cartItem = new CartItem();
-    const item = await cartItem.getById(id);
-
-    if (!item) {
-      return res.status(404).json({
-        success: false,
-        message: 'Không tìm thấy sản phẩm trong giỏ hàng'
-      });
-    }
+    const item = await cartItemService.getById(id);
 
     res.json({
       success: true,
@@ -144,10 +99,9 @@ export const getCartItemById = async (req, res) => {
     });
   } catch (error) {
     console.error('Error getting cart item:', error);
-    res.status(500).json({
+    res.status(error.message.includes('Không tìm thấy') ? 404 : 500).json({
       success: false,
-      message: 'Lỗi khi lấy thông tin sản phẩm',
-      error: error.message
+      message: error.message
     });
   }
 };
@@ -157,8 +111,7 @@ export const getCartItems = async (req, res) => {
   try {
     const { cartId } = req.params;
 
-    const cartItem = new CartItem();
-    const items = await cartItem.getByCartId(cartId);
+    const items = await cartItemService.getByCartId(cartId);
 
     res.json({
       success: true,
@@ -168,8 +121,7 @@ export const getCartItems = async (req, res) => {
     console.error('Error getting cart items:', error);
     res.status(500).json({
       success: false,
-      message: 'Lỗi khi lấy danh sách sản phẩm',
-      error: error.message
+      message: error.message
     });
   }
 };
@@ -179,8 +131,7 @@ export const checkCartItemExists = async (req, res) => {
   try {
     const { cartId, variantId } = req.params;
 
-    const cartItem = new CartItem();
-    const exists = await cartItem.exists(cartId, variantId);
+    const exists = await cartItemService.exists(cartId, variantId);
 
     res.json({
       success: true,
@@ -190,8 +141,7 @@ export const checkCartItemExists = async (req, res) => {
     console.error('Error checking cart item exists:', error);
     res.status(500).json({
       success: false,
-      message: 'Lỗi khi kiểm tra sản phẩm',
-      error: error.message
+      message: error.message
     });
   }
 };
@@ -201,8 +151,7 @@ export const getCartItemQuantity = async (req, res) => {
   try {
     const { cartId, variantId } = req.params;
 
-    const cartItem = new CartItem();
-    const quantity = await cartItem.getQuantity(cartId, variantId);
+    const quantity = await cartItemService.getQuantity(cartId, variantId);
 
     res.json({
       success: true,
@@ -212,8 +161,7 @@ export const getCartItemQuantity = async (req, res) => {
     console.error('Error getting cart item quantity:', error);
     res.status(500).json({
       success: false,
-      message: 'Lỗi khi lấy số lượng sản phẩm',
-      error: error.message
+      message: error.message
     });
   }
 };
@@ -223,8 +171,7 @@ export const countCartItems = async (req, res) => {
   try {
     const { cartId } = req.params;
 
-    const cartItem = new CartItem();
-    const count = await cartItem.count(cartId);
+    const count = await cartItemService.count(cartId);
 
     res.json({
       success: true,
@@ -234,8 +181,7 @@ export const countCartItems = async (req, res) => {
     console.error('Error counting cart items:', error);
     res.status(500).json({
       success: false,
-      message: 'Lỗi khi đếm sản phẩm',
-      error: error.message
+      message: error.message
     });
   }
 };
@@ -246,8 +192,7 @@ export const incrementCartItem = async (req, res) => {
     const { id } = req.params;
     const { amount } = req.body;
 
-    const cartItem = new CartItem();
-    await cartItem.increment(id, amount || 1);
+    await cartItemService.increment(id, amount || 1);
 
     res.json({
       success: true,
@@ -268,8 +213,7 @@ export const decrementCartItem = async (req, res) => {
     const { id } = req.params;
     const { amount } = req.body;
 
-    const cartItem = new CartItem();
-    await cartItem.decrement(id, amount || 1);
+    await cartItemService.decrement(id, amount || 1);
 
     res.json({
       success: true,
@@ -289,8 +233,7 @@ export const removeInvalidCartItems = async (req, res) => {
   try {
     const { cartId } = req.params;
 
-    const cartItem = new CartItem();
-    const deletedCount = await cartItem.removeInvalidItems(cartId);
+    const deletedCount = await cartItemService.removeInvalidItems(cartId);
 
     res.json({
       success: true,
@@ -301,8 +244,7 @@ export const removeInvalidCartItems = async (req, res) => {
     console.error('Error removing invalid cart items:', error);
     res.status(500).json({
       success: false,
-      message: 'Lỗi khi xóa sản phẩm không hợp lệ',
-      error: error.message
+      message: error.message
     });
   }
 };
@@ -312,8 +254,7 @@ export const adjustCartItemsToStock = async (req, res) => {
   try {
     const { cartId } = req.params;
 
-    const cartItem = new CartItem();
-    const adjustedCount = await cartItem.adjustToStock(cartId);
+    const adjustedCount = await cartItemService.adjustToStock(cartId);
 
     res.json({
       success: true,
@@ -324,19 +265,17 @@ export const adjustCartItemsToStock = async (req, res) => {
     console.error('Error adjusting cart items to stock:', error);
     res.status(500).json({
       success: false,
-      message: 'Lỗi khi điều chỉnh số lượng',
-      error: error.message
+      message: error.message
     });
   }
 };
 
-// Lấy items cho checkout
+// Lấy items cho checkout (với giá discount)
 export const getCartItemsForCheckout = async (req, res) => {
   try {
     const { cartId } = req.params;
 
-    const cartItem = new CartItem();
-    const items = await cartItem.getItemsForCheckout(cartId);
+    const items = await cartItemService.getItemsForCheckout(cartId);
 
     res.json({
       success: true,
@@ -346,8 +285,7 @@ export const getCartItemsForCheckout = async (req, res) => {
     console.error('Error getting cart items for checkout:', error);
     res.status(500).json({
       success: false,
-      message: 'Lỗi khi lấy thông tin checkout',
-      error: error.message
+      message: error.message
     });
   }
 };
@@ -357,19 +295,11 @@ export const bulkAddToCart = async (req, res) => {
   try {
     const { cartId, items } = req.body;
 
-    if (!cartId || !items || !Array.isArray(items) || items.length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: 'Vui lòng cung cấp cartId và danh sách sản phẩm'
-      });
-    }
-
-    const cartItem = new CartItem();
-    await cartItem.bulkAdd(cartId, items);
+    const addedCount = await cartItemService.bulkAdd(cartId, items);
 
     res.status(201).json({
       success: true,
-      message: 'Thêm nhiều sản phẩm vào giỏ hàng thành công'
+      message: `Thêm ${addedCount} sản phẩm vào giỏ hàng thành công`
     });
   } catch (error) {
     console.error('Error bulk adding to cart:', error);
@@ -385,15 +315,7 @@ export const transferCartItems = async (req, res) => {
   try {
     const { fromCartId, toCartId } = req.body;
 
-    if (!fromCartId || !toCartId) {
-      return res.status(400).json({
-        success: false,
-        message: 'Vui lòng cung cấp fromCartId và toCartId'
-      });
-    }
-
-    const cartItem = new CartItem();
-    const transferredCount = await cartItem.transferItems(fromCartId, toCartId);
+    const transferredCount = await cartItemService.transferItems(fromCartId, toCartId);
 
     res.json({
       success: true,
@@ -404,8 +326,7 @@ export const transferCartItems = async (req, res) => {
     console.error('Error transferring cart items:', error);
     res.status(500).json({
       success: false,
-      message: 'Lỗi khi chuyển sản phẩm',
-      error: error.message
+      message: error.message
     });
   }
 };

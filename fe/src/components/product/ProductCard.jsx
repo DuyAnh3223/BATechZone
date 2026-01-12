@@ -150,6 +150,22 @@ const ProductCard = ({ product }) => {
       //   return;
       // }
 
+      // Tính giá discount cho variant
+      const variantPrice = defaultVariant.price || 0;
+      const variantDiscountPercent = defaultVariant.discount_percent || 0;
+      const variantDiscountStartDate = defaultVariant.discount_start_date ? new Date(defaultVariant.discount_start_date) : null;
+      const variantDiscountEndDate = defaultVariant.discount_end_date ? new Date(defaultVariant.discount_end_date) : null;
+      const currentDate = new Date();
+      
+      // Kiểm tra khuyến mãi có active không
+      const isVariantDiscountActive = variantDiscountPercent > 0 && 
+        (!variantDiscountStartDate || currentDate >= variantDiscountStartDate) &&
+        (!variantDiscountEndDate || currentDate <= variantDiscountEndDate);
+      
+      const finalPrice = isVariantDiscountActive 
+        ? variantPrice * (1 - variantDiscountPercent / 100) 
+        : variantPrice;
+
       // 2. Lấy hoặc tạo giỏ hàng
       let cartData = {};
       if (user) {
@@ -166,9 +182,6 @@ const ProductCard = ({ product }) => {
 
       const cartResponse = await getOrCreateCart(cartData);
       const cart = cartResponse?.data || cartResponse;
-      
-      console.log('Cart response:', cartResponse);
-      console.log('Cart data:', cart);
 
       const cartId = cart?.cart_id || cart?.cartId;
       if (!cartId) {
@@ -177,11 +190,12 @@ const ProductCard = ({ product }) => {
         return;
       }
 
-      // 3. Thêm sản phẩm vào giỏ hàng
+      // 3. Thêm sản phẩm vào giỏ hàng với giá đã discount
       await addToCart({
         cartId: cartId,
         variantId: defaultVariant.variant_id,
-        quantity: 1
+        quantity: 1,
+        price: finalPrice // Truyền giá đã discount
       });
 
       setSuccessDialog({ 
