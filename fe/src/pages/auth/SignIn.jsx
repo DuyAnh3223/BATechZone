@@ -84,14 +84,14 @@ const Login = () => {
 						<h1 className="text-2xl font-bold">Đăng nhập</h1>
 						<p className="mt-1 text-sm text-gray-500">Nhập thông tin để truy cập tài khoản</p>
 
-						<div className="mt-6 grid grid-cols-2 gap-2 bg-gray-100 p-1 rounded-lg">
+						{/* <div className="mt-6 grid grid-cols-2 gap-2 bg-gray-100 p-1 rounded-lg">
 							<button type="button" onClick={() => setTab('email')} className={`${tab === 'email' ? 'bg-white shadow text-blue-600' : 'text-gray-600'} flex items-center justify-center gap-2 rounded-md py-2 transition`}>
 								<Mail className="w-4 h-4" /> Email
 							</button>
 							<button type="button" onClick={() => setTab('phone')} className={`${tab === 'phone' ? 'bg-white shadow text-blue-600' : 'text-gray-600'} flex items-center justify-center gap-2 rounded-md py-2 transition`}>
 								<Phone className="w-4 h-4" /> Điện thoại
 							</button>
-						</div>
+						</div> */}
 
 						<form onSubmit={handleSubmit} className="mt-6 space-y-4 text-left">
 							<div>
@@ -140,16 +140,16 @@ const Login = () => {
 								{isSubmitting ? 'Đang đăng nhập...' : 'Đăng nhập'}
 							</button>
 
-							<button
+							{/* <button
 								type="button"
 								className="w-full rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-2.5 font-medium hover:opacity-90 transition"
 							>
 								Đăng nhập bằng OTP
-							</button>
+							</button> */}
 
 						</form>
 
-						<div className="my-6 flex items-center gap-3">
+						{/* <div className="my-6 flex items-center gap-3">
 							<div className="h-px bg-gray-200 flex-1" />
 							<span className="text-xs text-gray-500">Hoặc đăng nhập với</span>
 							<div className="h-px bg-gray-200 flex-1" />
@@ -159,7 +159,7 @@ const Login = () => {
 							<button type="button" className="flex items-center justify-center gap-2 rounded-lg border py-2 hover:bg-gray-50"><img alt="Facebook" className="w-5 h-5" src="https://www.facebook.com/favicon.ico" /> Facebook</button>
 							<button type="button" className="flex items-center justify-center gap-2 rounded-lg border py-2 hover:bg-gray-50"><img alt="Zalo" className="w-5 h-5" src="https://zalo.me/favicon.ico" /> Zalo</button>
 							<button type="button" className="flex items-center justify-center gap-2 rounded-lg border py-2 hover:bg-gray-50"><img alt="GitHub" className="w-5 h-5" src="https://github.com/favicon.ico" /> GitHub</button>
-						</div>
+						</div> */}
 
 						<div className="mt-6 text-sm text-gray-600 text-center">
 							Chưa có tài khoản? <Link to="/auth/signup" className="text-blue-600 hover:underline">Đăng ký ngay</Link>

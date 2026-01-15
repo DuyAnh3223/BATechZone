@@ -575,7 +575,7 @@ const Profile = () => {
               <TabsTrigger className="justify-start w-full" value="security">
                 Bảo mật
               </TabsTrigger>
-              <TabsTrigger className="justify-start w-full" value="notifications">
+              {/* <TabsTrigger className="justify-start w-full" value="notifications">
                 Thông báo
               </TabsTrigger>
               <TabsTrigger className="justify-start w-full" value="wishlist">
@@ -583,7 +583,7 @@ const Profile = () => {
               </TabsTrigger>
               <TabsTrigger className="justify-start w-full" value="coupons">
                 Mã giảm giá
-              </TabsTrigger>
+              </TabsTrigger> */}
               
             </TabsList>
           </aside>
@@ -1609,7 +1609,7 @@ const Profile = () => {
         </TabsContent>
 
         {/* Notifications */}
-        <TabsContent value="notifications">
+        {/* <TabsContent value="notifications">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
@@ -1660,10 +1660,10 @@ const Profile = () => {
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
+        </TabsContent> */}
 
         {/* Wishlist */}
-        <TabsContent value="wishlist">
+        {/* <TabsContent value="wishlist">
           <Card>
             <CardHeader>
               <CardTitle>Danh sách yêu thích</CardTitle>
@@ -1757,10 +1757,10 @@ const Profile = () => {
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
+        </TabsContent> */}
 
         {/* Coupons */}
-        <TabsContent value="coupons">
+        {/* <TabsContent value="coupons">
           <Card>
             <CardHeader>
               <CardTitle>Mã giảm giá</CardTitle>
@@ -1819,10 +1819,10 @@ const Profile = () => {
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
+        </TabsContent> */}
 
         {/* Reviews */}
-        <TabsContent value="reviews">
+        {/* <TabsContent value="reviews">
           <Card>
             <CardHeader>
               <CardTitle>Đánh giá của tôi</CardTitle>
@@ -1871,7 +1871,6 @@ const Profile = () => {
                           variant="outline"
                           size="sm"
                           className="hover:bg-gray-200"
-                          onClick={() => {/* Handle edit */}}
                         >
                           Sửa
                         </Button>
@@ -1898,7 +1897,7 @@ const Profile = () => {
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
+        </TabsContent> */}
         
         
           </section>

@@ -74,9 +74,15 @@ export const authService = {
     },
 
     // Đăng ký
-    signUp: async (username, password, email) => {
+    signUp: async (username, password, email, fullName, phone) => {
         const response = await axios.post(`${baseURL}/auth/signup`, 
-            { username, password, email },
+            { 
+                username, 
+                password, 
+                email, 
+                full_name: fullName,  // Convert camelCase to snake_case
+                phone 
+            },
             { withCredentials: true }
         );
         return response.data;

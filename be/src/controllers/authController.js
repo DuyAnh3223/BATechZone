@@ -12,21 +12,50 @@ const REFRESH_TOKEN_TTL = 14 * 24 * 60 * 60 *1000 // 14 ngày theo millisecond
 
 export const signUp = async (req, res) => {
     try {
-        const { username, email, password } = req.body;
+        const { username, email, password, full_name, phone } = req.body;
         // Validate các trường bắt buộc
         if (!username || !email || !password) {
             return res.status(400).json({
                 success: false,
-                message: "Vui lòng điền đầy đủ username, email và password"
+                message: "Vui lòng điền đầy đủ thông tin"
             });
         }
+        
+        // Convert undefined to null for optional fields
+        const fullNameValue = full_name || null;
+        const phoneValue = phone || null;
 
-        // Validate định dạng email
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        // Validate định dạng email (chặt chẽ hơn)
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
         if (!emailRegex.test(email)) {
             return res.status(400).json({
                 success: false,
                 message: "Email không hợp lệ"
+            });
+        }
+
+        // Validate username (không có khoảng trắng, chỉ chữ, số, _, -)
+        const usernameRegex = /^[a-zA-Z0-9_-]+$/;
+        if (!usernameRegex.test(username)) {
+            return res.status(400).json({
+                success: false,
+                message: "Tên đăng nhập không được chứa khoảng trắng hoặc ký tự đặc biệt"
+            });
+        }
+
+        // Validate độ dài username
+        if (username.length < 3 || username.length > 50) {
+            return res.status(400).json({
+                success: false,
+                message: "Tên đăng nhập phải có từ 3-50 ký tự"
+            });
+        }
+
+        // Validate độ dài password
+        if (password.length < 6) {
+            return res.status(400).json({
+                success: false,
+                message: "Mật khẩu phải có ít nhất 6 ký tự"
             });
         }
 
@@ -56,6 +85,8 @@ export const signUp = async (req, res) => {
             username,
             email,
             password_hash: hashedPassword,
+            full_name: fullNameValue,
+            phone: phoneValue,
             role: 0 // 0: customer
         });
 
@@ -67,6 +98,8 @@ export const signUp = async (req, res) => {
                 user_id: userId,
                 username,
                 email,
+                full_name,
+                phone,
                 role: 0
             }
         });

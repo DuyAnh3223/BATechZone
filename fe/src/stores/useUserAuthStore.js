@@ -52,9 +52,9 @@ export const useUserAuthStore = create((set, get) => ({
     },
 
     // Đăng ký
-    signUp: async (username, password, email) => {
+    signUp: async (username, password, email, fullName, phone) => {
         try {
-            const response = await authService.signUp(username, password, email);
+            const response = await authService.signUp(username, password, email, fullName, phone);
             toast.success('Đăng ký thành công! Vui lòng đăng nhập.');
             return response;
         } catch (error) {
