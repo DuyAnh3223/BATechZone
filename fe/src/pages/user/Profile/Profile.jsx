@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Link } from "react-router-dom";
 import { translatePaymentMethod, translatePaymentStatus, translateOrderStatus } from "@/utils/statusTranslations";
+import { updateProfileSchema } from "@/lib/validations/authValidation";
 import {
   Card,
   CardContent,
@@ -226,6 +228,7 @@ const Profile = () => {
   const [isSubmittingProfile, setIsSubmittingProfile] = useState(false);
 
   const profileForm = useForm({
+    resolver: zodResolver(updateProfileSchema),
     defaultValues: {
       full_name: "",
       email: "",

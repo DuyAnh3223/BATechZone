@@ -23,12 +23,17 @@ export const signUpSchema = z.object({
         .string()
         .min(1, 'Vui lòng nhập email')
         .email('Email không hợp lệ')
-        .regex(
-            /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/,
-            'Email phải có định dạng hợp lệ (ví dụ: example@gmail.com)'
-        )
         .toLowerCase()
-        .trim(),
+        .trim()
+        .refine(
+            (val) => {
+                // Kiểm tra domain phải là các nhà cung cấp email phổ biến
+                const validDomains = ['gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com', 'icloud.com', 'protonmail.com'];
+                const domain = val.split('@')[1]?.toLowerCase();
+                return validDomains.includes(domain);
+            },
+            { message: 'Email phải sử dụng domain phổ biến (@gmail.com, @yahoo.com, @outlook.com, v.v.)' }
+        ),
     
     displayName: z
         .string()
@@ -82,28 +87,55 @@ export const signInSchema = z.object({
 
 // Schema validation cho cập nhật profile
 export const updateProfileSchema = z.object({
-    fullName: z
+    full_name: z
         .string()
-        .min(2, 'Họ và tên phải có ít nhất 2 ký tự')
-        .max(100, 'Họ và tên không được quá 100 ký tự')
-        .regex(nameRegex, 'Họ và tên chỉ được chứa chữ cái và khoảng trắng')
         .trim()
+        .refine(
+            (val) => {
+                // Nếu rỗng thì OK (optional)
+                if (!val || val.length === 0) return true;
+                // Nếu có nhập thì phải đúng format
+                if (val.length < 2) return false;
+                if (val.length > 100) return false;
+                return nameRegex.test(val);
+            },
+            { 
+                message: 'Họ và tên chỉ được chứa chữ cái và khoảng trắng, từ 2-100 ký tự' 
+            }
+        )
         .optional(),
     
     phone: z
         .string()
-        .regex(phoneRegex, 'Số điện thoại không hợp lệ (phải có 10-11 số và bắt đầu bằng 0)')
         .trim()
+        .refine(
+            (val) => {
+                // Nếu rỗng thì OK (optional)
+                if (!val || val.length === 0) return true;
+                // Nếu có nhập thì phải đúng format
+                return phoneRegex.test(val);
+            },
+            { message: 'Số điện thoại không hợp lệ (phải có 10-11 số và bắt đầu bằng 0)' }
+        )
         .optional(),
     
     email: z
         .string()
-        .email('Email không hợp lệ')
-        .regex(
-            /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/,
-            'Email phải có định dạng hợp lệ'
-        )
-        .toLowerCase()
         .trim()
+        .refine(
+            (val) => {
+                // Nếu rỗng thì OK (optional)
+                if (!val || val.length === 0) return true;
+                // Nếu có nhập thì phải đúng format email
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+                if (!emailRegex.test(val)) return false;
+                
+                // Kiểm tra domain phải là các nhà cung cấp email phổ biến
+                const validDomains = ['gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com', 'icloud.com', 'protonmail.com'];
+                const domain = val.split('@')[1]?.toLowerCase();
+                return validDomains.includes(domain);
+            },
+            { message: 'Email phải có định dạng hợp lệ và sử dụng domain phổ biến (@gmail.com, @yahoo.com, @outlook.com, v.v.)' }
+        )
         .optional()
 });
