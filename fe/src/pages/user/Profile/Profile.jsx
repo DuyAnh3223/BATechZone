@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link } from "react-router-dom";
 import { translatePaymentMethod, translatePaymentStatus, translateOrderStatus } from "@/utils/statusTranslations";
-import { updateProfileSchema } from "@/lib/validations/authValidation";
+import { updateProfileSchema, addressSchema } from "@/lib/validations/authValidation";
 import {
   Card,
   CardContent,
@@ -245,6 +245,7 @@ const Profile = () => {
   });
 
   const addressForm = useForm({
+    resolver: zodResolver(addressSchema),
     defaultValues: {
       recipient_name: "",
       phone: "",

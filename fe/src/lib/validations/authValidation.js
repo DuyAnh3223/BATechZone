@@ -3,8 +3,8 @@ import { z } from 'zod';
 // Regex cho tên (chỉ chữ cái, dấu tiếng Việt, khoảng trắng)
 const nameRegex = /^[a-zA-ZàáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđÀÁẠẢÃÂẦẤẬẨẪĂẰẮẶẲẴÈÉẸẺẼÊỀẾỆỂỄÌÍỊỈĨÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠÙÚỤỦŨƯỪỨỰỬỮỲÝỴỶỸĐ\s]+$/;
 
-// Regex cho số điện thoại Việt Nam (10-11 số, bắt đầu bằng 0)
-const phoneRegex = /^0[0-9]{9,10}$/;
+// Regex cho số điện thoại Việt Nam (10 số, bắt đầu bằng 0)
+const phoneRegex = /^0[0-9]{9}$/;
 
 // Regex cho username (không có khoảng trắng, chỉ chữ, số, _, -)
 const usernameRegex = /^[a-zA-Z0-9_-]+$/;
@@ -115,7 +115,7 @@ export const updateProfileSchema = z.object({
                 // Nếu có nhập thì phải đúng format
                 return phoneRegex.test(val);
             },
-            { message: 'Số điện thoại không hợp lệ (phải có 10-11 số và bắt đầu bằng 0)' }
+            { message: 'Số điện thoại không hợp lệ (phải có 10 số và bắt đầu bằng 0)' }
         )
         .optional(),
     
@@ -138,4 +138,64 @@ export const updateProfileSchema = z.object({
             { message: 'Email phải có định dạng hợp lệ và sử dụng domain phổ biến (@gmail.com, @yahoo.com, @outlook.com, v.v.)' }
         )
         .optional()
+});
+
+// Schema validation cho address form
+export const addressSchema = z.object({
+    recipient_name: z
+        .string()
+        .min(1, 'Vui lòng nhập tên người nhận')
+        .min(2, 'Tên người nhận phải có ít nhất 2 ký tự')
+        .max(100, 'Tên người nhận không được quá 100 ký tự')
+        .regex(nameRegex, 'Tên người nhận chỉ được chứa chữ cái và khoảng trắng')
+        .trim(),
+    
+    phone: z
+        .string()
+        .min(1, 'Vui lòng nhập số điện thoại')
+        .regex(phoneRegex, 'Số điện thoại không hợp lệ (phải có 10 số và bắt đầu bằng 0)')
+        .trim(),
+    
+    address_line1: z
+        .string()
+        .min(1, 'Vui lòng nhập địa chỉ')
+        .trim(),
+    
+    address_line2: z
+        .string()
+        .trim()
+        .optional(),
+    
+    ward: z
+        .string()
+        .trim()
+        .optional(),
+    
+    district: z
+        .string()
+        .trim()
+        .optional(),
+    
+    city: z
+        .string()
+        .min(1, 'Vui lòng nhập thành phố')
+        .trim(),
+    
+    postal_code: z
+        .string()
+        .trim()
+        .optional(),
+    
+    country: z
+        .string()
+        .trim()
+        .optional(),
+    
+    address_type: z
+        .enum(['home', 'office', 'other'])
+        .default('home'),
+    
+    is_default: z
+        .boolean()
+        .default(false)
 });
