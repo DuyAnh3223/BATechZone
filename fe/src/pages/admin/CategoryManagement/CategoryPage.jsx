@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus } from 'lucide-react';
+import { Plus, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -92,10 +92,19 @@ const CategoryPage = () => {
             Quản lý danh mục sản phẩm và thuộc tính
           </p>
         </div>
-        <Button onClick={handleAdd}>
-          <Plus className="w-4 h-4 mr-2" />
-          Thêm danh mục
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={() => navigate('/admin/categories/compatibility')}
+          >
+            <Settings className="w-4 h-4 mr-2" />
+            Quản lý Tương thích
+          </Button>
+          <Button onClick={handleAdd}>
+            <Plus className="w-4 h-4 mr-2" />
+            Thêm danh mục
+          </Button>
+        </div>
       </div>
 
       {/* Category List */}

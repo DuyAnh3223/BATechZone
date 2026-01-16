@@ -2,6 +2,9 @@
 CREATE TABLE `attributes` (
   `attribute_id` int(11) NOT NULL,
   `attribute_name` varchar(100) NOT NULL,
+  `attribute_code` varchar(50) DEFAULT NULL,
+  `is_compatibility_key` tinyint(1) DEFAULT 0,
+  `compatibility_group` varchar(50) DEFAULT NULL,
   `display_order` int(11) DEFAULT 0,
   `is_active` tinyint(1) DEFAULT 1,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
@@ -11,37 +14,37 @@ CREATE TABLE `attributes` (
 -- Dumping data for table `attributes`
 --
 
-INSERT INTO `attributes` (`attribute_id`, `attribute_name`, `display_order`, `is_active`, `created_at`) VALUES
-(1, 'Hãng', 1, 1, '2026-01-04 12:31:19'),
-(2, 'Dòng CPU', 2, 1, '2026-01-04 12:31:19'),
-(3, 'CPU theo Socket', 3, 1, '2026-01-04 12:31:19'),
-(4, 'Thế hệ CPU', 4, 1, '2026-01-04 12:31:19'),
-(5, 'Nhu cầu sử dụng', 5, 1, '2026-01-04 12:31:19'),
-(6, 'Kiểu Bộ Nhớ', 6, 1, '2026-01-04 12:31:19'),
-(7, 'Kích Thước Bộ Nhớ', 7, 1, '2026-01-04 12:31:19'),
-(8, 'Dung Lượng', 8, 1, '2026-01-04 12:31:19'),
-(9, 'Loại Ổ Cứng', 9, 1, '2026-01-04 12:31:19'),
-(10, 'Giao diện PCIe', 10, 1, '2026-01-04 12:31:19'),
-(11, 'Socket Hỗ Trợ', 11, 1, '2026-01-04 12:31:19'),
-(12, 'Chipset', 12, 1, '2026-01-04 12:31:19'),
-(13, 'Kiểu Kích Thước (Form Factor)', 13, 1, '2026-01-04 12:31:19'),
-(14, 'Số Khe Cắm RAM', 14, 1, '2026-01-04 12:31:19'),
-(15, 'Công Suất Nguồn', 15, 1, '2026-01-04 12:31:19'),
-(16, 'Chuẩn Nguồn', 16, 1, '2026-01-04 12:31:19'),
-(17, 'Kiểu Dây Nguồn', 17, 1, '2026-01-04 12:31:19'),
-(18, 'Kích Cỡ', 18, 1, '2026-01-04 12:31:19'),
-(19, 'Kích thước Mainboard', 19, 1, '2026-01-04 12:31:19'),
-(20, 'Tốc Độ Vòng Quay', 20, 1, '2026-01-04 12:31:19'),
-(21, 'Loại RAM', 21, 1, '2026-01-04 12:31:19'),
-(22, 'Bus RAM', 22, 1, '2026-01-04 12:31:19'),
-(23, 'Tần Số Quét', 23, 1, '2026-01-04 12:31:19'),
-(24, 'Độ Phân Giải', 24, 1, '2026-01-04 12:31:19'),
-(25, 'Tấm Nền', 25, 1, '2026-01-04 12:31:19'),
-(26, 'Kích Thước', 26, 1, '2026-01-04 12:31:19'),
-(27, 'Thế hệ bộ nhớ', 0, 1, '2026-01-11 03:18:00'),
-(28, 'Loại RAM Hỗ Trợ', 0, 1, '2026-01-11 03:18:58'),
-(29, 'Độ dài GPU tối đa (mm)', 0, 1, '2026-01-11 03:26:46'),
-(30, 'Độ dài GPU (mm)', 0, 1, '2026-01-11 03:27:03');
+INSERT INTO `attributes` (`attribute_id`, `attribute_name`, `attribute_code`, `is_compatibility_key`, `compatibility_group`, `display_order`, `is_active`, `created_at`) VALUES
+(1, 'Hãng', 'cpu_brand', 0, NULL, 1, 1, '2026-01-04 12:31:19'),
+(2, 'Dòng CPU', 'cpu_series', 0, NULL, 2, 1, '2026-01-04 12:31:19'),
+(3, 'CPU theo Socket', 'cpu_socket', 1, 'socket', 3, 1, '2026-01-04 12:31:19'),
+(4, 'Thế hệ CPU', 'cpu_generation', 0, NULL, 4, 1, '2026-01-04 12:31:19'),
+(5, 'Nhu cầu sử dụng', NULL, 0, NULL, 5, 1, '2026-01-04 12:31:19'),
+(6, 'Kiểu Bộ Nhớ', NULL, 0, NULL, 6, 1, '2026-01-04 12:31:19'),
+(7, 'Kích Thước Bộ Nhớ', NULL, 0, NULL, 7, 1, '2026-01-04 12:31:19'),
+(8, 'Dung Lượng', 'storage_capacity', 0, NULL, 8, 1, '2026-01-04 12:31:19'),
+(9, 'Loại Ổ Cứng', 'storage_type', 0, NULL, 9, 1, '2026-01-04 12:31:19'),
+(10, 'Giao diện PCIe', 'storage_interface', 0, NULL, 10, 1, '2026-01-04 12:31:19'),
+(11, 'Socket Hỗ Trợ', 'mb_socket_support', 1, 'socket', 11, 1, '2026-01-04 12:31:19'),
+(12, 'Chipset', 'mb_chipset', 0, NULL, 12, 1, '2026-01-04 12:31:19'),
+(13, 'Kiểu Kích Thước (Form Factor)', 'mb_form_factor', 1, 'form_factor', 13, 1, '2026-01-04 12:31:19'),
+(14, 'Số Khe Cắm RAM', 'mb_ram_slots', 0, NULL, 14, 1, '2026-01-04 12:31:19'),
+(15, 'Công Suất Nguồn', 'psu_wattage', 0, NULL, 15, 1, '2026-01-04 12:31:19'),
+(16, 'Chuẩn Nguồn', 'psu_standard', 0, NULL, 16, 1, '2026-01-04 12:31:19'),
+(17, 'Kiểu Dây Nguồn', 'psu_cable_type', 0, NULL, 17, 1, '2026-01-04 12:31:19'),
+(18, 'Kích Cỡ', 'case_size', 0, NULL, 18, 1, '2026-01-04 12:31:19'),
+(19, 'Kích thước Mainboard', 'case_mb_support', 1, 'form_factor', 19, 1, '2026-01-04 12:31:19'),
+(20, 'Tốc Độ Vòng Quay', 'cooler_fan_speed', 0, NULL, 20, 1, '2026-01-04 12:31:19'),
+(21, 'Loại RAM', 'ram_type', 1, 'ram_type', 21, 1, '2026-01-04 12:31:19'),
+(22, 'Bus RAM', 'ram_bus', 0, NULL, 22, 1, '2026-01-04 12:31:19'),
+(23, 'Tần Số Quét', 'monitor_refresh_rate', 0, NULL, 23, 1, '2026-01-04 12:31:19'),
+(24, 'Độ Phân Giải', 'monitor_resolution', 0, NULL, 24, 1, '2026-01-04 12:31:19'),
+(25, 'Tấm Nền', 'monitor_panel', 0, NULL, 25, 1, '2026-01-04 12:31:19'),
+(26, 'Kích Thước', 'monitor_size', 0, NULL, 26, 1, '2026-01-04 12:31:19'),
+(27, 'Thế hệ bộ nhớ', 'ram_generation', 0, NULL, 0, 1, '2026-01-11 03:18:00'),
+(28, 'Loại RAM Hỗ Trợ', 'mb_ram_type_support', 1, 'ram_type', 0, 1, '2026-01-11 03:18:58'),
+(29, 'Độ dài GPU tối đa (mm)', 'case_max_gpu_length', 1, 'gpu_length', 0, 1, '2026-01-11 03:26:46'),
+(30, 'Độ dài GPU (mm)', 'gpu_length', 1, 'gpu_length', 0, 1, '2026-01-11 03:27:03');
 
 --
 -- Indexes for dumped tables
@@ -51,7 +54,11 @@ INSERT INTO `attributes` (`attribute_id`, `attribute_name`, `display_order`, `is
 -- Indexes for table `attributes`
 --
 ALTER TABLE `attributes`
-  ADD PRIMARY KEY (`attribute_id`);
+  ADD PRIMARY KEY (`attribute_id`),
+  ADD UNIQUE KEY `attribute_code` (`attribute_code`),
+  ADD KEY `idx_attribute_code` (`attribute_code`),
+  ADD KEY `idx_compatibility_key` (`is_compatibility_key`),
+  ADD KEY `idx_compatibility_group` (`compatibility_group`);
 
 --
 -- AUTO_INCREMENT for dumped tables
@@ -63,7 +70,6 @@ ALTER TABLE `attributes`
 ALTER TABLE `attributes`
   MODIFY `attribute_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=31;
 COMMIT;
-
 
 
 CREATE TABLE `attributes_categories` (
@@ -385,10 +391,6 @@ ALTER TABLE `attribute_values`
 COMMIT;
 
 
---
--- Table structure for table `categories`
---
-
 CREATE TABLE `categories` (
   `category_id` int(11) NOT NULL,
   `category_name` varchar(100) NOT NULL,
@@ -460,7 +462,6 @@ ALTER TABLE `categories`
   ADD CONSTRAINT `categories_ibfk_1` FOREIGN KEY (`parent_category_id`) REFERENCES `categories` (`category_id`) ON DELETE SET NULL;
 COMMIT;
 
--
 
 CREATE TABLE `categories_attributes_values` (
   `cav_id` int(11) NOT NULL,
@@ -731,28 +732,56 @@ CREATE TABLE `products` (
 --
 
 INSERT INTO `products` (`product_id`, `category_id`, `product_name`, `slug`, `description`, `base_price`, `is_active`, `is_featured`, `view_count`, `rating_average`, `review_count`, `created_at`, `updated_at`, `img_path`) VALUES
-(395, 13, 'Seagate 500GB', 'seagate-500gb', 'Mô tả Seagate 500GB', 0.00, 0, 1, 0, 0.00, 0, '2026-01-04 16:36:19', '2026-01-04 19:12:01', NULL),
-(396, 1, 'AMD Ryzen 5 5700X3D', 'amd-ryzen-5-5700x3d', 'Mắc quá đi', 4700000.00, 0, 1, 0, 0.00, 0, '2026-01-04 16:43:50', '2026-01-04 19:12:10', NULL),
-(397, 1, 'CPU Intel Core i5-12400F (Up to 4.4Ghz, 6 Nhân 12 Luồng, 18MB Cache, Socket Intel LGA 1700)', 'cpu-intel-core-i5-12400f-up-to-44ghz-6-nhan-12-luong-18mb-cache-socket-intel-lga-1700', 'CPU Intel Core i5-12400F - CPU thuộc thế hệ thứ 12 (Alder Lake) thiết kế tối ưu cho các game thủ và những người sáng tạo nội dung bán chuyên.', 2900000.00, 1, 1, 0, 0.00, 0, '2026-01-04 17:15:45', '2026-01-04 17:15:45', NULL),
-(398, 1, 'CPU Intel Core i5-12400 (Upto 4.4Ghz, 6 nhân 12 luồng, 18MB Cache, 65W) - Socket Intel LGA 1700)', 'cpu-intel-core-i5-12400-upto-44ghz-6-nhan-12-luong-18mb-cache-65w-socket-intel-lga-1700', 'CPU Intel Core i5-12400 là bước nhảy vọt của Intel ở thế hệ thứ 12, mang trong mình sức mạnh bền bỉ, sẵn sàng cùng bạn chinh chiến mọi tựa game AAA hay xử lý chồng chất những deadline đồ họa phức tạp', 4400000.00, 1, 0, 0, 0.00, 0, '2026-01-04 17:25:43', '2026-01-04 17:25:43', NULL),
-(399, 1, 'CPU Intel Core i5-13400 (up to 4.6Ghz, 10 nhân 16 luồng, 20MB Cache, 65W) - Socket Intel LGA 1700/Raptor Lake) ', 'cpu-intel-core-i5-13400-up-to-46ghz-10-nhan-16-luong-20mb-cache-65w-socket-intel-lga-1700raptor-lake', 'CPU Intel Core i5-13400 - Bộ vi xử lý không quá cao cấp để gây lãng phí, nhưng cũng không hề yếu để phải đắn đo khi làm việc nặng hay chơi game.', 5100000.00, 1, 0, 0, 0.00, 0, '2026-01-04 17:34:58', '2026-01-04 17:34:58', NULL),
-(400, 13, 'Ổ Cứng HDD SEAGATE Barracuda 4TB 3.5 inch 5400RPM, SATA III, 256MB Cache', 'o-cung-hdd-seagate-barracuda-4tb-35-inch-5400rpm-sata-iii-256mb-cache-st4000dm004', 'Ổ cứng truyền thống HDD với ưu thế là độ bền và dung lượng cao vẫn là một phần không thể thiếu được trong một chiếc máy tính. Đặc biệt là trong thời đại công nghệ hiện nay.', 3600000.00, 1, 1, 6, 0.00, 0, '2026-01-04 17:41:50', '2026-01-10 15:05:19', NULL),
-(401, 13, 'Ổ Cứng HDD SEAGATE IronWolf 10TB 3.5 inch, 7200RPM ,SATA III3, 256MB Cache', 'o-cung-hdd-seagate-ironwolf-10tb-35-inch-7200rpm-sata-iii3-256mb-cache', 'Ổ cứng Seagate IronWolf 10TB — lưu trữ dữ liệu lớn, chạy ổn định, phù hợp cho PC, NAS, server nhỏ. Tốc độ quay cao và bộ nhớ đệm lớn giúp truy xuất dữ liệu nhanh, đáng tin cậy cho công việc và giải trí.', 10300000.00, 1, 0, 2, 0.00, 0, '2026-01-04 17:48:16', '2026-01-04 19:17:04', NULL),
-(402, 13, 'Ổ Cứng HDD Toshiba P300 4TB 3.5 inch, 5400RPM, SATA III, 128MB Cache', 'o-cung-hdd-toshiba-p300-4tb-35-inch-5400rpm-sata-iii-128mb-cache', 'Thiết kế này giúp cho tốc độ đọc và ghi chính xác hơn, nhanh hơn và truy cập nhanh vào dữ liệu của bạn.', 3400000.00, 1, 0, 2, 0.00, 0, '2026-01-04 17:51:09', '2026-01-04 19:17:10', NULL),
-(403, 35, 'RAM Desktop Kingston Fury Beast 16GB (1x16GB) DDR4 3200MHz', 'ram-desktop-kingston-fury-beast-16gb-1x16gb-ddr4-3200mhz', 'Ram Desktop Kingston Fury là dòng Ram phổ thông nhắm đến hiệu năng/ giá bán được nhiều khách hàng tin dùng. Phiên bản Kingston Fury mới được thay đổi nhẹ về thiết kế để bắt mắt hơn.', 3100000.00, 1, 1, 0, 0.00, 0, '2026-01-04 17:56:56', '2026-01-04 17:56:56', NULL),
-(404, 35, 'RAM Desktop Kingston Fury Beast 16GB (1x16GB) DDR5 5600MHz', 'ram-desktop-kingston-fury-beast-16gb-1x16gb-ddr5-5600mhz', 'Ram Desktop Kingston Fury Beast là dòng RAM hiệu năng cao của Kingston trên nền tảng DDR5 mới nhất cho tốc độ cực nhanh. ', 5300000.00, 1, 0, 0, 0.00, 0, '2026-01-04 18:01:00', '2026-01-04 18:01:00', NULL),
-(405, 35, 'RAM Desktop Kingston Fury Beast RGB EXPO 32GB (1x32GB) DDR5 6000MHz', 'ram-desktop-kingston-fury-beast-rgb-expo-32gb-1x32gb-ddr5-6000mhz', 'RAM và kit RAM DDR5 của Kingston FURY có tích hợp AMD EXPO (Công nghệ Extended Profiles của AMD để ép xung) được tự xác nhận trên bo mạch chủ AM5', 11000000.00, 1, 0, 0, 0.00, 0, '2026-01-04 18:06:06', '2026-01-04 18:06:06', NULL),
-(406, 2, 'Card màn hình Asus DUAL-RTX 3050-6G', 'card-man-hinh-asus-dual-rtx-3050-6g', 'ASUS Dual RTX 3050 6GB GDDR6 là một sản phẩm đáng chú ý trong phân khúc card đồ họa tầm trung, có khả năng xử lý đồ họa 3D mượt mà, hỗ trợ công nghệ ray tracing và DLSS.', 4650000.00, 1, 0, 0, 0.00, 0, '2026-01-04 18:12:25', '2026-01-04 18:12:25', NULL),
-(407, 2, 'Card màn hình Gigabyte RTX 3050 WINFORCE OC V2-6G', 'card-man-hinh-gigabyte-rtx-3050-winforce-oc-v2-6g', 'Card màn hình Gigabyte GeForce RTX 3050 WINDFORCE OC 6G được thiết kế với phong cách tối giản, phù hợp với mọi cấu hình máy tính.', 4700000.00, 1, 0, 6, 0.00, 0, '2026-01-04 18:16:29', '2026-01-10 15:23:04', NULL),
-(408, 2, 'Card màn hình MSI RTX 5060 8G VENTUS 2X OC GDDR7', 'card-man-hinh-msi-rtx-5060-8g-ventus-2x-oc-gddr7', 'MSI RTX 5060 8G VENTUS 2X OC là card đồ họa tầm trung mới nhất từ NVIDIA RTX 50-series, trang bị 8GB VRAM GDDR7 cho hiệu năng mạnh mẽ, đặc biệt trong chơi game, đồ họa và làm việc sáng tạo.', 9100000.00, 1, 0, 4, 0.00, 0, '2026-01-04 18:22:03', '2026-01-10 15:36:42', NULL),
-(409, 4, 'Ổ Cứng SSD Samsung 980 500GB – M.2 2280 PCIe Gen3 x4 (Đọc 3100MB/s - Ghi 2600MB/s)', 'o-cung-ssd-samsung-980-500gb-m2-2280-pcie-gen3-x4-doc-3100mbs-ghi-2600mbs', 'Ổ cứng SSD Samsung 980 là dòng sản phẩm SSD M.2 NVME PCIe Gen 3 mới nhất của Samsung. Đây là dòng ổ cứng hàng đầu thích hợp cho nhu cầu lưu trữ tốc độ cao: edit ảnh, video, chơi games,..', 3000000.00, 1, 0, 0, 0.00, 0, '2026-01-04 18:29:18', '2026-01-04 18:29:18', NULL),
-(410, 4, 'Ổ Cứng SSD CORSAIR MP600 CORE XT 1TB – M.2 2280 PCIe Gen4 x4 (Đọc 5900MB/s - Ghi 5000MB/s)', 'o-cung-ssd-corsair-mp600-core-xt-1tb-m2-2280-pcie-gen4-x4-doc-5900mbs-ghi-5000mbs', 'Ổ cứng SSD Corsair MP600 CORE XT là một sản phẩm cao cấp của thương hiệu nổi tiếng CORSAIR. Với dung lượng lưu trữ 1TB, giao diện NVMe PCIe Gen4 x4 và kích thước M.2 2280, ổ cứng này hứa hẹn mang đến hiệu năng và tốc độ đáng chú ý cho người dùng.', 3800000.00, 1, 0, 0, 0.00, 0, '2026-01-04 18:32:28', '2026-01-04 18:32:28', NULL),
-(411, 4, 'Ổ Cứng SSD Gigabyte 4000E 1TB – M.2 2280 PCIe Gen4 x4 (Đọc 4000MB/s - Ghi 3900MB/s)', 'o-cung-ssd-gigabyte-4000e-1tb-m2-2280-pcie-gen4-x4-doc-4000mbs-ghi-3900mbs', 'Ổ cứng SSD Gigabyte 4000E là một bước đột phá trong công nghệ lưu trữ, mang đến hiệu năng vượt trội với giao diện PCIe 4.0 x4 và chuẩn NVMe 1.4. Với thiết kế M.2 2280 nhỏ gọn.', 3500000.00, 1, 0, 0, 0.00, 0, '2026-01-04 18:46:00', '2026-01-04 18:46:00', NULL),
-(412, 5, 'Mainboard ASUS TUF GAMING Z790 PLUS WIFI DDR5', 'mainboard-asus-tuf-gaming-z790-plus-wifi-ddr5', 'Mainboard Asus TUF Gaming Z790 PLUS Wifi DDR5 là một bo mạch chủ có tất cả các yếu tố thiết yếu của bộ xử lý Intel® mới nhất và kết hợp chúng với các tính năng sẵn sàng cho nhu cầu gaming.', 7000000.00, 1, 0, 0, 0.00, 0, '2026-01-04 18:49:52', '2026-01-04 18:49:52', NULL),
-(413, 5, 'Mainboard MSI PRO B760M-E DDR4', 'mainboard-msi-pro-b760m-e-ddr4', 'Tốc độ truyền tải dữ liệu nhanh hơn: Rút ngắn thời gian truyền tải giữa RAM, CPU và các thành phần khác, giúp thiết bị của bạn hoạt động nhanh nhạy hơn.', 2300000.00, 1, 0, 0, 0.00, 0, '2026-01-04 18:55:07', '2026-01-04 18:55:07', NULL),
-(414, 5, 'Mainboard Gigabyte Z890M AORUS ELITE WIFI7', 'mainboard-gigabyte-z890m-aorus-elite-wifi7', 'Mainboard Gigabyte Z890M AORUS ELITE WIFI7 là bo mạch chủ Micro-ATX DDR5 cao cấp dành cho CPU Intel Core Ultra (Socket LGA1851), phù hợp cho PC gaming & làm việc hiệu năng cao.', 6100000.00, 1, 0, 0, 0.00, 0, '2026-01-04 19:01:46', '2026-01-04 19:01:46', NULL),
-(416, 1, 'Intel Core I3 13100F ', 'intel-core-i3-13100f', NULL, 2100000.00, 1, 1, 12, 0.00, 0, '2026-01-10 14:25:14', '2026-01-10 15:26:50', NULL),
-(417, 35, 'Corsair DDR4 Buss 3200MHZ', 'corsair-ddr4-buss-3200mhz', NULL, 0.00, 1, 1, 20, 0.00, 0, '2026-01-10 14:29:16', '2026-01-10 15:37:16', NULL);
+(1, 1, 'Intel Core I5 10400f', 'intel-core-i5-10400f', NULL, 3400000.00, 1, 0, 0, 0.00, 0, '2026-01-15 11:15:43', '2026-01-15 11:15:43', NULL),
+(2, 1, 'Intel Core I3 10105f', 'intel-core-i3-10105f', NULL, 1800000.00, 1, 0, 0, 0.00, 0, '2026-01-15 11:17:09', '2026-01-15 11:17:09', NULL),
+(3, 1, 'Intel Core I3 12100f', 'intel-core-i3-12100f', NULL, 2100000.00, 1, 1, 0, 0.00, 0, '2026-01-15 11:19:57', '2026-01-15 11:19:57', NULL),
+(4, 1, 'Intel Core I5 12400f', 'intel-core-i5-12400f', NULL, 2800000.00, 1, 1, 0, 0.00, 0, '2026-01-15 11:22:44', '2026-01-15 11:22:44', NULL),
+(5, 1, 'Intel Core I5 13500', 'intel-core-i5-13500', NULL, 5500000.00, 1, 1, 0, 0.00, 0, '2026-01-15 11:24:10', '2026-01-15 11:24:10', NULL),
+(6, 1, 'Intel Core i7 14700f', 'intel-core-i7-14700f', NULL, 7000000.00, 1, 1, 0, 0.00, 0, '2026-01-15 11:25:36', '2026-01-15 11:25:36', NULL),
+(7, 1, 'Intel Core I5 14600kf', 'intel-core-i5-14600kf', NULL, 6000000.00, 1, 1, 0, 0.00, 0, '2026-01-15 11:26:38', '2026-01-15 11:26:38', NULL),
+(8, 1, 'CPU AMD Ryzen 5 5600X (3.7 GHz Upto 4.6GHz / 35MB / 6 Cores, 12 Threads / 65W / Socket AM4)', 'cpu-amd-ryzen-5-5600x-37-ghz-upto-46ghz-35mb-6-cores-12-threads-65w-socket-am4', NULL, 2800000.00, 1, 1, 0, 0.00, 0, '2026-01-15 11:28:10', '2026-01-15 11:28:10', NULL),
+(9, 1, 'CPU AMD Ryzen 7 5700X (3.4 GHz Upto 4.6GHz / 36MB / 8 Cores, 16 Threads / 65W / Socket AM4)', 'cpu-amd-ryzen-7-5700x-34-ghz-upto-46ghz-36mb-8-cores-16-threads-65w-socket-am4', NULL, 4500000.00, 1, 0, 0, 0.00, 0, '2026-01-15 11:29:00', '2026-01-15 11:29:00', NULL),
+(10, 1, 'CPU AMD Ryzen Ryzen 5 7500F (3.7 GHz Upto 5.0GHz / 38MB / 6 Cores, 12 Threads / 65W / Socket AM5)', 'cpu-amd-ryzen-ryzen-5-7500f-37-ghz-upto-50ghz-38mb-6-cores-12-threads-65w-socket-am5', NULL, 3200000.00, 1, 1, 0, 0.00, 0, '2026-01-15 11:30:05', '2026-01-15 11:30:05', NULL),
+(11, 1, 'CPU AMD Ryzen 5 7600X (4.7 GHz Upto 5.3GHz / 38MB / 6 Cores, 12 Threads / 105W / Socket AM5)', 'cpu-amd-ryzen-5-7600x-47-ghz-upto-53ghz-38mb-6-cores-12-threads-105w-socket-am5', NULL, 5000000.00, 1, 0, 0, 0.00, 0, '2026-01-15 11:31:06', '2026-01-15 11:31:06', NULL),
+(12, 1, ' CPU AMD Ryzen 7 7700X (4.5 GHz Upto 5.4GHz / 40MB / 8 Cores, 16 Threads / 105W / Socket AM5)', 'cpu-amd-ryzen-7-7700x-45-ghz-upto-54ghz-40mb-8-cores-16-threads-105w-socket-am5', NULL, 8000000.00, 1, 1, 0, 0.00, 0, '2026-01-15 11:32:20', '2026-01-15 11:33:29', NULL),
+(13, 1, 'CPU AMD Ryzen 7 7800X3D (4.2Ghz up to 5.0Ghz/105MB/8 cores 16 threads/120W/Socket AM5)', 'cpu-amd-ryzen-7-7800x3d-42ghz-up-to-50ghz105mb8-cores-16-threads120wsocket-am5', NULL, 9000000.00, 1, 0, 0, 0.00, 0, '2026-01-15 11:33:06', '2026-01-15 11:33:06', NULL),
+(14, 5, 'Mainboard ASROCK H510M-HDV/M.2 SE', 'mainboard-asrock-h510m-hdvm2-se', NULL, 1500000.00, 1, 0, 0, 0.00, 0, '2026-01-15 11:36:30', '2026-01-15 11:36:30', NULL),
+(15, 5, 'Mainboard ASROCK B560M PRO4/ac (Intel B560, Socket 1200, m-ATX, 4 khe Ram DDR4)', 'mainboard-asrock-b560m-pro4ac-intel-b560-socket-1200-m-atx-4-khe-ram-ddr4', NULL, 2300000.00, 1, 0, 0, 0.00, 0, '2026-01-15 11:37:27', '2026-01-15 11:37:27', NULL),
+(16, 5, 'Mainboard Asus PRIME H610M-K D4', 'mainboard-asus-prime-h610m-k-d4', NULL, 1800000.00, 1, 0, 0, 0.00, 0, '2026-01-15 11:39:43', '2026-01-15 11:39:43', NULL),
+(17, 5, 'Mainboard Asus B760M-AYW WIFI D4', 'mainboard-asus-b760m-ayw-wifi-d4', NULL, 2800000.00, 1, 1, 0, 0.00, 0, '2026-01-15 11:40:40', '2026-01-15 11:40:40', NULL),
+(18, 5, 'Mainboard MSI MAG B760M MORTAR WIFI II DDR5', 'mainboard-msi-mag-b760m-mortar-wifi-ii-ddr5', NULL, 4800000.00, 1, 1, 0, 0.00, 0, '2026-01-15 11:41:54', '2026-01-15 11:41:54', NULL),
+(19, 5, 'Mainboard MSI B760M GAMING PLUS WIFI DDR4', 'mainboard-msi-b760m-gaming-plus-wifi-ddr4', NULL, 3300000.00, 1, 1, 0, 0.00, 0, '2026-01-15 11:42:53', '2026-01-15 11:43:03', NULL),
+(20, 5, 'Bo mạch chủ GIGABYTE Z790 AORUS MASTER DDR5', 'bo-mach-chu-gigabyte-z790-aorus-master-ddr5', NULL, 15000000.00, 1, 1, 0, 0.00, 0, '2026-01-15 11:44:19', '2026-01-15 11:44:19', NULL),
+(21, 5, 'Mainboard ASUS TUF GAMING B450M-PLUS (AMD B450, Socket AM4, m-ATX, 4 khe RAM DRR4)', 'mainboard-asus-tuf-gaming-b450m-plus-amd-b450-socket-am4-m-atx-4-khe-ram-drr4', NULL, 2900000.00, 1, 1, 0, 0.00, 0, '2026-01-15 11:46:18', '2026-01-15 11:46:18', NULL),
+(22, 5, 'Mainboard ASROCK A520M/ac ', 'mainboard-asrock-a520mac', NULL, 1700000.00, 1, 1, 0, 0.00, 0, '2026-01-15 11:47:28', '2026-01-15 11:47:28', NULL),
+(23, 5, 'Mainboard MSI PRO A620M-E DDR5', 'mainboard-msi-pro-a620m-e-ddr5', NULL, 2600000.00, 1, 1, 0, 0.00, 0, '2026-01-15 11:48:27', '2026-01-15 11:48:27', NULL),
+(24, 5, 'Mainboard Gigabyte B650M AORUS ELITE AX', 'mainboard-gigabyte-b650m-aorus-elite-ax', NULL, 4400000.00, 1, 1, 0, 0.00, 0, '2026-01-15 11:49:36', '2026-01-15 11:49:36', NULL),
+(25, 5, 'Mainboard ASUS ROG B650E-F GAMING WIFI', 'mainboard-asus-rog-b650e-f-gaming-wifi', NULL, 7800000.00, 1, 1, 0, 0.00, 0, '2026-01-15 11:50:51', '2026-01-15 11:50:51', NULL),
+(26, 5, 'Mainboard MSI X670E GAMING PLUS WIFI DDR5', 'mainboard-msi-x670e-gaming-plus-wifi-ddr5', NULL, 7500000.00, 1, 1, 0, 0.00, 0, '2026-01-15 11:51:51', '2026-01-15 11:51:51', NULL),
+(27, 35, 'RAM Desktop Corsair Vengeance RGB RS DDR4 3200MHz', 'ram-desktop-corsair-vengeance-rgb-rs-ddr4-3200mhz', NULL, 0.00, 1, 0, 0, 0.00, 0, '2026-01-15 11:54:48', '2026-01-15 11:54:48', NULL),
+(28, 35, 'RAM Desktop Kingston Fury Beast (KF432C16BB1/16 - KF432C16BB1/16WP) 16GB (1x16GB) DDR4 3200MHz', 'ram-desktop-kingston-fury-beast-kf432c16bb116-kf432c16bb116wp-16gb-1x16gb-ddr4-3200mhz', NULL, 3000000.00, 1, 0, 0, 0.00, 0, '2026-01-15 11:56:58', '2026-01-15 11:56:58', NULL),
+(29, 35, 'RAM Desktop KINGSTON Fury Beast RGB 32GB (1x32GB) DDR5 6400MHz', 'ram-desktop-kingston-fury-beast-rgb-32gb-1x32gb-ddr5-6400mhz', NULL, 7000000.00, 1, 1, 0, 0.00, 0, '2026-01-15 11:58:13', '2026-01-15 11:58:13', NULL),
+(30, 35, 'Ram Desktop Corsair Vengeance RGB White Heatspreader (CMH32GX5M2E6000C36W) 32GB (2x16GB) DDR5 6000MHz', 'ram-desktop-corsair-vengeance-rgb-white-heatspreader-cmh32gx5m2e6000c36w-32gb-2x16gb-ddr5-6000mhz', NULL, 10000000.00, 1, 0, 0, 0.00, 0, '2026-01-15 11:59:07', '2026-01-15 11:59:07', NULL),
+(31, 13, 'Ổ Cứng HDD SEAGATE Barracuda 4TB 3.5 inch 5400RPM, SATA III, 256MB Cache (ST4000DM004)', 'o-cung-hdd-seagate-barracuda-4tb-35-inch-5400rpm-sata-iii-256mb-cache-st4000dm004', NULL, 3500000.00, 1, 0, 0, 0.00, 0, '2026-01-15 12:00:20', '2026-01-15 12:00:20', NULL),
+(33, 13, 'Ổ Cứng HDD WD 4TB Blue 3.5 inch, 5400RPM, SATA III, 256MB Cache (WD40EZAX)', 'o-cung-hdd-wd-4tb-blue-35-inch-5400rpm-sata-iii-256mb-cache-wd40ezax', NULL, 3800000.00, 1, 0, 0, 0.00, 0, '2026-01-15 12:01:41', '2026-01-15 12:01:41', NULL),
+(34, 13, 'Ổ Cứng HDD Toshiba P300 2TB Red 3.5 inch, 7200RPM, SATA III, 256MB Cache (HDWD320AZSTA/HDWD320UZSVA)', 'o-cung-hdd-toshiba-p300-2tb-red-35-inch-7200rpm-sata-iii-256mb-cache-hdwd320azstahdwd320uzsva', NULL, 3000000.00, 1, 0, 0, 0.00, 0, '2026-01-15 12:03:37', '2026-01-15 12:03:37', NULL),
+(35, 4, 'Ổ Cứng SSD Samsung 870 EVO 500GB 2.5 inch SATA III ( Đọc 560MB/s - Ghi 530MB/s) - (MZ-77E500BW)', 'o-cung-ssd-samsung-870-evo-500gb-25-inch-sata-iii-doc-560mbs-ghi-530mbs-mz-77e500bw', NULL, 2.80, 1, 0, 0, 0.00, 0, '2026-01-15 12:04:55', '2026-01-15 12:04:55', NULL),
+(37, 4, 'Ổ Cứng SSD Samsung 980 250GB – M.2 2280 PCIe Gen3 x4 (Đọc 2900MB/s - Ghi 1300MB/s) ', 'o-cung-ssd-samsung-980-250gb-m2-2280-pcie-gen3-x4-doc-2900mbs-ghi-1300mbs', NULL, 2000000.00, 1, 0, 0, 0.00, 0, '2026-01-15 12:07:43', '2026-01-15 12:07:43', NULL),
+(38, 4, 'Ổ Cứng SSD KINGSTON A400 256GB 2.5 inch SATA III (Đọc 500MB/s - Ghi 450MB/s)', 'o-cung-ssd-kingston-a400-256gb-25-inch-sata-iii-doc-500mbs-ghi-450mbs', NULL, 1600000.00, 1, 0, 0, 0.00, 0, '2026-01-15 12:08:47', '2026-01-15 12:08:47', NULL),
+(39, 4, 'Ổ Cứng SSD CORSAIR MP600 CORE XT 1TB – M.2 2280 PCIe Gen4 x4 (Đọc 5900MB/s - Ghi 5000MB/s)', 'o-cung-ssd-corsair-mp600-core-xt-1tb-m2-2280-pcie-gen4-x4-doc-5900mbs-ghi-5000mbs', NULL, 3800000.00, 1, 0, 0, 0.00, 0, '2026-01-15 12:10:01', '2026-01-15 12:10:01', NULL),
+(40, 2, 'Card màn hình Asus DUAL RTX 4060-O8G-V2', 'card-man-hinh-asus-dual-rtx-4060-o8g-v2', NULL, 8800000.00, 1, 0, 2, 0.00, 0, '2026-01-15 12:12:47', '2026-01-15 12:28:52', NULL),
+(41, 2, 'VGA Gigabyte RTX 4070 WINDFORCE 2X OC V2 12GB', 'vga-gigabyte-rtx-4070-windforce-2x-oc-v2-12gb', NULL, 16000000.00, 1, 0, 0, 0.00, 0, '2026-01-15 12:13:55', '2026-01-15 12:13:55', NULL),
+(42, 2, 'Card màn hình MSI RTX 5060 8G VENTUS 2X OC GDDR7', 'card-man-hinh-msi-rtx-5060-8g-ventus-2x-oc-gddr7', NULL, 9000000.00, 1, 0, 0, 0.00, 0, '2026-01-15 12:14:48', '2026-01-15 12:14:48', NULL),
+(43, 2, 'Card màn hình Asus DUAL RX 6600 XT-O8G', 'card-man-hinh-asus-dual-rx-6600-xt-o8g', NULL, 8000000.00, 1, 0, 0, 0.00, 0, '2026-01-15 12:15:59', '2026-01-15 12:15:59', NULL),
+(44, 2, 'VGA Asus Dual Radeon RX 6500 XT OC 4GB DUAL-RX6500XT-O4G-V2', 'vga-asus-dual-radeon-rx-6500-xt-oc-4gb-dual-rx6500xt-o4g-v2', NULL, 3600000.00, 1, 0, 0, 0.00, 0, '2026-01-15 12:17:06', '2026-01-15 12:17:06', NULL),
+(45, 6, 'Nguồn Asus PRIME 650B BLACK ( 80 Plus Bronze)', 'nguon-asus-prime-650b-black-80-plus-bronze', NULL, 1300000.00, 1, 0, 0, 0.00, 0, '2026-01-15 12:18:59', '2026-01-15 12:18:59', NULL),
+(46, 6, 'Nguồn máy tính Corsair RM1000e ATX 3.1 1000W (80 Plus Gold/ Màu Đen)', 'nguon-may-tinh-corsair-rm1000e-atx-31-1000w-80-plus-gold-mau-den', NULL, 4400000.00, 1, 0, 0, 0.00, 0, '2026-01-15 12:19:59', '2026-01-15 12:19:59', NULL),
+(47, 6, 'Nguồn Xigmatek X-POWER III 650 - 600W EN45990 (Màu Đen)', 'nguon-xigmatek-x-power-iii-650-600w-en45990-mau-den', NULL, 900000.00, 1, 0, 0, 0.00, 0, '2026-01-15 12:20:52', '2026-01-15 12:20:52', NULL),
+(48, 6, 'Nguồn máy tính MSI MAG A650BNL - 650W (80 Plus Bronze)', 'nguon-may-tinh-msi-mag-a650bnl-650w-80-plus-bronze', NULL, 1100000.00, 1, 0, 0, 0.00, 0, '2026-01-15 12:21:52', '2026-01-15 12:21:52', NULL),
+(49, 7, 'Vỏ máy tính Corsair FRAME 5000D RS White (ATX/mid tower)', 'vo-may-tinh-corsair-frame-5000d-rs-white-atxmid-tower', NULL, 3800000.00, 1, 0, 0, 0.00, 0, '2026-01-15 12:24:27', '2026-01-15 12:24:27', NULL),
+(50, 7, 'Vỏ Case Asus TUF GAMING GT502 HORIZON WHITE(MATX/Mid tower)', 'vo-case-asus-tuf-gaming-gt502-horizon-whitematxmid-tower', NULL, 4000000.00, 1, 0, 0, 0.00, 0, '2026-01-15 12:25:07', '2026-01-15 12:25:07', NULL),
+(51, 7, 'Vỏ case MSI MAG FORGE 120A AIRFLOW (Mid Tower/Màu Đen/Tặng 6 fan RGB)', 'vo-case-msi-mag-forge-120a-airflow-mid-towermau-dentang-6-fan-rgb', NULL, 900000.00, 1, 0, 0, 0.00, 0, '2026-01-15 12:25:48', '2026-01-15 12:25:48', NULL),
+(52, 7, 'Vỏ case Jonsbo TK-1 White ( Mid Tower/Màu Trắng)', 'vo-case-jonsbo-tk-1-white-mid-towermau-trang', NULL, 2400000.00, 1, 0, 0, 0.00, 0, '2026-01-15 12:26:42', '2026-01-15 12:26:42', NULL);
 
 --
 -- Indexes for dumped tables
@@ -778,7 +807,7 @@ ALTER TABLE `products` ADD FULLTEXT KEY `idx_search` (`product_name`,`descriptio
 -- AUTO_INCREMENT for table `products`
 --
 ALTER TABLE `products`
-  MODIFY `product_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=418;
+  MODIFY `product_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=53;
 
 --
 -- Constraints for dumped tables
@@ -792,10 +821,6 @@ ALTER TABLE `products`
 COMMIT;
 
 
---
--- Table structure for table `products_attribute_values`
---
-
 CREATE TABLE `products_attribute_values` (
   `product_id` int(11) NOT NULL,
   `attribute_value_id` int(11) NOT NULL
@@ -806,91 +831,222 @@ CREATE TABLE `products_attribute_values` (
 --
 
 INSERT INTO `products_attribute_values` (`product_id`, `attribute_value_id`) VALUES
-(395, 18),
-(395, 137),
-(396, 2),
-(396, 39),
-(396, 46),
-(396, 54),
-(397, 1),
-(397, 36),
-(397, 44),
-(397, 49),
-(398, 1),
-(398, 36),
-(398, 44),
-(398, 49),
-(399, 1),
-(399, 36),
-(399, 44),
-(399, 50),
-(400, 18),
-(400, 75),
-(400, 137),
-(401, 18),
-(401, 78),
-(401, 138),
-(402, 19),
-(402, 75),
-(402, 137),
-(403, 15),
-(403, 80),
-(403, 139),
-(403, 141),
-(404, 15),
-(404, 80),
-(404, 140),
-(404, 144),
-(405, 15),
-(405, 82),
-(405, 140),
-(405, 143),
-(406, 3),
-(406, 57),
-(406, 61),
-(406, 66),
-(407, 5),
-(407, 57),
-(407, 61),
-(407, 66),
-(408, 6),
-(408, 57),
-(408, 63),
-(408, 67),
-(409, 13),
-(409, 72),
-(409, 86),
-(409, 87),
-(410, 11),
-(410, 73),
-(410, 86),
-(410, 88),
-(411, 5),
-(411, 73),
-(411, 86),
-(411, 88),
-(412, 1),
-(412, 91),
-(412, 100),
-(412, 110),
-(412, 113),
-(413, 6),
-(413, 91),
-(413, 99),
-(413, 109),
-(413, 112),
-(414, 5),
-(414, 92),
-(414, 102),
-(414, 109),
-(414, 113),
-(416, 1),
-(416, 35),
-(416, 44),
-(416, 50),
-(417, 11),
-(417, 139),
-(417, 141);
+(1, 1),
+(1, 36),
+(1, 43),
+(1, 48),
+(2, 1),
+(2, 35),
+(2, 43),
+(2, 48),
+(3, 1),
+(3, 35),
+(3, 44),
+(3, 49),
+(4, 1),
+(4, 36),
+(4, 44),
+(4, 49),
+(5, 1),
+(5, 36),
+(5, 44),
+(5, 50),
+(6, 1),
+(6, 37),
+(6, 44),
+(6, 51),
+(7, 1),
+(7, 36),
+(7, 44),
+(7, 51),
+(8, 2),
+(8, 39),
+(8, 46),
+(8, 172),
+(9, 2),
+(9, 39),
+(9, 46),
+(9, 172),
+(10, 2),
+(10, 39),
+(10, 47),
+(10, 173),
+(11, 2),
+(11, 39),
+(11, 47),
+(11, 173),
+(12, 2),
+(12, 40),
+(12, 47),
+(12, 173),
+(13, 2),
+(13, 40),
+(13, 47),
+(13, 173),
+(14, 7),
+(14, 90),
+(14, 95),
+(14, 112),
+(14, 174),
+(14, 178),
+(15, 7),
+(15, 90),
+(15, 96),
+(15, 113),
+(15, 174),
+(15, 178),
+(16, 4),
+(16, 91),
+(16, 98),
+(16, 112),
+(16, 174),
+(16, 178),
+(17, 4),
+(17, 91),
+(17, 99),
+(17, 112),
+(17, 174),
+(17, 178),
+(18, 6),
+(18, 91),
+(18, 99),
+(18, 113),
+(18, 175),
+(18, 178),
+(19, 6),
+(19, 91),
+(19, 99),
+(19, 113),
+(19, 174),
+(19, 178),
+(20, 5),
+(20, 91),
+(20, 100),
+(20, 113),
+(20, 175),
+(20, 178),
+(21, 4),
+(21, 93),
+(21, 103),
+(21, 113),
+(21, 174),
+(21, 178),
+(22, 7),
+(22, 93),
+(22, 104),
+(22, 112),
+(22, 174),
+(22, 178),
+(23, 6),
+(23, 94),
+(23, 105),
+(23, 112),
+(23, 175),
+(23, 178),
+(24, 5),
+(24, 94),
+(24, 106),
+(24, 113),
+(24, 175),
+(24, 178),
+(25, 4),
+(25, 94),
+(25, 106),
+(25, 113),
+(25, 175),
+(25, 178),
+(26, 6),
+(26, 94),
+(26, 107),
+(26, 113),
+(26, 175),
+(26, 178),
+(27, 11),
+(27, 139),
+(27, 141),
+(28, 15),
+(28, 80),
+(28, 139),
+(28, 141),
+(29, 15),
+(29, 82),
+(29, 140),
+(29, 145),
+(30, 11),
+(30, 83),
+(30, 140),
+(30, 143),
+(31, 18),
+(31, 75),
+(31, 137),
+(33, 12),
+(33, 75),
+(33, 137),
+(34, 19),
+(34, 74),
+(34, 138),
+(35, 13),
+(35, 72),
+(35, 84),
+(35, 87),
+(37, 13),
+(37, 71),
+(37, 86),
+(37, 87),
+(38, 15),
+(38, 71),
+(38, 84),
+(38, 87),
+(39, 73),
+(39, 86),
+(39, 88),
+(40, 4),
+(40, 57),
+(40, 61),
+(40, 67),
+(41, 5),
+(41, 57),
+(41, 61),
+(41, 68),
+(42, 6),
+(42, 57),
+(42, 63),
+(42, 67),
+(43, 2),
+(43, 57),
+(43, 61),
+(43, 67),
+(44, 4),
+(44, 59),
+(44, 61),
+(44, 65),
+(45, 4),
+(45, 119),
+(45, 123),
+(45, 127),
+(46, 121),
+(46, 125),
+(46, 128),
+(47, 24),
+(47, 119),
+(47, 122),
+(47, 127),
+(48, 6),
+(48, 119),
+(48, 123),
+(48, 127),
+(49, 11),
+(49, 130),
+(49, 181),
+(50, 4),
+(50, 130),
+(50, 181),
+(51, 6),
+(51, 130),
+(51, 181),
+(52, 29),
+(52, 130),
+(52, 181);
 
 --
 -- Indexes for dumped tables
@@ -915,9 +1071,6 @@ ALTER TABLE `products_attribute_values`
   ADD CONSTRAINT `products_attribute_values_ibfk_2` FOREIGN KEY (`attribute_value_id`) REFERENCES `attribute_values` (`attribute_value_id`);
 COMMIT;
 
---
--- Table structure for table `product_variants`
---
 
 CREATE TABLE `product_variants` (
   `variant_id` int(11) NOT NULL,
@@ -941,31 +1094,58 @@ CREATE TABLE `product_variants` (
 --
 
 INSERT INTO `product_variants` (`variant_id`, `product_id`, `sku`, `variant_name`, `price`, `stock_quantity`, `is_active`, `is_default`, `created_at`, `updated_at`, `warranty_period`, `discount_percent`, `discount_start_date`, `discount_end_date`) VALUES
-(597, 395, 'PRD-1T-1', '1TB', 700000.00, 3, 1, 1, '2026-01-04 16:36:19', '2026-01-04 16:36:19', 12, 0.00, NULL, NULL),
-(598, 395, 'PRD-2T-2', '2TB', 700000.00, 3, 1, 0, '2026-01-04 16:36:19', '2026-01-04 16:36:19', 12, 0.00, NULL, NULL),
-(599, 395, 'PRD-4T-3', '4TB', 700000.00, 3, 1, 0, '2026-01-04 16:36:19', '2026-01-04 16:36:19', 121, 0.00, NULL, NULL),
-(600, 396, 'AR5-396-030666', 'Mặc định', 4700000.00, 3, 1, 1, '2026-01-04 16:43:50', '2026-01-04 16:43:50', 36, 0.00, NULL, NULL),
-(601, 397, 'CIC-397-945039', 'Mặc định', 2900000.00, 3, 1, 1, '2026-01-04 17:15:45', '2026-01-04 17:15:45', 36, 0.00, NULL, NULL),
-(602, 398, 'CIC-398-543739', 'Mặc định', 4400000.00, 3, 1, 1, '2026-01-04 17:25:43', '2026-01-04 17:25:43', 36, 0.00, NULL, NULL),
-(603, 399, 'CIC-399-098537', 'Mặc định', 5100000.00, 3, 1, 1, '2026-01-04 17:34:58', '2026-01-04 17:34:58', 36, 0.00, NULL, NULL),
-(604, 400, 'ỔCH-400-510127', 'Mặc định', 3600000.00, 3, 1, 1, '2026-01-04 17:41:50', '2026-01-04 17:41:50', 24, 0.00, NULL, NULL),
-(605, 401, 'ỔCH-401-896349', 'Mặc định', 10300000.00, 3, 1, 1, '2026-01-04 17:48:16', '2026-01-04 17:48:16', 36, 0.00, NULL, NULL),
-(606, 402, 'ỔCH-402-069368', 'Mặc định', 3400000.00, 2, 1, 1, '2026-01-04 17:51:09', '2026-01-04 19:26:00', 24, 0.00, NULL, NULL),
-(607, 403, 'RDK-403-416369', 'Mặc định', 3100000.00, 3, 1, 1, '2026-01-04 17:56:56', '2026-01-04 17:56:56', 36, 0.00, NULL, NULL),
-(608, 404, 'RDK-404-660059', 'Mặc định', 5300000.00, 3, 1, 1, '2026-01-04 18:01:00', '2026-01-04 18:01:00', 36, 0.00, NULL, NULL),
-(609, 405, 'RDK-405-966067', 'Mặc định', 11000000.00, 3, 1, 1, '2026-01-04 18:06:06', '2026-01-04 18:06:06', 36, 0.00, NULL, NULL),
-(610, 406, 'CMH-406-345662', 'Mặc định', 4650000.00, 3, 1, 1, '2026-01-04 18:12:25', '2026-01-04 18:12:25', 36, 0.00, NULL, NULL),
-(611, 407, 'CMH-407-589830', 'Mặc định', 4700000.00, 3, 1, 1, '2026-01-04 18:16:29', '2026-01-04 18:16:29', 36, 0.00, NULL, NULL),
-(612, 408, 'CMH-408-923104', 'Mặc định', 9100000.00, 3, 1, 1, '2026-01-04 18:22:03', '2026-01-04 18:22:03', 36, 0.00, NULL, NULL),
-(613, 409, 'ỔCS-409-358366', 'Mặc định', 3000000.00, 3, 1, 1, '2026-01-04 18:29:18', '2026-01-04 18:29:18', 60, 0.00, NULL, NULL),
-(614, 410, 'ỔCS-410-548425', 'Mặc định', 3800000.00, 3, 1, 1, '2026-01-04 18:32:28', '2026-01-04 18:32:28', 60, 0.00, NULL, NULL),
-(615, 411, 'ỔCS-411-360417', 'Mặc định', 3500000.00, 3, 1, 1, '2026-01-04 18:46:00', '2026-01-04 18:46:00', 36, 0.00, NULL, NULL),
-(616, 412, 'MAT-412-592586', 'Mặc định', 7000000.00, 3, 1, 1, '2026-01-04 18:49:52', '2026-01-04 18:49:52', 36, 0.00, NULL, NULL),
-(617, 413, 'MMP-413-907513', 'Mặc định', 2300000.00, 3, 1, 1, '2026-01-04 18:55:07', '2026-01-04 18:55:07', 36, 0.00, NULL, NULL),
-(618, 414, 'MGZ-414-306460', 'Mặc định', 6100000.00, 3, 1, 1, '2026-01-04 19:01:46', '2026-01-04 19:01:46', 36, 0.00, NULL, NULL),
-(619, 416, 'ICI-416-114599', 'Mặc định', 2100000.00, 3, 1, 1, '2026-01-10 14:25:14', '2026-01-10 14:25:14', 36, 20.00, '2026-01-10 00:00:00', '2026-01-20 00:00:00'),
-(620, 417, 'PRD-16-1', '16GB (1 X 16GB)', 800000.00, 2, 1, 1, '2026-01-10 14:29:16', '2026-01-10 14:29:16', 36, 10.00, '2026-01-10 00:00:00', '2026-01-20 00:00:00'),
-(621, 417, 'PRD-16-2', '16GB (2 X 8GB)', 1000000.00, 2, 1, 0, '2026-01-10 14:29:16', '2026-01-10 14:29:16', 36, 20.00, '2026-01-10 00:00:00', '2026-01-30 00:00:00');
+(1, 1, 'C01-P0001-V00', 'Mặc định', 3400000.00, 3, 1, 1, '2026-01-15 11:15:43', '2026-01-15 11:15:43', 36, 20.00, '2026-01-01 00:00:00', '2026-01-30 00:00:00'),
+(2, 2, 'C01-P0002-V00', 'Mặc định', 1800000.00, 2, 1, 1, '2026-01-15 11:17:09', '2026-01-15 11:17:09', 36, 10.00, '2026-01-01 00:00:00', '2026-01-30 00:00:00'),
+(3, 3, 'C01-P0003-V00', 'Mặc định', 2100000.00, 2, 1, 1, '2026-01-15 11:19:57', '2026-01-15 11:19:57', 36, 10.00, '2026-01-01 00:00:00', '2026-01-30 00:00:00'),
+(4, 4, 'C01-P0004-V00', 'Mặc định', 2800000.00, 3, 1, 1, '2026-01-15 11:22:44', '2026-01-15 11:22:44', 36, 20.00, '2026-01-01 00:00:00', '2026-01-30 00:00:00'),
+(5, 5, 'C01-P0005-V00', 'Mặc định', 5500000.00, 2, 1, 1, '2026-01-15 11:24:10', '2026-01-15 11:24:10', 36, 10.00, '2026-01-01 00:00:00', '2026-01-30 00:00:00'),
+(6, 6, 'C01-P0006-V00', 'Mặc định', 7000000.00, 2, 1, 1, '2026-01-15 11:25:36', '2026-01-15 11:25:36', 36, 13.00, '2026-01-01 00:00:00', '2026-01-31 00:00:00'),
+(7, 7, 'C01-P0007-V00', 'Mặc định', 6000000.00, 2, 1, 1, '2026-01-15 11:26:39', '2026-01-15 11:26:39', 36, 15.00, '2026-01-01 00:00:00', '2026-01-31 00:00:00'),
+(8, 8, 'C01-P0008-V00', 'Mặc định', 2800000.00, 2, 1, 1, '2026-01-15 11:28:10', '2026-01-15 11:28:10', 36, 15.00, '2026-01-01 00:00:00', '2026-01-30 00:00:00'),
+(9, 9, 'C01-P0009-V00', 'Mặc định', 4500000.00, 2, 1, 1, '2026-01-15 11:29:00', '2026-01-15 11:29:00', 36, 10.00, '2026-01-01 00:00:00', '2026-01-30 00:00:00'),
+(10, 10, 'C01-P0010-V00', 'Mặc định', 3200000.00, 2, 1, 1, '2026-01-15 11:30:05', '2026-01-15 11:30:05', 36, 15.00, '2026-01-01 00:00:00', '2026-01-30 00:00:00'),
+(11, 11, 'C01-P0011-V00', 'Mặc định', 5000000.00, 2, 1, 1, '2026-01-15 11:31:06', '2026-01-15 11:31:06', 36, 15.00, '2026-01-01 00:00:00', '2026-01-31 00:00:00'),
+(12, 12, 'C01-P0012-V00', 'Mặc định', 8000000.00, 2, 1, 1, '2026-01-15 11:32:20', '2026-01-15 11:32:20', 36, 10.00, '2026-01-01 00:00:00', '2026-01-15 00:00:00'),
+(13, 13, 'C01-P0013-V00', 'Mặc định', 9000000.00, 2, 1, 1, '2026-01-15 11:33:06', '2026-01-15 11:33:06', 36, 10.00, '2026-01-01 00:00:00', '2026-01-15 00:00:00'),
+(14, 14, 'C05-P0014-V00', 'Mặc định', 1500000.00, 2, 1, 1, '2026-01-15 11:36:30', '2026-01-15 11:36:30', 36, 20.00, '2026-01-01 00:00:00', NULL),
+(15, 15, 'C05-P0015-V00', 'Mặc định', 2300000.00, 2, 1, 1, '2026-01-15 11:37:27', '2026-01-15 11:37:27', 36, 10.00, '2026-01-01 00:00:00', '2026-01-15 00:00:00'),
+(16, 16, 'C05-P0016-V00', 'Mặc định', 1800000.00, 2, 1, 1, '2026-01-15 11:39:43', '2026-01-15 11:39:43', 36, 10.00, '2026-01-01 00:00:00', '2026-01-15 00:00:00'),
+(17, 17, 'C05-P0017-V00', 'Mặc định', 2800000.00, 2, 1, 1, '2026-01-15 11:40:40', '2026-01-15 11:40:40', 36, 10.00, '2026-01-01 00:00:00', '2026-01-15 00:00:00'),
+(18, 18, 'C05-P0018-V00', 'Mặc định', 4800000.00, 3, 1, 1, '2026-01-15 11:41:54', '2026-01-15 11:41:54', 36, 15.00, '2026-01-01 00:00:00', '2026-01-15 00:00:00'),
+(19, 19, 'C05-P0019-V00', 'Mặc định', 3300000.00, 2, 1, 1, '2026-01-15 11:42:53', '2026-01-15 11:42:53', 36, 10.00, '2026-01-08 00:00:00', '2026-01-15 00:00:00'),
+(20, 20, 'C05-P0020-V00', 'Mặc định', 15000000.00, 2, 1, 1, '2026-01-15 11:44:19', '2026-01-15 11:44:19', 36, 10.00, '2026-01-01 00:00:00', '2026-01-15 00:00:00'),
+(21, 21, 'C05-P0021-V00', 'Mặc định', 2900000.00, 2, 1, 1, '2026-01-15 11:46:18', '2026-01-15 11:46:18', 36, 10.00, '2026-01-01 00:00:00', '2026-01-15 00:00:00'),
+(22, 22, 'C05-P0022-V00', 'Mặc định', 1700000.00, 2, 1, 1, '2026-01-15 11:47:28', '2026-01-15 11:47:28', 24, 15.00, '2026-01-01 00:00:00', '2026-01-15 00:00:00'),
+(23, 23, 'C05-P0023-V00', 'Mặc định', 2600000.00, 2, 1, 1, '2026-01-15 11:48:27', '2026-01-15 11:48:27', 36, 15.00, '2026-01-01 00:00:00', '2026-01-15 00:00:00'),
+(24, 24, 'C05-P0024-V00', 'Mặc định', 4400000.00, 2, 1, 1, '2026-01-15 11:49:36', '2026-01-15 11:49:36', 36, 10.00, '2026-01-01 00:00:00', '2026-01-15 00:00:00'),
+(25, 25, 'C05-P0025-V00', 'Mặc định', 7800000.00, 2, 1, 1, '2026-01-15 11:50:51', '2026-01-15 11:50:51', 36, 10.00, '2026-01-01 00:00:00', '2026-01-15 00:00:00'),
+(26, 26, 'C05-P0026-V00', 'Mặc định', 7500000.00, 2, 1, 1, '2026-01-15 11:51:51', '2026-01-15 11:51:51', 36, 15.00, '2026-01-01 00:00:00', '2026-01-15 00:00:00'),
+(27, 27, 'PRD-8G-1', '8GB ( 1 X 8GB)', 800000.00, 2, 1, 0, '2026-01-15 11:54:48', '2026-01-15 11:54:48', 36, 0.00, NULL, NULL),
+(28, 27, 'PRD-16-2', '16GB (1 X 16GB)', 1400000.00, 2, 1, 0, '2026-01-15 11:54:48', '2026-01-15 11:54:48', 36, 0.00, NULL, NULL),
+(29, 27, 'PRD-16-3', '16GB (2 X 8GB)', 1500000.00, 2, 1, 1, '2026-01-15 11:54:48', '2026-01-15 11:54:48', 36, 10.00, '2026-01-01 00:00:00', '2026-01-15 00:00:00'),
+(30, 28, 'C35-P0028-V00', 'Mặc định', 3000000.00, 2, 1, 1, '2026-01-15 11:56:58', '2026-01-15 11:56:58', 36, 0.00, NULL, NULL),
+(31, 29, 'C35-P0029-V00', 'Mặc định', 7000000.00, 2, 1, 1, '2026-01-15 11:58:13', '2026-01-15 11:58:13', 36, 10.00, '2026-01-01 00:00:00', '2026-01-15 00:00:00'),
+(32, 30, 'C35-P0030-V00', 'Mặc định', 10000000.00, 2, 1, 1, '2026-01-15 11:59:07', '2026-01-15 11:59:07', 36, 0.00, NULL, NULL),
+(33, 31, 'C13-P0031-V00', 'Mặc định', 3500000.00, 2, 1, 1, '2026-01-15 12:00:20', '2026-01-15 12:00:20', 24, 10.00, '2026-01-01 00:00:00', '2026-01-16 00:00:00'),
+(35, 33, 'C13-P0033-V00', 'Mặc định', 3800000.00, 2, 1, 1, '2026-01-15 12:01:41', '2026-01-15 12:01:41', 24, 0.00, NULL, NULL),
+(36, 34, 'C13-P0034-V00', 'Mặc định', 3000000.00, 2, 1, 1, '2026-01-15 12:03:37', '2026-01-15 12:03:37', 24, 0.00, NULL, NULL),
+(37, 35, 'C04-P0035-V00', 'Mặc định', 2.80, 2, 1, 1, '2026-01-15 12:04:55', '2026-01-15 12:04:55', 60, 0.00, NULL, NULL),
+(39, 37, 'C04-P0037-V00', 'Mặc định', 2000000.00, 2, 1, 1, '2026-01-15 12:07:43', '2026-01-15 12:07:43', 60, 0.00, NULL, NULL),
+(40, 38, 'C04-P0038-V00', 'Mặc định', 1600000.00, 2, 1, 1, '2026-01-15 12:08:47', '2026-01-15 12:08:47', 60, 0.00, NULL, NULL),
+(41, 39, 'C04-P0039-V00', 'Mặc định', 3800000.00, 2, 1, 1, '2026-01-15 12:10:01', '2026-01-15 12:10:01', 60, 10.00, '2026-01-15 00:00:00', '2026-01-31 00:00:00'),
+(42, 40, 'C02-P0040-V00', 'Mặc định', 8800000.00, 2, 1, 1, '2026-01-15 12:12:47', '2026-01-15 12:12:47', 36, 0.00, NULL, NULL),
+(43, 41, 'C02-P0041-V00', 'Mặc định', 16000000.00, 2, 1, 1, '2026-01-15 12:13:55', '2026-01-15 12:13:55', 36, 0.00, NULL, NULL),
+(44, 42, 'C02-P0042-V00', 'Mặc định', 9000000.00, 2, 1, 1, '2026-01-15 12:14:48', '2026-01-15 12:14:48', 36, 0.00, NULL, NULL),
+(45, 43, 'C02-P0043-V00', 'Mặc định', 8000000.00, 2, 1, 1, '2026-01-15 12:15:59', '2026-01-15 12:15:59', 36, 0.00, NULL, NULL),
+(46, 44, 'C02-P0044-V00', 'Mặc định', 3600000.00, 2, 1, 1, '2026-01-15 12:17:06', '2026-01-15 12:17:06', 36, 0.00, NULL, NULL),
+(47, 45, 'C06-P0045-V00', 'Mặc định', 1300000.00, 2, 1, 1, '2026-01-15 12:18:59', '2026-01-15 12:18:59', 72, 0.00, NULL, NULL),
+(48, 46, 'C06-P0046-V00', 'Mặc định', 4400000.00, 2, 1, 1, '2026-01-15 12:19:59', '2026-01-15 12:19:59', 84, 0.00, NULL, NULL),
+(49, 47, 'C06-P0047-V00', 'Mặc định', 900000.00, 2, 1, 1, '2026-01-15 12:20:52', '2026-01-15 12:20:52', 36, 0.00, NULL, NULL),
+(50, 48, 'C06-P0048-V00', 'Mặc định', 1100000.00, 2, 1, 1, '2026-01-15 12:21:52', '2026-01-15 12:21:52', 60, 0.00, NULL, NULL),
+(51, 49, 'C07-P0049-V00', 'Mặc định', 3800000.00, 2, 1, 1, '2026-01-15 12:24:27', '2026-01-15 12:24:27', 24, 0.00, NULL, NULL),
+(52, 50, 'C07-P0050-V00', 'Mặc định', 4000000.00, 2, 1, 1, '2026-01-15 12:25:07', '2026-01-15 12:25:07', 24, 0.00, NULL, NULL),
+(53, 51, 'C07-P0051-V00', 'Mặc định', 900000.00, 2, 1, 1, '2026-01-15 12:25:48', '2026-01-15 12:25:48', 12, 0.00, NULL, NULL),
+(54, 52, 'C07-P0052-V00', 'Mặc định', 2400000.00, 2, 1, 1, '2026-01-15 12:26:42', '2026-01-15 12:26:42', 12, 0.00, NULL, NULL);
 
 --
 -- Indexes for dumped tables
@@ -989,7 +1169,7 @@ ALTER TABLE `product_variants`
 -- AUTO_INCREMENT for table `product_variants`
 --
 ALTER TABLE `product_variants`
-  MODIFY `variant_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=622;
+  MODIFY `variant_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=55;
 
 --
 -- Constraints for dumped tables
@@ -1002,6 +1182,7 @@ ALTER TABLE `product_variants`
   ADD CONSTRAINT `product_variants_ibfk_1` FOREIGN KEY (`product_id`) REFERENCES `products` (`product_id`) ON DELETE CASCADE;
 COMMIT;
 
+
 CREATE TABLE `variants_attribute_values` (
   `variant_id` int(11) NOT NULL,
   `attribute_value_id` int(11) NOT NULL
@@ -1012,11 +1193,9 @@ CREATE TABLE `variants_attribute_values` (
 --
 
 INSERT INTO `variants_attribute_values` (`variant_id`, `attribute_value_id`) VALUES
-(597, 73),
-(598, 74),
-(599, 75),
-(620, 80),
-(621, 81);
+(27, 79),
+(28, 80),
+(29, 81);
 
 --
 -- Indexes for dumped tables
@@ -1040,4 +1219,144 @@ ALTER TABLE `variants_attribute_values`
 ALTER TABLE `variants_attribute_values`
   ADD CONSTRAINT `variants_attribute_values_ibfk_1` FOREIGN KEY (`variant_id`) REFERENCES `product_variants` (`variant_id`) ON DELETE CASCADE,
   ADD CONSTRAINT `variants_attribute_values_ibfk_2` FOREIGN KEY (`attribute_value_id`) REFERENCES `attribute_values` (`attribute_value_id`) ON DELETE CASCADE;
+COMMIT;
+
+
+
+CREATE TABLE `compatibility_rules` (
+  `rule_id` int(11) NOT NULL,
+  `rule_name` varchar(100) NOT NULL COMMENT 'VD: CPU-Mainboard Socket',
+  `category_1_id` int(11) NOT NULL COMMENT 'Category nguồn (VD: CPU)',
+  `attribute_1_id` int(11) NOT NULL COMMENT 'Attribute của category 1',
+  `category_2_id` int(11) NOT NULL COMMENT 'Category đích (VD: Mainboard)',
+  `attribute_2_id` int(11) NOT NULL COMMENT 'Attribute c��a category 2',
+  `match_type` enum('exact','one_to_many','contains') DEFAULT 'exact' COMMENT 'exact=khớp chính xác, one_to_many=1→nhiều, contains=chứa',
+  `is_active` tinyint(1) DEFAULT 1,
+  `note` text DEFAULT NULL COMMENT 'Ghi chú cho admin',
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `compatibility_rules`
+--
+
+INSERT INTO `compatibility_rules` (`rule_id`, `rule_name`, `category_1_id`, `attribute_1_id`, `category_2_id`, `attribute_2_id`, `match_type`, `is_active`, `note`, `created_at`, `updated_at`) VALUES
+(1, 'Kiểm tra tương thích giữa CPU - Mainboard: Socket', 1, 3, 5, 11, 'exact', 1, 'Socket của CPU phải khớp chính xác với socket mà Mainboard hỗ trợ', '2026-01-16 06:13:10', '2026-01-16 10:27:43'),
+(2, 'Kiểm tra tương thích giữa Mainboard - RAM: Loại Ram ', 5, 28, 35, 21, 'exact', 1, NULL, '2026-01-16 09:11:57', '2026-01-16 10:21:40'),
+(3, 'Kiểm tra tương thích giữa Mainboard - Case: Form Factor', 7, 19, 5, 13, 'one_to_many', 1, NULL, '2026-01-16 10:24:11', '2026-01-16 10:34:56'),
+(4, 'Kiểm tra tương thích giữa CPU - Ram: Loại Ram', 1, 3, 35, 21, 'one_to_many', 1, NULL, '2026-01-16 10:34:44', '2026-01-16 10:34:44');
+
+--
+-- Indexes for dumped tables
+--
+
+--
+-- Indexes for table `compatibility_rules`
+--
+ALTER TABLE `compatibility_rules`
+  ADD PRIMARY KEY (`rule_id`),
+  ADD KEY `idx_category_1` (`category_1_id`),
+  ADD KEY `idx_category_2` (`category_2_id`),
+  ADD KEY `idx_is_active` (`is_active`),
+  ADD KEY `attribute_1_id` (`attribute_1_id`),
+  ADD KEY `attribute_2_id` (`attribute_2_id`);
+
+--
+-- AUTO_INCREMENT for dumped tables
+--
+
+--
+-- AUTO_INCREMENT for table `compatibility_rules`
+--
+ALTER TABLE `compatibility_rules`
+  MODIFY `rule_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+
+--
+-- Constraints for dumped tables
+--
+
+--
+-- Constraints for table `compatibility_rules`
+--
+ALTER TABLE `compatibility_rules`
+  ADD CONSTRAINT `compatibility_rules_ibfk_1` FOREIGN KEY (`category_1_id`) REFERENCES `categories` (`category_id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `compatibility_rules_ibfk_2` FOREIGN KEY (`category_2_id`) REFERENCES `categories` (`category_id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `compatibility_rules_ibfk_3` FOREIGN KEY (`attribute_1_id`) REFERENCES `attributes` (`attribute_id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `compatibility_rules_ibfk_4` FOREIGN KEY (`attribute_2_id`) REFERENCES `attributes` (`attribute_id`) ON DELETE CASCADE;
+COMMIT;
+
+
+CREATE TABLE `compatibility_values` (
+  `cv_id` int(11) NOT NULL,
+  `rule_id` int(11) NOT NULL,
+  `attribute_value_1_id` int(11) NOT NULL,
+  `attribute_value_2_id` int(11) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `compatibility_values`
+--
+
+INSERT INTO `compatibility_values` (`cv_id`, `rule_id`, `attribute_value_1_id`, `attribute_value_2_id`, `created_at`) VALUES
+(1, 1, 44, 91, '2026-01-16 08:18:40'),
+(2, 1, 43, 90, '2026-01-16 10:20:03'),
+(3, 1, 45, 92, '2026-01-16 10:20:23'),
+(4, 1, 46, 93, '2026-01-16 10:20:31'),
+(5, 1, 47, 94, '2026-01-16 10:20:35'),
+(6, 2, 174, 139, '2026-01-16 10:21:52'),
+(7, 2, 175, 140, '2026-01-16 10:21:55'),
+(8, 3, 182, 179, '2026-01-16 10:36:13'),
+(9, 3, 182, 110, '2026-01-16 10:36:17'),
+(10, 3, 182, 178, '2026-01-16 10:36:20'),
+(11, 3, 182, 176, '2026-01-16 10:36:23'),
+(12, 3, 135, 110, '2026-01-16 10:36:26'),
+(13, 3, 135, 178, '2026-01-16 10:36:29'),
+(14, 3, 135, 176, '2026-01-16 10:36:32'),
+(15, 3, 181, 178, '2026-01-16 10:36:35'),
+(16, 3, 181, 176, '2026-01-16 10:36:38'),
+(17, 3, 180, 176, '2026-01-16 10:36:41'),
+(19, 4, 43, 139, '2026-01-16 10:38:56'),
+(20, 4, 44, 139, '2026-01-16 10:38:58'),
+(21, 4, 44, 140, '2026-01-16 10:39:01'),
+(22, 4, 45, 140, '2026-01-16 10:39:04'),
+(23, 4, 46, 139, '2026-01-16 10:39:07'),
+(24, 4, 47, 140, '2026-01-16 10:39:10');
+
+--
+-- Indexes for dumped tables
+--
+
+--
+-- Indexes for table `compatibility_values`
+--
+ALTER TABLE `compatibility_values`
+  ADD PRIMARY KEY (`cv_id`),
+  ADD KEY `idx_rule_id` (`rule_id`),
+  ADD KEY `idx_rule_lookup` (`rule_id`),
+  ADD KEY `idx_attribute_value_1` (`attribute_value_1_id`),
+  ADD KEY `idx_attribute_value_2` (`attribute_value_2_id`);
+
+--
+-- AUTO_INCREMENT for dumped tables
+--
+
+--
+-- AUTO_INCREMENT for table `compatibility_values`
+--
+ALTER TABLE `compatibility_values`
+  MODIFY `cv_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=25;
+
+--
+-- Constraints for dumped tables
+--
+
+--
+-- Constraints for table `compatibility_values`
+--
+ALTER TABLE `compatibility_values`
+  ADD CONSTRAINT `compatibility_values_ibfk_1` FOREIGN KEY (`rule_id`) REFERENCES `compatibility_rules` (`rule_id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `compatibility_values_ibfk_av1` FOREIGN KEY (`attribute_value_1_id`) REFERENCES `attribute_values` (`attribute_value_id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `compatibility_values_ibfk_av2` FOREIGN KEY (`attribute_value_2_id`) REFERENCES `attribute_values` (`attribute_value_id`) ON DELETE CASCADE;
 COMMIT;

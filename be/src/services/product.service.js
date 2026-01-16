@@ -49,15 +49,12 @@ class ProductService {
     }
 
     // Helper function để tạo SKU mặc định
-    generateDefaultSKU(productName, productId) {
-        const namePrefix = productName
-            .split(' ')
-            .map(word => word.charAt(0))
-            .join('')
-            .toUpperCase()
-            .substring(0, 3);
-        const timestamp = Date.now().toString().slice(-6);
-        return `${namePrefix}-${productId}-${timestamp}`;
+    // Format: C{categoryId}-P{productId}-V{variantIndex}
+    generateDefaultSKU(categoryId, productId, variantIndex = 0) {
+        const catId = String(categoryId).padStart(2, '0');
+        const prodId = String(productId).padStart(4, '0');
+        const varIdx = String(variantIndex).padStart(2, '0');
+        return `C${catId}-P${prodId}-V${varIdx}`;
     }
 
     async createProduct(data, imgageFile, variantImages = {} )
@@ -101,7 +98,7 @@ class ProductService {
 
                 // 3.2 Trường hợp 1: không có thuộc tính variant_attributes => Tạo variant mặc định
                 if (!data.variant_attributes || data.variant_attributes.length === 0) {
-                    const defaultSKU = this.generateDefaultSKU(data.product_name, productId);
+                    const defaultSKU = this.generateDefaultSKU(data.category_id, productId, 0);
                     const defaultPrice = data.base_price || 0;
                     const defaultStock = data.stock_quantity || 0;
 
@@ -143,9 +140,10 @@ class ProductService {
                 const serialTasks = [];
                 const variantImageTasks = [];
 
-                for (const combo of data.variant_attributes) {
+                for (let variantIndex = 0; variantIndex < data.variant_attributes.length; variantIndex++) {
+                    const combo = data.variant_attributes[variantIndex];
                     // Generate SKU cho variant này
-                    const variantSKU = combo.sku || this.generateDefaultSKU(data.product_name + '-' + (combo.variant_name || ''), productId);
+                    const variantSKU = combo.sku || this.generateDefaultSKU(data.category_id, productId, variantIndex + 1);
                     const variantPrice = combo.price || data.base_price || 0;
                     const variantStock = combo.stock_quantity || 0;
 

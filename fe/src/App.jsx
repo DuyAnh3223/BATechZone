@@ -31,6 +31,11 @@ import AdminNotification from './pages/admin/AdminNotification';
 import AdminBuild from './pages/admin/AdminBuild';
 import CategoryPage from './pages/admin/CategoryManagement/CategoryPage';
 import AttributePage from './pages/admin/CategoryManagement/Attributes&ValuesManagement/AttributePage';
+import {
+  CompatibilityPage,
+  CompatibilityRuleForm,
+  RuleMappingManager,
+} from './pages/admin/CategoryManagement/Compatibility';
 import AdminPost from './pages/admin/AdminBlog';
 import AdminPostDetail from './pages/admin/AdminBlogDetail';
 import AdminWishlist from './pages/admin/AdminWishlist';
@@ -103,6 +108,11 @@ function App() {
             <Route path="notifications" element={<AdminNotification />} />
             <Route path="categories" element={<CategoryPage />} />
             <Route path="categories/:categoryId/attributes" element={<AttributePage />} />
+            <Route path="categories/compatibility" element={<CompatibilityPage />} />
+            <Route path="categories/compatibility/create" element={<CompatibilityRuleForm />} />
+            <Route path="categories/compatibility/rules/:ruleId" element={<CompatibilityRuleForm />} />
+            <Route path="categories/compatibility/rules/:ruleId/edit" element={<CompatibilityRuleForm />} />
+            <Route path="categories/compatibility/rules/:ruleId/mappings" element={<RuleMappingManager />} />
             <Route path="posts" element={<AdminPost />} />
             <Route path="posts/:postId" element={<AdminPostDetail />} />
             <Route path="installments" element={<AdminInstallmentPage />} />

@@ -26,8 +26,8 @@ import paymentRoutes from './paymentRoutes.js';
 //import articleRoutes from './articleRoutes.js';
 import warrantyRoutes from './warranty.routes.js';
 import serviceRequestRoutes from './serviceRequest.routes.js';
-import compatibilityRoutes from './compatibilityRoutes.js';
-
+//import compatibilityRoutes from './compatibilityRoutes.js';
+import compatibilityRoutes from './compatibility.routes.js';
 
 
 
@@ -36,7 +36,6 @@ router.use('/attributes', attributesRoutes);
 router.use('/attribute-values', attributeValueRoutes);
 router.use('/cart-items', cartItemRoutes);
 router.use('/carts', cartRoutes);
-//router.use('/categories', categoryRoutes);
 router.use('/categories', categoryRoutes);
 router.use('/coupons', couponRoutes);
 router.use('/dashboard', dashboardRoutes);
@@ -52,8 +51,6 @@ router.use('/variants', variantRoutes);
 router.use('/variant-images', variantImageRoutes);
 router.use('/variant-serials', variantSerialRoutes);
 router.use('/payments', paymentRoutes);
-//router.use('/posts', postRoutes);
-//router.use('/articles', articleRoutes);
 router.use('/warranty', warrantyRoutes);
 router.use('/service-requests', serviceRequestRoutes);
 router.use('/compatibility', compatibilityRoutes);
