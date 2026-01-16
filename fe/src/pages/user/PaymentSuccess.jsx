@@ -153,6 +153,21 @@ const PaymentSuccess = () => {
           items: pendingOrder.items
         });
 
+        const orderId = response?.data?.orderId || response?.data?.order_id;
+
+        // Nếu là VNPay và thanh toán thành công, cập nhật trạng thái
+        if (vnpResponseCode === '00' && pendingOrder.orderData.payment_method === 'vnpay') {
+          try {
+            await userApi.patch(`/orders/${orderId}/payment-status`, {
+              payment_status: 'paid',
+              order_status: 'confirmed'
+            });
+            console.log(`✅ Updated payment status to 'paid' for order ${orderId}`);
+          } catch (updateError) {
+            console.error('Error updating payment status:', updateError);
+          }
+        }
+
         // Xóa giỏ hàng sau khi tạo đơn hàng thành công
         const cartId = cart?.cart_id || cart?.cartId;
         if (cartId) {
@@ -167,7 +182,7 @@ const PaymentSuccess = () => {
         localStorage.removeItem('discount_amount');
 
         setPaymentInfo({
-          orderCode: response?.data?.orderId || response?.data?.order_id,
+          orderCode: orderId,
           amount: pendingOrder.orderData.totalAmount,
           type: 'order'
         });

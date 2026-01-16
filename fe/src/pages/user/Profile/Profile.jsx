@@ -445,14 +445,14 @@ const Profile = () => {
 
   const getOrderStatusColor = (status) => {
     const colors = {
-      pending: 'bg-yellow-100 text-yellow-800',
-      confirmed: 'bg-blue-100 text-blue-800',
-      processing: 'bg-purple-100 text-purple-800',
-      shipping: 'bg-indigo-100 text-indigo-800',
-      delivered: 'bg-green-100 text-green-800',
-      completed: 'bg-green-100 text-green-800',
-      cancelled: 'bg-red-100 text-red-800',
-      refunded: 'bg-gray-100 text-gray-800'
+      pending: 'bg-gray-100 text-gray-600',
+      confirmed: 'bg-blue-100 text-blue-700',
+      processing: 'bg-yellow-100 text-yellow-700',
+      shipping: 'bg-indigo-100 text-indigo-700',
+      delivered: 'bg-green-100 text-green-700',
+      completed: 'bg-green-100 text-green-700',
+      cancelled: 'bg-red-100 text-red-700',
+      refunded: 'bg-orange-100 text-orange-700'
     };
     return colors[status] || 'bg-gray-100 text-gray-800';
   };
@@ -1238,6 +1238,7 @@ const Profile = () => {
                         <TableHead>Ngày đặt</TableHead>
                         <TableHead>Tổng tiền</TableHead>
                         <TableHead>Trạng thái đơn</TableHead>
+                        <TableHead>Thanh toán</TableHead>
                         <TableHead className="text-right">Thao tác</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -1256,6 +1257,11 @@ const Profile = () => {
                           <TableCell>
                             <Badge className={getOrderStatusColor(order.orderStatus || order.order_status)}>
                               {getOrderStatusLabel(order.orderStatus || order.order_status)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={getPaymentStatusColor(order.paymentStatus || order.payment_status)}>
+                              {getPaymentStatusLabel(order.paymentStatus || order.payment_status)}
                             </Badge>
                           </TableCell>
                           <TableCell className="text-right">
@@ -1321,12 +1327,8 @@ const Profile = () => {
                   </div>
                   <div className="flex-1">
                     <p className="text-sm text-gray-500 mb-1">Trạng thái thanh toán</p>
-                    <Badge className={getPaymentStatusColor(
-                      (selectedOrder.orderStatus === 'delivered' || selectedOrder.order_status === 'delivered') ? 'paid' : 'pending'
-                    )}>
-                      {getPaymentStatusLabel(
-                        (selectedOrder.orderStatus === 'delivered' || selectedOrder.order_status === 'delivered') ? 'paid' : 'pending'
-                      )}
+                    <Badge className={getPaymentStatusColor(selectedOrder.paymentStatus || selectedOrder.payment_status)}>
+                      {getPaymentStatusLabel(selectedOrder.paymentStatus || selectedOrder.payment_status)}
                     </Badge>
                   </div>
                 </div>
@@ -1340,16 +1342,28 @@ const Profile = () => {
                       <h3 className="font-semibold text-lg mb-3">Thông tin thanh toán</h3>
                       <div className="space-y-2">
                         {selectedOrder.payments.map((payment, index) => {
-                          const paymentMethod = payment.paymentMethod || payment.payment_method;
+                          let paymentMethod = payment.paymentMethod || payment.payment_method;
                           const paymentStatus = payment.paymentStatus || payment.payment_status;
                           const transactionId = payment.transactionId || payment.transaction_id;
+                          const paymentGateway = payment.paymentGateway || payment.payment_gateway;
+                          
+                          // Fallback: xác định payment method từ transaction_id hoặc payment_gateway
+                          if (!paymentMethod) {
+                            if (paymentGateway === 'vnpay' || transactionId?.includes('VNPAY')) {
+                              paymentMethod = 'vnpay';
+                            } else if (paymentGateway === 'momo' || transactionId?.includes('MOMO')) {
+                              paymentMethod = 'momo';
+                            } else {
+                              paymentMethod = 'cod';
+                            }
+                          }
                           
                           return (
                             <div key={index} className="p-4 bg-gray-50 rounded-lg">
                               <div>
                                 <p className="text-sm text-gray-600 mb-1">Phương thức thanh toán</p>
                                 <p className="font-medium text-base">
-                                  {translatePaymentMethod(paymentMethod || 'cod')}
+                                  {translatePaymentMethod(paymentMethod)}
                                 </p>
                               </div>
                               {transactionId && (

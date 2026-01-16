@@ -271,16 +271,16 @@ export const updateOrderStatus = async (req, res) => {
 export const updatePaymentStatus = async (req, res) => {
   try {
     const { id } = req.params;
-    const { status } = req.body;
+    const { payment_status, order_status } = req.body;
 
-    if (!status) {
+    if (!payment_status) {
       return res.status(400).json({
         success: false,
         message: 'Vui lòng cung cấp trạng thái thanh toán'
       });
     }
 
-    await OrderService.updatePaymentStatus(id, status);
+    await OrderService.updatePaymentStatus(id, payment_status, order_status);
 
     res.json({
       success: true,

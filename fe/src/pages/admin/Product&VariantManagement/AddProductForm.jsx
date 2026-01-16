@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Save, Upload, Plus, Trash2, ChevronRight, ChevronLeft } from 'lucide-react';
+import { X, Save, Upload, Plus, Trash2, ChevronRight, ChevronLeft, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useProductStore } from '@/stores/useProductStore';
 import { useCategoryStore } from '@/stores/useCategoryStore';
 import { attributeService } from '@/services/attributeService';
@@ -53,6 +54,7 @@ const AddEditProductForm = ({ productId, isAddingNew, onClose, onSaveSuccess, de
   const [activeAttribute, setActiveAttribute] = useState(null); // Thuộc tính đang được chọn để hiển thị giá trị
   const [variantImages, setVariantImages] = useState({}); // { default: [files], variant_0: [files], variant_1: [files], ... }
   const [variantImagePreviews, setVariantImagePreviews] = useState({}); // { default: [urls], variant_0: [urls], ... }
+  const [successDialog, setSuccessDialog] = useState({ open: false, message: '' });
 
   const { currentProduct, createProduct, updateProduct, fetchProduct } = useProductStore();
   const { categories, fetchCategories } = useCategoryStore();
@@ -496,16 +498,30 @@ const AddEditProductForm = ({ productId, isAddingNew, onClose, onSaveSuccess, de
 
       if (isAddingNew) {
         await createProduct(submitData);
-        toast.success('Tạo sản phẩm thành công');
+        setSuccessDialog({ open: true, message: 'Tạo sản phẩm thành công!' });
       } else {
         await updateProduct(productId, submitData);
-        toast.success('Cập nhật sản phẩm thành công');
+        setSuccessDialog({ open: true, message: 'Cập nhật sản phẩm thành công!' });
       }
 
-      onSaveSuccess();
+      setTimeout(() => {
+        onSaveSuccess();
+      }, 1500);
     } catch (error) {
       console.error('Error saving product:', error);
-      toast.error(error.response?.data?.message || 'Có lỗi xảy ra');
+      const errorMessage = error.response?.data?.message || 'Có lỗi xảy ra';
+      const lowerErrorMessage = errorMessage.toLowerCase();
+      
+      // Kiểm tra các trường hợp lỗi trùng lặp
+      if (lowerErrorMessage.includes('trùng') || 
+          lowerErrorMessage.includes('đã tồn tại') || 
+          lowerErrorMessage.includes('already exists') ||
+          lowerErrorMessage.includes('duplicate entry') ||
+          lowerErrorMessage.includes('slug')) {
+        setSuccessDialog({ open: true, message: 'Sản phẩm đã tồn tại. Vui lòng kiểm tra lại tên sản phẩm!' });
+      } else {
+        toast.error(errorMessage);
+      }
     } finally {
       setSaving(false);
     }
@@ -1053,6 +1069,34 @@ const AddEditProductForm = ({ productId, isAddingNew, onClose, onSaveSuccess, de
           </Button>
         </div>
       </Tabs>
+
+      {/* Success Dialog */}
+      <Dialog open={successDialog.open} onOpenChange={(open) => {
+        setSuccessDialog({ open, message: '' });
+      }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <div className="flex items-center justify-center mb-4">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                <CheckCircle className="w-10 h-10 text-green-600" />
+              </div>
+            </div>
+            <DialogTitle className="text-center text-xl">Thành công!</DialogTitle>
+            <DialogDescription className="text-center text-base mt-2">
+              {successDialog.message}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="sm:justify-center">
+            <Button 
+              type="button"
+              onClick={() => setSuccessDialog({ open: false, message: '' })}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white"
+            >
+              Đóng
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

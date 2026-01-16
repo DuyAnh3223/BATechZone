@@ -89,7 +89,6 @@ export const useProductStore = create((set, get) => ({
         } catch (error) {
             const message = error.response?.data?.message || 'Có lỗi xảy ra khi thêm sản phẩm';
             set({ error: message, loading: false });
-            toast.error(message);
             throw error;
         }
     },
@@ -112,7 +111,6 @@ export const useProductStore = create((set, get) => ({
         } catch (error) {
             const message = error.response?.data?.message || 'Có lỗi xảy ra khi cập nhật sản phẩm';
             set({ error: message, loading: false });
-            toast.error(message);
             throw error;
         }
     },

@@ -623,10 +623,10 @@ const AdminOrder = () => {
                     <div className="text-gray-500 mb-2">Thanh toán</div>
                     <div>
                       <span className={`px-3 py-0.5 rounded-full text-xs font-semibold ${getPaymentStatusClass(
-                        (orderDetail.order_status === 'delivered' || orderDetail.orderStatus === 'delivered') ? 'paid' : 'pending'
+                        orderDetail.payment_status || orderDetail.paymentStatus
                       )}`}>
                         {translatePaymentStatus(
-                          (orderDetail.order_status === 'delivered' || orderDetail.orderStatus === 'delivered') ? 'paid' : 'pending'
+                          orderDetail.payment_status || orderDetail.paymentStatus
                         )}
                       </span>
                     </div>
@@ -776,20 +776,38 @@ const AdminOrder = () => {
                         </tr>
                       </thead>
                       <tbody className="divide-y">
-                        {orderDetail.payments.map((p, index) => (
-                          <tr key={p.payment_id || p.paymentId || `payment-${index}`}>
-                            <td className="px-4 py-2 font-mono text-sm">{p.transaction_id || p.transactionId || '-'}</td>
-                            <td className="px-4 py-2">
-                              {translatePaymentMethod(p.payment_method || p.paymentMethod)}
-                            </td>
-                            <td className="px-4 py-2">
-                              {translatePaymentStatus(p.payment_status || p.paymentStatus)}
-                            </td>
-                            <td className="px-4 py-2 text-right">
-                              {parseFloat(p.amount || 0).toLocaleString('vi-VN')} ₫
-                            </td>
-                          </tr>
-                        ))}
+                        {orderDetail.payments.map((p, index) => {
+                          let paymentMethod = p.payment_method || p.paymentMethod;
+                          const transactionId = p.transaction_id || p.transactionId;
+                          const paymentGateway = p.payment_gateway || p.paymentGateway;
+                          
+                          // Fallback: xác định payment method từ transaction_id hoặc payment_gateway
+                          if (!paymentMethod) {
+                            const txIdLower = (transactionId || '').toLowerCase();
+                            if (paymentGateway === 'vnpay' || txIdLower.includes('vnpay')) {
+                              paymentMethod = 'vnpay';
+                            } else if (paymentGateway === 'momo' || txIdLower.includes('momo')) {
+                              paymentMethod = 'momo';
+                            } else {
+                              paymentMethod = 'cod';
+                            }
+                          }
+                          
+                          return (
+                            <tr key={p.payment_id || p.paymentId || `payment-${index}`}>
+                              <td className="px-4 py-2 font-mono text-sm">{transactionId || '-'}</td>
+                              <td className="px-4 py-2">
+                                {translatePaymentMethod(paymentMethod)}
+                              </td>
+                              <td className="px-4 py-2">
+                                {translatePaymentStatus(p.payment_status || p.paymentStatus)}
+                              </td>
+                              <td className="px-4 py-2 text-right">
+                                {parseFloat(p.amount || 0).toLocaleString('vi-VN')} ₫
+                              </td>
+                            </tr>
+                          );
+                        })}
                         <tr className="bg-red-50">
                           <td className="px-4 py-3" colSpan={3}>
                             <span className="text-lg font-bold text-red-600">Tổng đã thanh toán</span>
