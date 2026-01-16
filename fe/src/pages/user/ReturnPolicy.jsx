@@ -14,8 +14,8 @@ const ReturnPolicy = () => {
       content: [
         "Sản phẩm còn nguyên vẹn, không bị móp méo, trầy xước",
         "Sản phẩm còn đầy đủ tem, nhãn mác, hóa đơn mua hàng",
-        "Thời gian đổi trả trong vòng 7 ngày kể từ ngày nhận hàng",
-        "Sản phẩm chưa qua sử dụng hoặc lắp đặt",
+        "Thời gian đổi trả trong vòng 7 ngày kể từ ngày nhận hàng", 
+        "Sản phẩm chưa qua sử dụng hoặc lắp đặt ",
       ],
     },
     {
