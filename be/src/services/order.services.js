@@ -274,9 +274,9 @@ class OrderService {
       throw new Error('Không tìm thấy đơn hàng');
     }
 
-    if (!['pending', 'confirmed'].includes(order.order_status)) {
-      throw new Error('Chỉ có thể hủy đơn hàng đang chờ xử lý hoặc đã xác nhận');
-    }
+    if (!['shipping'].includes(order.order_status)) {
+       throw new Error('Không thể hủy đơn hàng: Đơn hàng của bạn đang trong quá trình giao');
+     }
 
     const conn = await db.getConnection();
     try {

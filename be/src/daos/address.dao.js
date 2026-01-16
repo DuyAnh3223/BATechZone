@@ -8,8 +8,8 @@ class AddressDAO {
     async listByUser(userId) {
         try {
             const rows = await query(
-                `SELECT address_id, user_id, recipient_name, phone, address_line1, address_line2, 
-                        city, district, ward, postal_code, country, is_default, address_type, 
+                `SELECT address_id, user_id, recipient_name, phone, address_line, 
+                        city, district, ward, type, 
                         created_at, updated_at
                  FROM addresses WHERE user_id = ? ORDER BY is_default DESC, address_id DESC`,
                 [userId]
@@ -35,26 +35,43 @@ class AddressDAO {
     /**
      * Create new address
      */
-    async create({ user_id, recipient_name, phone, address_line1, address_line2 = null, 
-                   city, district = null, ward = null, postal_code = null, 
-                   country = 'Vietnam', is_default = false, address_type = 'home' }) {
-        try {
+    async create(data) {
             // Nếu đặt làm mặc định, cần bỏ mặc định của các địa chỉ khác
-            if (is_default) {
-                await query(`UPDATE addresses SET is_default = 0 WHERE user_id = ?`, [user_id]);
+            if (data.is_default) {
+                await query(`UPDATE addresses SET is_default = 0 WHERE user_id = ?`, [data.user_id]);
             }
             
-            const result = await query(
-                `INSERT INTO addresses (user_id, recipient_name, phone, address_line1, address_line2, 
-                                       city, district, ward, postal_code, country, is_default, address_type)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                [user_id, recipient_name, phone, address_line1, address_line2, 
-                 city, district, ward, postal_code, country, is_default ? 1 : 0, address_type]
-            );
-            return result.insertId;
-        } catch (error) {
-            throw new Error(`Error creating address: ${error.message}`);
-        }
+        const sql = `INSERT INTO addresses (
+        user_id, 
+        recipient_name, 
+        phone, 
+        address_line, 
+        city, 
+        province_id,
+        district,
+        district_id, 
+        ward,
+        ward_code,  
+        is_default, 
+        type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+
+        const params = [
+            data.user_id, 
+            data.recipient_name, 
+            data.phone, 
+            data.address_line, 
+            data.city, 
+            data.province_id || null, 
+            data.district, 
+            data.district_id || null, 
+            data.ward, 
+            data.ward_code || null, 
+            data.is_default ? 1 : 0, 
+            data.type]
+
+        const result = await query(sql,params);
+        return result.insertId;
+        
     }
 
     /**
@@ -62,9 +79,7 @@ class AddressDAO {
      */
     async update(addressId, userId, updateData) {
         try {
-            const allowed = ['recipient_name', 'phone', 'address_line1', 'address_line2', 
-                           'city', 'district', 'ward', 'postal_code', 'country', 
-                           'is_default', 'address_type'];
+            const allowed = ['recipient_name', 'phone', 'address_line', 'city', 'province_id', 'district', 'district_id', 'ward', 'ward_code', 'is_default', 'type'];
             const sets = [];
             const vals = [];
             
@@ -102,12 +117,9 @@ class AddressDAO {
      * Delete address
      */
     async delete(addressId) {
-        try {
             const result = await query(`DELETE FROM addresses WHERE address_id = ?`, [addressId]);
             return result.affectedRows > 0;
-        } catch (error) {
-            throw new Error(`Error deleting address: ${error.message}`);
-        }
+        
     }
 }
 

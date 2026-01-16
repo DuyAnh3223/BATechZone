@@ -4,15 +4,15 @@ class Address {
         this.user_id = data.user_id;
         this.recipient_name = data.recipient_name;
         this.phone = data.phone;
-        this.address_line1 = data.address_line1;
-        this.address_line2 = data.address_line2;
+        this.address_line = data.address_line;
         this.city = data.city;
+        this.province_id = data.province_id;
         this.district = data.district;
+        this.district_id = data.district_id;
         this.ward = data.ward;
-        this.postal_code = data.postal_code;
-        this.country = data.country || 'Vietnam';
+        this.ward_code = data.ward_code;
         this.is_default = data.is_default;
-        this.address_type = data.address_type || 'home';
+        this.type = data.type || 'home';
         this.created_at = data.created_at;
         this.updated_at = data.updated_at;
     }
@@ -23,15 +23,15 @@ class Address {
             user_id: this.user_id,
             recipient_name: this.recipient_name,
             phone: this.phone,
-            address_line1: this.address_line1,
-            address_line2: this.address_line2,
+            address_line: this.address_line,
             city: this.city,
+            province_id: this.province_id,
             district: this.district,
+            district_id: this.district_id,
             ward: this.ward,
-            postal_code: this.postal_code,
-            country: this.country,
+            ward_code: this.ward_code,
             is_default: Boolean(this.is_default),
-            address_type: this.address_type,
+            type: this.type,
             created_at: this.created_at,
             updated_at: this.updated_at,
         };

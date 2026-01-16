@@ -41,7 +41,7 @@ class OrderDAO {
         o.cancelled_reason as cancelledReason,
         u.username, u.email, u.phone as user_phone,
         a.recipient_name, a.phone as recipient_phone, 
-        a.address_line1, a.address_line2, a.city, a.district, a.ward,
+        a.address_line, a.city, a.district, a.ward,
         c.coupon_code, c.discount_type, c.discount_value,
         EXISTS(SELECT 1 FROM installments WHERE order_id = o.order_id) as is_installment
       FROM orders o
@@ -134,7 +134,7 @@ class OrderDAO {
         o.*,
         u.username, u.email, u.phone as user_phone,
         a.recipient_name, a.phone as recipient_phone,
-        a.address_line1, a.city, a.district,
+        a.address_line, a.city, a.district,
         (SELECT COUNT(*) FROM order_items WHERE order_id = o.order_id) as item_count,
         EXISTS(SELECT 1 FROM installments WHERE order_id = o.order_id) as is_installment
       FROM orders o
@@ -382,7 +382,7 @@ class OrderDAO {
       `SELECT address_id FROM addresses 
        WHERE user_id = ? 
        AND phone = ? 
-       AND address_line1 = ? 
+       AND address_line = ? 
        AND city = ? 
        AND district = ?
        LIMIT 1`,
@@ -409,23 +409,21 @@ class OrderDAO {
     const [result] = await connection.query(
       `INSERT INTO addresses (
         user_id, recipient_name, phone, 
-        address_line1, address_line2, 
-        city, district, ward, postal_code, country, 
-        is_default, address_type
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        address_line,  
+        city, district, ward, 
+        is_default, type
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         userId || null,
         addressData.fullName,
         addressData.phone,
         addressData.address,
-        addressData.note || null,
         addressData.province,
         addressData.district,
         addressData.ward || null,
-        null,
-        'Vietnam',
-        0,
-        'other'
+        addressData.isDefault ? 1 : 0,
+        addressData.type || 'home'
+       
       ]
     );
     return result.insertId;

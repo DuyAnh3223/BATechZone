@@ -156,15 +156,10 @@ export const addressSchema = z.object({
         .regex(phoneRegex, 'Số điện thoại không hợp lệ (phải có 10 số và bắt đầu bằng 0)')
         .trim(),
     
-    address_line1: z
+    address_line: z
         .string()
         .min(1, 'Vui lòng nhập địa chỉ')
         .trim(),
-    
-    address_line2: z
-        .string()
-        .trim()
-        .optional(),
     
     ward: z
         .string()
@@ -181,17 +176,22 @@ export const addressSchema = z.object({
         .min(1, 'Vui lòng nhập thành phố')
         .trim(),
     
-    postal_code: z
+    province_id: z
         .string()
         .trim()
         .optional(),
     
-    country: z
+    district_id: z
         .string()
         .trim()
         .optional(),
     
-    address_type: z
+    ward_code: z
+        .string()
+        .trim()
+        .optional(),
+    
+    type: z
         .enum(['home', 'office', 'other'])
         .default('home'),
     

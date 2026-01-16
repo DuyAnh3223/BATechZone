@@ -37,7 +37,7 @@ class AddressService {
     async createAddress(userId, addressData) {
         // Validation
         if (!addressData.recipient_name || !addressData.phone || 
-            !addressData.address_line1 || !addressData.city) {
+            !addressData.address_line || !addressData.city) {
             throw new Error('Vui lòng điền đầy đủ thông tin: Tên người nhận, Số điện thoại, Địa chỉ, Thành phố');
         }
 
@@ -46,15 +46,15 @@ class AddressService {
             user_id: userId,
             recipient_name: addressData.recipient_name,
             phone: addressData.phone,
-            address_line1: addressData.address_line1,
-            address_line2: addressData.address_line2 || null,
+            address_line: addressData.address_line,
             city: addressData.city,
+            province_id: addressData.province_id || null,
             district: addressData.district || null,
+            district_id: addressData.district_id || null,
             ward: addressData.ward || null,
-            postal_code: addressData.postal_code || null,
-            country: addressData.country || 'Vietnam',
+            ward_code: addressData.ward_code || null,
             is_default: addressData.is_default || false,
-            address_type: addressData.address_type || 'home'
+            type: addressData.type || 'home'
         });
         
         const address = await AddressDAO.findById(addressId);
@@ -81,15 +81,15 @@ class AddressService {
         const data = {};
         if (updateData.recipient_name !== undefined) data.recipient_name = updateData.recipient_name;
         if (updateData.phone !== undefined) data.phone = updateData.phone;
-        if (updateData.address_line1 !== undefined) data.address_line1 = updateData.address_line1;
-        if (updateData.address_line2 !== undefined) data.address_line2 = updateData.address_line2;
+        if (updateData.address_line !== undefined) data.address_line = updateData.address_line;
         if (updateData.city !== undefined) data.city = updateData.city;
+        if (updateData.province_id !== undefined) data.province_id = updateData.province_id;
         if (updateData.district !== undefined) data.district = updateData.district;
+        if (updateData.district_id !== undefined) data.district_id = updateData.district_id;
         if (updateData.ward !== undefined) data.ward = updateData.ward;
-        if (updateData.postal_code !== undefined) data.postal_code = updateData.postal_code;
-        if (updateData.country !== undefined) data.country = updateData.country;
+        if (updateData.ward_code !== undefined) data.ward_code = updateData.ward_code;
         if (updateData.is_default !== undefined) data.is_default = updateData.is_default;
-        if (updateData.address_type !== undefined) data.address_type = updateData.address_type;
+        if (updateData.type !== undefined) data.type = updateData.type;
         
         // Update
         const updated = await AddressDAO.update(addressId, userId, data);

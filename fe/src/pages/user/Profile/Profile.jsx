@@ -249,15 +249,15 @@ const Profile = () => {
     defaultValues: {
       recipient_name: "",
       phone: "",
-      address_line1: "",
-      address_line2: "",
+      address_line: "",
       ward: "",
       district: "",
       city: "",
-      postal_code: "",
-      country: "Vietnam",
+      province_id: "",
+      district_id: "",
+      ward_code: "",
       is_default: false,
-      address_type: "home",
+      type: "home",
     },
   });
 
@@ -320,15 +320,15 @@ const Profile = () => {
     addressForm.reset({
       recipient_name: "",
       phone: "",
-      address_line1: "",
-      address_line2: "",
+      address_line: "",
       ward: "",
       district: "",
       city: "",
-      postal_code: "",
-      country: "Vietnam",
+      province_id: "",
+      district_id: "",
+      ward_code: "",
       is_default: false,
-      address_type: "home",
+      type: "home",
     });
     setEditingAddressId(null);
     setIsAddAddressOpen(true);
@@ -336,17 +336,17 @@ const Profile = () => {
 
   const handleEditAddress = (address) => {
     addressForm.reset({
-      recipient_name: address.recipient_name,
-      phone: address.phone,
-      address_line1: address.address_line1,
-      address_line2: address.address_line2 || "",
+      recipient_name: address.recipient_name || "",
+      phone: address.phone || "",
+      address_line: address.address_line || "",
       ward: address.ward || "",
       district: address.district || "",
-      city: address.city,
-      postal_code: address.postal_code || "",
-      country: address.country || "Vietnam",
-      is_default: address.is_default,
-      address_type: address.address_type || "home",
+      city: address.city || "",
+      province_id: address.province_id || "",
+      district_id: address.district_id || "",
+      ward_code: address.ward_code || "",
+      is_default: address.is_default || false,
+      type: address.type || "home",
     });
     setEditingAddressId(address.address_id);
     setIsEditAddressOpen(true);
@@ -780,19 +780,17 @@ const Profile = () => {
                               <Badge variant="secondary">Mặc định</Badge>
                             )}
                             <Badge variant="outline" className="text-xs">
-                              {getAddressTypeLabel(address.address_type)}
+                              {getAddressTypeLabel(address.type)}
                             </Badge>
                           </div>
                           <div className="text-sm text-gray-500 mb-1">
                             {address.phone}
                           </div>
                           <div className="text-sm text-gray-600">
-                            {address.address_line1}
-                            {address.address_line2 && `, ${address.address_line2}`}
+                            {address.address_line}
                             {address.ward && `, ${address.ward}`}
                             {address.district && `, ${address.district}`}
                             {address.city && `, ${address.city}`}
-                            {address.postal_code && ` - ${address.postal_code}`}
                           </div>
                         </div>
                         <div className="space-x-2 ml-4">
@@ -863,25 +861,12 @@ const Profile = () => {
                 </div>
                 <FormField
                   control={addressForm.control}
-                  name="address_line1"
+                  name="address_line"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Địa chỉ *</FormLabel>
                       <FormControl>
                         <Input {...field} placeholder="Số nhà, tên đường" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={addressForm.control}
-                  name="address_line2"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Địa chỉ phụ (tùy chọn)</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="Tầng, phòng, tòa nhà..." />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -929,39 +914,14 @@ const Profile = () => {
                   />
                 </div>
                 <div className="grid grid-cols-3 gap-4">
+                  
                   <FormField
                     control={addressForm.control}
-                    name="postal_code"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Mã bưu điện</FormLabel>
-                        <FormControl>
-                          <Input {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={addressForm.control}
-                    name="country"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Quốc gia</FormLabel>
-                        <FormControl>
-                          <Input {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={addressForm.control}
-                    name="address_type"
+                    name="type"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Loại địa chỉ</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <Select onValueChange={field.onChange} value={field.value || "home"}>
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Chọn loại" />
@@ -986,7 +946,7 @@ const Profile = () => {
                       <FormControl>
                         <input
                           type="checkbox"
-                          checked={field.value}
+                          checked={field.value || false}
                           onChange={field.onChange}
                           className="mt-1"
                         />
@@ -1056,25 +1016,12 @@ const Profile = () => {
                 </div>
                 <FormField
                   control={addressForm.control}
-                  name="address_line1"
+                  name="address_line"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Địa chỉ *</FormLabel>
                       <FormControl>
                         <Input {...field} placeholder="Số nhà, tên đường" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={addressForm.control}
-                  name="address_line2"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Địa chỉ phụ (tùy chọn)</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="Tầng, phòng, tòa nhà..." />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -1122,35 +1069,10 @@ const Profile = () => {
                   />
                 </div>
                 <div className="grid grid-cols-3 gap-4">
+                  
                   <FormField
                     control={addressForm.control}
-                    name="postal_code"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Mã bưu điện</FormLabel>
-                        <FormControl>
-                          <Input {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={addressForm.control}
-                    name="country"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Quốc gia</FormLabel>
-                        <FormControl>
-                          <Input {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={addressForm.control}
-                    name="address_type"
+                    name="type"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Loại địa chỉ</FormLabel>
@@ -1179,7 +1101,7 @@ const Profile = () => {
                       <FormControl>
                         <input
                           type="checkbox"
-                          checked={field.value}
+                          checked={field.value || false}
                           onChange={field.onChange}
                           className="mt-1"
                         />
@@ -1274,8 +1196,8 @@ const Profile = () => {
                                 <Eye className="h-4 w-4 mr-1" />
                                 Xem
                               </Button>
-                              {(order.paymentStatus === 'pending' || order.payment_status === 'pending') && 
-                               (order.orderStatus !== 'cancelled' && order.order_status !== 'cancelled') && (
+                              {(order.paymentStatus === 'pending' ) && 
+                               (order.orderStatus !== 'cancelled' ) && (
                                 <Button
                                   variant="default"
                                   size="sm"
@@ -1285,7 +1207,7 @@ const Profile = () => {
                                   Thanh toán
                                 </Button>
                               )}
-                              {(order.orderStatus === 'pending' || order.order_status === 'pending') && (
+                              {(order.orderStatus === 'pending' || order.orderStatus === 'confirmed' || order.orderStatus === 'processing') && (
                                 <Button
                                   variant="destructive"
                                   size="sm"

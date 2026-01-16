@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useCategoryStore } from '@/stores/useCategoryStore';
-import { useNotificationStore } from '@/stores/useNotificationStore';
 import { useCartItemStore } from '@/stores/useCartItemStore';
 import { useCartStore } from '@/stores/useCartStore';
 import { useCouponStore } from '@/stores/useCouponStore';
@@ -42,7 +41,6 @@ const UserLayout = () => {
   const [isCategoryMenuOpen, setIsCategoryMenuOpen] = useState(false);
   const [menuCloseTimeout, setMenuCloseTimeout] = useState(null);
   const { categories, fetchCategories, loading: categoriesLoading } = useCategoryStore();
-  const { notifications, unreadCount, loading: notificationsLoading, fetchNotifications, markAsRead, markAllAsRead } = useNotificationStore();
   const { cartItems, fetchCartItems, reset: resetCartItems } = useCartItemStore();
   const { getOrCreateCart } = useCartStore();
   const { coupons, fetchCoupons, loading: couponsLoading } = useCouponStore();
@@ -186,26 +184,7 @@ const UserLayout = () => {
     };
   }, [menuCloseTimeout]);
 
-  // Fetch notifications when user is logged in
-  useEffect(() => {
-    if (user) {
-      const loadNotifications = async () => {
-        try {
-          await fetchNotifications({ limit: 10, page: 1 });
-        } catch (error) {
-          // Silently ignore 404 error if notification API not implemented yet
-          if (error.response?.status !== 404) {
-            console.error('Failed to load notifications:', error);
-          }
-        }
-      };
-      loadNotifications();
-      // Refresh notifications every 30 seconds
-      const interval = setInterval(loadNotifications, 30000);
-      return () => clearInterval(interval);
-    }
-  }, [user, fetchNotifications]);
-
+  
   const handleLogout = async () => {
     try {
       // Reset cart items before logout
@@ -515,151 +494,6 @@ const UserLayout = () => {
                 <Shield className="size-6" style={{ color: '#ffffff' }} />
               </Link>
 
-              {/* Notification Bell - Only show if user is logged in */}
-              {user && (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button 
-                      variant="ghost" 
-                      size="icon-lg" 
-                      className="relative transition-all duration-300 ease-in-out"
-                      style={{
-                        position: 'relative',
-                        backgroundColor: '#fbbf24', // yellow-400
-                        color: '#ffffff',
-                        borderRadius: '50%',
-                        width: '48px',
-                        height: '48px',
-                        padding: '0',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        transform: 'scale(1)',
-                        transition: 'all 0.3s ease-in-out',
-                        border: 'none'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = '#f59e0b'; // yellow-500 (darker on hover)
-                        e.currentTarget.style.transform = 'scale(1.1)';
-                        e.currentTarget.style.transition = 'all 0.3s ease-in-out';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = '#fbbf24'; // yellow-400
-                        e.currentTarget.style.transform = 'scale(1)';
-                        e.currentTarget.style.transition = 'all 0.3s ease-in-out';
-                      }}
-                    >
-                      <Bell className="size-6" style={{ color: '#ffffff' }} />
-                      {unreadCount > 0 && (
-                        <Badge 
-                          className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1.5 flex items-center justify-center bg-red-500 text-white text-xs font-bold border-2 border-white rounded-full"
-                          style={{
-                            position: 'absolute',
-                            top: '-4px',
-                            right: '-4px',
-                            minWidth: '20px',
-                            height: '20px',
-                            padding: '0 6px',
-                            backgroundColor: '#ef4444',
-                            color: '#ffffff',
-                            fontSize: '12px',
-                            fontWeight: 'bold',
-                            border: '2px solid #ffffff',
-                            borderRadius: '9999px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
-                          }}
-                        >
-                          {unreadCount > 99 ? '99+' : unreadCount}
-                        </Badge>
-                      )}
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-80 max-h-[400px] overflow-y-auto">
-                    <div className="flex items-center justify-between px-2 py-1.5 border-b">
-                      <span className="font-semibold text-sm">Thông báo</span>
-                      {unreadCount > 0 && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 px-2 text-xs"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            markAllAsRead();
-                          }}
-                        >
-                          Đánh dấu tất cả đã đọc
-                        </Button>
-                      )}
-                    </div>
-                    {notificationsLoading ? (
-                      <div className="px-4 py-8 text-center text-gray-500 text-sm">
-                        Đang tải thông báo...
-                      </div>
-                    ) : notifications.length > 0 ? (
-                      <>
-                        {notifications.map((notification) => {
-                          const notifId = notification.notification_id || notification.id;
-                          const isRead = notification.is_read || false;
-                          return (
-                            <DropdownMenuItem
-                              key={notifId}
-                              className={`px-3 py-2.5 cursor-pointer ${!isRead ? 'bg-blue-50' : ''}`}
-                              onClick={() => {
-                                if (!isRead) {
-                                  markAsRead(notifId);
-                                }
-                                if (notification.link_url) {
-                                  navigate(notification.link_url);
-                                }
-                              }}
-                            >
-                              <div className="flex flex-col w-full">
-                                <div className="flex items-start justify-between gap-2">
-                                  <div className="flex-1">
-                                    <p className={`text-sm font-medium ${!isRead ? 'text-gray-900' : 'text-gray-600'}`}>
-                                      {notification.title || notification.content}
-                                    </p>
-                                    {notification.content && notification.title && (
-                                      <p className="text-xs text-gray-500 mt-1 line-clamp-2">
-                                        {notification.content}
-                                      </p>
-                                    )}
-                                    <p className="text-xs text-gray-400 mt-1">
-                                      {new Date(notification.created_at).toLocaleDateString('vi-VN', {
-                                        day: '2-digit',
-                                        month: '2-digit',
-                                        year: 'numeric',
-                                        hour: '2-digit',
-                                        minute: '2-digit'
-                                      })}
-                                    </p>
-                                  </div>
-                                  {!isRead && (
-                                    <div className="w-2 h-2 bg-blue-600 rounded-full flex-shrink-0 mt-1" />
-                                  )}
-                                </div>
-                              </div>
-                            </DropdownMenuItem>
-                          );
-                        })}
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem asChild>
-                          <Link to="/profile?tab=notifications" className="text-center text-sm text-blue-600 hover:text-blue-700">
-                            Xem tất cả thông báo
-                          </Link>
-                        </DropdownMenuItem>
-                      </>
-                    ) : (
-                      <div className="px-4 py-8 text-center text-gray-500 text-sm">
-                        Chưa có thông báo nào
-                      </div>
-                    )}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              )}
-              
               {/* User Account Menu */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -893,31 +727,6 @@ const UserLayout = () => {
               <Tag className="size-9 mr-2 text-green-600" />
               Mã giảm giá
             </Button>
-            {user && (
-              <Button variant="ghost" size="lg" className="w-full justify-start relative" asChild>
-                <Link to="/profile?tab=notifications" className="flex items-center">
-                  <Bell className="size-9 mr-2 text-blue-600" />
-                  Thông báo
-                  {unreadCount > 0 && (
-                    <Badge 
-                      className="ml-auto bg-red-500 text-white text-xs font-bold min-w-[20px] h-5 px-1.5 flex items-center justify-center"
-                      style={{
-                        backgroundColor: '#ef4444',
-                        color: '#ffffff',
-                        fontSize: '12px',
-                        fontWeight: 'bold',
-                        minWidth: '20px',
-                        height: '20px',
-                        padding: '0 6px',
-                        borderRadius: '9999px'
-                      }}
-                    >
-                      {unreadCount > 99 ? '99+' : unreadCount}
-                    </Badge>
-                  )}
-                </Link>
-              </Button>
-            )}
             <Button variant="ghost" size="lg" className="w-full justify-start" asChild>
               <Link to="/profile" className="flex items-center">
                 <User className="size-9 mr-2 text-blue-600" />
