@@ -78,8 +78,8 @@ class Order {
       const paymentMethod = orderData.payment_method || orderData.paymentMethod || 'cod';
       const paymentStatus = orderData.payment_status || 'pending';
       
-      // Xác định order status - COD sẽ là 'confirmed' ngay khi đặt hàng
-      const orderStatus = paymentMethod === 'cod' ? 'confirmed' : (orderData.order_status || 'pending');
+      // Xác định order status - Tất cả đơn hàng đều bắt đầu với 'pending'
+      const orderStatus = orderData.order_status || 'pending';
 
       // Insert đơn hàng
       const [result] = await conn.query(
@@ -163,7 +163,7 @@ class Order {
 
       // Tạo bản ghi payment
       const paymentMethodForPayment = orderData.payment_method || orderData.paymentMethod || 'cod';
-      const paymentStatusForPayment = paymentMethodForPayment === 'cod' ? 'paid' : (orderData.payment_status || 'pending');
+      const paymentStatusForPayment = orderData.payment_status || 'pending';
       const paymentGateway = paymentMethodForPayment === 'momo' ? 'momo' : 
                              paymentMethodForPayment === 'vnpay' ? 'vnpay' : null;
       const paidAt = paymentStatusForPayment === 'paid' ? new Date() : null;

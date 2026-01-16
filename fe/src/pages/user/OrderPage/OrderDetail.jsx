@@ -203,15 +203,9 @@ const OrderDetail = () => {
                   </div>
                 </div>
                 <Separator />
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-base text-gray-600 mb-2">Phương thức thanh toán</p>
-                    <p className="font-semibold text-lg">{translatePaymentMethod(order.payment_method || order.paymentMethod || 'cod')}</p>
-                  </div>
-                  <div>
-                    <p className="text-base text-gray-600 mb-2">Ngày đặt hàng</p>
-                    <p className="font-semibold text-lg">{formatDate(order.created_at || order.createdAt)}</p>
-                  </div>
+                <div>
+                  <p className="text-base text-gray-600 mb-2">Ngày đặt hàng</p>
+                  <p className="font-semibold text-lg">{formatDate(order.created_at || order.createdAt)}</p>
                 </div>
               </CardContent>
             </Card>
@@ -227,12 +221,29 @@ const OrderDetail = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {order.payments.map((payment, index) => (
+                    {order.payments.map((payment, index) => {
+                      let paymentMethod = payment.payment_method || payment.paymentMethod;
+                      const transactionId = payment.transaction_id || payment.transactionId;
+                      const paymentGateway = payment.payment_gateway || payment.paymentGateway;
+                      
+                      // Fallback: xác định payment method từ transaction_id hoặc payment_gateway
+                      if (!paymentMethod) {
+                        const txIdLower = (transactionId || '').toLowerCase();
+                        if (paymentGateway === 'vnpay' || txIdLower.includes('vnpay')) {
+                          paymentMethod = 'vnpay';
+                        } else if (paymentGateway === 'momo' || txIdLower.includes('momo')) {
+                          paymentMethod = 'momo';
+                        } else {
+                          paymentMethod = 'cod';
+                        }
+                      }
+                      
+                      return (
                       <div key={payment.paymentId || index} className="p-4 bg-gray-50 rounded-lg space-y-3">
                         <div className="grid grid-cols-2 gap-4">
                           <div>
                             <p className="text-base text-gray-600 mb-1">Phương thức thanh toán</p>
-                            <p className="font-semibold text-lg">{translatePaymentMethod(payment.paymentMethod || payment.payment_method)}</p>
+                            <p className="font-semibold text-lg">{translatePaymentMethod(paymentMethod)}</p>
                           </div>
                           <div>
                             <p className="text-base text-gray-600 mb-1">Trạng thái</p>
@@ -252,7 +263,8 @@ const OrderDetail = () => {
                           <p className="font-bold text-lg text-blue-600">{formatPrice(payment.amount)}</p>
                         </div>
                       </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </CardContent>
               </Card>

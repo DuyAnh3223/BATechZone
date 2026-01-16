@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Plus, Search, Edit2, Trash2, Package } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, Package, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useProductStore } from '@/stores/useProductStore';
 import { toast } from 'sonner';
 import axios from 'axios';
@@ -24,6 +25,7 @@ const ProductList = ({ onAddProduct, onEditProduct, onManageVariants, selectedPr
   const [searchTerm, setSearchTerm] = useState('');
   const [deleteProductId, setDeleteProductId] = useState(null);
   const [variantImages, setVariantImages] = useState({}); // { variantId: primaryImageUrl }
+  const [successDialog, setSuccessDialog] = useState({ open: false, message: '' });
   const { products, loading, deleteProduct } = useProductStore();
 
   // Fetch variant images when products change
@@ -73,7 +75,7 @@ const ProductList = ({ onAddProduct, onEditProduct, onManageVariants, selectedPr
   const handleDelete = async () => {
     try {
       await deleteProduct(deleteProductId);
-      toast.success('Xóa sản phẩm thành công');
+      setSuccessDialog({ open: true, message: 'Xóa sản phẩm thành công!' });
       setDeleteProductId(null);
     } catch (error) {
       toast.error('Không thể xóa sản phẩm');
@@ -289,6 +291,34 @@ const ProductList = ({ onAddProduct, onEditProduct, onManageVariants, selectedPr
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Success Dialog */}
+      <Dialog open={successDialog.open} onOpenChange={(open) => {
+        setSuccessDialog({ open, message: '' });
+      }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <div className="flex items-center justify-center mb-4">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                <CheckCircle className="w-10 h-10 text-green-600" />
+              </div>
+            </div>
+            <DialogTitle className="text-center text-xl">Thành công!</DialogTitle>
+            <DialogDescription className="text-center text-base mt-2">
+              {successDialog.message}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="sm:justify-center">
+            <Button 
+              type="button"
+              onClick={() => setSuccessDialog({ open: false, message: '' })}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white"
+            >
+              Đóng
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

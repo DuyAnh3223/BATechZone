@@ -592,10 +592,54 @@ export const vnpayReturn = async (req, res) => {
     const checkSignature = createVNPaySignature(signData, VNPAY_CONFIG.hashSecret);
 
     if (secureHash === checkSignature) {
+      const rspCode = vnp_Params['vnp_ResponseCode'];
+      const orderId = vnp_Params['vnp_TxnRef'];
+      const transactionNo = vnp_Params['vnp_TransactionNo'];
+
+      // Nếu thanh toán thành công, cập nhật trạng thái
+      if (rspCode === '00') {
+        try {
+          // Cập nhật payment status
+          await db.query(
+            `UPDATE payments 
+             SET payment_status = 'paid', 
+                 transaction_id = ?,
+                 paid_at = NOW()
+             WHERE transaction_id = ?`,
+            [transactionNo, orderId]
+          );
+
+          // Lấy order_id từ payment
+          const [orderRows] = await db.query(
+            `SELECT order_id FROM payments WHERE transaction_id = ?`,
+            [orderId]
+          );
+
+          if (orderRows && orderRows.length > 0) {
+            const dbOrderId = orderRows[0].order_id;
+            
+            // Cập nhật order status
+            await db.query(
+              `UPDATE orders 
+               SET payment_status = 'paid',
+                   order_status = 'confirmed',
+                   confirmed_at = NOW(),
+                   updated_at = NOW()
+               WHERE order_id = ?`,
+              [dbOrderId]
+            );
+
+            console.log(`✅ VNPay payment successful for order ${dbOrderId} (TxnRef: ${orderId})`);
+          }
+        } catch (updateError) {
+          console.error('Error updating payment status:', updateError);
+        }
+      }
+
       res.json({
         success: true,
-        code: vnp_Params['vnp_ResponseCode'],
-        orderId: vnp_Params['vnp_TxnRef'],
+        code: rspCode,
+        orderId: orderId,
         amount: vnp_Params['vnp_Amount'] / 100
       });
     } else {

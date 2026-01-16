@@ -342,12 +342,12 @@ const Checkout = () => {
         const buyerPhone = formData.phone;
         const buyerAddress = `${formData.address}, ${formData.district}, ${formData.province}`;
         
-        // Cập nhật payment_method, payment_status và order_status cho online payment
+        // Cập nhật payment_method cho VNPay, status sẽ được update sau khi thanh toán
         const vnpayOrderData = {
           ...orderData,
           payment_method: 'vnpay',
-          payment_status: 'paid', // Thanh toán online thành công = đã thanh toán
-          order_status: 'shipping' // Đã thanh toán online -> Đang giao hàng
+          payment_status: 'pending', // Chờ thanh toán, sẽ update sau
+          order_status: 'pending' // Chờ xác nhận, sẽ update sau khi thanh toán
         };
         
         // Lưu thông tin order vào localStorage để tạo sau khi thanh toán

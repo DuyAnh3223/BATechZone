@@ -234,7 +234,7 @@ const Cart = () => {
     setDiscountAmount(0);
     localStorage.removeItem('applied_coupon');
     localStorage.removeItem('discount_amount');
-    toast.success("Đã hủy mã giảm giá");
+    setSuccessDialog({ open: true, message: 'Đã hủy mã giảm giá thành công!' });
   };
 
   const formatPrice = (price) => {

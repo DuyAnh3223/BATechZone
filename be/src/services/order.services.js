@@ -225,20 +225,22 @@ class OrderService {
     try {
       await conn.beginTransaction();
 
-      // Cập nhật trạng thái đơn hàng
+      // Cập nhật trạng thái đơn hàng và thanh toán
       await conn.query(
         `UPDATE orders 
         SET order_status = 'delivered',
+            payment_status = 'paid',
             delivered_at = NOW()
         WHERE order_id = ?`,
         [orderId]
       );
 
-      // Cập nhật trạng thái thanh toán COD
+      // Cập nhật trạng thái thanh toán trong bảng payments
       await conn.query(
         `UPDATE payments 
-        SET payment_status = 'completed'
-        WHERE order_id = ? AND payment_method = 'cod'`,
+        SET payment_status = 'paid',
+            paid_at = NOW()
+        WHERE order_id = ? AND payment_status != 'paid'`,
         [orderId]
       );
 
@@ -448,6 +450,16 @@ class OrderService {
         return false;
       }
 
+      // Cập nhật bảng payments khi order status = delivered
+      if (newStatus === 'delivered') {
+        await conn.query(
+          `UPDATE payments 
+          SET payment_status = 'paid', paid_at = NOW()
+          WHERE order_id = ? AND payment_status != 'paid'`,
+          [orderId]
+        );
+      }
+
       // Auto-activate warranties khi delivered
       if (newStatus === 'delivered') {
         console.log(`🔔 Order ${orderId} delivered - Activating warranties...`);
@@ -467,14 +479,20 @@ class OrderService {
   /**
    * Cập nhật trạng thái thanh toán
    * @param {number} orderId - ID đơn hàng
-   * @param {string} status - Trạng thái thanh toán
+   * @param {string} paymentStatus - Trạng thái thanh toán
+   * @param {string} orderStatus - Trạng thái đơn hàng (optional)
    * @returns {boolean}
    */
-  async updatePaymentStatus(orderId, status) {
-    const validStatuses = ['unpaid', 'paid', 'partially_paid', 'refunded'];
+  async updatePaymentStatus(orderId, paymentStatus, orderStatus = null) {
+    const validPaymentStatuses = ['unpaid', 'paid', 'partially_paid', 'refunded', 'pending'];
+    const validOrderStatuses = ['pending', 'confirmed', 'processing', 'shipping', 'delivered', 'cancelled'];
     
-    if (!validStatuses.includes(status)) {
+    if (!validPaymentStatuses.includes(paymentStatus)) {
       throw new Error('Trạng thái thanh toán không hợp lệ');
+    }
+
+    if (orderStatus && !validOrderStatuses.includes(orderStatus)) {
+      throw new Error('Trạng thái đơn hàng không hợp lệ');
     }
 
     const order = await Order.getById(orderId);
@@ -482,11 +500,37 @@ class OrderService {
       throw new Error('Không tìm thấy đơn hàng');
     }
 
+    // Update order
+    const updateFields = ['payment_status = ?'];
+    const updateValues = [paymentStatus];
+
+    if (orderStatus) {
+      updateFields.push('order_status = ?');
+      updateValues.push(orderStatus);
+      
+      // Nếu chuyển sang confirmed, set confirmed_at
+      if (orderStatus === 'confirmed') {
+        updateFields.push('confirmed_at = NOW()');
+      }
+    }
+
+    updateFields.push('updated_at = NOW()');
+    updateValues.push(orderId);
+
     const [result] = await db.query(
       `UPDATE orders 
-      SET payment_status = ?
+      SET ${updateFields.join(', ')}
       WHERE order_id = ?`,
-      [status, orderId]
+      updateValues
+    );
+
+    // Update payment record
+    await db.query(
+      `UPDATE payments 
+      SET payment_status = ?,
+          paid_at = ${paymentStatus === 'paid' ? 'NOW()' : 'paid_at'}
+      WHERE order_id = ?`,
+      [paymentStatus, orderId]
     );
 
     return result.affectedRows > 0;
