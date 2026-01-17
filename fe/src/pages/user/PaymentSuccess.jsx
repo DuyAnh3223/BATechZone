@@ -168,6 +168,19 @@ const PaymentSuccess = () => {
           }
         }
 
+        // Nếu là MoMo và thanh toán thành công, cập nhật trạng thái
+        if (momoResultCode === '0' && pendingOrder.orderData.payment_method === 'momo') {
+          try {
+            await userApi.patch(`/orders/${orderId}/payment-status`, {
+              payment_status: 'paid',
+              order_status: 'confirmed'
+            });
+            console.log(`✅ Updated payment status to 'paid' for MoMo order ${orderId}`);
+          } catch (updateError) {
+            console.error('Error updating MoMo payment status:', updateError);
+          }
+        }
+
         // Xóa giỏ hàng sau khi tạo đơn hàng thành công
         const cartId = cart?.cart_id || cart?.cartId;
         if (cartId) {
