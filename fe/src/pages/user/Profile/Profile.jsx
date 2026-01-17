@@ -46,6 +46,7 @@ import { userApi } from "@/lib/axios";
 import { useUserAddressStore } from "@/stores/useAddressStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { useUserAuthStore } from "@/stores/useUserAuthStore";
+import { useShippingStore } from "@/stores/useShippingStore";
 import InstallmentsTab from "./InstallmentsTab";
 import WarrantyTab from "./WarrantyTab";
 import {
@@ -211,10 +212,23 @@ const Profile = () => {
     updateAddress: updateAddressStore,
     removeAddress,
   } = useUserAddressStore();
+  const {
+    provinces,
+    districts,
+    wards,
+    fetchProvinces,
+    fetchDistricts,
+    fetchWards,
+    resetDistricts,
+    resetWards,
+  } = useShippingStore();
   const [isAddAddressOpen, setIsAddAddressOpen] = useState(false);
   const [isEditAddressOpen, setIsEditAddressOpen] = useState(false);
   const [editingAddressId, setEditingAddressId] = useState(null);
   const [isSubmittingAddress, setIsSubmittingAddress] = useState(false);
+  const [selectedProvince, setSelectedProvince] = useState(null);
+  const [selectedDistrict, setSelectedDistrict] = useState(null);
+  const [selectedWard, setSelectedWard] = useState(null);
 
   // Order states
   const { user } = useUserAuthStore();
@@ -316,7 +330,7 @@ const Profile = () => {
   }, [activeTab, user]);
 
   // Address handlers
-  const handleAddAddress = () => {
+  const handleAddAddress = async () => {
     addressForm.reset({
       recipient_name: "",
       phone: "",
@@ -331,10 +345,17 @@ const Profile = () => {
       type: "home",
     });
     setEditingAddressId(null);
+    setSelectedProvince(null);
+    setSelectedDistrict(null);
+    setSelectedWard(null);
+    resetDistricts();
+    resetWards();
     setIsAddAddressOpen(true);
+    // Load provinces khi mở dialog
+    await fetchProvinces();
   };
 
-  const handleEditAddress = (address) => {
+  const handleEditAddress = async (address) => {
     addressForm.reset({
       recipient_name: address.recipient_name || "",
       phone: address.phone || "",
@@ -350,25 +371,66 @@ const Profile = () => {
     });
     setEditingAddressId(address.address_id);
     setIsEditAddressOpen(true);
+    
+    // Load provinces
+    await fetchProvinces();
+    
+    // Nếu có province_id, load districts và set selected province
+    if (address.province_id) {
+      setSelectedProvince(address.province_id);
+      await fetchDistricts(address.province_id);
+    }
+    
+    // Nếu có district_id, load wards và set selected district
+    if (address.district_id) {
+      setSelectedDistrict(address.district_id);
+      await fetchWards(address.district_id);
+    }
+    
+    // Set selected ward
+    if (address.ward_code) {
+      setSelectedWard(address.ward_code);
+    }
   };
 
   const handleSubmitAddress = async (data) => {
     try {
+      console.log('=== Submit Address Debug ===');
+      console.log('Form data:', data);
+      console.log('Selected Province:', selectedProvince);
+      console.log('Selected District:', selectedDistrict);
+      console.log('Selected Ward:', selectedWard);
+      
       setIsSubmittingAddress(true);
+      
       if (editingAddressId) {
+        console.log('Updating address:', editingAddressId);
         await updateAddressStore(editingAddressId, data);
         setIsEditAddressOpen(false);
         setEditingAddressId(null);
+        toast.success('Cập nhật địa chỉ thành công');
       } else {
-        await addAddress(data);
+        console.log('Adding new address...');
+        const result = await addAddress(data);
+        console.log('Add address result:', result);
         setIsAddAddressOpen(false);
+        // Toast success đã được hiển thị trong store
       }
+      
+      // Reset form và selected values
       addressForm.reset();
+      setSelectedProvince(null);
+      setSelectedDistrict(null);
+      setSelectedWard(null);
+      resetDistricts();
+      resetWards();
+      
     } catch (error) {
       console.error('Error submitting address:', error);
-      if (error?.message) {
-        toast.error(error.message);
-      }
+      console.error('Error details:', error.response?.data);
+      
+      const errorMessage = error.response?.data?.message || error.message || 'Không thể lưu địa chỉ';
+      toast.error(errorMessage);
     } finally {
       setIsSubmittingAddress(false);
     }
@@ -395,6 +457,61 @@ const Profile = () => {
       other: 'Khác'
     };
     return labels[type] || type;
+  };
+
+  // Shipping handlers
+  const handleProvinceChange = async (value) => {
+    const provinceId = parseInt(value);
+    const province = provinces.find(p => p.ProvinceID === provinceId);
+    
+    setSelectedProvince(provinceId);
+    setSelectedDistrict(null);
+    setSelectedWard(null);
+    resetDistricts();
+    resetWards();
+    
+    // Cập nhật form - convert to string for validation
+    addressForm.setValue('province_id', String(provinceId));
+    addressForm.setValue('city', province?.ProvinceName || '');
+    addressForm.setValue('district_id', '');
+    addressForm.setValue('district', '');
+    addressForm.setValue('ward_code', '');
+    addressForm.setValue('ward', '');
+    
+    // Load districts
+    if (provinceId) {
+      await fetchDistricts(provinceId);
+    }
+  };
+
+  const handleDistrictChange = async (value) => {
+    const districtId = parseInt(value);
+    const district = districts.find(d => d.DistrictID === districtId);
+    
+    setSelectedDistrict(districtId);
+    setSelectedWard(null);
+    resetWards();
+    
+    // Cập nhật form - convert to string for validation
+    addressForm.setValue('district_id', String(districtId));
+    addressForm.setValue('district', district?.DistrictName || '');
+    addressForm.setValue('ward_code', '');
+    addressForm.setValue('ward', '');
+    
+    // Load wards
+    if (districtId) {
+      await fetchWards(districtId);
+    }
+  };
+
+  const handleWardChange = (value) => {
+    const ward = wards.find(w => w.WardCode === value);
+    
+    setSelectedWard(value);
+    
+    // Cập nhật form
+    addressForm.setValue('ward_code', value);
+    addressForm.setValue('ward', ward?.WardName || '');
   };
 
   // Order handlers
@@ -830,7 +947,16 @@ const Profile = () => {
               </DialogDescription>
             </DialogHeader>
             <Form {...addressForm}>
-              <form onSubmit={addressForm.handleSubmit(handleSubmitAddress)} className="space-y-4">
+              <form 
+                onSubmit={addressForm.handleSubmit(
+                  handleSubmitAddress,
+                  (errors) => {
+                    console.log('Form validation errors:', errors);
+                    toast.error('Vui lòng kiểm tra lại thông tin');
+                  }
+                )} 
+                className="space-y-4"
+              >
                 <div className="grid grid-cols-2 gap-4">
                   <FormField
                     control={addressForm.control}
@@ -872,65 +998,84 @@ const Profile = () => {
                     </FormItem>
                   )}
                 />
-                <div className="grid grid-cols-3 gap-4">
-                  <FormField
-                    control={addressForm.control}
-                    name="ward"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Phường/Xã</FormLabel>
+                <FormField
+                  control={addressForm.control}
+                  name="city"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Tỉnh/Thành phố *</FormLabel>
+                      <Select 
+                        value={selectedProvince?.toString() || ''} 
+                        onValueChange={handleProvinceChange}
+                      >
                         <FormControl>
-                          <Input {...field} />
+                          <SelectTrigger>
+                            <SelectValue placeholder="Chọn tỉnh/thành phố" />
+                          </SelectTrigger>
                         </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                        <SelectContent>
+                          {provinces.map((province) => (
+                            <SelectItem key={province.ProvinceID} value={province.ProvinceID.toString()}>
+                              {province.ProvinceName}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="grid grid-cols-2 gap-4">
                   <FormField
                     control={addressForm.control}
                     name="district"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Quận/Huyện</FormLabel>
-                        <FormControl>
-                          <Input {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={addressForm.control}
-                    name="city"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Thành phố *</FormLabel>
-                        <FormControl>
-                          <Input {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                <div className="grid grid-cols-3 gap-4">
-                  
-                  <FormField
-                    control={addressForm.control}
-                    name="type"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Loại địa chỉ</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value || "home"}>
+                        <FormLabel>Quận/Huyện *</FormLabel>
+                        <Select 
+                          value={selectedDistrict?.toString() || ''} 
+                          onValueChange={handleDistrictChange}
+                          disabled={!selectedProvince}
+                        >
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Chọn loại" />
+                              <SelectValue placeholder="Chọn quận/huyện" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="home">Nhà riêng</SelectItem>
-                            <SelectItem value="office">Văn phòng</SelectItem>
-                            <SelectItem value="other">Khác</SelectItem>
+                            {districts.map((district) => (
+                              <SelectItem key={district.DistrictID} value={district.DistrictID.toString()}>
+                                {district.DistrictName}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={addressForm.control}
+                    name="ward"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Phường/Xã *</FormLabel>
+                        <Select 
+                          value={selectedWard || ''} 
+                          onValueChange={handleWardChange}
+                          disabled={!selectedDistrict}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Chọn phường/xã" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {wards.map((ward) => (
+                              <SelectItem key={ward.WardCode} value={ward.WardCode}>
+                                {ward.WardName}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -938,6 +1083,28 @@ const Profile = () => {
                     )}
                   />
                 </div>
+                <FormField
+                  control={addressForm.control}
+                  name="type"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Loại địa chỉ</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value || "home"}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Chọn loại" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="home">Nhà riêng</SelectItem>
+                          <SelectItem value="office">Văn phòng</SelectItem>
+                          <SelectItem value="other">Khác</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 <FormField
                   control={addressForm.control}
                   name="is_default"
@@ -985,7 +1152,16 @@ const Profile = () => {
               </DialogDescription>
             </DialogHeader>
             <Form {...addressForm}>
-              <form onSubmit={addressForm.handleSubmit(handleSubmitAddress)} className="space-y-4">
+              <form 
+                onSubmit={addressForm.handleSubmit(
+                  handleSubmitAddress,
+                  (errors) => {
+                    console.log('Form validation errors:', errors);
+                    toast.error('Vui lòng kiểm tra lại thông tin');
+                  }
+                )} 
+                className="space-y-4"
+              >
                 <div className="grid grid-cols-2 gap-4">
                   <FormField
                     control={addressForm.control}
@@ -1027,65 +1203,84 @@ const Profile = () => {
                     </FormItem>
                   )}
                 />
-                <div className="grid grid-cols-3 gap-4">
-                  <FormField
-                    control={addressForm.control}
-                    name="ward"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Phường/Xã</FormLabel>
+                <FormField
+                  control={addressForm.control}
+                  name="city"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Tỉnh/Thành phố *</FormLabel>
+                      <Select 
+                        value={selectedProvince?.toString() || ''} 
+                        onValueChange={handleProvinceChange}
+                      >
                         <FormControl>
-                          <Input {...field} />
+                          <SelectTrigger>
+                            <SelectValue placeholder="Chọn tỉnh/thành phố" />
+                          </SelectTrigger>
                         </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                        <SelectContent>
+                          {provinces.map((province) => (
+                            <SelectItem key={province.ProvinceID} value={province.ProvinceID.toString()}>
+                              {province.ProvinceName}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="grid grid-cols-2 gap-4">
                   <FormField
                     control={addressForm.control}
                     name="district"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Quận/Huyện</FormLabel>
-                        <FormControl>
-                          <Input {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={addressForm.control}
-                    name="city"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Thành phố *</FormLabel>
-                        <FormControl>
-                          <Input {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                <div className="grid grid-cols-3 gap-4">
-                  
-                  <FormField
-                    control={addressForm.control}
-                    name="type"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Loại địa chỉ</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <FormLabel>Quận/Huyện *</FormLabel>
+                        <Select 
+                          value={selectedDistrict?.toString() || ''} 
+                          onValueChange={handleDistrictChange}
+                          disabled={!selectedProvince}
+                        >
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Chọn loại" />
+                              <SelectValue placeholder="Chọn quận/huyện" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="home">Nhà riêng</SelectItem>
-                            <SelectItem value="office">Văn phòng</SelectItem>
-                            <SelectItem value="other">Khác</SelectItem>
+                            {districts.map((district) => (
+                              <SelectItem key={district.DistrictID} value={district.DistrictID.toString()}>
+                                {district.DistrictName}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={addressForm.control}
+                    name="ward"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Phường/Xã *</FormLabel>
+                        <Select 
+                          value={selectedWard || ''} 
+                          onValueChange={handleWardChange}
+                          disabled={!selectedDistrict}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Chọn phường/xã" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {wards.map((ward) => (
+                              <SelectItem key={ward.WardCode} value={ward.WardCode}>
+                                {ward.WardName}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -1093,6 +1288,28 @@ const Profile = () => {
                     )}
                   />
                 </div>
+                <FormField
+                  control={addressForm.control}
+                  name="type"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Loại địa chỉ</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Chọn loại" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="home">Nhà riêng</SelectItem>
+                          <SelectItem value="office">Văn phòng</SelectItem>
+                          <SelectItem value="other">Khác</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 <FormField
                   control={addressForm.control}
                   name="is_default"
@@ -1375,8 +1592,7 @@ const Profile = () => {
                       <p className="font-medium text-base">{selectedOrder.recipient_name || 'N/A'}</p>
                       <p className="text-base text-gray-600 mt-1">{selectedOrder.recipient_phone || selectedOrder.user_phone || 'N/A'}</p>
                       <p className="text-base text-gray-600 mt-2">
-                        {selectedOrder.address_line1 || 'Địa chỉ chưa cập nhật'}
-                        {selectedOrder.address_line2 && `, ${selectedOrder.address_line2}`}
+                        {selectedOrder.address_line || 'Địa chỉ chưa cập nhật'}
                         {selectedOrder.ward && `, ${selectedOrder.ward}`}
                         {selectedOrder.district && `, ${selectedOrder.district}`}
                         {selectedOrder.city && `, ${selectedOrder.city}`}

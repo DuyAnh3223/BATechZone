@@ -531,8 +531,7 @@ const AdminOrder = () => {
                       <div className="text-gray-600 mb-1">Địa chỉ giao hàng:</div>
                       <div className="font-semibold text-gray-900">
                         {[
-                          orderDetail.address_line1 || orderDetail.addressLine1,
-                          orderDetail.address_line2 || orderDetail.addressLine2,
+                          orderDetail.address_line,
                           orderDetail.ward,
                           orderDetail.district,
                           orderDetail.city

@@ -43,6 +43,7 @@ import { useCartStore } from "@/stores/useCartStore";
 import { useCartItemStore } from "@/stores/useCartItemStore";
 import { useUserAuthStore } from "@/stores/useUserAuthStore";
 import { useOrderStore } from "@/stores/useOrderStore";
+import { useShippingStore } from "@/stores/useShippingStore";
 import { couponService } from "@/services/couponService";
 import { toast } from "sonner";
 import { useEffect } from "react";
@@ -59,6 +60,17 @@ const Checkout = () => {
     reset: resetCartItems
   } = useCartItemStore();
   const { createOrder, loading: orderLoading } = useOrderStore();
+  const {
+    provinces,
+    districts,
+    wards,
+    fetchProvinces,
+    fetchDistricts,
+    fetchWards,
+    calculateShippingFee: calculateShippingFeeAPI,
+    resetDistricts,
+    resetWards,
+  } = useShippingStore();
   const [isLoadingCart, setIsLoadingCart] = useState(true);
   const [step, setStep] = useState(1);
   const [paymentMethod, setPaymentMethod] = useState("cod");
@@ -66,6 +78,11 @@ const Checkout = () => {
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [discountAmount, setDiscountAmount] = useState(0);
   const [isValidatingCoupon, setIsValidatingCoupon] = useState(false);
+  const [selectedProvince, setSelectedProvince] = useState(null);
+  const [selectedDistrict, setSelectedDistrict] = useState(null);
+  const [selectedWard, setSelectedWard] = useState(null);
+  const [shippingFee, setShippingFee] = useState(0);
+  const [isCalculatingShipping, setIsCalculatingShipping] = useState(false);
   
   const form = useForm({
     defaultValues: {
@@ -74,6 +91,7 @@ const Checkout = () => {
       email: "",
       province: "",
       district: "",
+      ward: "",
       address: "",
       note: "",
       paymentMethod: "cod",
@@ -144,6 +162,9 @@ const Checkout = () => {
       try {
         setIsLoadingCart(true);
         
+        // Load provinces for shipping
+        await fetchProvinces();
+        
         // 1. Lấy hoặc tạo cart
         let cartData = {};
         if (user) {
@@ -194,13 +215,93 @@ const Checkout = () => {
   };
 
   const calculateShipping = () => {
-    return 50000; // Phí ship cố định
+    return shippingFee; // Sử dụng phí ship từ API
   };
 
   const calculateTotal = () => {
     const subtotal = calculateSubtotal();
     const shipping = calculateShipping();
     return Math.max(0, subtotal + shipping - discountAmount);
+  };
+
+  // Shipping handlers
+  const handleProvinceChange = async (value) => {
+    const provinceId = parseInt(value);
+    const province = provinces.find(p => p.ProvinceID === provinceId);
+    
+    setSelectedProvince(provinceId);
+    setSelectedDistrict(null);
+    setSelectedWard(null);
+    setShippingFee(0);
+    resetDistricts();
+    resetWards();
+    
+    form.setValue('province', province?.ProvinceName || '');
+    form.setValue('district', '');
+    form.setValue('ward', '');
+    
+    if (provinceId) {
+      await fetchDistricts(provinceId);
+    }
+  };
+
+  const handleDistrictChange = async (value) => {
+    const districtId = parseInt(value);
+    const district = districts.find(d => d.DistrictID === districtId);
+    
+    setSelectedDistrict(districtId);
+    setSelectedWard(null);
+    setShippingFee(0);
+    resetWards();
+    
+    form.setValue('district', district?.DistrictName || '');
+    form.setValue('ward', '');
+    
+    if (districtId) {
+      await fetchWards(districtId);
+    }
+  };
+
+  const handleWardChange = async (value) => {
+    const ward = wards.find(w => w.WardCode === value);
+    
+    setSelectedWard(value);
+    form.setValue('ward', ward?.WardName || '');
+    
+    // Tính phí vận chuyển khi đã chọn đầy đủ thông tin
+    if (selectedDistrict && value) {
+      await calculateShippingFeeForOrder(selectedDistrict, value);
+    }
+  };
+
+  const calculateShippingFeeForOrder = async (districtId, wardCode) => {
+    try {
+      setIsCalculatingShipping(true);
+      
+      // Tính tổng khối lượng (giả sử mỗi sản phẩm 500g)
+      const totalWeight = (cartItems?.length || 0) * 500;
+      const insuranceValue = calculateSubtotal();
+      
+      const payload = {
+        toDistrictId: districtId,
+        toWardCode: wardCode,
+        weight: totalWeight,
+        insuranceValue: insuranceValue
+      };
+      
+      const response = await calculateShippingFeeAPI(payload);
+      
+      if (response && response.total) {
+        setShippingFee(response.total);
+        toast.success(`Phí vận chuyển: ${formatPrice(response.total)}`);
+      }
+    } catch (error) {
+      console.error('Error calculating shipping fee:', error);
+      toast.error('Không thể tính phí vận chuyển');
+      setShippingFee(50000); // Fallback to default
+    } finally {
+      setIsCalculatingShipping(false);
+    }
   };
 
   const onSubmit = async (data) => {
@@ -243,6 +344,7 @@ const Checkout = () => {
         email: formData.email,
         province: formData.province,
         district: formData.district,
+        ward: formData.ward,
         address: formData.address,
         note: formData.note
       } : null;
@@ -267,7 +369,7 @@ const Checkout = () => {
         const buyerName = formData.fullName;
         const buyerEmail = formData.email || `user_${Date.now()}@batechzone.com`;
         const buyerPhone = formData.phone;
-        const buyerAddress = `${formData.address}, ${formData.district}, ${formData.province}`;
+        const buyerAddress = `${formData.address}, ${formData.ward}, ${formData.district}, ${formData.province}`;
         
         // Cập nhật payment_method, payment_status và order_status cho online payment
         const momoOrderData = {
@@ -340,7 +442,7 @@ const Checkout = () => {
         const buyerName = formData.fullName;
         const buyerEmail = formData.email || `user_${Date.now()}@batechzone.com`;
         const buyerPhone = formData.phone;
-        const buyerAddress = `${formData.address}, ${formData.district}, ${formData.province}`;
+        const buyerAddress = `${formData.address}, ${formData.ward}, ${formData.district}, ${formData.province}`;
         
         // Cập nhật payment_method cho VNPay, status sẽ được update sau khi thanh toán
         const vnpayOrderData = {
@@ -518,8 +620,8 @@ const Checkout = () => {
                           <FormItem>
                             <FormLabel>Tỉnh/Thành phố</FormLabel>
                             <Select
-                              onValueChange={field.onChange}
-                              defaultValue={field.value}
+                              value={selectedProvince?.toString() || ''}
+                              onValueChange={handleProvinceChange}
                             >
                               <FormControl>
                                 <SelectTrigger>
@@ -527,9 +629,11 @@ const Checkout = () => {
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                <SelectItem value="hcm">TP. Hồ Chí Minh</SelectItem>
-                                <SelectItem value="hn">Hà Nội</SelectItem>
-                                {/* Add more cities */}
+                                {provinces.map((province) => (
+                                  <SelectItem key={province.ProvinceID} value={province.ProvinceID.toString()}>
+                                    {province.ProvinceName}
+                                  </SelectItem>
+                                ))}
                               </SelectContent>
                             </Select>
                             <FormMessage />
@@ -545,8 +649,9 @@ const Checkout = () => {
                           <FormItem>
                             <FormLabel>Quận/Huyện</FormLabel>
                             <Select
-                              onValueChange={field.onChange}
-                              defaultValue={field.value}
+                              value={selectedDistrict?.toString() || ''}
+                              onValueChange={handleDistrictChange}
+                              disabled={!selectedProvince}
                             >
                               <FormControl>
                                 <SelectTrigger>
@@ -554,9 +659,11 @@ const Checkout = () => {
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                <SelectItem value="q1">Quận 1</SelectItem>
-                                <SelectItem value="q2">Quận 2</SelectItem>
-                                {/* Add more districts */}
+                                {districts.map((district) => (
+                                  <SelectItem key={district.DistrictID} value={district.DistrictID.toString()}>
+                                    {district.DistrictName}
+                                  </SelectItem>
+                                ))}
                               </SelectContent>
                             </Select>
                             <FormMessage />
@@ -564,6 +671,36 @@ const Checkout = () => {
                         )}
                       />
                     </div>
+
+                    <FormField
+                      control={form.control}
+                      name="ward"
+                      rules={{ required: "Vui lòng chọn phường/xã" }}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Phường/Xã</FormLabel>
+                          <Select
+                            value={selectedWard || ''}
+                            onValueChange={handleWardChange}
+                            disabled={!selectedDistrict}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Chọn phường/xã" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {wards.map((ward) => (
+                                <SelectItem key={ward.WardCode} value={ward.WardCode}>
+                                  {ward.WardName}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
                     <FormField
                       control={form.control}

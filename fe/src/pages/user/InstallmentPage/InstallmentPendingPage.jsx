@@ -31,7 +31,8 @@ const InstallmentPendingPage = () => {
     selectedMonths = 6,
     selectedDownPaymentPercent = 20,
     userInfo = {},
-    shippingAddress = {}
+    shippingAddress = {},
+    shippingFee = 0
   } = pendingData;
 
   const formatCurrency = (amount) => {
@@ -365,12 +366,35 @@ const InstallmentPendingPage = () => {
             <CardHeader>
               <CardTitle className="text-base">Địa chỉ giao hàng</CardTitle>
             </CardHeader>
-            <CardContent>
-              <p className="text-sm text-gray-900 font-medium">{shippingAddress.fullName}</p>
-              <p className="text-sm text-gray-600 mt-1">{shippingAddress.phone}</p>
-              <p className="text-sm text-gray-600 mt-2">
-                {shippingAddress.address}, {shippingAddress.district}, {shippingAddress.province}
-              </p>
+            <CardContent className="space-y-3">
+              <div>
+                <p className="text-sm text-gray-900 font-medium">{shippingAddress.fullName}</p>
+                <p className="text-sm text-gray-600 mt-1">{shippingAddress.phone}</p>
+              </div>
+              <Separator />
+              <div>
+                <p className="text-xs text-gray-500 mb-1">Địa chỉ</p>
+                <p className="text-sm text-gray-600">
+                  {shippingAddress.address}
+                </p>
+                <p className="text-sm text-gray-600 mt-1">
+                  {shippingAddress.ward && `${shippingAddress.ward}, `}
+                  {shippingAddress.district}, {shippingAddress.province}
+                </p>
+              </div>
+              {shippingFee > 0 && (
+                <>
+                  <Separator />
+                  <div className="bg-green-50 p-3 rounded-lg">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-gray-600">Phí vận chuyển</span>
+                      <span className="text-base font-bold text-green-600">
+                        {formatCurrency(shippingFee)}
+                      </span>
+                    </div>
+                  </div>
+                </>
+              )}
             </CardContent>
           </Card>
 

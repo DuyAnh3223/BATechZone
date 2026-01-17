@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,10 +21,11 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { ShoppingCart, CreditCard, ArrowLeft } from 'lucide-react';
+import { ShoppingCart, CreditCard, ArrowLeft, Truck } from 'lucide-react';
 import { useCartItemStore } from '@/stores/useCartItemStore';
 import { useOrderStore } from '@/stores/useOrderStore';
 import { useUserAuthStore } from '@/stores/useUserAuthStore';
+import { useShippingStore } from '@/stores/useShippingStore';
 import { toast } from 'sonner';
 
 // Base URL for serving uploads
@@ -37,9 +38,6 @@ const toAbsoluteUrl = (url) => {
   return url;
 };
 
-// Import constants
-import { provinces, districtsByProvince } from './constants';
-
 const InstallmentCheckoutPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -47,7 +45,25 @@ const InstallmentCheckoutPage = () => {
   const { cartItems, reset: resetCartItems } = useCartItemStore();
   const { createOrder, loading: orderLoading } = useOrderStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedProvince, setSelectedProvince] = useState('hcm');
+  
+  // Shipping states
+  const {
+    provinces,
+    districts,
+    wards,
+    fetchProvinces,
+    fetchDistricts,
+    fetchWards,
+    calculateShippingFee,
+    resetDistricts,
+    resetWards,
+  } = useShippingStore();
+  
+  const [selectedProvince, setSelectedProvince] = useState(null);
+  const [selectedDistrict, setSelectedDistrict] = useState(null);
+  const [selectedWard, setSelectedWard] = useState(null);
+  const [shippingFee, setShippingFee] = useState(0);
+  const [isCalculatingShipping, setIsCalculatingShipping] = useState(false);
 
   // Get installment data from navigation state
   const installmentData = location.state || {};
@@ -74,11 +90,104 @@ const InstallmentCheckoutPage = () => {
       email: user?.email || '',
       province: '',
       district: '',
+      ward: '',
       address: '',
       note: '',
       idNumber: '',
     },
   });
+
+  // Fetch provinces on mount
+  useEffect(() => {
+    fetchProvinces();
+  }, []);
+
+  // Calculate shipping fee when ward is selected
+  useEffect(() => {
+    if (selectedDistrict && selectedWard && cartItems && cartItems.length > 0) {
+      calculateShippingFeeForOrder();
+    }
+  }, [selectedDistrict, selectedWard, cartItems]);
+
+  // Calculate shipping fee for the order
+  const calculateShippingFeeForOrder = async () => {
+    try {
+      setIsCalculatingShipping(true);
+      
+      const districtId = parseInt(selectedDistrict);
+      const wardCode = selectedWard;
+      
+      // Calculate weight (assume 500g per item)
+      const totalWeight = cartItems.reduce((total, item) => {
+        return total + (parseInt(item.quantity || 1) * 500);
+      }, 0);
+      
+      // Calculate insurance value (product total)
+      const insuranceValue = cartItems.reduce((total, item) => {
+        return total + (parseFloat(item.price || 0) * parseInt(item.quantity || 1));
+      }, 0);
+      
+      const payload = {
+        toDistrictId: districtId,
+        toWardCode: wardCode,
+        weight: totalWeight,
+        insuranceValue: insuranceValue
+      };
+      
+      const result = await calculateShippingFee(payload);
+      
+      if (result && result.total) {
+        setShippingFee(result.total);
+        toast.success(`Phí vận chuyển: ${formatCurrency(result.total)}`);
+      } else {
+        setShippingFee(50000);
+        toast.info('Sử dụng phí vận chuyển mặc định: 50.000đ');
+      }
+    } catch (error) {
+      console.error('Error calculating shipping fee:', error);
+      setShippingFee(50000);
+      toast.error('Không thể tính phí vận chuyển, sử dụng phí mặc định');
+    } finally {
+      setIsCalculatingShipping(false);
+    }
+  };
+
+  // Handle province change
+  const handleProvinceChange = async (provinceId) => {
+    setSelectedProvince(provinceId);
+    setSelectedDistrict(null);
+    setSelectedWard(null);
+    resetDistricts();
+    resetWards();
+    form.setValue('province', String(provinceId));
+    form.setValue('district', '');
+    form.setValue('ward', '');
+    setShippingFee(0);
+    
+    if (provinceId) {
+      await fetchDistricts(provinceId);
+    }
+  };
+
+  // Handle district change
+  const handleDistrictChange = async (districtId) => {
+    setSelectedDistrict(districtId);
+    setSelectedWard(null);
+    resetWards();
+    form.setValue('district', String(districtId));
+    form.setValue('ward', '');
+    setShippingFee(0);
+    
+    if (districtId) {
+      await fetchWards(districtId);
+    }
+  };
+
+  // Handle ward change
+  const handleWardChange = (wardCode) => {
+    setSelectedWard(wardCode);
+    form.setValue('ward', wardCode);
+  };
 
   const handlePlaceOrder = async (formData) => {
     if (!calculation || !cartItems || cartItems.length === 0) {
@@ -117,7 +226,7 @@ const InstallmentCheckoutPage = () => {
       const orderData = {
         userId: user?.user_id || user?.userId || null,
         discountAmount: 0,
-        shippingFee: 0,
+        shippingFee: shippingFee,
         taxAmount: 0,
         notes: formData.note || null,
         paymentMethod: 'installment',
@@ -137,8 +246,12 @@ const InstallmentCheckoutPage = () => {
         fullName: formData.fullName,
         phone: formData.phone,
         email: formData.email,
-        province: formData.province,
-        district: formData.district,
+        province: provinces.find(p => p.ProvinceID === parseInt(formData.province))?.ProvinceName || '',
+        provinceId: parseInt(formData.province),
+        district: districts.find(d => d.DistrictID === parseInt(formData.district))?.DistrictName || '',
+        districtId: parseInt(formData.district),
+        ward: wards.find(w => w.WardCode === formData.ward)?.WardName || '',
+        wardCode: formData.ward,
         address: formData.address,
       };
 
@@ -173,7 +286,8 @@ const InstallmentCheckoutPage = () => {
               phone: formData.phone,
               idNumber: formData.idNumber
             },
-            shippingAddress: shippingAddress
+            shippingAddress: shippingAddress,
+            shippingFee: shippingFee
           }
         });
       } else {
@@ -295,6 +409,41 @@ const InstallmentCheckoutPage = () => {
             </CardContent>
           </Card>
 
+          {/* Shipping Fee Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Truck className="w-5 h-5" />
+                Phí vận chuyển
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {isCalculatingShipping ? (
+                  <div className="text-center py-4">
+                    <p className="text-sm text-gray-500">Đang tính phí vận chuyển...</p>
+                  </div>
+                ) : shippingFee > 0 ? (
+                  <div className="bg-green-50 p-3 rounded-lg">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-gray-600">Phí giao hàng</span>
+                      <span className="text-lg font-bold text-green-600">
+                        {formatCurrency(shippingFee)}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Phí vận chuyển được tính riêng, không tính vào trả góp
+                    </p>
+                  </div>
+                ) : (
+                  <div className="text-center py-4">
+                    <p className="text-sm text-gray-500">Chọn địa chỉ giao hàng để tính phí</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Payment Summary */}
           <Card>
             <CardHeader>
@@ -354,13 +503,40 @@ const InstallmentCheckoutPage = () => {
                 <Separator />
 
                 <div className="flex justify-between items-start">
-                  <span className="text-sm text-gray-600">Tổng tiền</span>
+                  <span className="text-sm text-gray-600">Tổng tiền trả góp</span>
                   <div className="text-right">
                     <p className="text-xl font-bold text-gray-900">
                       {formatCurrency(calculation.totalPayment)}
                     </p>
                   </div>
                 </div>
+
+                {shippingFee > 0 && (
+                  <>
+                    <div className="flex justify-between items-start">
+                      <span className="text-sm text-gray-600">Phí vận chuyển</span>
+                      <div className="text-right">
+                        <p className="text-lg font-semibold text-green-600">
+                          {formatCurrency(shippingFee)}
+                        </p>
+                      </div>
+                    </div>
+
+                    <Separator className="border-dashed" />
+
+                    <div className="flex justify-between items-start bg-red-50 p-3 rounded-lg">
+                      <span className="text-base font-semibold text-gray-900">Tổng thanh toán</span>
+                      <div className="text-right">
+                        <p className="text-2xl font-bold text-red-600">
+                          {formatCurrency(calculation.totalPayment + shippingFee)}
+                        </p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Trả góp + Vận chuyển
+                        </p>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
 
               <Separator />
@@ -510,20 +686,21 @@ const InstallmentCheckoutPage = () => {
                           <FormLabel>Tỉnh/Thành phố</FormLabel>
                           <FormControl>
                             <Select 
-                              value={field.value} 
+                              value={field.value}
                               onValueChange={(value) => {
-                                field.onChange(value);
-                                setSelectedProvince(value);
-                                form.setValue('district', '');
+                                handleProvinceChange(value);
                               }}
                             >
                               <SelectTrigger className="w-full">
                                 <SelectValue placeholder="Chọn tỉnh/thành phố" />
                               </SelectTrigger>
                               <SelectContent>
-                                {provinces.map((prov) => (
-                                  <SelectItem key={prov.code} value={prov.code}>
-                                    {prov.name}
+                                {provinces?.map((province) => (
+                                  <SelectItem 
+                                    key={province.ProvinceID} 
+                                    value={String(province.ProvinceID)}
+                                  >
+                                    {province.ProvinceName}
                                   </SelectItem>
                                 ))}
                               </SelectContent>
@@ -544,15 +721,56 @@ const InstallmentCheckoutPage = () => {
                           <FormControl>
                             <Select 
                               value={field.value}
-                              onValueChange={field.onChange}
+                              onValueChange={(value) => {
+                                handleDistrictChange(value);
+                              }}
+                              disabled={!selectedProvince || districts.length === 0}
                             >
                               <SelectTrigger className="w-full">
                                 <SelectValue placeholder="Chọn quận/huyện" />
                               </SelectTrigger>
                               <SelectContent>
-                                {districtsByProvince[selectedProvince]?.map((district) => (
-                                  <SelectItem key={district} value={district}>
-                                    {district}
+                                {districts?.map((district) => (
+                                  <SelectItem 
+                                    key={district.DistrictID} 
+                                    value={String(district.DistrictID)}
+                                  >
+                                    {district.DistrictName}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="ward"
+                      rules={{ required: "Vui lòng chọn phường/xã" }}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Phường/Xã</FormLabel>
+                          <FormControl>
+                            <Select 
+                              value={field.value}
+                              onValueChange={(value) => {
+                                handleWardChange(value);
+                              }}
+                              disabled={!selectedDistrict || wards.length === 0}
+                            >
+                              <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Chọn phường/xã" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {wards?.map((ward) => (
+                                  <SelectItem 
+                                    key={ward.WardCode} 
+                                    value={ward.WardCode}
+                                  >
+                                    {ward.WardName}
                                   </SelectItem>
                                 ))}
                               </SelectContent>

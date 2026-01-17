@@ -62,10 +62,15 @@ class OrderService {
 
       // (4) Nếu paymentMethod = 'installment' → gọi InstallmentService
       if (orderData.paymentMethod === 'installment' && orderData.installmentDetails) {
+        // ✨ QUAN TRỌNG: Chỉ tính trả góp trên giá sản phẩm (subtotal)
+        // Phí vận chuyển KHÔNG được tính vào lãi suất
+        // Lãi suất chỉ áp dụng cho tổng tiền sản phẩm
+        const installmentBaseAmount = subtotal - (orderData.discountAmount || 0);
+        
         const installmentData = {
           order_id: orderId,
           user_id: orderData.userId,
-          total_amount: totalAmount, // Giá đơn hàng GỐC (chưa tính lãi)
+          total_amount: installmentBaseAmount, // CHỈ giá sản phẩm (không bao gồm phí vận chuyển)
           total_with_interest: orderData.installmentDetails.totalWithInterest,
           down_payment: orderData.installmentDetails.downPayment || 0,
           num_terms: orderData.installmentDetails.months,
@@ -80,6 +85,7 @@ class OrderService {
         installmentId = installmentResult.installment.installment_id;
 
         console.log(`✅ Created installment #${installmentId} for order #${orderId}`);
+        console.log(`📊 Installment calculation: Product total ${installmentBaseAmount}đ (excluding shipping ${orderData.shippingFee}đ)`);
       }
 
       return {
