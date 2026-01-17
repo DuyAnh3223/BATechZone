@@ -28,7 +28,7 @@ import warrantyRoutes from './warranty.routes.js';
 import serviceRequestRoutes from './serviceRequest.routes.js';
 //import compatibilityRoutes from './compatibilityRoutes.js';
 import compatibilityRoutes from './compatibility.routes.js';
-
+import shippingRoutes from './shipping.routes.js';
 
 
 const router = express.Router();
@@ -54,6 +54,7 @@ router.use('/payments', paymentRoutes);
 router.use('/warranty', warrantyRoutes);
 router.use('/service-requests', serviceRequestRoutes);
 router.use('/compatibility', compatibilityRoutes);
+router.use('/shipping', shippingRoutes);
 
 
 
