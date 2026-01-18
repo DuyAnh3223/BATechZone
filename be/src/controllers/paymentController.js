@@ -225,14 +225,14 @@ export const paymentWebhook = async (req, res) => {
          SET payment_status = 'paid', 
              transaction_id = ?,
              paid_at = NOW()
-         WHERE transaction_id = ?`,
-        [transId, requestId]
+         WHERE order_id = ?`,
+        [transId, orderId]
       );
 
       // Lấy order_id từ payment
       const [payments] = await db.query(
-        'SELECT order_id FROM payments WHERE transaction_id = ?',
-        [requestId]
+        'SELECT order_id FROM payments WHERE order_id = ?',
+        [orderId]
       );
 
       if (payments.length > 0) {
@@ -242,10 +242,14 @@ export const paymentWebhook = async (req, res) => {
         await db.query(
           `UPDATE orders 
            SET payment_status = 'paid',
-               order_status = 'confirmed'
+               order_status = 'confirmed',
+               confirmed_at = NOW(),
+               updated_at = NOW()
            WHERE order_id = ?`,
           [dbOrderId]
         );
+
+        console.log(`✅ MoMo payment successful for order ${dbOrderId}`);
       }
 
       console.log(`✅ Payment successful for order: ${orderId}`);
@@ -538,7 +542,8 @@ export const vnpayWebhook = async (req, res) => {
         await db.query(
           `UPDATE orders 
            SET payment_status = 'paid',
-               order_status = 'shipping',
+               order_status = 'confirmed',
+               confirmed_at = NOW(),
                updated_at = NOW()
            WHERE order_id = ?`,
           [dbOrderId]

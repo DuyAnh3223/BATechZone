@@ -375,8 +375,8 @@ const Checkout = () => {
         const momoOrderData = {
           ...orderData,
           payment_method: 'momo',
-          payment_status: 'paid', // Thanh toán online thành công = đã thanh toán
-          order_status: 'shipping' // Đã thanh toán online -> Đang giao hàng
+          payment_status: 'pending', // Chờ webhook xác nhận thanh toán
+          order_status: 'pending' // Webhook sẽ cập nhật thành 'confirmed' khi thanh toán thành công
         };
         
         // Lưu thông tin order vào localStorage để tạo sau khi thanh toán
