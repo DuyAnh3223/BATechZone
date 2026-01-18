@@ -50,19 +50,26 @@ const SearchBar = () => {
         const [productsRes, categoriesRes] = await Promise.all([
           productService.listProducts({
             search: searchQuery,
-            is_active: true,
-            limit: 5,
-            page: 1
+            is_active: 1
           }),
           categoryService.listCategories({
             search: searchQuery,
-            is_active: true,
-            limit: 3,
-            page: 1
+            is_active: 1,
+            limit: 3
           })
         ]);
 
-        const products = productsRes?.data || [];
+        console.log('Products Response:', productsRes);
+        console.log('Categories Response:', categoriesRes);
+
+        // Parse products và limit ở client-side
+        let products = Array.isArray(productsRes?.data) ? productsRes.data : [];
+        products = products.slice(0, 5); // Limit to 5 products
+        
+        const categories = Array.isArray(categoriesRes?.data) ? categoriesRes.data : [];
+        
+        console.log('Parsed Products:', products);
+        console.log('Parsed Categories:', categories);
         
         // Fetch variant images for products
         const imagesMap = {};
@@ -79,7 +86,7 @@ const SearchBar = () => {
         
         setProductImages(imagesMap);
         setSuggestions({
-          categories: categoriesRes?.data || [],
+          categories: categories,
           products: products
         });
         setShowSuggestions(true);
@@ -132,6 +139,54 @@ const SearchBar = () => {
     }).format(price);
   };
 
+  // Check if discount is still valid
+  const isDiscountValid = (variant) => {
+    if (!variant.discount_percent || parseFloat(variant.discount_percent) <= 0) {
+      return false;
+    }
+    
+    const now = new Date();
+    const startDate = variant.discount_start_date ? new Date(variant.discount_start_date) : null;
+    const endDate = variant.discount_end_date ? new Date(variant.discount_end_date) : null;
+    
+    if (startDate && now < startDate) return false;
+    if (endDate && now > endDate) return false;
+    
+    return true;
+  };
+
+  // Get product price info (original price and discounted price if applicable)
+  const getProductPriceInfo = (product) => {
+    let variant = null;
+    
+    // Try to get default variant
+    if (product.variants && product.variants.length > 0) {
+      variant = product.variants.find(v => v.is_default === 1) || product.variants[0];
+    }
+    
+    const originalPrice = variant?.price 
+      ? parseFloat(variant.price) 
+      : (product.base_price ? parseFloat(product.base_price) : 0);
+    
+    // Check for discount
+    if (variant && isDiscountValid(variant)) {
+      const discountPercent = parseFloat(variant.discount_percent);
+      const discountedPrice = originalPrice * (1 - discountPercent / 100);
+      return {
+        originalPrice,
+        finalPrice: discountedPrice,
+        hasDiscount: true,
+        discountPercent
+      };
+    }
+    
+    return {
+      originalPrice,
+      finalPrice: originalPrice,
+      hasDiscount: false
+    };
+  };
+
   const hasSuggestions = suggestions.categories.length > 0 || suggestions.products.length > 0;
 
   return (
@@ -143,11 +198,7 @@ const SearchBar = () => {
           placeholder="Tìm kiếm sản phẩm..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              e.preventDefault(); // Prevent form submission
-            }
-          }}
+          onKeyDown={handleKeyDown}
           onFocus={() => {
             if (searchQuery.trim().length >= 2 && hasSuggestions) {
               setShowSuggestions(true);
@@ -156,7 +207,8 @@ const SearchBar = () => {
         />
         <Button 
           variant="ghost" 
-          className="flex-[2] bg-orange-500 text-white hover:bg-orange-600 px-3 py-1 rounded-l-none border border-l-0 border-orange-500 h-9 flex items-center justify-center cursor-default"
+          onClick={handleSearch}
+          className="flex-[2] bg-orange-500 text-white hover:bg-orange-600 px-3 py-1 rounded-l-none border border-l-0 border-orange-500 h-9 flex items-center justify-center cursor-pointer"
         >
           <Search className="size-4 mr-1.5" />
           <span className="text-sm font-medium whitespace-nowrap">Tìm kiếm</span>
@@ -246,10 +298,27 @@ const SearchBar = () => {
                           )}
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium text-gray-900 truncate">{product.product_name}</p>
-                            <div className="flex items-center gap-2 mt-1">
-                              <p className="text-sm font-semibold text-red-600">
-                                {formatPrice(product.default_variant_price || product.min_variant_price || 0)}
-                              </p>
+                            <div className="flex items-center gap-2 mt-1 flex-wrap">
+                              {(() => {
+                                const priceInfo = getProductPriceInfo(product);
+                                return (
+                                  <>
+                                    {priceInfo.hasDiscount && (
+                                      <span className="text-xs text-gray-400 line-through">
+                                        {formatPrice(priceInfo.originalPrice)}
+                                      </span>
+                                    )}
+                                    <p className="text-sm font-semibold text-red-600">
+                                      {formatPrice(priceInfo.finalPrice)}
+                                    </p>
+                                    {priceInfo.hasDiscount && (
+                                      <span className="text-xs bg-red-100 text-red-600 px-1.5 py-0.5 rounded">
+                                        -{priceInfo.discountPercent}%
+                                      </span>
+                                    )}
+                                  </>
+                                );
+                              })()}
                               {product.category_name && (
                                 <span className="text-xs text-gray-500">• {product.category_name}</span>
                               )}
