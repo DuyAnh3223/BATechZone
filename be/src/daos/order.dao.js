@@ -136,10 +136,17 @@ class OrderDAO {
         a.recipient_name, a.phone as recipient_phone,
         a.address_line, a.city, a.district,
         (SELECT COUNT(*) FROM order_items WHERE order_id = o.order_id) as item_count,
-        EXISTS(SELECT 1 FROM installments WHERE order_id = o.order_id) as is_installment
+        EXISTS(SELECT 1 FROM installments WHERE order_id = o.order_id) as is_installment,
+        i.total_amount as installment_total_amount,
+        i.down_payment as installment_down_payment,
+        i.monthly_payment as installment_monthly_payment,
+        i.num_terms as installment_num_terms,
+        i.interest_rate as installment_interest_rate,
+        (i.down_payment + (i.monthly_payment * i.num_terms)) as installment_total_with_interest
       FROM orders o
       LEFT JOIN users u ON o.user_id = u.user_id
       LEFT JOIN addresses a ON o.address_id = a.address_id
+      LEFT JOIN installments i ON o.order_id = i.order_id
       WHERE ${conditions.join(' AND ')}
       ORDER BY o.${sortBy} ${sortOrder}
       LIMIT ? OFFSET ?`,
@@ -301,6 +308,44 @@ class OrderDAO {
       `UPDATE orders 
       SET order_status = 'refunded',
           payment_status = 'refunded'
+      WHERE order_id = ?`,
+      [orderId]
+    );
+    return result.affectedRows;
+  }
+
+  /**
+   * Cập nhật order status và payment status cho đơn trả góp
+   * @param {number} orderId
+   * @param {Object} conn
+   * @returns {number} affectedRows
+   */
+  async updateInstallmentOrderStatus(orderId, conn = null) {
+    const connection = conn || db;
+    const [result] = await connection.query(
+      `UPDATE orders 
+      SET payment_status = 'paid',
+          order_status = 'confirmed',
+          confirmed_at = NOW(),
+          updated_at = NOW()
+      WHERE order_id = ?`,
+      [orderId]
+    );
+    return result.affectedRows;
+  }
+
+  /**
+   * Cập nhật payment status thành paid cho order
+   * @param {number} orderId
+   * @param {Object} conn
+   * @returns {number} affectedRows
+   */
+  async updatePaymentsToPaid(orderId, conn = null) {
+    const connection = conn || db;
+    const [result] = await connection.query(
+      `UPDATE payments 
+      SET payment_status = 'paid',
+          paid_at = NOW()
       WHERE order_id = ?`,
       [orderId]
     );

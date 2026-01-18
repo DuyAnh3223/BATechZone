@@ -130,12 +130,12 @@ const InstallmentDetailDialog = ({
                         )}
                       </div>
                     )}
-                    <div className="p-3 bg-purple-50 rounded-lg">
+                    {/* <div className="p-3 bg-purple-50 rounded-lg">
                       <p className="text-xs text-gray-600 mb-1">Góp mỗi tháng</p>
                       <p className="font-bold text-lg text-purple-600">
                         {formatPrice(installment.monthly_payment)}
                       </p>
-                    </div>
+                    </div> */}
                     <div className="p-3 bg-orange-50 rounded-lg">
                       <p className="text-xs text-gray-600 mb-1">Lãi suất</p>
                       <p className="font-bold text-lg text-orange-600">

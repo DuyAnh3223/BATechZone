@@ -230,6 +230,8 @@ const InstallmentCheckoutPage = () => {
         taxAmount: 0,
         notes: formData.note || null,
         paymentMethod: 'installment',
+        // paymentStatus: 'paid',
+        // orderStatus: 'confirmed',
         installmentDetails: {
           months: selectedPolicy?.terms || selectedMonths,
           downPayment: calculation.downPaymentAmount,

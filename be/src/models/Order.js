@@ -349,6 +349,13 @@ class Order {
           cancelledAt: orderInstance.cancelledAt,
           isInstallment: orderInstance.isInstallment,
           is_installment: orderInstance.is_installment,
+          // Thông tin trả góp (nếu có)
+          installmentTotalAmount: order.installment_total_amount,
+          installmentDownPayment: order.installment_down_payment,
+          installmentMonthlyPayment: order.installment_monthly_payment,
+          installmentNumTerms: order.installment_num_terms,
+          installmentInterestRate: order.installment_interest_rate,
+          installmentTotalWithInterest: order.installment_total_with_interest,
           // Thông tin từ users table
           userPhone: order.user_phone,
           username: order.username,

@@ -84,7 +84,14 @@ class OrderService {
         const installmentResult = await InstallmentService.createInstallment(installmentData);
         installmentId = installmentResult.installment.installment_id;
 
+        // Cập nhật trạng thái đơn hàng và thanh toán cho đơn trả góp
+        await OrderDAO.updateInstallmentOrderStatus(orderId);
+        
+        // Cập nhật trạng thái payment trong bảng payments nếu có
+        await OrderDAO.updatePaymentsToPaid(orderId);
+
         console.log(`✅ Created installment #${installmentId} for order #${orderId}`);
+        console.log(`✅ Updated order #${orderId} status: payment_status='paid', order_status='confirmed'`);
         console.log(`📊 Installment calculation: Product total ${installmentBaseAmount}đ (excluding shipping ${orderData.shippingFee}đ)`);
       }
 

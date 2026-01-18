@@ -81,7 +81,7 @@ const InstallmentList = ({
                 <TableHead>Sản phẩm</TableHead>
                 <TableHead>Tổng tiền</TableHead>
                 <TableHead>Trả trước</TableHead>
-                <TableHead>Góp/tháng</TableHead>
+                {/* <TableHead>Góp/tháng</TableHead> */}
                 <TableHead>Kỳ hạn</TableHead>
                 {/* <TableHead>Kỳ tiếp</TableHead> */}
                 <TableHead>Phí trễ</TableHead>
@@ -125,9 +125,9 @@ const InstallmentList = ({
                       </Badge>
                     )}
                   </TableCell>
-                  <TableCell className="font-semibold text-blue-600">
+                  {/* <TableCell className="font-semibold text-blue-600">
                     {formatPrice(installment.monthly_payment)}
-                  </TableCell>
+                  </TableCell> */}
                   <TableCell>
                     {installment.num_terms} tháng
                   </TableCell>

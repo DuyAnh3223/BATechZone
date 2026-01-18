@@ -530,6 +530,20 @@ const Profile = () => {
       }
       console.log('Payment Status:', fullOrderData.paymentStatus, fullOrderData.payment_status);
       
+      // Nếu là đơn hàng trả góp, lấy thông tin installment
+      if (fullOrderData.isInstallment || fullOrderData.is_installment) {
+        try {
+          // Import installmentService nếu cần
+          const { installmentService } = await import('@/services/installmentService');
+          const installmentResponse = await installmentService.getInstallmentByOrderId(fullOrderData.orderId || fullOrderData.order_id);
+          fullOrderData.installment = installmentResponse.data || installmentResponse;
+          console.log('Installment Data:', fullOrderData.installment);
+        } catch (error) {
+          console.error('Error fetching installment data:', error);
+          // Không throw error, chỉ log để không ảnh hưởng đến việc hiển thị order
+        }
+      }
+      
       setSelectedOrder(fullOrderData);
     } catch (error) {
       console.error('Error fetching order details:', error);
@@ -618,6 +632,27 @@ const Profile = () => {
     } catch (error) {
       return 'N/A';
     }
+  };
+
+  // Tính tổng tiền đơn hàng dựa trên phương thức thanh toán
+  const calculateOrderTotal = (order) => {
+    // Nếu là đơn hàng trả góp
+    if (order.isInstallment || order.is_installment) {
+      // Trường hợp 1: Có thông tin installment chi tiết (từ detail API)
+      if (order.installment) {
+        const totalWithInterest = parseFloat(order.installment.total_with_interest || order.installment.totalWithInterest || 0);
+        const shippingFee = parseFloat(order.shippingFee || order.shipping_fee || 0);
+        return totalWithInterest + shippingFee;
+      }
+      // Trường hợp 2: Có thông tin installment_total_with_interest (từ list API)
+      if (order.installment_total_with_interest || order.installmentTotalWithInterest) {
+        const totalWithInterest = parseFloat(order.installment_total_with_interest || order.installmentTotalWithInterest || 0);
+        const shippingFee = parseFloat(order.shippingFee || order.shipping_fee || 0);
+        return totalWithInterest + shippingFee;
+      }
+    }
+    // Đơn hàng thường: trả về total_amount
+    return parseFloat(order.totalAmount || order.total_amount || 0);
   };
 
   // Notification handlers
@@ -1391,7 +1426,7 @@ const Profile = () => {
                             {formatDate(order.createdAt || order.created_at)}
                           </TableCell>
                           <TableCell className="font-semibold">
-                            {formatPrice(order.totalAmount || order.total_amount)}
+                            {formatPrice(calculateOrderTotal(order))}
                           </TableCell>
                           <TableCell>
                             <Badge className={getOrderStatusColor(order.orderStatus || order.order_status)}>
@@ -1629,11 +1664,48 @@ const Profile = () => {
                         <span>{formatPrice(parseFloat(selectedOrder.taxAmount || selectedOrder.tax_amount || 0))}</span>
                       </div>
                     )}
+                    {/* Thông tin trả góp */}
+                    {(selectedOrder.isInstallment || selectedOrder.is_installment) && selectedOrder.installment && (
+                      <>
+                        <Separator />
+                        <div className="bg-blue-50 p-3 rounded-lg space-y-2">
+                          <p className="font-medium text-blue-900">Thông tin trả góp</p>
+                          <div className="flex justify-between text-sm">
+                            <span className="text-gray-600">Tổng giá trị hàng (gốc)</span>
+                            <span>{formatPrice(parseFloat(selectedOrder.installment.total_amount || selectedOrder.installment.totalAmount || 0))}</span>
+                          </div>
+                          {parseFloat(selectedOrder.installment.interest_rate || selectedOrder.installment.interestRate || 0) > 0 && (
+                            <div className="flex justify-between text-sm">
+                              <span className="text-gray-600">Lãi suất</span>
+                              <span>{parseFloat(selectedOrder.installment.interest_rate || selectedOrder.installment.interestRate || 0)}%</span>
+                            </div>
+                          )}
+                          <div className="flex justify-between text-sm">
+                            <span className="text-gray-600">Kỳ hạn</span>
+                            <span>{selectedOrder.installment.num_terms || selectedOrder.installment.numTerms} tháng</span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span className="text-gray-600">Tổng sau lãi</span>
+                            <span className="font-semibold">{formatPrice(parseFloat(selectedOrder.installment.total_with_interest || selectedOrder.installment.totalWithInterest || 0))}</span>
+                          </div>
+                          
+                          {/* <div className="flex justify-between text-sm">
+                            <span className="text-gray-600">Trả mỗi tháng</span>
+                            <span className="font-semibold text-blue-600">{formatPrice(parseFloat(selectedOrder.installment.monthly_payment || selectedOrder.installment.monthlyPayment || 0))}</span>
+                          </div> */}
+                        </div>
+                      </>
+                    )}
                     <Separator />
                     <div className="flex justify-between font-semibold text-xl">
                       <span>Tổng cộng</span>
-                      <span className="text-red-600">{formatPrice(parseFloat(selectedOrder.totalAmount || selectedOrder.total_amount || 0))}</span>
+                      <span className="text-red-600">{formatPrice(calculateOrderTotal(selectedOrder))}</span>
                     </div>
+                    {(selectedOrder.isInstallment || selectedOrder.is_installment) && selectedOrder.installment && (
+                      <p className="text-xs text-gray-500 italic">
+                        * Tổng cộng = Tổng sau lãi + Phí vận chuyển
+                      </p>
+                    )}
                   </div>
                 </div>
 
