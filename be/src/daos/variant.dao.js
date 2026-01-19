@@ -60,7 +60,10 @@ class VariantDAO {
             stock_quantity = ?,
             is_active = ?,
             is_default = ?,
-            warranty_period = ?
+            warranty_period = ?,
+            discount_percent = ?,
+            discount_start_date = ?,
+            discount_end_date = ?
         WHERE variant_id = ?`;
 
         const params = [
@@ -71,6 +74,9 @@ class VariantDAO {
             data.is_active || 1,
             data.is_default || 0,
             data.warranty_period || null,
+            data.discount_percent !== undefined ? data.discount_percent : null,
+            data.discount_start_date || null,
+            data.discount_end_date || null,
             variant_id
         ]
 

@@ -300,7 +300,7 @@ const UserLayout = () => {
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-4">
               {/* News Icon - Circular with purple background */}
-              <Link
+              {/* <Link
                 to="/blog"
                 className="relative transition-all duration-300 ease-in-out inline-flex items-center justify-center"
                 style={{
@@ -331,7 +331,7 @@ const UserLayout = () => {
                 }}
               >
                 <Newspaper className="size-6" style={{ color: "#ffffff" }} />
-              </Link>
+              </Link> */}
               {/* Shopping Cart Icon - Circular with blue background */}
               <CartDropdown cartItemsCount={cartItemsCount}>
                 <div

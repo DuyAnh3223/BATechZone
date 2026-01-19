@@ -282,6 +282,17 @@ const EditProductPage = () => {
         submitData.append('base_price', defaultVariant.price);
         submitData.append('warranty_period', defaultVariant.warranty_period || 0);
         submitData.append('stock_quantity', defaultVariant.stock_quantity || 0);
+        
+        // Thêm discount fields cho default variant
+        if (defaultVariant.discount_percent) {
+          submitData.append('discount_percent', parseFloat(defaultVariant.discount_percent));
+        }
+        if (defaultVariant.discount_start_date) {
+          submitData.append('discount_start_date', defaultVariant.discount_start_date);
+        }
+        if (defaultVariant.discount_end_date) {
+          submitData.append('discount_end_date', defaultVariant.discount_end_date);
+        }
       }
 
       await updateProduct(productId, submitData);

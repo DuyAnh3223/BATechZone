@@ -3,6 +3,15 @@ import { Package, Cpu } from "lucide-react";
 
 const TechnicalSpecs = ({ selectedVariant, variants, product }) => {
   
+  // DEBUG: Log variant data
+  console.log('🔍 TechnicalSpecs DEBUG:', {
+    selectedVariant,
+    variant_type: selectedVariant?.variant_type,
+    components: selectedVariant?.components,
+    bundle_items: selectedVariant?.bundle_items,
+    isBundle: selectedVariant?.variant_type === 'bundle'
+  });
+  
   // Check if this is a bundle product
   const isBundle = selectedVariant?.variant_type === 'bundle';
   const bundleItems = selectedVariant?.components || selectedVariant?.bundle_items || [];

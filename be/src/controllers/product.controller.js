@@ -192,7 +192,7 @@ async updateProduct(req, res) {
         }
 
         // Nếu có base_price, warranty_period, stock_quantity => cập nhật default variant
-        if (req.body.base_price || req.body.warranty_period !== undefined || req.body.stock_quantity !== undefined) {
+        if (req.body.base_price || req.body.warranty_period !== undefined || req.body.stock_quantity !== undefined || req.body.discount_percent !== undefined || req.body.discount_start_date || req.body.discount_end_date) {
             const variants = await VariantDAO.getVariantsByProductId(productId);
             const defaultVariant = variants.find(v => v.is_default === 1);
             
@@ -207,6 +207,17 @@ async updateProduct(req, res) {
                 }
                 if (req.body.stock_quantity !== undefined) {
                     variantUpdateData.stock_quantity = parseInt(req.body.stock_quantity);
+                }
+                
+                // Thêm xử lý discount fields
+                if (req.body.discount_percent !== undefined) {
+                    variantUpdateData.discount_percent = req.body.discount_percent ? parseFloat(req.body.discount_percent) : null;
+                }
+                if (req.body.discount_start_date !== undefined) {
+                    variantUpdateData.discount_start_date = req.body.discount_start_date || null;
+                }
+                if (req.body.discount_end_date !== undefined) {
+                    variantUpdateData.discount_end_date = req.body.discount_end_date || null;
                 }
                 
                 // Giữ nguyên các field cần thiết cho update
@@ -355,7 +366,9 @@ async getProductVariants(req, res) {
             });
         }
 
-        const variants = await VariantDAO.getVariantsByProductId(productId);
+        // Use VariantService instead of DAO to get bundle components
+        const VariantService = (await import('../services/variant.service.js')).default;
+        const variants = await VariantService.getVariantsByProductId(productId);
 
         res.json({
             success: true,

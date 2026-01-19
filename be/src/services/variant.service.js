@@ -126,8 +126,11 @@ class VariantService {
             const variantIds = variants.map(v => v.variant_id);
             const attributes = await VariantsAttributeValues.getAttributesWithDetailsByVariantIds(variantIds);
             
-            // Attach attributes to each variant
-            const variantsWithAttributes = variants.map(variant => {
+            // Dynamically import BundleDAO to avoid circular dependency
+            const BundleDAO = (await import('../daos/bundle.dao.js')).default;
+            
+            // Attach attributes and bundle components to each variant
+            const variantsWithAttributes = await Promise.all(variants.map(async (variant) => {
                 const variantAttributes = attributes
                     .filter(attr => attr.variant_id === variant.variant_id)
                     .map(attr => ({
@@ -137,12 +140,27 @@ class VariantService {
                         value_name: attr.value_name
                     }));
                 
-                return {
+                const result = {
                     ...variant,
                     attributes: variantAttributes,
                     attribute_values: variantAttributes // Alias for compatibility
                 };
-            });
+                
+                // If this is a bundle variant, load bundle components
+                if (variant.variant_type === 'bundle') {
+                    try {
+                        const components = await BundleDAO.getBundleItems(variant.variant_id);
+                        result.components = components;
+                        result.bundle_items = components; // Alias for compatibility
+                    } catch (error) {
+                        console.error(`Error loading bundle components for variant ${variant.variant_id}:`, error);
+                        result.components = [];
+                        result.bundle_items = [];
+                    }
+                }
+                
+                return result;
+            }));
             
             return variantsWithAttributes;
         } catch (error) {
