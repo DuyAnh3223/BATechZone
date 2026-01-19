@@ -85,7 +85,7 @@ const InstallmentList = ({
                 <TableHead>Kỳ hạn</TableHead>
                 {/* <TableHead>Kỳ tiếp</TableHead> */}
                 <TableHead>Phí trễ</TableHead>
-                <TableHead>Còn lại</TableHead>
+                <TableHead>Tiền gốc còn lại</TableHead>
                 <TableHead>Trạng thái</TableHead>
                 <TableHead className="text-right">Thao tác</TableHead>
               </TableRow>

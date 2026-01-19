@@ -469,18 +469,7 @@ const InstallmentCheckoutPage = () => {
 
                 {calculation.firstMonthPayment && calculation.lastMonthPayment ? (
                   <div className="bg-blue-50 p-3 rounded-lg space-y-2">
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs text-gray-600">Tháng đầu</span>
-                      <span className="text-sm font-semibold text-red-600">
-                        {formatCurrency(calculation.firstMonthPayment)}
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs text-gray-600">Tháng cuối</span>
-                      <span className="text-sm font-semibold text-green-600">
-                        {formatCurrency(calculation.lastMonthPayment)}
-                      </span>
-                    </div>
+                   
                     <div className="flex justify-between items-center pt-1 border-t border-blue-200">
                       <span className="text-xs text-gray-600">Trung bình/tháng</span>
                       <span className="text-base font-bold text-blue-900">
@@ -547,7 +536,7 @@ const InstallmentCheckoutPage = () => {
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Lãi suất:</span>
                   <span className="font-semibold text-blue-600">
-                    {calculation.interestRate}%/năm (Dư nợ giảm dần)
+                    {calculation.interestRate}%/năm 
                   </span>
                 </div>
               </div>
@@ -578,9 +567,7 @@ const InstallmentCheckoutPage = () => {
                       </table>
                     </div>
                   </div>
-                  <p className="text-xs text-gray-500 mt-1">
-                    💡 Số tiền giảm dần mỗi tháng theo phương pháp dư nợ giảm dần
-                  </p>
+                  
                 </div>
               )}
             </CardContent>

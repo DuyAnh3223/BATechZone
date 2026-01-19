@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link } from "react-router-dom";
-import { translatePaymentMethod, translatePaymentStatus, translateOrderStatus } from "@/utils/statusTranslations";
+import { translatePaymentStatus, translateOrderStatus } from "@/utils/statusTranslations";
 import { updateProfileSchema, addressSchema } from "@/lib/validations/authValidation";
 import {
   Card,
@@ -28,19 +28,9 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
-import { Star, ShoppingCart, Trash2, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { userApi } from "@/lib/axios";
 import { useUserAddressStore } from "@/stores/useAddressStore";
@@ -49,6 +39,7 @@ import { useUserAuthStore } from "@/stores/useUserAuthStore";
 import { useShippingStore } from "@/stores/useShippingStore";
 import InstallmentsTab from "./InstallmentsTab";
 import WarrantyTab from "./WarrantyTab";
+import OrdersTab from "./components/OrdersTab";
 import {
   Dialog,
   DialogContent,
@@ -232,9 +223,7 @@ const Profile = () => {
 
   // Order states
   const { user } = useUserAuthStore();
-  const { orders, loading: ordersLoading, fetchOrders, fetchOrderById, cancelOrder } = useOrderStore();
-  const [selectedOrder, setSelectedOrder] = useState(null);
-  const [isOrderDetailOpen, setIsOrderDetailOpen] = useState(false);
+  const { orders, loading: ordersLoading, fetchOrders } = useOrderStore();
 
   // Profile states
   const [userProfile, setUserProfile] = useState(null);
@@ -512,58 +501,6 @@ const Profile = () => {
     // Cập nhật form
     addressForm.setValue('ward_code', value);
     addressForm.setValue('ward', ward?.WardName || '');
-  };
-
-  // Order handlers
-  const handleViewOrderDetail = async (order) => {
-    try {
-      setIsOrderDetailOpen(true);
-      setSelectedOrder({ ...order, loading: true });
-      
-      // Fetch full order details with items and address
-      const fullOrderData = await fetchOrderById(order.orderId || order.order_id);
-      console.log('Full Order Data:', fullOrderData);
-      
-      // Lấy payment status từ payments array nếu order.paymentStatus trống
-      if (fullOrderData.payments && fullOrderData.payments.length > 0 && !fullOrderData.paymentStatus) {
-        fullOrderData.paymentStatus = fullOrderData.payments[0].paymentStatus || fullOrderData.payments[0].payment_status;
-      }
-      console.log('Payment Status:', fullOrderData.paymentStatus, fullOrderData.payment_status);
-      
-      // Nếu là đơn hàng trả góp, lấy thông tin installment
-      if (fullOrderData.isInstallment || fullOrderData.is_installment) {
-        try {
-          // Import installmentService nếu cần
-          const { installmentService } = await import('@/services/installmentService');
-          const installmentResponse = await installmentService.getInstallmentByOrderId(fullOrderData.orderId || fullOrderData.order_id);
-          fullOrderData.installment = installmentResponse.data || installmentResponse;
-          console.log('Installment Data:', fullOrderData.installment);
-        } catch (error) {
-          console.error('Error fetching installment data:', error);
-          // Không throw error, chỉ log để không ảnh hưởng đến việc hiển thị order
-        }
-      }
-      
-      setSelectedOrder(fullOrderData);
-    } catch (error) {
-      console.error('Error fetching order details:', error);
-      toast.error('Không thể tải chi tiết đơn hàng');
-      setIsOrderDetailOpen(false);
-    }
-  };
-
-  const handleCancelOrder = async (orderId) => {
-    if (!confirm('Bạn có chắc chắn muốn hủy đơn hàng này?')) {
-      return;
-    }
-    try {
-      await cancelOrder(orderId, 'Khách hàng hủy đơn');
-      toast.success('Đã hủy đơn hàng');
-      fetchOrders(); // Reload orders
-    } catch (error) {
-      console.error('Error canceling order:', error);
-      toast.error('Không thể hủy đơn hàng');
-    }
   };
 
   const getOrderStatusLabel = (status) => {
@@ -1384,350 +1321,18 @@ const Profile = () => {
 
         {/* Order History */}
         <TabsContent value="orders">
-          <Card>
-            <CardHeader>
-              <CardTitle>Đơn hàng của tôi</CardTitle>
-              <CardDescription>
-                Xem lại lịch sử đơn hàng của bạn
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {ordersLoading ? (
-                <div className="text-center py-8">
-                  <p className="text-gray-500">Đang tải đơn hàng...</p>
-                </div>
-              ) : orders.length === 0 ? (
-                <div className="text-center py-8">
-                  <p className="text-gray-500 mb-4">Bạn chưa có đơn hàng nào</p>
-                  <Button asChild>
-                    <Link to="/">Tiếp tục mua sắm</Link>
-                  </Button>
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Mã đơn hàng</TableHead>
-                        <TableHead>Ngày đặt</TableHead>
-                        <TableHead>Tổng tiền</TableHead>
-                        <TableHead>Trạng thái đơn</TableHead>
-                        <TableHead>Thanh toán</TableHead>
-                        <TableHead className="text-right">Thao tác</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {orders.map((order) => (
-                        <TableRow key={order.orderId || order.order_id}>
-                          <TableCell className="font-medium">
-                            #{order.orderNumber || order.order_number || order.orderId || order.order_id}
-                          </TableCell>
-                          <TableCell>
-                            {formatDate(order.createdAt || order.created_at)}
-                          </TableCell>
-                          <TableCell className="font-semibold">
-                            {formatPrice(calculateOrderTotal(order))}
-                          </TableCell>
-                          <TableCell>
-                            <Badge className={getOrderStatusColor(order.orderStatus || order.order_status)}>
-                              {getOrderStatusLabel(order.orderStatus || order.order_status)}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <Badge className={getPaymentStatusColor(order.paymentStatus || order.payment_status)}>
-                              {getPaymentStatusLabel(order.paymentStatus || order.payment_status)}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex justify-end gap-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleViewOrderDetail(order)}
-                              >
-                                <Eye className="h-4 w-4 mr-1" />
-                                Xem
-                              </Button>
-                              {(order.paymentStatus === 'pending' ) && 
-                               (order.orderStatus !== 'cancelled' ) && (
-                                <Button
-                                  variant="default"
-                                  size="sm"
-                                  className="bg-blue-600 hover:bg-blue-700"
-                                  onClick={() => toast.info('Tính năng thanh toán đang phát triển')}
-                                >
-                                  Thanh toán
-                                </Button>
-                              )}
-                              {(order.orderStatus === 'pending' || order.orderStatus === 'confirmed' || order.orderStatus === 'processing') && (
-                                <Button
-                                  variant="destructive"
-                                  size="sm"
-                                  onClick={() => handleCancelOrder(order.orderId || order.order_id)}
-                                >
-                                  Hủy
-                                </Button>
-                              )}
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          <OrdersTab
+            orders={orders}
+            ordersLoading={ordersLoading}
+            formatDate={formatDate}
+            formatPrice={formatPrice}
+            calculateOrderTotal={calculateOrderTotal}
+            getOrderStatusLabel={getOrderStatusLabel}
+            getOrderStatusColor={getOrderStatusColor}
+            getPaymentStatusLabel={getPaymentStatusLabel}
+            getPaymentStatusColor={getPaymentStatusColor}
+          />
         </TabsContent>
-
-        {/* Order Detail Dialog */}
-        <Dialog open={isOrderDetailOpen} onOpenChange={setIsOrderDetailOpen}>
-          <DialogContent className="w-[98vw] max-w-[1600px] max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="text-2xl">Chi tiết đơn hàng #{selectedOrder?.orderNumber || selectedOrder?.order_number || selectedOrder?.orderId || selectedOrder?.order_id}</DialogTitle>
-              <DialogDescription className="text-base">
-                Thông tin chi tiết về đơn hàng của bạn
-              </DialogDescription>
-            </DialogHeader>
-            {selectedOrder && (
-              <div className="space-y-6">
-                {/* Order Status */}
-                <div className="flex gap-4">
-                  <div className="flex-1">
-                    <p className="text-sm text-gray-500 mb-1">Trạng thái đơn hàng</p>
-                    <Badge className={getOrderStatusColor(selectedOrder.orderStatus || selectedOrder.order_status)}>
-                      {getOrderStatusLabel(selectedOrder.orderStatus || selectedOrder.order_status)}
-                    </Badge>
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm text-gray-500 mb-1">Trạng thái thanh toán</p>
-                    <Badge className={getPaymentStatusColor(selectedOrder.paymentStatus || selectedOrder.payment_status)}>
-                      {getPaymentStatusLabel(selectedOrder.paymentStatus || selectedOrder.payment_status)}
-                    </Badge>
-                  </div>
-                </div>
-
-                <Separator />
-
-                {/* Payment Information */}
-                {selectedOrder.payments && selectedOrder.payments.length > 0 && (
-                  <>
-                    <div>
-                      <h3 className="font-semibold text-lg mb-3">Thông tin thanh toán</h3>
-                      <div className="space-y-2">
-                        {selectedOrder.payments.map((payment, index) => {
-                          let paymentMethod = payment.paymentMethod || payment.payment_method;
-                          const paymentStatus = payment.paymentStatus || payment.payment_status;
-                          const transactionId = payment.transactionId || payment.transaction_id;
-                          const paymentGateway = payment.paymentGateway || payment.payment_gateway;
-                          
-                          // Fallback: xác định payment method từ transaction_id hoặc payment_gateway
-                          if (!paymentMethod) {
-                            if (paymentGateway === 'vnpay' || transactionId?.includes('VNPAY')) {
-                              paymentMethod = 'vnpay';
-                            } else if (paymentGateway === 'momo' || transactionId?.includes('MOMO')) {
-                              paymentMethod = 'momo';
-                            } else {
-                              paymentMethod = 'cod';
-                            }
-                          }
-                          
-                          return (
-                            <div key={index} className="p-4 bg-gray-50 rounded-lg">
-                              <div>
-                                <p className="text-sm text-gray-600 mb-1">Phương thức thanh toán</p>
-                                <p className="font-medium text-base">
-                                  {translatePaymentMethod(paymentMethod)}
-                                </p>
-                              </div>
-                              {transactionId && (
-                                <div className="mt-2 pt-2 border-t">
-                                  <p className="text-sm text-gray-600 mb-1">Mã giao dịch</p>
-                                  <p className="text-sm font-mono bg-white px-2 py-1 rounded">
-                                    {transactionId}
-                                  </p>
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                    <Separator />
-                  </>
-                )}
-
-                {/* Order Items */}
-                <div>
-                  <h3 className="font-semibold text-lg mb-3">Sản phẩm</h3>
-                  {selectedOrder.loading ? (
-                    <div className="text-center py-4 text-gray-500 text-base">
-                      Đang tải chi tiết...
-                    </div>
-                  ) : !selectedOrder.items || selectedOrder.items.length === 0 ? (
-                    <div className="text-center py-4 text-gray-500 text-base">
-                      Không có sản phẩm
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {selectedOrder.items.map((item, index) => (
-                      <div key={index} className="flex gap-4 items-start p-4 border rounded-lg">
-                        {/* Product Image */}
-                        <div className="flex-shrink-0">
-                          <img
-                            src={
-                              item.imageUrl 
-                                ? `${import.meta.env.VITE_API_URL || 'http://localhost:5001'}${item.imageUrl}`
-                                : '/placeholder-product.png'
-                            }
-                            alt={item.productName || item.product_name}
-                            className="w-20 h-20 object-cover rounded-lg border-2 border-gray-200"
-                            onError={(e) => {
-                              e.target.src = '/placeholder-product.png';
-                            }}
-                          />
-                        </div>
-                        
-                        {/* Product Info */}
-                        <div className="flex-1">
-                          <p className="font-medium text-base">{item.productName || item.product_name}</p>
-                          {(item.variantName || item.variant_name) && (
-                            <p className="text-base text-gray-500">{item.variantName || item.variant_name}</p>
-                          )}
-                          {item.sku && (
-                            <p className="text-base text-gray-400">SKU: {item.sku}</p>
-                          )}
-                        </div>
-                        
-                        {/* Price Info */}
-                        <div className="text-right">
-                          <p className="text-base text-gray-500">x{item.quantity}</p>
-                          <p className="font-semibold text-lg">{formatPrice((item.unitPrice || item.unit_price || item.price) * item.quantity)}</p>
-                          {(item.discountAmount || item.discount_amount || 0) > 0 && (
-                            <p className="text-sm text-green-600">-{formatPrice(item.discountAmount || item.discount_amount)}</p>
-                          )}
-                        </div>
-                      </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                <Separator />
-
-                {/* Shipping Address */}
-                <div>
-                  <h3 className="font-semibold text-lg mb-3">Địa chỉ giao hàng</h3>
-                  {selectedOrder.loading ? (
-                    <div className="text-center py-4 text-gray-500 text-base">
-                      Đang tải...
-                    </div>
-                  ) : (
-                    <div className="p-4 bg-gray-50 rounded-lg">
-                      <p className="font-medium text-base">{selectedOrder.recipient_name || 'N/A'}</p>
-                      <p className="text-base text-gray-600 mt-1">{selectedOrder.recipient_phone || selectedOrder.user_phone || 'N/A'}</p>
-                      <p className="text-base text-gray-600 mt-2">
-                        {selectedOrder.address_line || 'Địa chỉ chưa cập nhật'}
-                        {selectedOrder.ward && `, ${selectedOrder.ward}`}
-                        {selectedOrder.district && `, ${selectedOrder.district}`}
-                        {selectedOrder.city && `, ${selectedOrder.city}`}
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                <Separator />
-
-                {/* Order Summary */}
-                <div>
-                  <h3 className="font-semibold text-lg mb-3">Tổng kết đơn hàng</h3>
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-base">
-                      <span className="text-gray-600">Tạm tính</span>
-                      <span>{formatPrice(parseFloat(selectedOrder.subtotal || selectedOrder.subtotalAmount || selectedOrder.subtotal_amount || 0))}</span>
-                    </div>
-                    {parseFloat(selectedOrder.discountAmount || selectedOrder.discount_amount || 0) > 0 && (
-                      <div className="flex justify-between text-base">
-                        <span className="text-gray-600">Giảm giá</span>
-                        <span className="text-green-600">-{formatPrice(parseFloat(selectedOrder.discountAmount || selectedOrder.discount_amount || 0))}</span>
-                      </div>
-                    )}
-                    {parseFloat(selectedOrder.shippingFee || selectedOrder.shipping_fee || 0) > 0 && (
-                      <div className="flex justify-between text-base">
-                        <span className="text-gray-600">Phí vận chuyển</span>
-                        <span>{formatPrice(parseFloat(selectedOrder.shippingFee || selectedOrder.shipping_fee || 0))}</span>
-                      </div>
-                    )}
-                    {parseFloat(selectedOrder.taxAmount || selectedOrder.tax_amount || 0) > 0 && (
-                      <div className="flex justify-between text-base">
-                        <span className="text-gray-600">Thuế</span>
-                        <span>{formatPrice(parseFloat(selectedOrder.taxAmount || selectedOrder.tax_amount || 0))}</span>
-                      </div>
-                    )}
-                    {/* Thông tin trả góp */}
-                    {(selectedOrder.isInstallment || selectedOrder.is_installment) && selectedOrder.installment && (
-                      <>
-                        <Separator />
-                        <div className="bg-blue-50 p-3 rounded-lg space-y-2">
-                          <p className="font-medium text-blue-900">Thông tin trả góp</p>
-                          <div className="flex justify-between text-sm">
-                            <span className="text-gray-600">Tổng giá trị hàng (gốc)</span>
-                            <span>{formatPrice(parseFloat(selectedOrder.installment.total_amount || selectedOrder.installment.totalAmount || 0))}</span>
-                          </div>
-                          {parseFloat(selectedOrder.installment.interest_rate || selectedOrder.installment.interestRate || 0) > 0 && (
-                            <div className="flex justify-between text-sm">
-                              <span className="text-gray-600">Lãi suất</span>
-                              <span>{parseFloat(selectedOrder.installment.interest_rate || selectedOrder.installment.interestRate || 0)}%</span>
-                            </div>
-                          )}
-                          <div className="flex justify-between text-sm">
-                            <span className="text-gray-600">Kỳ hạn</span>
-                            <span>{selectedOrder.installment.num_terms || selectedOrder.installment.numTerms} tháng</span>
-                          </div>
-                          <div className="flex justify-between text-sm">
-                            <span className="text-gray-600">Tổng sau lãi</span>
-                            <span className="font-semibold">{formatPrice(parseFloat(selectedOrder.installment.total_with_interest || selectedOrder.installment.totalWithInterest || 0))}</span>
-                          </div>
-                          
-                          {/* <div className="flex justify-between text-sm">
-                            <span className="text-gray-600">Trả mỗi tháng</span>
-                            <span className="font-semibold text-blue-600">{formatPrice(parseFloat(selectedOrder.installment.monthly_payment || selectedOrder.installment.monthlyPayment || 0))}</span>
-                          </div> */}
-                        </div>
-                      </>
-                    )}
-                    <Separator />
-                    <div className="flex justify-between font-semibold text-xl">
-                      <span>Tổng cộng</span>
-                      <span className="text-red-600">{formatPrice(calculateOrderTotal(selectedOrder))}</span>
-                    </div>
-                    {(selectedOrder.isInstallment || selectedOrder.is_installment) && selectedOrder.installment && (
-                      <p className="text-xs text-gray-500 italic">
-                        * Tổng cộng = Tổng sau lãi + Phí vận chuyển
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                {/* Notes */}
-                {selectedOrder.notes && (
-                  <>
-                    <Separator />
-                    <div>
-                      <h3 className="font-semibold text-lg mb-2">Ghi chú</h3>
-                      <p className="text-base text-gray-600">{selectedOrder.notes}</p>
-                    </div>
-                  </>
-                )}
-              </div>
-            )}
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsOrderDetailOpen(false)}>
-                Đóng
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
 
         {/* Installments Tab */}
         <TabsContent value="installments">

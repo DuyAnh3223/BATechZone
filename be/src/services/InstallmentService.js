@@ -53,10 +53,8 @@ class InstallmentService {
                 throw new Error('Tổng tiền không hợp lệ');
             }
 
-            // (2) Tính toán kỳ trả góp - Declining Balance (Dư nợ giảm dần)
+            // (2) Tính toán kỳ trả góp - Flat Interest (Lãi phẳng - Chia đều)
             const principal = total_amount - down_payment; // Số tiền cần trả góp
-            const monthlyInterestRate = interest_rate / 100 / 12;
-            const principalPerMonth = principal / num_terms;
 
             // Get overdue_fee_percent and installment_fee_percent from policy
             let finalOverdueFeePercent = overdue_fee_percent_per_day || 0;
@@ -73,41 +71,37 @@ class InstallmentService {
                 }
             }
 
-            // Calculate payment schedule with declining balance
+            // Calculate payment schedule with flat interest
+            // Lãi = Gốc × Lãi suất × Số kỳ / 12 tháng
+            const totalInterest = principal * (interest_rate / 100) * (num_terms / 12);
             const totalFee = (principal * installmentFeePercent) / 100;
-            const monthlyFee = totalFee / num_terms;
+            const totalPayable = principal + totalInterest + totalFee;
             
-            let balance = principal;
+            // Chia đều cho các kỳ
+            const monthlyPayment = Math.round((totalPayable / num_terms) * 100) / 100;
+            
+            // Tháng cuối điều chỉnh để tổng chính xác
+            const lastMonthPayment = Math.round((totalPayable - (monthlyPayment * (num_terms - 1))) * 100) / 100;
+            
             const paymentSchedule = [];
-            
             for (let i = 1; i <= num_terms; i++) {
-                const openingBalance = balance;
-                const interest = balance * monthlyInterestRate;
-                
-                // Tháng cuối: điều chỉnh principal để balance = 0 chính xác
-                const principalAmount = i === num_terms ? balance : principalPerMonth;
-                
-                const total = Math.round((principalAmount + interest + monthlyFee) * 100) / 100;
-                balance -= principalAmount;
+                const amount = i === num_terms ? lastMonthPayment : monthlyPayment;
                 
                 paymentSchedule.push({
                     month: i,
-                    openingBalance: Math.round(openingBalance * 100) / 100,
-                    principal: Math.round(principalAmount * 100) / 100,
-                    interest: Math.round(interest * 100) / 100,
-                    fee: Math.round(monthlyFee * 100) / 100,
-                    total: total,
-                    remainingBalance: Math.round(Math.max(0, balance) * 100) / 100
+                    total: amount
                 });
             }
 
-            console.log('📊 Declining balance schedule:', {
+            console.log('📊 Flat interest schedule:', {
                 principal,
                 num_terms: num_terms,
-                monthlyInterestRate,
-                principalPerMonth,
-                firstPayment: paymentSchedule[0].total,
-                lastPayment: paymentSchedule[num_terms - 1].total
+                interest_rate,
+                totalInterest,
+                totalFee,
+                totalPayable,
+                monthlyPayment,
+                lastMonthPayment
             });
 
             // Calculate end date (start_date + num_terms months)
@@ -119,7 +113,7 @@ class InstallmentService {
             const installmentStatus = down_payment === 0 ? 'active' : 'approved';
             const downPaymentStatus = down_payment === 0 ? 'not_required' : 'pending';
 
-            // Tính monthly_payment trung bình (vì declining balance khác nhau mỗi tháng)
+            // Tính monthly_payment (lãi phẳng - các kỳ bằng nhau hoặc gần bằng nhau)
             const averageMonthlyPayment = Math.round((paymentSchedule.reduce((sum, p) => sum + p.total, 0) / num_terms) * 100) / 100;
 
             // (3) Tạo bảng installment
@@ -163,7 +157,7 @@ class InstallmentService {
                     payments.push(paymentRecord);
                 }
 
-                console.log(`✅ Created ${num_terms} payment schedules with declining balance`);
+                console.log(`✅ Created ${num_terms} payment schedules with flat interest`);
             }
 
             // (5) Trả kết quả ngược về OrderService
@@ -557,27 +551,26 @@ class InstallmentService {
                 }
             }
 
-            // Recalculate payment schedule with declining balance
+            // Recalculate payment schedule with flat interest
             const principal = (installment.total_amount || 0) - (installment.down_payment || 0);
             const numTerms = installment.num_terms || 1;
-            const monthlyInterestRate = interestRate / 100 / 12;
-            const principalPerMonth = principal / numTerms;
+            
+            // Tính tổng lãi và phí
+            const totalInterest = principal * (interestRate / 100) * (numTerms / 12);
             const totalFee = (principal * installmentFeePercent) / 100;
-            const monthlyFee = totalFee / numTerms;
+            const totalPayable = principal + totalInterest + totalFee;
             
-            let balance = principal;
+            // Chia đều cho các kỳ
+            const monthlyPayment = Math.round((totalPayable / numTerms) * 100) / 100;
+            const lastMonthPayment = Math.round((totalPayable - (monthlyPayment * (numTerms - 1))) * 100) / 100;
+            
             const paymentSchedule = [];
-            
             for (let i = 1; i <= numTerms; i++) {
-                const openingBalance = balance;
-                const interest = balance * monthlyInterestRate;
-                const principalAmount = i === numTerms ? balance : principalPerMonth;
-                const total = Math.round((principalAmount + interest + monthlyFee) * 100) / 100;
-                balance -= principalAmount;
+                const amount = i === numTerms ? lastMonthPayment : monthlyPayment;
                 
                 paymentSchedule.push({
                     month: i,
-                    total: total
+                    total: amount
                 });
             }
 
@@ -602,7 +595,7 @@ class InstallmentService {
                 payments.push(payment);
             }
 
-            console.log(`Generated ${payments.length} payments with declining balance for installment ${installmentId}`);
+            console.log(`Generated ${payments.length} payments with flat interest for installment ${installmentId}`);
             return payments;
         } catch (error) {
             throw new Error(`SERVICE Lỗi tạo payments: ${error.message}`);

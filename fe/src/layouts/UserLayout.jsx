@@ -291,7 +291,7 @@ const UserLayout = () => {
           <div className="flex items-center justify-between h-20">
             {/* Logo */}
             <Link to="/" className="flex-shrink-0">
-              <span className="text-white text-xl font-bold">PC Hardware Store</span>
+              <span className="text-white text-xl font-bold">BATechZone</span>
             </Link>
 
             {/* Search Bar */}
@@ -751,7 +751,7 @@ const UserLayout = () => {
             <div>
               <h3 className="text-lg font-bold mb-4">Về chúng tôi</h3>
               <p className="text-gray-400">
-                PC Hardware Store - Chuyên cung cấp linh kiện máy tính chính hãng với giá tốt nhất thị trường.
+                BATechZone - Chuyên cung cấp linh kiện máy tính chính hãng với giá tốt nhất thị trường.
               </p>
             </div>
             <div>
@@ -766,8 +766,8 @@ const UserLayout = () => {
               <h3 className="text-lg font-bold mb-4">Liên hệ</h3>
               <ul className="space-y-2 text-gray-400">
                 <li>Hotline: 1900-1234</li>
-                <li>Email: support@pchardware.com</li>
-                <li>Địa chỉ: 123 Đường ABC, Quận XYZ, TP.HCM</li>
+                <li>Email: support@batechzone.com</li>
+                <li>Địa chỉ: 123 Đường Trần Hưng Đạo, Quận 1, TP.HCM</li>
               </ul>
             </div>
             <div>
@@ -908,7 +908,7 @@ const UserLayout = () => {
             </div>
           </div>
           <div className="mt-8 border-t border-gray-700 pt-8 text-center text-gray-400">
-            <p>&copy; 2025 PC Hardware Store. All rights reserved.</p>
+            <p>&copy; 2025 BATechZone. All rights reserved.</p>
           </div>
         </div>
       </footer>

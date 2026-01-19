@@ -60,24 +60,7 @@ const provinces = [
   { name: 'Bà Rịa - Vũng Tàu', code: 'bariavungtau' },
 ];
 
-const districtsByProvince = {
-  hcm: [
-    'Quận 1', 'Quận 2', 'Quận 3', 'Quận 4', 'Quận 5', 'Quận 6', 'Quận 7', 'Quận 8', 'Quận 9', 'Quận 10',
-    'Quận 11', 'Quận 12', 'Quận Bình Thạnh', 'Quận Bình Tân', 'Quận Gò Vấp', 'Quận Phú Nhuận', 
-    'Quận Tân Bình', 'Quận Tân Phú', 'Quận Thủ Đức', 'Huyện Bình Chánh', 'Huyện Cần Giờ', 'Huyện Hóc Môn'
-  ],
-  hanoi: [
-    'Ba Đình', 'Bắc Từ Liêm', 'Chương Mỹ', 'Đan Phượng', 'Đông Anh', 'Gia Lâm', 'Hà Đông', 
-    'Hoài Đức', 'Hoàng Mai', 'Long Biên', 'Phú Xuyên', 'Quốc Oai', 'Sơn Tây', 'Thanh Oai', 
-    'Thanh Trì', 'Thạch Thất', 'Tây Hồ', 'Từ Liêm', 'Ứng Hòa'
-  ],
-  danang: ['Hải Châu', 'Cẩm Lệ', 'Ngũ Hành Sơn', 'Liên Chiểu', 'Sơn Trà', 'Thanh Khê'],
-  haiphong: ['Hồng Bàng', 'Ngô Quyền', 'Lê Chân', 'Đồ Sơn', 'Kiến An', 'An Dương', 'Thủy Nguyên', 'Tiên Lãng'],
-  cantho: ['Ninh Kiều', 'Bình Thủy', 'Cờ Đỏ', 'Phong Điền', 'Châu Thành', 'Vĩnh Thạnh', 'Thot Nốt'],
-  binhdung: ['Thủ Dầu Một', 'Bến Cát', 'Dầu Tiếng', 'Chơn Thành', 'Phú Giáo', 'Tân Uyên'],
-  dongnai: ['Biên Hoà', 'Long Khánh', 'Nhơn Trạch', 'Tân Phú', 'Vĩnh Cửu', 'Định Quán', 'Thống Nhất'],
-  bariavungtau: ['Vũng Tàu', 'Bà Rịa', 'Long Điền', 'Đất Đỏ', 'Châu Đức', 'Xuyên Mộc', 'Tuy Phong']
-};
+
 
 const Installment = () => {
   const navigate = useNavigate();
@@ -131,7 +114,7 @@ const Installment = () => {
 
   const cartTotal = calculateCartTotal();
 
-  // Calculate installment details with declining balance method
+  // Calculate installment details with flat interest rate method
   useEffect(() => {
     if (!selectedPolicy || cartTotal === 0) return;
 
@@ -141,27 +124,30 @@ const Installment = () => {
 
 
     const selectedMonths = selectedPolicy.terms;
-    const monthlyInterestRate = selectedPolicy.interest_rate / 100 / 12;
     const feePercent = selectedPolicy.installment_fee_percent || 0;
     const totalFee = (remainingAmount * feePercent) / 100;
     const monthlyFee = totalFee / selectedMonths;
     
-    // Dư nợ giảm dần
-    const principalPerMonth = remainingAmount / selectedMonths; // Gốc
+    // Lãi phẳng - Flat interest rate
+    const totalInterest = (remainingAmount * selectedPolicy.interest_rate * selectedMonths) / (100 * 12);
+    const principalPerMonth = remainingAmount / selectedMonths;
+    const interestPerMonth = totalInterest / selectedMonths;
+    const monthlyPayment = principalPerMonth + interestPerMonth + monthlyFee;
+    
     let balance = remainingAmount; 
     const schedule = [];
-    let totalInterestPaid = 0;
     
     for (let i = 1; i <= selectedMonths; i++) {
       const openingBalance = balance;
-      const interest = balance * monthlyInterestRate;
+      
+      // Lãi phẳng: mỗi tháng trả lãi bằng nhau
+      const interest = interestPerMonth;
       
       // Tháng cuối: điều chỉnh principal để balance = 0 chính xác
       const principal = i === selectedMonths ? balance : principalPerMonth;
       
       const total = Math.round((principal + interest + monthlyFee) * 100) / 100;
       balance -= principal;
-      totalInterestPaid += interest;
       
       schedule.push({
         month: i,
@@ -184,13 +170,12 @@ const Installment = () => {
       downPaymentAmount,
       remainingAmount,
       principalPerMonth: Math.round(principalPerMonth * 100) / 100,
-      firstMonthPayment: schedule[0].total,
-      lastMonthPayment: schedule[selectedMonths - 1].total,
-      averageMonthlyPayment: Math.round((schedule.reduce((sum, p) => sum + p.total, 0) / selectedMonths) * 100) / 100,
+      interestPerMonth: Math.round(interestPerMonth * 100) / 100,
+      monthlyPayment: Math.round(monthlyPayment * 100) / 100,
       monthlyFee,
       totalFee,
       totalPayment,
-      totalInterest: Math.round(totalInterestPaid * 100) / 100,
+      totalInterest: Math.round(totalInterest * 100) / 100,
       difference,
       interestRate: selectedPolicy.interest_rate,
       feePercent,
@@ -459,7 +444,7 @@ const Installment = () => {
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-gray-600">Lãi suất</span>
                       <span className="text-sm font-semibold text-green-600">
-                        {calculation.interestRate}%/năm (Dư nợ giảm dần)
+                        {calculation.interestRate}%/năm (Lãi phẳng)
                       </span>
                     </div>
 
@@ -496,7 +481,12 @@ const Installment = () => {
 
                     <Separator />
 
-                    {/* Declining Balance Payment Info */}
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-gray-600">Góp mỗi tháng</span>
+                      <span className="text-lg font-bold text-blue-600">
+                        {formatCurrency(calculation.monthlyPayment)}
+                      </span>
+                    </div>
                     
                   </div>
 
@@ -579,7 +569,7 @@ const Installment = () => {
                         </div>
                         <div className="flex items-center gap-1">
                           <div className="w-3 h-3 bg-orange-100 rounded"></div>
-                          <span>Lãi (giảm dần)</span>
+                          <span>Lãi (cố định mỗi tháng)</span>
                         </div>
                       </div>
                     </div>

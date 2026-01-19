@@ -297,6 +297,26 @@ const AdminOrder = () => {
     setShowInstallmentDialog(false);
   };
 
+  const calculateOrderTotal = (order) => {
+    // Nếu là đơn hàng trả góp
+    if (order.isInstallment || order.is_installment) {
+      // Trường hợp 1: Có thông tin installment chi tiết (từ detail API)
+      if (order.installment) {
+        const totalWithInterest = parseFloat(order.installment.total_with_interest || order.installment.totalWithInterest || 0);
+        const shippingFee = parseFloat(order.shippingFee || order.shipping_fee || 0);
+        return totalWithInterest + shippingFee;
+      }
+      // Trường hợp 2: Có thông tin installment_total_with_interest (từ list API)
+      if (order.installment_total_with_interest || order.installmentTotalWithInterest) {
+        const totalWithInterest = parseFloat(order.installment_total_with_interest || order.installmentTotalWithInterest || 0);
+        const shippingFee = parseFloat(order.shippingFee || order.shipping_fee || 0);
+        return totalWithInterest + shippingFee;
+      }
+    }
+    // Đơn hàng thường: trả về total_amount
+    return parseFloat(order.totalAmount || order.total_amount || 0);
+  };
+
   const getAvailableStatuses = (currentStatus) => {
     // Flow chuyển trạng thái hợp lệ (cho phép tiến lên và quay lại 1 bước)
     const statusFlow = {
@@ -437,7 +457,7 @@ const AdminOrder = () => {
                       </td>
                       <td className="px-4 py-3 text-right">
                         <span className="font-semibold text-blue-700 text-base">
-                          {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(totalAmount || 0)}
+                          {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(calculateOrderTotal(order))}
                         </span>
                       </td>
                       <td className="px-4 py-3 flex gap-2 whitespace-nowrap">
@@ -641,7 +661,7 @@ const AdminOrder = () => {
                         <th className="px-4 py-2">Hình ảnh</th>
                         <th className="px-4 py-2">SKU</th>
                         <th className="px-4 py-2">Sản phẩm</th>
-                        <th className="px-4 py-2">Biến thể</th>
+                        {/* <th className="px-4 py-2">Biến thể</th> */}
                         <th className="px-4 py-2 text-right">SL</th>
                         <th className="px-4 py-2 text-right">Đơn giá</th>
                         <th className="px-4 py-2 text-right">Tạm tính</th>
@@ -668,7 +688,7 @@ const AdminOrder = () => {
                               </td>
                               <td className="px-4 py-2">{item.sku || '-'}</td>
                               <td className="px-4 py-2">{item.product_name || item.productName || '-'}</td>
-                              <td className="px-4 py-2">{item.variant_name || item.variantName || '-'}</td>
+                              {/* <td className="px-4 py-2">{item.variant_name || item.variantName || '-'}</td> */}
                               <td className="px-4 py-2 text-right">{item.quantity || 0}</td>
                               <td className="px-4 py-2 text-right">
                                 {parseFloat(item.unit_price || item.unitPrice || 0).toLocaleString('vi-VN')} ₫
@@ -752,17 +772,60 @@ const AdminOrder = () => {
                         {parseFloat(orderDetail.shipping_fee || orderDetail.shippingFee || 0).toLocaleString('vi-VN')} ₫
                       </span>
                     </div>
+                    
+                    {/* Thông tin trả góp - hiển thị trước tổng cộng */}
+                    {(!!orderDetail.isInstallment || !!orderDetail.is_installment) && installmentData ?  (
+                      <>
+                        <div className="border-t pt-2 mt-2"></div>
+                        <div className="bg-blue-50 p-3 rounded space-y-1.5">
+                          <p className="font-semibold text-blue-900 text-sm">Thông tin trả góp</p>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Tổng giá trị hàng (gốc):</span>
+                            <span className="font-semibold">
+                              {parseFloat(installmentData.total_amount || installmentData.totalAmount || 0).toLocaleString('vi-VN')} ₫
+                            </span>
+                          </div>
+                          {parseFloat(installmentData.interest_rate || installmentData.interestRate || 0) > 0 && (
+                            <div className="flex justify-between">
+                              <span className="text-gray-600">Lãi suất:</span>
+                              <span>
+                                {parseFloat(installmentData.interest_rate || installmentData.interestRate || 0)}%/năm
+                              </span>
+                            </div>
+                          )}
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Kỳ hạn:</span>
+                            <span>
+                              {installmentData.num_terms || installmentData.numTerms || 0} tháng
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Tổng sau lãi:</span>
+                            <span className="font-semibold text-blue-700">
+                              {parseFloat(installmentData.total_with_interest || installmentData.totalWithInterest || 0).toLocaleString('vi-VN')} ₫
+                            </span>
+                          </div>
+                        </div>
+                      </>
+                    ) : null}
+                    
                     <div className="border-t pt-2 mt-2 flex justify-between">
                       <span className="font-bold text-base">Tổng cộng:</span>
                       <span className="font-bold text-lg text-red-600">
-                        {parseFloat(orderDetail.total_amount || orderDetail.totalAmount || 0).toLocaleString('vi-VN')} ₫
+                        {calculateOrderTotal({ ...orderDetail, installment: installmentData }).toLocaleString('vi-VN')} ₫
                       </span>
                     </div>
+                    
+                    {(!!orderDetail.isInstallment || !!orderDetail.is_installment) && installmentData ? (
+                      <p className="text-xs text-gray-500 italic">
+                        * Tổng cộng = Tổng sau lãi + Phí vận chuyển
+                      </p>
+                    ) : null}
                   </div>
                 </div>
 
                 {/* Thông tin thanh toán */}
-                {orderDetail.payments && orderDetail.payments.length > 0 && (
+                {/* {orderDetail.payments && orderDetail.payments.length > 0 && (
                   <div className="overflow-x-auto">
                     <h3 className="text-sm font-semibold mb-2">Thanh toán</h3>
                     <table className="min-w-[700px] w-full text-left">
@@ -818,7 +881,7 @@ const AdminOrder = () => {
                       </tbody>
                     </table>
                   </div>
-                )}
+                )} */}
 
                 {/* Thông tin hợp đồng trả góp */}
                 {installmentData && (

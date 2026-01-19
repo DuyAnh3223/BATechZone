@@ -13,117 +13,117 @@ const WarrantyPage = () => {
   const [filterStatus, setFilterStatus] = useState('all');
 
   // Mock data bảo hành
-  useEffect(() => {
-    const mockWarranties = [
-      {
-        warranty_id: 1,
-        order_item_id: 101,
-        order_id: 50,
-        product_name: 'CPU Intel Core i9-13900K',
-        warranty_period: 36,
-        warranty_type: 'manufacturer',
-        start_date: '2024-01-15',
-        end_date: '2027-01-15',
-        status: 'active',
-        remaining_days: 760,
-        notes: 'Bảo hành chính hãng Intel 36 tháng'
-      },
-      {
-        warranty_id: 2,
-        order_item_id: 102,
-        order_id: 51,
-        product_name: 'VGA ASUS ROG Strix RTX 4080',
-        warranty_period: 24,
-        warranty_type: 'manufacturer',
-        start_date: '2024-03-20',
-        end_date: '2026-03-20',
-        status: 'active',
-        remaining_days: 495,
-        notes: 'Bảo hành ASUS 24 tháng'
-      },
-      {
-        warranty_id: 3,
-        order_item_id: 103,
-        order_id: 52,
-        product_name: 'RAM G.SKILL Trident Z5 32GB',
-        warranty_period: 60,
-        warranty_type: 'manufacturer',
-        start_date: '2023-06-10',
-        end_date: '2028-06-10',
-        status: 'active',
-        remaining_days: 1247,
-        notes: 'Bảo hành trọn đời G.SKILL'
-      },
-      {
-        warranty_id: 4,
-        order_item_id: 104,
-        order_id: 53,
-        product_name: 'SSD Samsung 990 PRO 2TB',
-        warranty_period: 60,
-        warranty_type: 'manufacturer',
-        start_date: '2023-08-25',
-        end_date: '2028-08-25',
-        status: 'active',
-        remaining_days: 1323,
-        notes: 'Bảo hành Samsung 5 năm'
-      },
-      {
-        warranty_id: 5,
-        order_item_id: 105,
-        order_id: 54,
-        product_name: 'Mainboard MSI MPG Z790',
-        warranty_period: 36,
-        warranty_type: 'store',
-        start_date: '2022-11-05',
-        end_date: '2025-11-05',
-        status: 'active',
-        remaining_days: 329,
-        notes: 'Bảo hành cửa hàng 36 tháng'
-      },
-      {
-        warranty_id: 6,
-        order_item_id: 106,
-        order_id: 55,
-        product_name: 'PSU Corsair RM850x',
-        warranty_period: 120,
-        warranty_type: 'manufacturer',
-        start_date: '2023-01-12',
-        end_date: '2033-01-12',
-        status: 'active',
-        remaining_days: 2954,
-        notes: 'Bảo hành Corsair 10 năm'
-      },
-      {
-        warranty_id: 7,
-        order_item_id: 107,
-        order_id: 56,
-        product_name: 'Case NZXT H710i',
-        warranty_period: 24,
-        warranty_type: 'store',
-        start_date: '2021-09-18',
-        end_date: '2023-09-18',
-        status: 'expired',
-        remaining_days: -437,
-        notes: 'Bảo hành đã hết hạn'
-      },
-      {
-        warranty_id: 8,
-        order_item_id: 108,
-        order_id: 57,
-        product_name: 'Monitor LG UltraGear 27GL850',
-        warranty_period: 36,
-        warranty_type: 'manufacturer',
-        start_date: '2022-05-20',
-        end_date: '2025-05-20',
-        status: 'claimed',
-        remaining_days: 160,
-        notes: 'Đã yêu cầu bảo hành - Đang xử lý'
-      }
-    ];
+  // useEffect(() => {
+  //   const mockWarranties = [
+  //     {
+  //       warranty_id: 1,
+  //       order_item_id: 101,
+  //       order_id: 50,
+  //       product_name: 'CPU Intel Core i9-13900K',
+  //       warranty_period: 36,
+  //       warranty_type: 'manufacturer',
+  //       start_date: '2024-01-15',
+  //       end_date: '2027-01-15',
+  //       status: 'active',
+  //       remaining_days: 760,
+  //       notes: 'Bảo hành chính hãng Intel 36 tháng'
+  //     },
+  //     {
+  //       warranty_id: 2,
+  //       order_item_id: 102,
+  //       order_id: 51,
+  //       product_name: 'VGA ASUS ROG Strix RTX 4080',
+  //       warranty_period: 24,
+  //       warranty_type: 'manufacturer',
+  //       start_date: '2024-03-20',
+  //       end_date: '2026-03-20',
+  //       status: 'active',
+  //       remaining_days: 495,
+  //       notes: 'Bảo hành ASUS 24 tháng'
+  //     },
+  //     {
+  //       warranty_id: 3,
+  //       order_item_id: 103,
+  //       order_id: 52,
+  //       product_name: 'RAM G.SKILL Trident Z5 32GB',
+  //       warranty_period: 60,
+  //       warranty_type: 'manufacturer',
+  //       start_date: '2023-06-10',
+  //       end_date: '2028-06-10',
+  //       status: 'active',
+  //       remaining_days: 1247,
+  //       notes: 'Bảo hành trọn đời G.SKILL'
+  //     },
+  //     {
+  //       warranty_id: 4,
+  //       order_item_id: 104,
+  //       order_id: 53,
+  //       product_name: 'SSD Samsung 990 PRO 2TB',
+  //       warranty_period: 60,
+  //       warranty_type: 'manufacturer',
+  //       start_date: '2023-08-25',
+  //       end_date: '2028-08-25',
+  //       status: 'active',
+  //       remaining_days: 1323,
+  //       notes: 'Bảo hành Samsung 5 năm'
+  //     },
+  //     {
+  //       warranty_id: 5,
+  //       order_item_id: 105,
+  //       order_id: 54,
+  //       product_name: 'Mainboard MSI MPG Z790',
+  //       warranty_period: 36,
+  //       warranty_type: 'store',
+  //       start_date: '2022-11-05',
+  //       end_date: '2025-11-05',
+  //       status: 'active',
+  //       remaining_days: 329,
+  //       notes: 'Bảo hành cửa hàng 36 tháng'
+  //     },
+  //     {
+  //       warranty_id: 6,
+  //       order_item_id: 106,
+  //       order_id: 55,
+  //       product_name: 'PSU Corsair RM850x',
+  //       warranty_period: 120,
+  //       warranty_type: 'manufacturer',
+  //       start_date: '2023-01-12',
+  //       end_date: '2033-01-12',
+  //       status: 'active',
+  //       remaining_days: 2954,
+  //       notes: 'Bảo hành Corsair 10 năm'
+  //     },
+  //     {
+  //       warranty_id: 7,
+  //       order_item_id: 107,
+  //       order_id: 56,
+  //       product_name: 'Case NZXT H710i',
+  //       warranty_period: 24,
+  //       warranty_type: 'store',
+  //       start_date: '2021-09-18',
+  //       end_date: '2023-09-18',
+  //       status: 'expired',
+  //       remaining_days: -437,
+  //       notes: 'Bảo hành đã hết hạn'
+  //     },
+  //     {
+  //       warranty_id: 8,
+  //       order_item_id: 108,
+  //       order_id: 57,
+  //       product_name: 'Monitor LG UltraGear 27GL850',
+  //       warranty_period: 36,
+  //       warranty_type: 'manufacturer',
+  //       start_date: '2022-05-20',
+  //       end_date: '2025-05-20',
+  //       status: 'claimed',
+  //       remaining_days: 160,
+  //       notes: 'Đã yêu cầu bảo hành - Đang xử lý'
+  //     }
+  //   ];
 
-    setWarranties(mockWarranties);
-    setFilteredWarranties(mockWarranties);
-  }, []);
+  //   setWarranties(mockWarranties);
+  //   setFilteredWarranties(mockWarranties);
+  // }, []);
 
   useEffect(() => {
     let filtered = warranties;

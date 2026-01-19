@@ -16,7 +16,6 @@ import ShipTracking from './pages/user/ShipTracking';
 import WarrantyCheck from './pages/user/WarrantyCheck';
 import WarrantyPolicy from './pages/user/WarrantyPolicy';
 import WarrantyPage from './pages/user/Warranty/WarrantyPage';
-import Wishlist from './pages/user/Wishlist';
 import SignIn from './pages/auth/SignIn';
 import SignUp from './pages/auth/SignUp';
 import AdminLogin from './pages/admin/AdminLogin';
@@ -92,7 +91,6 @@ function App() {
             <Route path="shipping-track" element={<ShipTracking />} />
             <Route path="warranty-check" element={<WarrantyCheck />} />
             <Route path="warranty-policy" element={<WarrantyPolicy />} />
-            <Route path="wishlist" element={<Wishlist />} />
           </Route>
           <Route path="/auth/signin" element={<SignIn />} />
           <Route path="/auth/signup" element={<SignUp />} />

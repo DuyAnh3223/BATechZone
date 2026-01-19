@@ -194,7 +194,7 @@ const WarrantyInspectionDialog = ({ request, open, onOpenChange, onComplete }) =
           </Card>
 
           {/* Customer Images */}
-          {request.images && request.images.length > 0 && (
+          {/* {request.images && request.images.length > 0 && (
             <div>
               <Label className="mb-2 block">Hình ảnh từ khách hàng</Label>
               <div className="grid grid-cols-5 gap-2">
@@ -209,7 +209,7 @@ const WarrantyInspectionDialog = ({ request, open, onOpenChange, onComplete }) =
                 ))}
               </div>
             </div>
-          )}
+          )} */}
 
           {/* Inspection Form */}
           <div className="space-y-5">
@@ -249,7 +249,7 @@ const WarrantyInspectionDialog = ({ request, open, onOpenChange, onComplete }) =
             </div>
 
             {/* Inspection Images */}
-            <div>
+            {/* <div>
               <Label className="text-base mb-2">Hình ảnh kiểm tra (Tối đa 5 ảnh)</Label>
               <div className="mt-3">
                 <input
@@ -270,10 +270,10 @@ const WarrantyInspectionDialog = ({ request, open, onOpenChange, onComplete }) =
                 <p className="text-base text-gray-500 mt-2">
                   Chụp ảnh sản phẩm tại cửa hàng để làm bằng chứng
                 </p>
-              </div>
+              </div> */}
 
               {/* Image Preview */}
-              {inspectionData.inspection_images.length > 0 && (
+              {/* {inspectionData.inspection_images.length > 0 && (
                 <div className="grid grid-cols-5 gap-2 mt-3">
                   {inspectionData.inspection_images.map((img, index) => (
                     <div key={index} className="relative group">
@@ -293,7 +293,7 @@ const WarrantyInspectionDialog = ({ request, open, onOpenChange, onComplete }) =
                   ))}
                 </div>
               )}
-            </div>
+            </div> */}
 
             {/* Decision */}
             <div>

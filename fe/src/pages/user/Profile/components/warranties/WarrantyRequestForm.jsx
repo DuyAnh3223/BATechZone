@@ -110,7 +110,7 @@ const WarrantyRequestForm = ({ product, open, onClose, onSubmit, loading }) => {
                         />
                     </div>
 
-                    <div>
+                    {/* <div>
                         <Label>Hình ảnh lỗi (tối đa 5 ảnh)</Label>
                         <div className="mt-2">
                             <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed rounded-lg cursor-pointer hover:bg-gray-50">
@@ -149,7 +149,7 @@ const WarrantyRequestForm = ({ product, open, onClose, onSubmit, loading }) => {
                                 </div>
                             )}
                         </div>
-                    </div>
+                    </div> */}
 
                     <div className="bg-yellow-50 border border-yellow-200 rounded p-3 text-xs text-yellow-800">
                         <p className="font-medium mb-1">Lưu ý:</p>
