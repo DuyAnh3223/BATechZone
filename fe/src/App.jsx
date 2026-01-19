@@ -3,8 +3,8 @@ import { Toaster } from 'sonner';
 import UserLayout from './layouts/UserLayout';
 import AdminLayout from './layouts/AdminLayout';
 import Home from './pages/user/Home';
-import Blog from './pages/user/Blog';
-import BlogDetail from './pages/user/BlogDetail';
+// import Blog from './pages/user/Blog';
+// import BlogDetail from './pages/user/BlogDetail';
 import BuildPC from './pages/user/BuildPC';
 import Cart from './pages/user/Cart';
 import Checkout from './pages/user/Checkout';
@@ -26,7 +26,7 @@ import AdminUserDetail from './pages/admin/AdminUserDetail';
 import AdminCouponPage from './pages/admin/CouponPage/AdminCouponPage';
 import AdminAddress from './pages/admin/AdminAddress';
 import AdminOrder from './pages/admin/AdminOrder';
-import AdminNotification from './pages/admin/AdminNotification';
+// import AdminNotification from './pages/admin/AdminNotification';
 import AdminBuild from './pages/admin/AdminBuild';
 import CategoryPage from './pages/admin/CategoryManagement/CategoryPage';
 import AttributePage from './pages/admin/CategoryManagement/Attributes&ValuesManagement/AttributePage';
@@ -35,9 +35,9 @@ import {
   CompatibilityRuleForm,
   RuleMappingManager,
 } from './pages/admin/CategoryManagement/Compatibility';
-import AdminPost from './pages/admin/AdminBlog';
-import AdminPostDetail from './pages/admin/AdminBlogDetail';
-import AdminWishlist from './pages/admin/AdminWishlist';
+// import AdminPost from './pages/admin/AdminBlog';
+// import AdminPostDetail from './pages/admin/AdminBlogDetail';
+// import AdminWishlist from './pages/admin/AdminWishlist';
 import AdminPayment from './pages/admin/AdminPayment';
 import AdminServiceCenter from './pages/admin/AdminServiceCenter';
 import AdminWarrantyPage from './pages/admin/WarrantyPage/AdminWarrantyPage';
@@ -69,8 +69,8 @@ function App() {
             <Route index element={<Home />} />
             <Route path="build-pc" element={<BuildPC />} />
             <Route path="warranty" element={<WarrantyPage />} />
-            <Route path="blog" element={<Blog />} />
-            <Route path="blog/:id" element={<BlogDetail />} />
+            {/* <Route path="blog" element={<Blog />} />
+            <Route path="blog/:id" element={<BlogDetail />} /> */}
             <Route path="cart" element={<Cart />} />
             <Route path="checkout" element={<Checkout />} />
             <Route path="installment" element={<Installment />} />
@@ -106,7 +106,7 @@ function App() {
             <Route path="users/:userId" element={<AdminUserDetail />} />
             <Route path="coupons" element={<AdminCouponPage />} />
             <Route path="orders" element={<AdminOrder />} />
-            <Route path="notifications" element={<AdminNotification />} />
+            {/* <Route path="notifications" element={<AdminNotification />} /> */}
             <Route path="categories" element={<CategoryPage />} />
             <Route path="categories/:categoryId/attributes" element={<AttributePage />} />
             <Route path="categories/compatibility" element={<CompatibilityPage />} />
@@ -114,8 +114,8 @@ function App() {
             <Route path="categories/compatibility/rules/:ruleId" element={<CompatibilityRuleForm />} />
             <Route path="categories/compatibility/rules/:ruleId/edit" element={<CompatibilityRuleForm />} />
             <Route path="categories/compatibility/rules/:ruleId/mappings" element={<RuleMappingManager />} />
-            <Route path="posts" element={<AdminPost />} />
-            <Route path="posts/:postId" element={<AdminPostDetail />} />
+            {/* <Route path="posts" element={<AdminPost />} />
+            <Route path="posts/:postId" element={<AdminPostDetail />} /> */}
             <Route path="installments" element={<AdminInstallmentPage />} />
             <Route path="warranty" element={<AdminWarrantyPage />} />
             <Route path="service-center" element={<AdminServiceCenter />} />

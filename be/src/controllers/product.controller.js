@@ -191,6 +191,92 @@ async updateProduct(req, res) {
             });
         }
 
+        // Nếu có base_price, warranty_period, stock_quantity => cập nhật default variant
+        if (req.body.base_price || req.body.warranty_period !== undefined || req.body.stock_quantity !== undefined) {
+            const variants = await VariantDAO.getVariantsByProductId(productId);
+            const defaultVariant = variants.find(v => v.is_default === 1);
+            
+            if (defaultVariant) {
+                const variantUpdateData = {};
+                
+                if (req.body.base_price) {
+                    variantUpdateData.price = parseFloat(req.body.base_price);
+                }
+                if (req.body.warranty_period !== undefined) {
+                    variantUpdateData.warranty_period = parseInt(req.body.warranty_period);
+                }
+                if (req.body.stock_quantity !== undefined) {
+                    variantUpdateData.stock_quantity = parseInt(req.body.stock_quantity);
+                }
+                
+                // Giữ nguyên các field cần thiết cho update
+                variantUpdateData.sku = defaultVariant.sku;
+                variantUpdateData.variant_name = defaultVariant.variant_name;
+                variantUpdateData.is_active = defaultVariant.is_active;
+                variantUpdateData.is_default = defaultVariant.is_default;
+                
+                // Sử dụng field nếu không được cập nhật
+                if (!variantUpdateData.price) {
+                    variantUpdateData.price = defaultVariant.price;
+                }
+                if (variantUpdateData.warranty_period === undefined) {
+                    variantUpdateData.warranty_period = defaultVariant.warranty_period;
+                }
+                if (variantUpdateData.stock_quantity === undefined) {
+                    variantUpdateData.stock_quantity = defaultVariant.stock_quantity;
+                }
+                
+                // XỬ LÝ SERIALS khi thay đổi stock_quantity
+                if (req.body.stock_quantity !== undefined) {
+                    const oldStock = defaultVariant.stock_quantity || 0;
+                    const newStock = parseInt(req.body.stock_quantity);
+                    const stockDelta = newStock - oldStock;
+                    
+                    if (stockDelta > 0) {
+                        // TĂNG TỒN KHO: Generate thêm serials mới
+                        console.log(`📈 Stock increased by ${stockDelta}. Generating additional serials...`);
+                        try {
+                            const VariantSerialService = (await import('../services/variantSerial.service.js')).default;
+                            await VariantSerialService.autoGenerateSerials(defaultVariant.variant_id, stockDelta);
+                            console.log(`✅ Generated ${stockDelta} new serials for variant ${defaultVariant.variant_id}`);
+                        } catch (serialError) {
+                            console.error(`❌ Error generating serials:`, serialError);
+                            // Không fail toàn bộ update nếu serial generation lỗi
+                        }
+                    } else if (stockDelta < 0) {
+                        // GIẢM TỒN KHO: Kiểm tra số serial available
+                        console.log(`📉 Stock decreased by ${Math.abs(stockDelta)}. Checking available serials...`);
+                        try {
+                            const VariantSerialDAO = (await import('../daos/warranty/variantSerial.dao.js')).default;
+                            const availableCount = await VariantSerialDAO.getAvailableCount(defaultVariant.variant_id);
+                            
+                            if (availableCount < Math.abs(stockDelta)) {
+                                console.warn(`⚠️ Warning: Trying to reduce stock by ${Math.abs(stockDelta)} but only ${availableCount} serials available`);
+                                // Có thể thêm logic xóa serials available nếu cần
+                                // Hoặc chỉ cảnh báo và cho phép giảm stock
+                            } else {
+                                // Xóa serials dư thừa (FIFO - xóa serial cũ nhất)
+                                const serialsToDelete = await VariantSerialDAO.findAvailableSerials(
+                                    defaultVariant.variant_id, 
+                                    Math.abs(stockDelta)
+                                );
+                                
+                                for (const serial of serialsToDelete) {
+                                    await VariantSerialDAO.delete(serial.serial_id);
+                                }
+                                console.log(`🗑️ Deleted ${serialsToDelete.length} available serials`);
+                            }
+                        } catch (serialError) {
+                            console.error(`❌ Error handling serial reduction:`, serialError);
+                            // Không fail toàn bộ update
+                        }
+                    }
+                }
+                
+                await VariantDAO.updateVariant(defaultVariant.variant_id, variantUpdateData);
+            }
+        }
+
         res.json({
             success: true,
             message: 'Cập nhật sản phẩm thành công',

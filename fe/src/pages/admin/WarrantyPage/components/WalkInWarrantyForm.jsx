@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,13 +13,21 @@ import {
   AlertCircle,
   CheckCircle,
   Shield,
-  Calendar
+  Calendar,
+  X
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatDate } from '@/lib/utils';
 import { searchProductForWarranty, createWalkInWarrantyRequest } from '@/services/serviceRequestService';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
-const WalkInWarrantyForm = () => {
+const WalkInWarrantyForm = ({ open, onClose, onSuccess, prefilledData }) => {
   const [searchType, setSearchType] = useState('serial'); // 'serial' | 'phone'
   const [searchValue, setSearchValue] = useState('');
   const [searching, setSearching] = useState(false);
@@ -35,6 +43,27 @@ const WalkInWarrantyForm = () => {
     images: []
   });
   const [submitting, setSubmitting] = useState(false);
+
+  // Auto-fill form when prefilledData is provided
+  useEffect(() => {
+    if (prefilledData) {
+      setFoundProduct({
+        serial_id: prefilledData.serial_id,
+        serial_number: prefilledData.serial_number,
+        product_name: prefilledData.product_name,
+        sku: prefilledData.sku,
+        variant_name: prefilledData.variant_name,
+        product_sku: prefilledData.sku,
+      });
+      setFormData(prev => ({
+        ...prev,
+        customer_name: prefilledData.customer_name || '',
+        customer_phone: prefilledData.customer_phone || '',
+      }));
+      setSearchValue(prefilledData.serial_number || '');
+      setSearchType('serial');
+    }
+  }, [prefilledData]);
 
   // Handle search by serial number or phone
   const handleSearch = async () => {
@@ -203,6 +232,11 @@ const WalkInWarrantyForm = () => {
 
       toast.success('Đã tạo yêu cầu bảo hành cho khách vãng lai!');
       
+      // Call onSuccess callback if provided
+      if (onSuccess) {
+        onSuccess();
+      }
+      
       // Reset form
       handleReset();
     } catch (error) {
@@ -228,142 +262,20 @@ const WalkInWarrantyForm = () => {
   };
 
   return (
-    <div className="max-w-5xl mx-auto p-8">
-      <div className="mb-8">
-        <div className="flex items-center gap-4 mb-3">
-          <UserPlus className="size-12 text-blue-600" />
-          <div>
-            <h1 className="text-4xl font-bold text-gray-900">Bảo hành khách vãng lai</h1>
-            <p className="text-lg text-gray-600 mt-1">Tạo yêu cầu bảo hành cho khách hàng tại cửa hàng</p>
-          </div>
-        </div>
-      </div>
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-3 text-2xl">
+            <UserPlus className="size-8 text-blue-600" />
+            Bảo hành khách vãng lai
+          </DialogTitle>
+          <DialogDescription className="text-base">
+            Tạo yêu cầu bảo hành cho khách hàng tại cửa hàng
+          </DialogDescription>
+        </DialogHeader>
 
-      {/* Step 1: Search Product */}
-      <Card className="mb-8">
-        <CardHeader className="pb-6">
-          <CardTitle className="flex items-center gap-3 text-xl">
-            <Search className="size-6" />
-            Bước 1: Tìm kiếm sản phẩm
-          </CardTitle>
-          <CardDescription className="text-base mt-2">
-            Tìm sản phẩm bằng số serial hoặc số điện thoại khách hàng
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6" >
-          <div className="space-y-5">
-            {/* Search Type Selection */}
-            <div className="flex gap-3">
-              <Button
-                type="button"
-                variant={searchType === 'serial' ? 'default' : 'outline'}
-                onClick={() => setSearchType('serial')}
-                className="flex-1 h-12 text-base"
-              >
-                Tìm theo Serial
-              </Button>
-              <Button
-                type="button"
-                variant={searchType === 'phone' ? 'default' : 'outline'}
-                onClick={() => setSearchType('phone')}
-                className="flex-1 h-12 text-base"
-              >
-                Tìm theo SĐT
-              </Button>
-            </div>
-
-            {/* Search Input */}
-            <div className="flex gap-3">
-              <Input
-                type="text"
-                placeholder={searchType === 'serial' ? 'Nhập số serial...' : 'Nhập số điện thoại...'}
-                value={searchValue}
-                onChange={(e) => setSearchValue(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                className="h-12 text-base"
-              />
-              <Button 
-                onClick={handleSearch}
-                disabled={searching}
-                className="h-12 px-6 text-base"
-              >
-                <Search className="size-5 mr-2" />
-                {searching ? 'Đang tìm...' : 'Tìm kiếm'}
-              </Button>
-            </div>
-
-            {/* Order Search Results - Show product list */}
-            {foundOrder && !foundProduct && (
-              <div className="mt-4">
-                <h3 className="font-semibold mb-3">Chọn sản phẩm cần bảo hành:</h3>
-                <div className="space-y-2">
-                  {foundOrder.products.map((product) => (
-                    <Card key={product.serial_id} className="cursor-pointer hover:border-blue-500" onClick={() => handleSelectProduct(product)}>
-                      <CardContent className="pt-4">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <p className="font-semibold">{product.product_name}</p>
-                            <p className="text-sm text-gray-500">Serial: {product.serial_number}</p>
-                          </div>
-                          <Badge className={product.warranty_status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
-                            {product.warranty_status === 'active' ? 'Còn BH' : 'Hết BH'}
-                          </Badge>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Found Product Display */}
-            {foundProduct && (
-              <Card className="bg-green-50 border-green-200">
-                <CardContent className="pt-6">
-                  <div className="flex items-start gap-5">
-                    <div className="bg-green-100 p-4 rounded-lg">
-                      <Package className="size-8 text-green-600" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-start justify-between mb-3">
-                        <div>
-                          <h3 className="font-bold text-xl">{foundProduct.product_name}</h3>
-                          <p className="text-base text-gray-600 mt-1">SKU: {foundProduct.product_sku}</p>
-                          <p className="text-base text-gray-600">Serial: {foundProduct.serial_number}</p>
-                        </div>
-                        <Badge className="bg-green-100 text-green-800 text-base px-3 py-1">
-                          <CheckCircle className="size-4 mr-1" />
-                          Đã tìm thấy
-                        </Badge>
-                      </div>
-                      <div className="grid grid-cols-2 gap-5 mt-4 text-base">
-                        <div>
-                          <p className="text-gray-600">Thời hạn bảo hành</p>
-                          <p className="font-semibold">{foundProduct.warranty_months} tháng</p>
-                        </div>
-                        <div>
-                          <p className="text-gray-600">Ngày mua</p>
-                          <p className="font-semibold">{formatDate(foundProduct.purchase_date)}</p>
-                        </div>
-                        <div>
-                          <p className="text-gray-600">Hết hạn BH</p>
-                          <p className="font-semibold">{formatDate(foundProduct.warranty_end_date)}</p>
-                        </div>
-                        <div>
-                          <p className="text-gray-600">Trạng thái BH</p>
-                          <Badge className={foundProduct.warranty_status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
-                            {foundProduct.warranty_status === 'active' ? 'Còn bảo hành' : 'Hết bảo hành'}
-                          </Badge>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+        <div className="space-y-6">
+         
 
       {/* Step 2: Customer Info & Request Details */}
       {foundProduct && (
@@ -372,7 +284,7 @@ const WalkInWarrantyForm = () => {
             <CardHeader className="pb-6">
               <CardTitle className="flex items-center gap-3 text-xl">
                 <Phone className="size-6" />
-                Bước 2: Thông tin khách hàng
+                Thông tin khách hàng
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -407,7 +319,7 @@ const WalkInWarrantyForm = () => {
             <CardHeader className="pb-6">
               <CardTitle className="flex items-center gap-3 text-xl">
                 <Shield className="size-6" />
-                Bước 3: Thông tin yêu cầu bảo hành
+                Thông tin yêu cầu bảo hành
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -440,7 +352,7 @@ const WalkInWarrantyForm = () => {
                 </div>
 
                 {/* Image Upload */}
-                <div>
+                {/* <div>
                   <Label className="text-base mb-2">Hình ảnh sản phẩm (Tối đa 5 ảnh)</Label>
                   <div className="mt-3">
                     <input
@@ -461,10 +373,10 @@ const WalkInWarrantyForm = () => {
                     <p className="text-base text-gray-500 mt-2">
                       Chụp ảnh sản phẩm và vấn đề gặp phải
                     </p>
-                  </div>
+                  </div> */}
 
                   {/* Image Preview */}
-                  {formData.images.length > 0 && (
+                  {/* {formData.images.length > 0 && (
                     <div className="grid grid-cols-5 gap-2 mt-3">
                       {formData.images.map((img, index) => (
                         <div key={index} className="relative group">
@@ -484,7 +396,7 @@ const WalkInWarrantyForm = () => {
                       ))}
                     </div>
                   )}
-                </div>
+                </div> */}
 
                 {/* Important Note */}
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -509,7 +421,9 @@ const WalkInWarrantyForm = () => {
             <Button
               type="button"
               variant="outline"
-              onClick={handleReset}
+              onClick={() => {
+                if (onClose) onClose();
+              }}
               disabled={submitting}
               className="h-12 px-6 text-base"
             >
@@ -525,7 +439,9 @@ const WalkInWarrantyForm = () => {
           </div>
         </form>
       )}
-    </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 

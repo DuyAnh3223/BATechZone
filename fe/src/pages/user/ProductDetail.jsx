@@ -352,18 +352,27 @@ const ProductDetail = () => {
           <TabsList className={`grid w-full max-w-2xl ${variants && variants.length > 0 ? 'grid-cols-3' : 'grid-cols-2'}`}>
             <TabsTrigger value="description">Mô tả sản phẩm</TabsTrigger>
             <TabsTrigger value="technical-specs">Thông số kỹ thuật</TabsTrigger>
-            {variants && variants.length > 0 && (
+            {/* {variants && variants.length > 0 && (
               <TabsTrigger value="variants">Biến thể ({variants.length})</TabsTrigger>
-            )}
+            )} */}
           </TabsList>
           
-          <ProductDescription description={currentProduct.description} />
-          <TechnicalSpecs
-            selectedVariant={selectedVariant}
-            variants={variants}
-            product={currentProduct}
-          />
-          {variants && variants.length > 0 && <VariantsList variants={variants} />}
+          <TabsContent value="description">
+            <ProductDescription description={currentProduct.description} />
+          </TabsContent>
+          
+          <TabsContent value="technical-specs">
+            <TechnicalSpecs
+              selectedVariant={selectedVariant}
+              variants={variants}
+              product={currentProduct}
+            />
+          </TabsContent>
+          {/* {variants && variants.length > 0 && (
+            <TabsContent value="variants">
+              <VariantsList variants={variants} />
+            </TabsContent>
+          )} */}
         </Tabs>
       </div>
 

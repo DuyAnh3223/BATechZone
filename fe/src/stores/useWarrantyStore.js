@@ -1,11 +1,13 @@
 import { create } from 'zustand';
 import { toast } from 'sonner';
 import { serviceRequestService } from '@/services/serviceRequestService';
+import warrantyService from '@/services/warrantyService';
 
 export const useWarrantyStore = create((set, get) => ({
     myProducts: [],
     myRequests: [],
     currentRequest: null,
+    warrantyInfo: null,
     loading: false,
     error: null,
 
@@ -83,12 +85,39 @@ export const useWarrantyStore = create((set, get) => ({
         }
     },
 
+    lookupWarrantyBySerial: async (serialNumber) => {
+        set({ loading: true, error: null, warrantyInfo: null });
+        try {
+            const response = await warrantyService.lookupWarrantyBySerial(serialNumber);
+            if (response.success) {
+                set({ warrantyInfo: response.data, loading: false });
+                if (!response.data.isValid) {
+                    toast.warning('Sản phẩm không còn trong thời hạn bảo hành');
+                } else {
+                    toast.success('Tìm thấy thông tin bảo hành');
+                }
+            } else {
+                set({ warrantyInfo: null, loading: false });
+                toast.error(response.message || 'Không tìm thấy thông tin bảo hành');
+            }
+            return response;
+        } catch (error) {
+            const message = error.response?.data?.message || error.message || 'Không tìm thấy serial number này';
+            set({ error: message, loading: false, warrantyInfo: null });
+            toast.error(message);
+            throw error;
+        }
+    },
+
+    clearWarrantyInfo: () => set({ warrantyInfo: null }),
+
     clearError: () => set({ error: null }),
     
     reset: () => set({ 
         myProducts: [], 
         myRequests: [],
         currentRequest: null,
+        warrantyInfo: null,
         loading: false, 
         error: null 
     })

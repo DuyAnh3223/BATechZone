@@ -1,8 +1,11 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { Package } from "lucide-react";
+import { Package, Cpu } from "lucide-react";
 
 const TechnicalSpecs = ({ selectedVariant, variants, product }) => {
- 
+  
+  // Check if this is a bundle product
+  const isBundle = selectedVariant?.variant_type === 'bundle';
+  const bundleItems = selectedVariant?.components || selectedVariant?.bundle_items || [];
   
   // Get variant label for display
   const variantLabel = selectedVariant 
@@ -10,6 +13,40 @@ const TechnicalSpecs = ({ selectedVariant, variants, product }) => {
         attr.value_name || attr.attribute_value_name || attr.attribute_value_id
       ).join(' / ') || selectedVariant.variant_name || `Biến thể #${selectedVariant.variant_id}`
     : null;
+  
+  // If bundle, display bundle items
+  if (isBundle && bundleItems && bundleItems.length > 0) {
+    return (
+      <Card>
+        <CardContent className="pt-6">
+          <div className="space-y-4">
+            {selectedVariant && variantLabel && (
+              <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-sm text-blue-900 font-medium mb-1">Cấu hình bộ PC:</p>
+                {selectedVariant.sku && (
+                  <p className="text-xs text-blue-600 mt-1">SKU: {selectedVariant.sku}</p>
+                )}
+              </div>
+            )}
+            
+            <div className="space-y-3">
+              {bundleItems.map((item, index) => (
+                <div key={index} className="flex items-start gap-4 py-3 border-b border-gray-200 last:border-0">
+                  <span className="text-gray-600 font-medium min-w-[180px] text-sm">
+                    {item.category_name || item.categoryName || 'Linh kiện'}:
+                  </span>
+                  <span className="text-gray-900 text-sm flex-1 font-medium">
+                    {item.product_name || item.productName || item.component_name || 'Không xác định'}
+                    {item.quantity > 1 && ` (x${item.quantity})`}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
   
   // Get specifications from:
   // 1. Product-level attributes (common specs for all variants)
@@ -99,7 +136,7 @@ const TechnicalSpecs = ({ selectedVariant, variants, product }) => {
           {selectedVariant && variantLabel && (
             <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
               <p className="text-sm text-blue-900 font-medium mb-1">Đang xem thông số kỹ thuật của:</p>
-              <p className="text-base text-blue-700 font-semibold">{variantLabel}</p>
+              {/* <p className="text-base text-blue-700 font-semibold">{variantLabel}</p> */}
               {selectedVariant.sku && (
                 <p className="text-xs text-blue-600 mt-1">SKU: {selectedVariant.sku}</p>
               )}

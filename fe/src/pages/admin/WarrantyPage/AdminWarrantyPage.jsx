@@ -27,6 +27,7 @@ import {
 import { formatDate } from '@/lib/utils';
 import WarrantyInspectionDialog from './components/WarrantyInspectionDialog';
 import WarrantyStatusUpdateDialog from './components/WarrantyStatusUpdateDialog';
+import WarrantyLookup from './components/WarrantyLookup';
 import {
   Dialog,
   DialogContent,
@@ -233,6 +234,11 @@ const AdminWarrantyPage = () => {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-2 lg:w-[400px]">
+          <TabsTrigger value="dashboard">Danh sách yêu cầu</TabsTrigger>
+          <TabsTrigger value="lookup">Tra cứu bảo hành</TabsTrigger>
+        </TabsList>
+
         {/* Dashboard Tab */}
         <TabsContent value="dashboard" className="space-y-6">
           {/* Summary Statistics */}
@@ -592,6 +598,11 @@ const AdminWarrantyPage = () => {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Lookup Tab */}
+        <TabsContent value="lookup" className="space-y-6">
+          <WarrantyLookup onRequestCreated={loadWarrantyRequests} />
         </TabsContent>
       </Tabs>
 

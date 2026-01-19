@@ -1217,10 +1217,10 @@ const BuildPC = () => {
                                   </span>
                                 ))}
                               </div>
-                              <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-emerald-600">
+                              {/* <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-emerald-600">
                                 <span>{item.stock > 0 ? "Còn hàng" : "Liên hệ"}</span>
                                 {item.warranty && <span>BH: {item.warranty}</span>}
-                              </div>
+                              </div> */}
                             </div>
                             <Button
                               className="w-full rounded-full sm:w-auto sm:flex-shrink-0 h-9 px-3 text-xs"

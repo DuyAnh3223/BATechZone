@@ -461,7 +461,7 @@ const UserLayout = () => {
               </Button>
 
               {/* Warranty Check Icon - Circular with teal background */}
-              <Link
+              {/* <Link
                 to="/warranty-check"
                 className="relative transition-all duration-300 ease-in-out inline-flex items-center justify-center"
                 style={{
@@ -492,7 +492,7 @@ const UserLayout = () => {
                 }}
               >
                 <Shield className="size-6" style={{ color: '#ffffff' }} />
-              </Link>
+              </Link> */}
 
               {/* User Account Menu */}
               <DropdownMenu>
