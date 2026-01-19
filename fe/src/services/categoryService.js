@@ -11,6 +11,40 @@ export const categoryService = {
         return response.data;
     },
 
+    // Lấy danh sách danh mục với filter (client-side filtering)
+    listCategories: async (params = {}) => {
+        const response = await api.get('/categories', { 
+            withCredentials: true 
+        });
+        
+        let categories = response.data?.data || [];
+        
+        // Filter by search keyword
+        if (params.search) {
+            const searchLower = params.search.toLowerCase();
+            categories = categories.filter(cat => 
+                cat.category_name?.toLowerCase().includes(searchLower) ||
+                cat.parent_name?.toLowerCase().includes(searchLower)
+            );
+        }
+        
+        // Filter by is_active
+        if (params.is_active !== undefined) {
+            categories = categories.filter(cat => cat.is_active === params.is_active);
+        }
+        
+        // Limit results
+        if (params.limit) {
+            categories = categories.slice(0, params.limit);
+        }
+        
+        return { 
+            ...response.data, 
+            data: categories,
+            total: categories.length 
+        };
+    },
+
     // Lấy danh mục theo ID
     getCategoryById: async (categoryId) => {
         const response = await api.get(`/categories/${categoryId}`, { 
