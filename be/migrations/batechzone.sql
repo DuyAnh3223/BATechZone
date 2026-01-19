@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Jan 16, 2026 at 12:11 PM
+-- Generation Time: Jan 19, 2026 at 09:58 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -21,6 +21,149 @@ SET time_zone = "+00:00";
 -- Database: `batechzone`
 --
 
+DELIMITER $$
+--
+-- Procedures
+--
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_get_bundle_stock` (IN `p_bundle_variant_id` INT, OUT `p_available_stock` INT)   BEGIN
+    -- Tính tồn kho bundle = MIN(số lượng linh kiện / số lượng cần dùng)
+    SELECT COALESCE(
+        FLOOR(
+            MIN(
+                (SELECT COUNT(*) 
+                 FROM variant_serials vs 
+                 WHERE vs.variant_id = bi.component_variant_id 
+                   AND vs.status = 'in_stock'
+                   AND vs.serial_type = 'component'
+                ) / bi.quantity
+            )
+        ), 
+        0
+    )
+    INTO p_available_stock
+    FROM bundle_items bi
+    WHERE bi.bundle_variant_id = p_bundle_variant_id;
+    
+    -- Nếu không có linh kiện nào, trả về 0
+    IF p_available_stock IS NULL THEN
+        SET p_available_stock = 0;
+    END IF;
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_sell_pc_bundle` (IN `p_bundle_variant_id` INT, IN `p_order_item_id` INT, OUT `p_success` BOOLEAN, OUT `p_message` VARCHAR(255), OUT `p_serial_number` VARCHAR(64))   BEGIN
+    DECLARE v_available_stock INT DEFAULT 0;
+    DECLARE v_bundle_sku VARCHAR(50);
+    DECLARE v_bundle_serial VARCHAR(64);
+    DECLARE v_component_variant_id INT;
+    DECLARE v_quantity_needed INT;
+    DECLARE v_serials_assigned INT;
+    DECLARE done INT DEFAULT 0;
+    
+    -- Cursor để duyệt qua các linh kiện trong bundle
+    DECLARE component_cursor CURSOR FOR
+        SELECT component_variant_id, quantity
+        FROM bundle_items
+        WHERE bundle_variant_id = p_bundle_variant_id
+        ORDER BY display_order;
+    
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = 1;
+    
+    -- Bắt đầu transaction
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        SET p_success = FALSE;
+        SET p_message = 'Lỗi khi bán bundle';
+        SET p_serial_number = NULL;
+    END;
+    
+    START TRANSACTION;
+    
+    -- Kiểm tra tồn kho
+    CALL sp_get_bundle_stock(p_bundle_variant_id, v_available_stock);
+    
+    IF v_available_stock < 1 THEN
+        SET p_success = FALSE;
+        SET p_message = 'Bundle hết hàng';
+        SET p_serial_number = NULL;
+        ROLLBACK;
+    ELSE
+        -- Lấy SKU của bundle để tạo serial
+        SELECT sku INTO v_bundle_sku
+        FROM product_variants
+        WHERE variant_id = p_bundle_variant_id;
+        
+        -- Tạo serial cho bundle (định dạng: BUNDLE-SKU-TIMESTAMP)
+        SET v_bundle_serial = CONCAT('BUNDLE-', v_bundle_sku, '-', UNIX_TIMESTAMP());
+        
+        -- Duyệt qua từng linh kiện và gán serial
+        OPEN component_cursor;
+        
+        component_loop: LOOP
+            FETCH component_cursor INTO v_component_variant_id, v_quantity_needed;
+            
+            IF done THEN
+                LEAVE component_loop;
+            END IF;
+            
+            -- Gán serial cho linh kiện (lấy số lượng cần thiết)
+            UPDATE variant_serials
+            SET status = 'sold',
+                order_item_id = p_order_item_id,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE variant_id = v_component_variant_id
+              AND status = 'in_stock'
+              AND serial_type = 'component'
+            ORDER BY created_at ASC
+            LIMIT v_quantity_needed;
+            
+            -- Kiểm tra xem đã gán đủ serial chưa
+            SET v_serials_assigned = ROW_COUNT();
+            
+            IF v_serials_assigned < v_quantity_needed THEN
+                SET p_success = FALSE;
+                SET p_message = CONCAT('Không đủ linh kiện variant_id: ', v_component_variant_id);
+                SET p_serial_number = NULL;
+                ROLLBACK;
+                LEAVE component_loop;
+            END IF;
+            
+        END LOOP;
+        
+        CLOSE component_cursor;
+        
+        -- Nếu tất cả linh kiện đã được gán, tạo serial cho bundle
+        IF p_success IS NULL OR p_success = TRUE THEN
+            INSERT INTO variant_serials (
+                variant_id, 
+                serial_number, 
+                status, 
+                order_item_id,
+                serial_type,
+                created_at,
+                updated_at
+            ) VALUES (
+                p_bundle_variant_id,
+                v_bundle_serial,
+                'sold',
+                p_order_item_id,
+                'pc_bundle',
+                CURRENT_TIMESTAMP,
+                CURRENT_TIMESTAMP
+            );
+            
+            SET p_success = TRUE;
+            SET p_message = 'Bán bundle thành công';
+            SET p_serial_number = v_bundle_serial;
+            
+            COMMIT;
+        END IF;
+    END IF;
+    
+END$$
+
+DELIMITER ;
+
 -- --------------------------------------------------------
 
 --
@@ -32,15 +175,15 @@ CREATE TABLE `addresses` (
   `user_id` int(11) DEFAULT NULL,
   `recipient_name` varchar(100) NOT NULL,
   `phone` varchar(20) NOT NULL,
-  `address_line1` varchar(255) NOT NULL,
-  `address_line2` varchar(255) DEFAULT NULL,
-  `city` varchar(100) NOT NULL,
-  `district` varchar(100) DEFAULT NULL,
-  `ward` varchar(100) DEFAULT NULL,
-  `postal_code` varchar(20) DEFAULT NULL,
-  `country` varchar(50) DEFAULT 'Vietnam',
+  `address_line` varchar(255) NOT NULL,
+  `city` varchar(100) NOT NULL COMMENT 'Tên Tỉnh/Thành phố',
+  `province_id` int(11) DEFAULT NULL COMMENT 'GHN Province ID',
+  `district` varchar(100) DEFAULT NULL COMMENT 'Tên Quận/Huyện',
+  `district_id` int(11) DEFAULT NULL COMMENT 'GHN District ID',
+  `ward` varchar(100) DEFAULT NULL COMMENT 'Tên Phường/Xã',
+  `ward_code` varchar(20) DEFAULT NULL COMMENT 'GHN Ward Code',
   `is_default` tinyint(1) DEFAULT 0,
-  `address_type` enum('home','office','other') DEFAULT 'home',
+  `type` enum('home','office','other') NOT NULL DEFAULT 'home',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -49,47 +192,22 @@ CREATE TABLE `addresses` (
 -- Dumping data for table `addresses`
 --
 
-INSERT INTO `addresses` (`address_id`, `user_id`, `recipient_name`, `phone`, `address_line1`, `address_line2`, `city`, `district`, `ward`, `postal_code`, `country`, `is_default`, `address_type`, `created_at`, `updated_at`) VALUES
-(53, 21, 'Nguyễn Văn A', '0908786561', '123 Thạch Lãm', NULL, 'hcm', 'Quận 1', NULL, NULL, 'Vietnam', 0, 'other', '2025-11-24 14:41:59', '2025-11-24 14:41:59'),
-(71, NULL, 'Nguyễn Văn A', '0123456789', '32 Bùi Ngọ', NULL, 'hcm', 'q1', NULL, NULL, 'Vietnam', 0, 'other', '2025-12-18 05:03:36', '2025-12-18 05:03:36'),
-(72, 23, 'Demo', '0908887776', '32 Demo', NULL, 'hcm', 'Quận 9', NULL, NULL, 'Vietnam', 0, 'other', '2025-12-18 05:08:23', '2025-12-18 05:08:23'),
-(73, NULL, 'Demo', '0908887776', '32 Demo', NULL, 'hcm', 'Quận 12', NULL, NULL, 'Vietnam', 0, 'other', '2025-12-18 07:28:26', '2025-12-18 07:28:26'),
-(74, 23, 'demo776', '0908887776', '32 Demo', NULL, 'hcm', 'Quận 5', NULL, NULL, 'Vietnam', 0, 'other', '2025-12-18 07:30:54', '2025-12-18 07:30:54'),
-(75, 23, 'demo776', '0908887776', '32 Demo', NULL, 'hcm', 'Quận Gò Vấp', NULL, NULL, 'Vietnam', 0, 'other', '2025-12-18 07:39:32', '2025-12-18 07:39:32'),
-(76, 23, 'demo776', '0908887776', '32 Demo', NULL, 'hcm', 'Quận 10', NULL, NULL, 'Vietnam', 0, 'other', '2025-12-18 07:58:55', '2025-12-18 07:58:55'),
-(77, NULL, 'Demo', '0908887776', '32 Demo', NULL, 'hcm', 'q1', NULL, NULL, 'Vietnam', 0, 'other', '2025-12-19 14:52:09', '2025-12-19 14:52:09'),
-(78, NULL, 'Demo', '0908887776', '32 Demo', NULL, 'hcm', 'q1', NULL, NULL, 'Vietnam', 0, 'other', '2025-12-20 06:57:11', '2025-12-20 06:57:11'),
-(79, NULL, 'Demo', '0908887776', '32 Demo', NULL, 'hcm', 'q1', NULL, NULL, 'Vietnam', 0, 'other', '2025-12-20 06:57:14', '2025-12-20 06:57:14'),
-(80, NULL, 'Demo', '0908887776', '32 Demo', NULL, 'hcm', 'q1', NULL, NULL, 'Vietnam', 0, 'other', '2025-12-20 06:57:40', '2025-12-20 06:57:40'),
-(81, NULL, 'Demo', '0908887776', '32 Demo', NULL, 'hcm', 'q1', NULL, NULL, 'Vietnam', 0, 'other', '2025-12-20 06:59:04', '2025-12-20 06:59:04'),
-(82, NULL, 'Demo', '0908887776', '32 Demo', NULL, 'hcm', 'q1', NULL, NULL, 'Vietnam', 0, 'other', '2025-12-20 07:07:15', '2025-12-20 07:07:15'),
-(83, NULL, 'Demo', '0908887776', '32 Demo', NULL, 'hcm', 'q1', NULL, NULL, 'Vietnam', 0, 'other', '2025-12-20 07:28:51', '2025-12-20 07:28:51'),
-(84, NULL, 'Demo', '0908887776', '32 Demo', NULL, 'hcm', 'q1', NULL, NULL, 'Vietnam', 0, 'other', '2025-12-20 07:33:54', '2025-12-20 07:33:54'),
-(85, NULL, 'Demo', '0908887776', '32 Demo', NULL, 'hcm', 'q1', NULL, NULL, 'Vietnam', 0, 'other', '2025-12-20 07:38:14', '2025-12-20 07:38:14'),
-(86, NULL, 'Demo', '0908887776', '32 Demo', NULL, 'hcm', 'q1', NULL, NULL, 'Vietnam', 0, 'other', '2025-12-20 07:48:04', '2025-12-20 07:48:04'),
-(87, NULL, 'Demo', '0908887776', '32 Demo', NULL, 'hcm', 'q1', NULL, NULL, 'Vietnam', 0, 'other', '2025-12-20 07:57:06', '2025-12-20 07:57:06'),
-(88, NULL, 'Demo', '0908887776', '32 Demo', NULL, 'hcm', 'q1', NULL, NULL, 'Vietnam', 0, 'other', '2025-12-20 08:01:49', '2025-12-20 08:01:49'),
-(89, NULL, 'Demo', '0908887776', '32 Demo', NULL, 'hcm', 'q1', NULL, NULL, 'Vietnam', 0, 'other', '2025-12-20 08:11:12', '2025-12-20 08:11:12'),
-(90, 20, 'Demo', '0908887776', '32 Demo', NULL, 'hcm', 'q1', NULL, NULL, 'Vietnam', 0, 'other', '2025-12-20 14:50:24', '2025-12-20 14:50:24'),
-(91, NULL, 'Demo', '0908887776', '32 Demo', NULL, 'hcm', 'q1', NULL, NULL, 'Vietnam', 0, 'other', '2025-12-20 17:10:59', '2025-12-20 17:10:59'),
-(92, 20, 'New Address', '0908787671', '32 Bùi Ngọ', NULL, 'TP. Hồ Chí Minh', NULL, NULL, NULL, 'Vietnam', 1, 'home', '2025-12-25 11:50:17', '2025-12-25 11:50:17'),
-(93, 20, 'New Address1', '0908787671', '32 Bùi Ngọ', NULL, 'TP. Hồ Chí Minh', NULL, NULL, NULL, 'Vietnam', 0, 'home', '2025-12-25 11:54:41', '2025-12-25 11:54:41'),
-(94, NULL, 'Trần Thị B', '0908787671', '32 Bùi Ngọ', NULL, 'hcm', 'q1', NULL, NULL, 'Vietnam', 0, 'other', '2025-12-26 11:35:27', '2025-12-26 11:35:27'),
-(95, NULL, 'Trần Thị B', '0908787671', '32 Bùi Ngọ', NULL, 'hcm', 'q1', NULL, NULL, 'Vietnam', 0, 'other', '2025-12-26 11:35:30', '2025-12-26 11:35:30'),
-(96, NULL, 'Trần Thị B', '0908787671', '32 Bùi Ngọ', NULL, 'hcm', 'q1', NULL, NULL, 'Vietnam', 0, 'other', '2025-12-26 11:36:57', '2025-12-26 11:36:57'),
-(97, NULL, 'Trần Thị B', '0908787671', '32 Bùi Ngọ', NULL, 'hanoi', 'Ba Đình', NULL, NULL, 'Vietnam', 0, 'other', '2025-12-30 13:42:36', '2025-12-30 13:42:36'),
-(98, NULL, 'Trần Thị B', '0908787671', '32 Bùi Ngọ', NULL, 'hanoi', 'Ba Đình', NULL, NULL, 'Vietnam', 0, 'other', '2025-12-30 13:49:36', '2025-12-30 13:49:36'),
-(99, 23, 'demo776', '0908787671', '32 Bùi Ngọ', NULL, 'hcm', 'Quận 1', NULL, NULL, 'Vietnam', 0, 'other', '2025-12-30 14:14:56', '2025-12-30 14:14:56'),
-(100, NULL, 'demo776', '0908787671', '32 Bùi Ngọ', NULL, 'hcm', 'Quận 1', NULL, NULL, 'Vietnam', 0, 'other', '2025-12-30 14:19:02', '2025-12-30 14:19:02'),
-(104, NULL, 'Le Van C', '0908787671', '32 Bùi Ngọ', NULL, 'hcm', 'Quận 1', NULL, NULL, 'Vietnam', 0, 'other', '2025-12-30 15:09:35', '2025-12-30 15:09:35'),
-(105, NULL, 'Trần Thị B', '0908787671', '32 Bùi Ngọ', NULL, 'hcm', 'q1', NULL, NULL, 'Vietnam', 0, 'other', '2025-12-30 15:10:38', '2025-12-30 15:10:38'),
-(106, NULL, 'Nguyễn Văn A', '0908786561', '123 Thạch Lãm', NULL, 'hcm', 'q1', NULL, NULL, 'Vietnam', 0, 'other', '2025-12-30 15:13:31', '2025-12-30 15:13:31'),
-(107, NULL, 'Le Van C', '0908787671', '32 Bùi Ngọ', NULL, 'hcm', 'Quận 7', NULL, NULL, 'Vietnam', 0, 'other', '2025-12-30 15:17:34', '2025-12-30 15:17:34'),
-(108, NULL, 'Trần Thị B', '0908787671', '32 Bùi Ngọ', NULL, 'hcm', 'Quận 1', NULL, NULL, 'Vietnam', 0, 'other', '2025-12-30 15:51:54', '2025-12-30 15:51:54'),
-(109, NULL, 'Trần Thị B', '0908787671', '32 Bùi Ngọ', NULL, 'hcm', 'Quận 1', NULL, NULL, 'Vietnam', 0, 'other', '2025-12-30 15:53:58', '2025-12-30 15:53:58'),
-(111, 25, 'Phạm Văn C', '0908988881', '32 Bùi Ngọ', NULL, 'hcm', 'Quận 1', NULL, NULL, 'Vietnam', 0, 'other', '2025-12-30 16:25:54', '2025-12-30 16:25:54'),
-(112, 25, 'phamvanc881', '0908988881', '32 Bùi Ngọ', NULL, 'hcm', 'Quận 7', NULL, NULL, 'Vietnam', 0, 'other', '2025-12-30 16:35:11', '2025-12-30 16:35:11'),
-(113, 20, 'Trần Thị B', '0908787671', '32 Bùi Ngọ', NULL, 'hcm', 'Quận 1', NULL, NULL, 'Vietnam', 0, 'other', '2026-01-04 19:25:59', '2026-01-04 19:25:59');
+INSERT INTO `addresses` (`address_id`, `user_id`, `recipient_name`, `phone`, `address_line`, `city`, `province_id`, `district`, `district_id`, `ward`, `ward_code`, `is_default`, `type`, `created_at`, `updated_at`) VALUES
+(116, 27, 'Tôn Bảo', '0909887661', '32 Bùi Ngọ', 'TP. Hồ Chí Minh', 0, 'Quận 9', 0, 'Nhà Bè', '', 0, 'home', '2026-01-16 14:51:05', '2026-01-16 14:54:23'),
+(117, 27, 'Trần Thị B', '0908787671', '32 Bùi Ngọ', 'hcm', NULL, 'q1', NULL, NULL, NULL, 0, 'home', '2026-01-16 14:57:23', '2026-01-16 14:57:23'),
+(118, 20, 'Tôn Bảo', '0908787671', '32 Bùi Ngọ', 'Hưng Yên', 268, 'Huyện Kim Động', 1717, 'Xã Hiệp Cường', '220205', 0, 'home', '2026-01-17 14:08:07', '2026-01-17 14:08:07'),
+(119, 20, 'Trần Thị B', '0908787671', '32 Bùi Ngọ', 'Quảng Ninh', NULL, 'Thành phố Móng Cái', NULL, 'Phường Bình Ngọc', NULL, 0, 'home', '2026-01-17 14:26:49', '2026-01-17 14:26:49'),
+(120, 20, 'Trần Thị B', '0908787671', '32 Bùi Ngọ', 'Thái Nguyên', NULL, 'Huyện Phú Bình', NULL, 'Xã Dương Thành', NULL, 0, 'home', '2026-01-17 14:41:55', '2026-01-17 14:41:55'),
+(121, 20, 'Trần Thị B', '0908787671', '32 Bùi Ngọ', 'Bình Thuận', NULL, 'Thành phố Phan Thiết', NULL, 'Phường Đức Long', NULL, 0, 'home', '2026-01-17 15:01:45', '2026-01-17 15:01:45'),
+(122, 20, 'tranthib671', '0908787671', '32 Bùi Ngọ', 'Hòa Bình', NULL, 'Huyện Mai Châu', NULL, 'Xã Phúc Sạn', NULL, 0, 'home', '2026-01-17 15:11:17', '2026-01-17 15:11:17'),
+(123, 20, 'tranthib671', '0908787671', '32 Bùi Ngọ', 'Điện Biên', NULL, 'Huyện Mường Ảng', NULL, 'Xã Ngối Cáy', NULL, 0, 'home', '2026-01-17 15:17:48', '2026-01-17 15:17:48'),
+(124, 20, 'tranthib671', '0908787671', '32 Bùi Ngọ', 'Bắc Giang', NULL, 'Huyện Lục Ngạn', NULL, 'Xã Trù Hựu', NULL, 0, 'home', '2026-01-17 15:20:29', '2026-01-17 15:20:29'),
+(125, 20, 'tranthib671', '0908787671', '32 Bùi Ngọ', 'Ninh Thuận', NULL, 'Huyện Thuận Nam', NULL, 'Xã Phước Ninh', NULL, 0, 'home', '2026-01-17 15:22:17', '2026-01-17 15:22:17'),
+(126, 20, 'tranthib671', '0908787671', '32 Bùi Ngọ', 'Hậu Giang', NULL, 'Thành phố Vị Thanh', NULL, 'Phường III', NULL, 0, 'home', '2026-01-17 15:31:06', '2026-01-17 15:31:06'),
+(127, 20, 'tranthib671', '0908787671', '32 Bùi Ngọ', 'Hưng Yên', NULL, 'Thành phố Hưng Yên', NULL, 'Phường Lê Lợi', NULL, 0, 'home', '2026-01-17 15:31:48', '2026-01-17 15:31:48'),
+(128, 20, 'tranthib671', '0908787671', '32 Bùi Ngọ', 'Phú Yên', NULL, 'Huyện Đồng Xuân', NULL, 'Xã Xuân Long', NULL, 0, 'home', '2026-01-18 03:57:30', '2026-01-18 03:57:30'),
+(129, 20, 'tranthib671', '0908787671', '32 Bùi Ngọ', 'Lào Cai', NULL, 'Huyện Bảo Thắng', NULL, 'Thị trấn Phố Lu', NULL, 0, 'home', '2026-01-18 04:04:37', '2026-01-18 04:04:37'),
+(130, NULL, 'Trần Thị B', '0908787671', '32 Bùi Ngọ', 'Kon Tum', NULL, 'Huyện Tu Mơ Rông', NULL, 'Xã Đắk Na', NULL, 0, 'home', '2026-01-19 07:56:45', '2026-01-19 07:56:45');
 
 -- --------------------------------------------------------
 
@@ -445,6 +563,34 @@ CREATE TABLE `build_items` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `bundle_items`
+--
+
+CREATE TABLE `bundle_items` (
+  `bundle_item_id` int(11) NOT NULL,
+  `bundle_variant_id` int(11) NOT NULL,
+  `component_variant_id` int(11) NOT NULL,
+  `quantity` int(11) DEFAULT 1,
+  `display_order` int(11) DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `bundle_items`
+--
+
+INSERT INTO `bundle_items` (`bundle_item_id`, `bundle_variant_id`, `component_variant_id`, `quantity`, `display_order`) VALUES
+(95, 67, 12, 1, 1),
+(96, 67, 26, 1, 2),
+(97, 67, 31, 1, 3),
+(98, 67, 36, 1, 4),
+(99, 67, 41, 1, 5),
+(100, 67, 46, 1, 6),
+(101, 67, 50, 1, 7),
+(102, 67, 54, 1, 8);
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `carts`
 --
 
@@ -462,19 +608,10 @@ CREATE TABLE `carts` (
 --
 
 INSERT INTO `carts` (`cart_id`, `user_id`, `session_id`, `created_at`, `updated_at`, `expires_at`) VALUES
-(1, NULL, 'guest_1763223671171_m9llpews6', '2025-11-15 16:30:52', '2025-11-15 16:30:52', '2025-12-15 16:30:52'),
-(2, 6, NULL, '2025-11-16 02:29:53', '2025-11-16 02:29:53', '2025-12-16 02:29:53'),
-(3, 6, NULL, '2025-11-16 02:29:53', '2025-11-16 02:29:53', '2025-12-16 02:29:53'),
-(5, NULL, 'guest_1763273048440_dxnpt7o32', '2025-11-16 06:04:08', '2025-11-16 06:04:08', '2025-12-16 06:04:08'),
-(6, NULL, 'guest_1763273048440_dxnpt7o32', '2025-11-16 06:04:08', '2025-11-16 06:04:08', '2025-12-16 06:04:08'),
-(10, 20, NULL, '2025-11-24 13:26:23', '2025-11-24 13:26:23', '2025-12-24 13:26:23'),
-(11, NULL, 'guest_1764417657819_1l2bl5eju', '2025-11-29 12:00:57', '2025-11-29 12:00:57', '2025-12-29 12:00:57'),
-(12, NULL, 'guest_1764904178852_7r4onzqri', '2025-12-05 03:09:38', '2025-12-05 03:09:38', '2026-01-04 03:09:38'),
-(13, NULL, 'guest_1764904178852_7r4onzqri', '2025-12-05 03:09:38', '2025-12-05 03:09:38', '2026-01-04 03:09:38'),
-(14, NULL, 'guest_1765438362367_iykvwb2wy', '2025-12-11 07:32:42', '2025-12-11 07:32:42', '2026-01-10 07:32:42'),
-(15, 23, NULL, '2025-12-18 05:10:55', '2025-12-18 05:10:55', '2026-01-17 05:10:55'),
-(17, 25, NULL, '2025-12-30 16:26:21', '2025-12-30 16:26:21', '2026-01-29 16:26:21'),
-(18, 28, NULL, '2026-01-15 06:42:50', '2026-01-15 06:42:50', '2026-02-14 06:42:50');
+(19, 20, NULL, '2026-01-16 14:11:00', '2026-01-16 14:11:00', '2026-02-15 14:11:00'),
+(20, 27, NULL, '2026-01-16 14:37:51', '2026-01-16 14:37:51', '2026-02-15 14:37:51'),
+(21, NULL, 'guest_1763223671171_m9llpews6', '2026-01-17 15:54:16', '2026-01-17 15:54:16', '2026-02-16 15:54:16'),
+(22, 28, NULL, '2026-01-18 03:34:23', '2026-01-18 03:34:23', '2026-02-17 03:34:23');
 
 -- --------------------------------------------------------
 
@@ -497,7 +634,7 @@ CREATE TABLE `cart_items` (
 --
 
 INSERT INTO `cart_items` (`cart_item_id`, `cart_id`, `variant_id`, `quantity`, `price`, `added_at`, `updated_at`) VALUES
-(166, 1, 42, 1, 8800000.00, '2026-01-15 12:32:18', '2026-01-15 12:32:18');
+(186, 19, 45, 1, 8000000.00, '2026-01-18 04:04:06', '2026-01-18 04:04:06');
 
 -- --------------------------------------------------------
 
@@ -541,7 +678,8 @@ INSERT INTO `categories` (`category_id`, `category_name`, `description`, `parent
 (46, 'Case Fan', 'Quạt case - Quạt tản nhiệt RGB, quạt PWM', NULL, '/uploads/categories/case_fan-1764062438647-791625777.jpg', NULL, 1, 46, '2025-11-25 08:58:13', '2025-11-25 09:20:38'),
 (47, 'Air Cooler', 'Tản nhiệt khí - Tản nhiệt CPU tower, dual tower', 8, '/uploads/categories/air_cooler-1764063453689-131504214.jpg', NULL, 1, 47, '2025-11-25 08:58:13', '2025-11-25 09:37:33'),
 (48, 'AIO Cooler', 'Tản nhiệt nước AIO - Tản nước 240mm, 360mm', 8, '/uploads/categories/aio_cooler-1764063468237-385237851.jpg', NULL, 1, 48, '2025-11-25 08:58:13', '2025-11-25 09:37:48'),
-(49, 'Custom Water', 'Tản nhiệt nước custom - Bộ kit tản nước custom loop', 8, '/uploads/categories/custom_water-1764063311202-157641460.jpg', NULL, 1, 49, '2025-11-25 08:58:13', '2025-11-25 10:40:27');
+(49, 'Custom Water', 'Tản nhiệt nước custom - Bộ kit tản nước custom loop', 8, '/uploads/categories/custom_water-1764063311202-157641460.jpg', NULL, 1, 49, '2025-11-25 08:58:13', '2025-11-25 10:40:27'),
+(57, 'PC Gaming', NULL, NULL, '/uploads/categories/pc-choi-game-hoc-tap-1768804940757-45874762.webp', NULL, 1, 0, '2026-01-19 06:42:20', '2026-01-19 06:42:20');
 
 -- --------------------------------------------------------
 
@@ -901,20 +1039,14 @@ CREATE TABLE `installments` (
 --
 
 INSERT INTO `installments` (`installment_id`, `order_id`, `user_id`, `total_amount`, `down_payment`, `down_payment_status`, `down_payment_date`, `down_payment_note`, `num_terms`, `monthly_payment`, `overdue_fee_percent_per_day`, `total_overdue_fee`, `interest_rate`, `start_date`, `end_date`, `status`, `created_at`, `policy_id`) VALUES
-(40, 82, 20, 10298355.41, 0.00, 'not_required', NULL, NULL, 12, 858196.28, 1.00, 532081.70, 2.00, '2025-12-11', '2026-12-11', 'active', '2025-12-11 09:18:53', 8),
-(41, 83, 20, 10061.73, 8000.00, 'paid', '2025-12-11 09:42:54', 'Thanh toán trả trước qua Chuyển khoản', 12, 171.81, 1.00, 39.52, 2.00, '2025-12-11', '2026-12-11', 'active', '2025-12-11 09:42:11', 8),
-(42, 84, 20, 9516196.03, 2550000.00, 'pending', NULL, NULL, 6, 1161032.67, 0.00, 0.00, 50.00, '2025-12-11', '2026-06-11', 'approved', '2025-12-11 12:01:18', 1),
-(43, 85, 20, 3739517.30, 658000.00, 'pending', NULL, NULL, 6, 513586.22, 0.00, 0.00, 50.00, '2025-12-11', '2026-06-11', 'approved', '2025-12-11 12:09:34', 1),
-(44, 86, 20, 6783100.96, 0.00, 'not_required', NULL, NULL, 12, 565258.41, 1.00, 28262.91, 2.00, '2025-12-14', '2026-12-14', 'active', '2025-12-14 13:12:52', 8),
-(45, 88, 23, 10853.95, 5000.00, 'paid', '2025-12-18 12:10:12', 'Thanh toán trả trước qua Chuyển khoản', 6, 975.66, 0.00, 0.00, 50.00, '2025-12-18', '2026-06-18', 'active', '2025-12-18 05:08:23', 1),
-(46, 90, 23, 995775.00, 0.00, 'not_required', NULL, NULL, 6, 0.00, 0.00, 0.00, 2.00, '2025-12-18', '2026-06-18', 'active', '2025-12-18 07:30:54', 2),
-(47, 91, 23, 11327.00, 2000.00, 'paid', '2025-12-18 14:40:09', 'Thanh toán trả trước qua Chuyển khoản', 6, 0.00, 0.00, 0.00, 50.00, '2025-12-18', '2026-06-18', 'active', '2025-12-18 07:39:32', 1),
-(48, 92, 23, 10058.33, 0.00, 'not_required', NULL, NULL, 6, 0.00, 0.00, 0.00, 2.00, '2025-12-18', '2026-06-18', 'active', '2025-12-18 07:58:55', 2),
-(49, 117, 23, 3307272.50, 329000.00, 'paid', '2025-12-30 21:15:39', 'Thanh toán trả trước qua Chuyển khoản', 6, 0.00, 0.00, 0.00, 2.00, '2025-12-30', '2026-06-30', 'active', '2025-12-30 14:14:56', 2),
-(51, 132, 25, 7016645.00, 698000.00, 'paid', '2025-12-30 23:26:41', 'Thanh toán trả trước qua Chuyển khoản', 6, 1059250.63, 0.00, 0.00, 2.00, '2025-12-30', '2026-06-30', 'active', '2025-12-30 16:25:54', NULL),
-(52, 133, 25, 7016645.00, 698000.00, 'paid', '2025-12-30 23:37:19', 'Thanh toán trả trước qua Chuyển khoản', 6, 1059250.63, 1.00, 0.00, 2.00, '2025-12-30', '2026-06-30', 'active', '2025-12-30 16:35:11', NULL),
-(53, 134, 25, 6980000.00, 698000.00, 'paid', '2025-12-30 23:47:01', 'Thanh toán trả trước qua Chuyển khoản', 6, 1053107.50, 1.00, 0.00, 2.00, '2025-12-30', '2026-06-30', 'active', '2025-12-30 16:46:34', NULL),
-(54, 135, 20, 3400000.00, 0.00, 'not_required', NULL, NULL, 6, 569972.22, 0.00, 0.00, 2.00, '2026-01-05', '2026-07-05', 'active', '2026-01-04 19:26:00', NULL);
+(55, 143, 20, 8060500.00, 800000.00, 'paid', '2026-01-17 22:07:49', 'Thanh toán trả trước qua Tiền mặt', 6, 1217142.15, 0.00, 0.00, 2.00, '2026-01-17', '2026-07-17', 'active', '2026-01-17 15:01:45', NULL),
+(56, 144, 20, 15097700.00, 0.00, 'not_required', NULL, NULL, 6, 2530961.65, 0.00, 0.00, 2.00, '2026-01-17', '2026-07-17', 'active', '2026-01-17 15:11:17', NULL),
+(57, 145, 20, 7937300.00, 1600000.00, 'paid', '2026-01-17 22:18:57', 'Thanh toán trả trước qua Tiền mặt', 6, 1062377.93, 0.00, 0.00, 2.00, '2026-01-17', '2026-07-17', 'active', '2026-01-17 15:17:48', NULL),
+(58, 146, 20, 8932300.00, 0.00, 'not_required', NULL, NULL, 6, 1497400.85, 0.00, 0.00, 2.00, '2026-01-17', '2026-07-17', 'active', '2026-01-17 15:20:29', NULL),
+(59, 147, 20, 9065500.00, 0.00, 'not_required', NULL, NULL, 6, 1519730.35, 0.00, 0.00, 2.00, '2026-01-17', '2026-07-17', 'active', '2026-01-17 15:22:17', NULL),
+(60, 149, 20, 8000000.00, 800000.00, 'paid', '2026-01-17 22:34:21', 'Thanh toán trả trước qua Tiền mặt', 6, 1207000.00, 0.00, 0.00, 2.00, '2026-01-17', '2026-07-17', 'active', '2026-01-17 15:31:48', NULL),
+(61, 150, 20, 8800000.00, 0.00, 'not_required', NULL, NULL, 6, 1475222.22, 0.00, 0.00, 2.00, '2026-01-18', '2026-07-18', 'active', '2026-01-18 03:57:30', NULL),
+(62, 152, 20, 8000000.00, 1600000.00, 'pending', NULL, NULL, 6, 1072888.89, 0.00, 0.00, 2.00, '2026-01-18', '2026-07-18', 'approved', '2026-01-18 04:05:10', NULL);
 
 -- --------------------------------------------------------
 
@@ -940,79 +1072,48 @@ CREATE TABLE `installment_payments` (
 --
 
 INSERT INTO `installment_payments` (`payment_id`, `installment_id`, `payment_no`, `due_date`, `paid_date`, `amount`, `status`, `overdue_days`, `overdue_fee`, `note`) VALUES
-(82, 40, 1, '2025-12-01', '2025-12-11 00:00:00', 858196.28, 'paid', 10, 0.00, 'Thanh toán qua Chuyển khoản'),
-(83, 40, 2, '2025-12-02', '2025-12-11 00:00:00', 858196.28, 'paid', 9, 77237.67, 'Thanh toán qua Chuyển khoản'),
-(84, 40, 3, '2025-12-03', '2025-12-11 00:00:00', 858196.28, 'paid', 8, 68655.70, 'Thanh toán qua Chuyển khoản'),
-(85, 40, 4, '2025-12-04', '2025-12-11 00:00:00', 858196.28, 'paid', 7, 60073.74, 'Thanh toán qua Chuyển khoản'),
-(86, 40, 5, '2025-12-05', NULL, 858196.28, 'overdue', 31, 266040.85, NULL),
-(87, 40, 6, '2026-06-11', '2025-12-11 00:00:00', 858196.28, 'paid', 0, 0.00, 'Thanh toán qua Momo'),
-(88, 40, 7, '2026-07-11', '2025-12-11 00:00:00', 858196.28, 'paid', 0, 0.00, 'Thanh toán qua Momo'),
-(89, 40, 8, '2026-08-11', '2025-12-11 00:00:00', 858196.28, 'paid', 0, 0.00, 'Thanh toán qua Momo'),
-(90, 40, 9, '2026-09-11', '2025-12-11 13:22:44', 858196.28, 'paid', 0, 0.00, 'Thanh toán qua Momo'),
-(91, 40, 10, '2026-10-11', '2025-12-11 20:25:31', 858196.28, 'paid', 0, 0.00, 'Thanh toán qua Momo'),
-(92, 40, 11, '2026-11-11', NULL, 858196.28, 'pending', 0, 0.00, NULL),
-(93, 40, 12, '2025-12-09', '2025-12-14 20:02:09', 1201474.79, 'paid', 5, 60073.74, 'Thanh toán qua Chuyển khoản'),
-(94, 41, 1, '2025-12-13', NULL, 171.81, 'overdue', 23, 39.52, NULL),
-(95, 41, 2, '2026-02-11', NULL, 171.81, 'pending', 0, 0.00, NULL),
-(96, 41, 3, '2026-03-11', NULL, 171.81, 'pending', 0, 0.00, NULL),
-(97, 41, 4, '2026-04-11', NULL, 171.81, 'pending', 0, 0.00, NULL),
-(98, 41, 5, '2026-05-11', NULL, 171.81, 'pending', 0, 0.00, NULL),
-(99, 41, 6, '2026-06-11', NULL, 171.81, 'pending', 0, 0.00, NULL),
-(100, 41, 7, '2026-07-11', NULL, 171.81, 'pending', 0, 0.00, NULL),
-(101, 41, 8, '2026-08-11', NULL, 171.81, 'pending', 0, 0.00, NULL),
-(102, 41, 9, '2026-09-11', NULL, 171.81, 'pending', 0, 0.00, NULL),
-(103, 41, 10, '2026-10-11', NULL, 171.81, 'pending', 0, 0.00, NULL),
-(104, 41, 11, '2026-11-11', NULL, 171.81, 'pending', 0, 0.00, NULL),
-(105, 41, 12, '2026-12-11', '2025-12-14 20:04:06', 173.53, 'pending', 0, 0.00, ''),
-(106, 44, 1, '2025-12-13', '2025-12-14 20:14:10', 565258.41, 'paid', 1, 5652.58, 'Thanh toán qua Tiền mặt'),
-(107, 44, 2, '2025-12-11', '2025-12-14 20:21:47', 565258.41, 'paid', 3, 16957.75, 'Thanh toán qua Chuyển khoản'),
-(108, 44, 3, '2025-12-13', '2025-12-14 20:26:33', 565258.41, 'paid', 1, 5652.58, 'Thanh toán qua Momo'),
-(109, 44, 4, '2026-04-14', NULL, 565258.41, 'pending', 0, 0.00, NULL),
-(110, 44, 5, '2026-05-14', NULL, 565258.41, 'pending', 0, 0.00, NULL),
-(111, 44, 6, '2026-06-14', NULL, 565258.41, 'pending', 0, 0.00, NULL),
-(112, 44, 7, '2026-07-14', NULL, 565258.41, 'pending', 0, 0.00, NULL),
-(113, 44, 8, '2026-08-14', NULL, 565258.41, 'pending', 0, 0.00, NULL),
-(114, 44, 9, '2026-09-14', NULL, 565258.41, 'pending', 0, 0.00, NULL),
-(115, 44, 10, '2026-10-14', NULL, 565258.41, 'pending', 0, 0.00, NULL),
-(116, 44, 11, '2026-11-14', NULL, 565258.41, 'pending', 0, 0.00, NULL),
-(117, 44, 12, '2026-12-14', '2025-12-14 20:13:43', 570910.99, 'paid', 0, 0.00, 'Thanh toán qua Chuyển khoản'),
-(118, 45, 1, '2026-01-18', '2025-12-18 12:10:19', 975.66, 'paid', 0, 0.00, 'Thanh toán qua Chuyển khoản'),
-(119, 45, 2, '2026-02-18', NULL, 975.66, 'pending', 0, 0.00, NULL),
-(120, 45, 3, '2026-03-18', NULL, 975.66, 'pending', 0, 0.00, NULL),
-(121, 45, 4, '2026-04-18', NULL, 975.66, 'pending', 0, 0.00, NULL),
-(122, 45, 5, '2026-05-18', NULL, 975.66, 'pending', 0, 0.00, NULL),
-(123, 45, 6, '2026-06-18', NULL, 975.66, 'pending', 0, 0.00, NULL),
-(136, 48, 1, '2026-01-18', NULL, 1693.15, 'pending', 0, 0.00, NULL),
-(137, 48, 2, '2026-02-18', NULL, 1690.36, 'pending', 0, 0.00, NULL),
-(138, 48, 3, '2026-03-18', NULL, 1687.56, 'pending', 0, 0.00, NULL),
-(139, 48, 4, '2026-04-18', NULL, 1684.77, 'pending', 0, 0.00, NULL),
-(140, 48, 5, '2026-05-18', NULL, 1681.98, 'pending', 0, 0.00, NULL),
-(141, 48, 6, '2026-06-18', NULL, 1679.18, 'pending', 0, 0.00, NULL),
-(142, 49, 1, '2026-01-30', NULL, 0.00, 'pending', 0, 0.00, NULL),
-(154, 51, 1, '2026-01-30', NULL, 1059250.63, 'pending', 0, 0.00, NULL),
-(155, 51, 2, '2026-03-02', NULL, 1059250.63, 'pending', 0, 0.00, NULL),
-(156, 51, 3, '2026-03-30', NULL, 1059250.63, 'pending', 0, 0.00, NULL),
-(157, 51, 4, '2026-04-30', NULL, 1059250.63, 'pending', 0, 0.00, NULL),
-(158, 51, 5, '2026-05-30', NULL, 1059250.63, 'pending', 0, 0.00, NULL),
-(159, 51, 6, '2026-06-30', NULL, 1059250.63, 'pending', 0, 0.00, NULL),
-(160, 52, 1, '2026-01-30', NULL, 1063638.58, 'pending', 0, 0.00, NULL),
-(161, 52, 2, '2026-03-02', NULL, 1061883.40, 'pending', 0, 0.00, NULL),
-(162, 52, 3, '2026-03-30', NULL, 1060128.22, 'pending', 0, 0.00, NULL),
-(163, 52, 4, '2026-04-30', NULL, 1058373.04, 'pending', 0, 0.00, NULL),
-(164, 52, 5, '2026-05-30', NULL, 1056617.86, 'pending', 0, 0.00, NULL),
-(165, 52, 6, '2026-06-30', NULL, 1054862.68, 'pending', 0, 0.00, NULL),
-(166, 53, 1, '2026-01-30', NULL, 1057470.00, 'pending', 0, 0.00, NULL),
-(167, 53, 2, '2026-03-02', NULL, 1055725.00, 'pending', 0, 0.00, NULL),
-(168, 53, 3, '2026-03-30', NULL, 1053980.00, 'pending', 0, 0.00, NULL),
-(169, 53, 4, '2026-04-30', NULL, 1052235.00, 'pending', 0, 0.00, NULL),
-(170, 53, 5, '2026-05-30', NULL, 1050490.00, 'pending', 0, 0.00, NULL),
-(171, 53, 6, '2026-06-30', NULL, 1048745.00, 'pending', 0, 0.00, NULL),
-(172, 54, 1, '2026-02-05', NULL, 572333.33, 'pending', 0, 0.00, NULL),
-(173, 54, 2, '2026-03-05', NULL, 571388.89, 'pending', 0, 0.00, NULL),
-(174, 54, 3, '2026-04-05', NULL, 570444.44, 'pending', 0, 0.00, NULL),
-(175, 54, 4, '2026-05-05', NULL, 569500.00, 'pending', 0, 0.00, NULL),
-(176, 54, 5, '2026-06-05', NULL, 568555.56, 'pending', 0, 0.00, NULL),
-(177, 54, 6, '2026-07-05', NULL, 567611.11, 'pending', 0, 0.00, NULL);
+(178, 55, 1, '2026-02-17', NULL, 1222184.17, 'pending', 0, 0.00, NULL),
+(179, 55, 2, '2026-03-17', NULL, 1220167.36, 'pending', 0, 0.00, NULL),
+(180, 55, 3, '2026-04-17', NULL, 1218150.56, 'pending', 0, 0.00, NULL),
+(181, 55, 4, '2026-05-17', NULL, 1216133.75, 'pending', 0, 0.00, NULL),
+(182, 55, 5, '2026-06-17', NULL, 1214116.94, 'pending', 0, 0.00, NULL),
+(183, 55, 6, '2026-07-17', NULL, 1212100.14, 'pending', 0, 0.00, NULL),
+(184, 56, 1, '2026-02-17', NULL, 2541446.17, 'pending', 0, 0.00, NULL),
+(185, 56, 2, '2026-03-17', NULL, 2537252.36, 'pending', 0, 0.00, NULL),
+(186, 56, 3, '2026-04-17', NULL, 2533058.56, 'pending', 0, 0.00, NULL),
+(187, 56, 4, '2026-05-17', NULL, 2528864.75, 'pending', 0, 0.00, NULL),
+(188, 56, 5, '2026-06-17', NULL, 2524670.94, 'pending', 0, 0.00, NULL),
+(189, 56, 6, '2026-07-17', NULL, 2520477.14, 'pending', 0, 0.00, NULL),
+(190, 57, 1, '2026-02-17', NULL, 1066778.83, 'pending', 0, 0.00, NULL),
+(191, 57, 2, '2026-03-17', NULL, 1065018.47, 'pending', 0, 0.00, NULL),
+(192, 57, 3, '2026-04-17', NULL, 1063258.11, 'pending', 0, 0.00, NULL),
+(193, 57, 4, '2026-05-17', NULL, 1061497.75, 'pending', 0, 0.00, NULL),
+(194, 57, 5, '2026-06-17', NULL, 1059737.39, 'pending', 0, 0.00, NULL),
+(195, 57, 6, '2026-07-17', NULL, 1057977.03, 'pending', 0, 0.00, NULL),
+(196, 58, 1, '2026-02-17', NULL, 1503603.83, 'pending', 0, 0.00, NULL),
+(197, 58, 2, '2026-03-17', NULL, 1501122.64, 'pending', 0, 0.00, NULL),
+(198, 58, 3, '2026-04-17', NULL, 1498641.44, 'pending', 0, 0.00, NULL),
+(199, 58, 4, '2026-05-17', NULL, 1496160.25, 'pending', 0, 0.00, NULL),
+(200, 58, 5, '2026-06-17', NULL, 1493679.06, 'pending', 0, 0.00, NULL),
+(201, 58, 6, '2026-07-17', NULL, 1491197.86, 'pending', 0, 0.00, NULL),
+(202, 59, 1, '2026-02-17', NULL, 1526025.83, 'pending', 0, 0.00, NULL),
+(203, 59, 2, '2026-03-17', NULL, 1523507.64, 'pending', 0, 0.00, NULL),
+(204, 59, 3, '2026-04-17', NULL, 1520989.44, 'pending', 0, 0.00, NULL),
+(205, 59, 4, '2026-05-17', NULL, 1518471.25, 'pending', 0, 0.00, NULL),
+(206, 59, 5, '2026-06-17', NULL, 1515953.06, 'pending', 0, 0.00, NULL),
+(207, 59, 6, '2026-07-17', NULL, 1513434.86, 'pending', 0, 0.00, NULL),
+(208, 60, 1, '2026-02-17', NULL, 1212000.00, 'pending', 0, 0.00, NULL),
+(209, 60, 2, '2026-03-17', NULL, 1210000.00, 'pending', 0, 0.00, NULL),
+(210, 60, 3, '2026-04-17', NULL, 1208000.00, 'pending', 0, 0.00, NULL),
+(211, 60, 4, '2026-05-17', NULL, 1206000.00, 'pending', 0, 0.00, NULL),
+(212, 60, 5, '2026-06-17', NULL, 1204000.00, 'pending', 0, 0.00, NULL),
+(213, 60, 6, '2026-07-17', NULL, 1202000.00, 'pending', 0, 0.00, NULL),
+(214, 61, 1, '2026-02-18', NULL, 1481333.33, 'pending', 0, 0.00, NULL),
+(215, 61, 2, '2026-03-18', NULL, 1478888.89, 'pending', 0, 0.00, NULL),
+(216, 61, 3, '2026-04-18', NULL, 1476444.44, 'pending', 0, 0.00, NULL),
+(217, 61, 4, '2026-05-18', NULL, 1474000.00, 'pending', 0, 0.00, NULL),
+(218, 61, 5, '2026-06-18', NULL, 1471555.56, 'pending', 0, 0.00, NULL),
+(219, 61, 6, '2026-07-18', NULL, 1469111.11, 'pending', 0, 0.00, NULL);
 
 -- --------------------------------------------------------
 
@@ -1082,70 +1183,22 @@ CREATE TABLE `orders` (
 --
 
 INSERT INTO `orders` (`order_id`, `user_id`, `order_number`, `address_id`, `coupon_id`, `order_status`, `payment_status`, `subtotal`, `discount_amount`, `shipping_fee`, `tax_amount`, `total_amount`, `notes`, `cancelled_reason`, `created_at`, `updated_at`, `confirmed_at`, `shipped_at`, `delivered_at`, `cancelled_at`) VALUES
-(46, 20, 'ORD88284166267', NULL, NULL, 'shipping', 'unpaid', 12000000.00, 0.00, 0.00, 0.00, 12000000.00, NULL, NULL, '2025-11-24 12:44:44', '2025-11-24 12:49:52', NULL, NULL, NULL, NULL),
-(47, 21, 'ORD95319130334', 53, NULL, 'shipping', 'unpaid', 12000000.00, 0.00, 0.00, 0.00, 12000000.00, NULL, NULL, '2025-11-24 14:41:59', '2025-11-24 14:44:46', '2025-11-24 14:43:33', NULL, NULL, NULL),
-(48, 20, 'ORD17748211898', NULL, NULL, 'pending', 'unpaid', 9000000.00, 0.00, 0.00, 0.00, 9000000.00, NULL, NULL, '2025-11-29 12:02:28', '2025-11-29 12:02:28', NULL, NULL, NULL, NULL),
-(49, 20, 'ORD03856953127', NULL, NULL, 'pending', 'unpaid', 3290000.00, 0.00, 50000.00, 0.00, 3340000.00, NULL, NULL, '2025-12-05 03:04:16', '2025-12-05 03:04:16', NULL, NULL, NULL, NULL),
-(50, 20, 'ORD04143586718', NULL, NULL, 'pending', 'unpaid', 9990000.00, 0.00, 50000.00, 0.00, 10040000.00, NULL, NULL, '2025-12-05 03:09:03', '2025-12-05 03:09:03', NULL, NULL, NULL, NULL),
-(51, 20, 'ORD05419530689', NULL, NULL, 'pending', 'unpaid', 22660000.00, 0.00, 50000.00, 0.00, 22710000.00, NULL, NULL, '2025-12-05 03:30:19', '2025-12-05 03:30:19', NULL, NULL, NULL, NULL),
-(52, 20, 'ORD08939750540', NULL, NULL, 'pending', 'unpaid', 2390000.00, 0.00, 50000.00, 0.00, 2440000.00, NULL, NULL, '2025-12-05 04:28:59', '2025-12-05 04:28:59', NULL, NULL, NULL, NULL),
-(53, 20, 'ORD13429806332', NULL, NULL, 'pending', 'unpaid', 30000.00, 0.00, 50000.00, 0.00, 80000.00, NULL, NULL, '2025-12-05 05:43:49', '2025-12-05 05:43:49', NULL, NULL, NULL, NULL),
-(54, 20, 'ORD13429810266', NULL, NULL, 'pending', 'unpaid', 30000.00, 0.00, 50000.00, 0.00, 80000.00, NULL, NULL, '2025-12-05 05:43:49', '2025-12-05 05:43:49', NULL, NULL, NULL, NULL),
-(55, 20, 'ORD13475694198', NULL, NULL, 'pending', 'unpaid', 30000.00, 0.00, 50000.00, 0.00, 80000.00, NULL, NULL, '2025-12-05 05:44:35', '2025-12-05 05:44:35', NULL, NULL, NULL, NULL),
-(56, 20, 'ORD13689538444', NULL, NULL, 'pending', 'unpaid', 3990000.00, 0.00, 50000.00, 0.00, 4040000.00, NULL, NULL, '2025-12-05 05:48:09', '2025-12-05 05:48:09', NULL, NULL, NULL, NULL),
-(57, 20, 'ORD13689544225', NULL, NULL, 'pending', 'unpaid', 3990000.00, 0.00, 50000.00, 0.00, 4040000.00, NULL, NULL, '2025-12-05 05:48:09', '2025-12-05 05:48:09', NULL, NULL, NULL, NULL),
-(58, 20, 'ORD13827679073', NULL, NULL, 'pending', 'unpaid', 990000.00, 0.00, 50000.00, 0.00, 1040000.00, NULL, NULL, '2025-12-05 05:50:27', '2025-12-05 05:50:27', NULL, NULL, NULL, NULL),
-(59, 20, 'ORD13827683230', NULL, NULL, 'pending', 'unpaid', 990000.00, 0.00, 50000.00, 0.00, 1040000.00, NULL, NULL, '2025-12-05 05:50:27', '2025-12-05 05:50:27', NULL, NULL, NULL, NULL),
-(60, 20, 'ORD14307217077', NULL, NULL, 'pending', 'unpaid', 3290000.00, 0.00, 50000.00, 0.00, 3340000.00, NULL, NULL, '2025-12-05 05:58:27', '2025-12-05 05:58:27', NULL, NULL, NULL, NULL),
-(61, 20, 'ORD14850252370', NULL, NULL, 'pending', 'unpaid', 10000.00, 0.00, 50000.00, 0.00, 60000.00, NULL, NULL, '2025-12-05 06:07:30', '2025-12-05 06:07:30', NULL, NULL, NULL, NULL),
-(62, 20, 'ORD15247269621', NULL, NULL, 'pending', 'unpaid', 20000.00, 0.00, 50000.00, 0.00, 70000.00, NULL, NULL, '2025-12-05 06:14:07', '2025-12-05 06:14:07', NULL, NULL, NULL, NULL),
-(63, 20, 'ORD15653022528', NULL, NULL, 'pending', 'paid', 50000.00, 0.00, 50000.00, 0.00, 100000.00, NULL, NULL, '2025-12-05 06:20:53', '2025-12-05 06:20:53', NULL, NULL, NULL, NULL),
-(64, 20, 'ORD16642084760', NULL, NULL, 'shipping', 'paid', 20000.00, 0.00, 50000.00, 0.00, 70000.00, NULL, NULL, '2025-12-05 06:37:22', '2025-12-05 06:37:22', NULL, NULL, NULL, NULL),
-(65, 20, 'ORD17351702937', NULL, NULL, 'shipping', 'paid', 3290000.00, 0.00, 50000.00, 0.00, 3340000.00, NULL, NULL, '2025-12-05 06:49:11', '2025-12-05 06:49:11', NULL, NULL, NULL, NULL),
-(66, 20, 'ORD19667478628', NULL, NULL, 'shipping', 'paid', 8490000.00, 0.00, 50000.00, 0.00, 8540000.00, NULL, NULL, '2025-12-05 07:27:47', '2025-12-05 07:27:47', NULL, NULL, NULL, NULL),
-(67, 20, 'ORD21177096571', NULL, NULL, 'shipping', 'paid', 3990000.00, 0.00, 50000.00, 0.00, 4040000.00, NULL, NULL, '2025-12-05 07:52:57', '2025-12-05 07:52:57', NULL, NULL, NULL, NULL),
-(68, 20, 'ORD21528536675', NULL, NULL, 'shipping', 'unpaid', 13280000.00, 0.00, 0.00, 0.00, 13280000.00, NULL, NULL, '2025-12-05 07:58:48', '2025-12-05 08:03:35', '2025-12-05 08:00:30', NULL, NULL, NULL),
-(69, 20, 'ORD21744010559', NULL, NULL, 'pending', 'unpaid', 23280000.00, 0.00, 0.00, 0.00, 23280000.00, NULL, NULL, '2025-12-05 08:02:24', '2025-12-05 08:02:24', NULL, NULL, NULL, NULL),
-(70, 20, 'ORD22032091503', NULL, NULL, 'shipping', 'paid', 70000.00, 0.00, 50000.00, 0.00, 120000.00, NULL, NULL, '2025-12-05 08:07:12', '2025-12-05 08:07:12', NULL, NULL, NULL, NULL),
-(71, 20, 'ORD33826605110', NULL, NULL, 'pending', 'unpaid', 990000.00, 0.00, 0.00, 0.00, 990000.00, NULL, NULL, '2025-12-05 11:23:46', '2025-12-05 11:23:46', NULL, NULL, NULL, NULL),
-(72, 20, 'ORD34206694276', NULL, NULL, 'pending', 'unpaid', 2500000.00, 0.00, 0.00, 0.00, 2500000.00, NULL, NULL, '2025-12-05 11:30:06', '2025-12-05 11:30:06', NULL, NULL, NULL, NULL),
-(73, 20, 'ORD35425067017', NULL, NULL, 'shipping', 'unpaid', 2500000.00, 0.00, 0.00, 0.00, 2500000.00, NULL, NULL, '2025-12-05 11:50:25', '2025-12-05 12:00:06', NULL, NULL, NULL, NULL),
-(74, 20, 'ORD36478055670', NULL, NULL, 'shipping', 'unpaid', 9990000.00, 0.00, 0.00, 0.00, 9990000.00, NULL, NULL, '2025-12-05 12:07:58', '2025-12-05 12:09:03', NULL, NULL, NULL, NULL),
-(75, 20, 'ORD37150962125', NULL, NULL, 'shipping', 'unpaid', 19980000.00, 0.00, 0.00, 0.00, 19980000.00, NULL, NULL, '2025-12-05 12:19:10', '2025-12-05 12:20:17', NULL, NULL, NULL, NULL),
-(76, 20, 'ORD37481094803', NULL, NULL, 'shipping', 'paid', 9990000.00, 0.00, 50000.00, 0.00, 10040000.00, NULL, NULL, '2025-12-05 12:24:41', '2025-12-05 12:24:41', NULL, NULL, NULL, NULL),
-(77, 20, 'ORD38502917646', NULL, NULL, 'pending', 'unpaid', 19980000.00, 0.00, 0.00, 0.00, 19980000.00, NULL, NULL, '2025-12-05 12:41:42', '2025-12-05 12:41:42', NULL, NULL, NULL, NULL),
-(78, 20, 'ORD38587363879', NULL, NULL, 'pending', 'unpaid', 29970000.00, 0.00, 0.00, 0.00, 29970000.00, NULL, NULL, '2025-12-05 12:43:07', '2025-12-05 12:43:07', NULL, NULL, NULL, NULL),
-(79, 20, 'ORD39740387554', NULL, NULL, 'pending', 'unpaid', 39960000.00, 0.00, 0.00, 0.00, 39960000.00, NULL, NULL, '2025-12-05 13:02:20', '2025-12-05 13:02:20', NULL, NULL, NULL, NULL),
-(80, 20, 'ORD39855467379', NULL, NULL, 'pending', 'unpaid', 3290000.00, 0.00, 0.00, 0.00, 3290000.00, NULL, NULL, '2025-12-05 13:04:15', '2025-12-05 13:04:15', NULL, NULL, NULL, NULL),
-(81, 20, 'ORD40709129049', NULL, NULL, 'shipping', 'unpaid', 6580000.00, 0.00, 0.00, 0.00, 6580000.00, NULL, NULL, '2025-12-05 13:18:29', '2025-12-05 13:32:26', NULL, NULL, NULL, NULL),
-(82, 20, 'ORD44733624691', NULL, NULL, 'pending', 'unpaid', 9990000.00, 0.00, 0.00, 0.00, 9990000.00, NULL, NULL, '2025-12-11 09:18:53', '2025-12-11 09:18:53', NULL, NULL, NULL, NULL),
-(83, 20, 'ORD46131581070', NULL, NULL, 'shipping', 'unpaid', 10000.00, 0.00, 0.00, 0.00, 10000.00, NULL, NULL, '2025-12-11 09:42:11', '2025-12-11 09:42:54', NULL, NULL, NULL, NULL),
-(84, 20, 'ORD54478765582', NULL, NULL, 'pending', 'unpaid', 8500000.00, 0.00, 0.00, 0.00, 8500000.00, NULL, NULL, '2025-12-11 12:01:18', '2025-12-11 12:01:18', NULL, NULL, NULL, NULL),
-(85, 20, 'ORD54974756792', NULL, NULL, 'pending', 'unpaid', 3290000.00, 0.00, 0.00, 0.00, 3290000.00, NULL, NULL, '2025-12-11 12:09:34', '2025-12-11 12:09:34', NULL, NULL, NULL, NULL),
-(86, 20, 'ORD17972178060', NULL, NULL, 'pending', 'unpaid', 6580000.00, 0.00, 0.00, 0.00, 6580000.00, NULL, NULL, '2025-12-14 13:12:52', '2025-12-14 13:12:52', NULL, NULL, NULL, NULL),
-(87, NULL, 'ORD34216204311', 71, 5, 'shipping', 'paid', 9390000.00, 100000.00, 50000.00, 0.00, 9340000.00, NULL, NULL, '2025-12-18 05:03:36', '2025-12-18 05:03:36', NULL, NULL, NULL, NULL),
-(88, 23, 'ORD34503946340', 72, NULL, 'delivered', 'unpaid', 10000.00, 0.00, 0.00, 0.00, 10000.00, NULL, NULL, '2025-12-18 05:08:23', '2025-12-18 06:07:45', NULL, NULL, NULL, NULL),
-(89, NULL, 'ORD42906136668', 73, NULL, 'pending', 'unpaid', 990000.00, 0.00, 0.00, 0.00, 990000.00, NULL, NULL, '2025-12-18 07:28:26', '2025-12-18 07:28:26', NULL, NULL, NULL, NULL),
-(90, 23, 'ORD43054769173', 74, NULL, 'pending', 'unpaid', 990000.00, 0.00, 0.00, 0.00, 990000.00, NULL, NULL, '2025-12-18 07:30:54', '2025-12-18 07:30:54', NULL, NULL, NULL, NULL),
-(91, 23, 'ORD43572170399', 75, NULL, 'shipping', 'unpaid', 10000.00, 0.00, 0.00, 0.00, 10000.00, NULL, NULL, '2025-12-18 07:39:32', '2025-12-18 07:40:09', NULL, NULL, NULL, NULL),
-(92, 23, 'ORD44735675996', 76, NULL, 'pending', 'unpaid', 10000.00, 0.00, 0.00, 0.00, 10000.00, NULL, NULL, '2025-12-18 07:58:55', '2025-12-18 07:58:55', NULL, NULL, NULL, NULL),
-(93, NULL, 'ORD55929176813', 77, NULL, 'pending', 'unpaid', 10980000.00, 0.00, 50000.00, 0.00, 11030000.00, NULL, NULL, '2025-12-19 14:52:09', '2025-12-19 14:52:09', NULL, NULL, NULL, NULL),
-(100, NULL, 'ORD16034232756', 84, NULL, 'delivered', 'paid', 100000.00, 0.00, 50000.00, 0.00, 150000.00, NULL, NULL, '2025-12-20 07:33:54', '2025-12-20 07:35:40', NULL, NULL, NULL, NULL),
-(101, NULL, 'ORD16294503673', 85, NULL, 'delivered', 'paid', 50000.00, 0.00, 50000.00, 0.00, 100000.00, NULL, NULL, '2025-12-20 07:38:14', '2025-12-20 07:44:45', NULL, NULL, NULL, NULL),
-(104, NULL, 'ORD17709381008', 88, NULL, 'delivered', 'paid', 50000.00, 0.00, 50000.00, 0.00, 100000.00, NULL, NULL, '2025-12-20 08:01:49', '2025-12-20 08:02:13', NULL, NULL, NULL, NULL),
-(116, NULL, 'ORD02576566886', 98, NULL, 'delivered', 'unpaid', 100000.00, 0.00, 0.00, 0.00, 100000.00, NULL, NULL, '2025-12-30 13:49:36', '2025-12-30 14:00:14', '2025-12-30 14:00:06', '2025-12-30 14:00:12', '2025-12-30 14:00:14', NULL),
-(117, 23, 'ORD04096765607', 99, NULL, 'shipping', 'unpaid', 3290000.00, 0.00, 0.00, 0.00, 3290000.00, NULL, NULL, '2025-12-30 14:14:56', '2025-12-30 14:15:39', NULL, '2025-12-30 14:15:39', NULL, NULL),
-(118, NULL, 'ORD04342526949', 100, NULL, 'pending', 'unpaid', 3290000.00, 0.00, 0.00, 0.00, 3290000.00, NULL, NULL, '2025-12-30 14:19:02', '2025-12-30 14:19:02', NULL, NULL, NULL, NULL),
-(122, NULL, 'ORD07375647264', 104, NULL, 'pending', 'unpaid', 3290000.00, 0.00, 0.00, 0.00, 3290000.00, NULL, NULL, '2025-12-30 15:09:35', '2025-12-30 15:09:35', NULL, NULL, NULL, NULL),
-(123, NULL, 'ORD07438051928', 105, NULL, 'confirmed', 'paid', 3290000.00, 0.00, 50000.00, 0.00, 3340000.00, NULL, NULL, '2025-12-30 15:10:38', '2025-12-30 15:10:38', NULL, NULL, NULL, NULL),
-(124, NULL, 'ORD07611819286', 106, NULL, 'shipping', 'paid', 9990000.00, 0.00, 50000.00, 0.00, 10040000.00, NULL, NULL, '2025-12-30 15:13:31', '2025-12-30 15:13:31', NULL, NULL, NULL, NULL),
-(125, NULL, 'ORD07854764922', 107, NULL, 'pending', 'unpaid', 8490000.00, 0.00, 0.00, 0.00, 8490000.00, NULL, NULL, '2025-12-30 15:17:34', '2025-12-30 15:17:34', NULL, NULL, NULL, NULL),
-(126, NULL, 'ORD09914084692', 108, NULL, 'pending', 'unpaid', 8490000.00, 0.00, 0.00, 0.00, 8490000.00, NULL, NULL, '2025-12-30 15:51:54', '2025-12-30 15:51:54', NULL, NULL, NULL, NULL),
-(127, NULL, 'ORD10038762410', 109, NULL, 'delivered', 'unpaid', 8490000.00, 0.00, 0.00, 0.00, 8490000.00, NULL, NULL, '2025-12-30 15:53:58', '2026-01-04 19:28:00', '2026-01-04 19:27:53', '2026-01-04 19:27:58', '2026-01-04 19:28:00', NULL),
-(132, 25, 'ORD11954950955', 111, NULL, 'shipping', 'unpaid', 6980000.00, 0.00, 0.00, 0.00, 6980000.00, NULL, NULL, '2025-12-30 16:25:54', '2025-12-30 16:26:42', NULL, '2025-12-30 16:26:42', NULL, NULL),
-(133, 25, 'ORD12511041306', 112, NULL, 'shipping', 'unpaid', 6980000.00, 0.00, 0.00, 0.00, 6980000.00, NULL, NULL, '2025-12-30 16:35:11', '2025-12-30 16:37:19', NULL, '2025-12-30 16:37:19', NULL, NULL),
-(134, 25, 'ORD13194143618', 111, NULL, 'shipping', 'unpaid', 6980000.00, 0.00, 0.00, 0.00, 6980000.00, NULL, NULL, '2025-12-30 16:46:34', '2025-12-30 16:47:01', NULL, '2025-12-30 16:47:01', NULL, NULL),
-(135, 20, 'ORD54759999626', 113, NULL, 'delivered', 'unpaid', 3400000.00, 0.00, 0.00, 0.00, 3400000.00, NULL, NULL, '2026-01-04 19:26:00', '2026-01-04 19:27:31', '2026-01-04 19:27:24', '2026-01-04 19:27:29', '2026-01-04 19:27:31', NULL);
+(136, 27, 'ORD75443150076', 117, NULL, 'cancelled', '', 8800000.00, 0.00, 50000.00, 0.00, 8850000.00, NULL, 'Khách hàng hủy đơn', '2026-01-16 14:57:23', '2026-01-16 14:59:01', NULL, NULL, NULL, '2026-01-16 14:59:01'),
+(137, 27, 'ORD75904435390', 117, NULL, 'confirmed', '', 8800000.00, 0.00, 50000.00, 0.00, 8850000.00, NULL, NULL, '2026-01-16 15:05:04', '2026-01-16 15:14:04', '2026-01-16 15:14:04', '2026-01-16 15:09:51', NULL, NULL),
+(138, 27, 'ORD76047844162', 117, NULL, 'pending', '', 15000000.00, 0.00, 50000.00, 0.00, 15050000.00, NULL, NULL, '2026-01-16 15:07:27', '2026-01-16 15:07:27', NULL, NULL, NULL, NULL),
+(139, 20, 'ORD60009311029', 119, NULL, 'shipping', 'paid', 4250000.00, 0.00, 64850.00, 0.00, 4314850.00, NULL, NULL, '2026-01-17 14:26:49', '2026-01-17 14:26:49', NULL, NULL, NULL, NULL),
+(140, 20, 'ORD60323477781', 119, NULL, 'confirmed', 'paid', 2380000.00, 0.00, 55500.00, 0.00, 2435500.00, NULL, NULL, '2026-01-17 14:32:03', '2026-01-17 14:32:03', '2026-01-17 14:32:03', NULL, NULL, NULL),
+(141, 20, 'ORD60521727191', 119, NULL, 'pending', '', 2380000.00, 0.00, 55500.00, 0.00, 2435500.00, NULL, NULL, '2026-01-17 14:35:21', '2026-01-17 14:35:21', NULL, NULL, NULL, NULL),
+(142, 20, 'ORD60915220002', 120, NULL, 'shipping', 'paid', 4250000.00, 0.00, 43950.00, 0.00, 4293950.00, NULL, NULL, '2026-01-17 14:41:55', '2026-01-17 14:41:55', NULL, NULL, NULL, NULL),
+(143, 20, 'ORD62105419899', 121, NULL, 'pending', '', 8000000.00, 0.00, 60500.00, 0.00, 8060500.00, NULL, NULL, '2026-01-17 15:01:45', '2026-01-17 15:01:45', NULL, NULL, NULL, NULL),
+(144, 20, 'ORD62677344378', 122, NULL, 'pending', '', 15000000.00, 0.00, 97700.00, 0.00, 15097700.00, NULL, NULL, '2026-01-17 15:11:17', '2026-01-17 15:11:17', NULL, NULL, NULL, NULL),
+(145, 20, 'ORD63068682764', 123, NULL, 'pending', '', 8000000.00, 0.00, 62700.00, 0.00, 8062700.00, NULL, NULL, '2026-01-17 15:17:48', '2026-01-17 15:17:48', NULL, NULL, NULL, NULL),
+(146, 20, 'ORD63229852093', 124, NULL, 'pending', '', 9000000.00, 0.00, 67700.00, 0.00, 9067700.00, NULL, NULL, '2026-01-17 15:20:29', '2026-01-17 15:20:29', NULL, NULL, NULL, NULL),
+(147, 20, 'ORD63337854416', 125, NULL, 'pending', '', 9000000.00, 0.00, 65500.00, 0.00, 9065500.00, NULL, NULL, '2026-01-17 15:22:17', '2026-01-17 15:22:17', NULL, NULL, NULL, NULL),
+(149, 20, 'ORD63908402952', 127, NULL, 'pending', '', 8000000.00, 0.00, 83600.00, 0.00, 8083600.00, NULL, NULL, '2026-01-17 15:31:48', '2026-01-17 15:31:48', NULL, NULL, NULL, NULL),
+(150, 20, 'ORD08650948453', 128, NULL, 'pending', '', 8800000.00, 0.00, 64500.00, 0.00, 8864500.00, NULL, NULL, '2026-01-18 03:57:30', '2026-01-18 03:57:30', NULL, NULL, NULL, NULL),
+(152, 20, 'ORD09110814578', 129, NULL, 'confirmed', 'paid', 8000000.00, 0.00, 62700.00, 0.00, 8062700.00, NULL, NULL, '2026-01-18 04:05:10', '2026-01-18 04:05:10', '2026-01-18 04:05:10', NULL, NULL, NULL),
+(153, NULL, 'ORD09405725550', 130, NULL, 'pending', '', 31500000.00, 0.00, 178000.00, 0.00, 31678000.00, NULL, NULL, '2026-01-19 07:56:45', '2026-01-19 07:56:45', NULL, NULL, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -1166,6 +1219,13 @@ CREATE TABLE `order_items` (
   `subtotal` decimal(12,2) NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `order_items`
+--
+
+INSERT INTO `order_items` (`order_item_id`, `order_id`, `variant_id`, `product_name`, `variant_name`, `sku`, `quantity`, `unit_price`, `discount_amount`, `subtotal`, `created_at`) VALUES
+(185, 153, 67, 'PC test buy', 'PC test buy', 'BUNDLE-1768808826729', 1, 31500000.00, 0.00, 31500000.00, '2026-01-19 07:56:45');
 
 -- --------------------------------------------------------
 
@@ -1192,51 +1252,22 @@ CREATE TABLE `payments` (
 --
 
 INSERT INTO `payments` (`payment_id`, `order_id`, `payment_method`, `payment_status`, `amount`, `transaction_id`, `payment_gateway`, `payment_details`, `paid_at`, `created_at`, `updated_at`) VALUES
-(17, 65, 'momo', 'paid', 3340000.00, NULL, 'momo', NULL, '2025-12-04 23:49:11', '2025-12-04 23:49:11', '2025-12-04 23:49:11'),
-(20, 66, 'momo', 'paid', 8540000.00, 'BATECH_1764919624272', 'momo', NULL, '2025-12-05 00:27:47', '2025-12-05 00:27:47', '2025-12-05 00:27:47'),
-(22, 67, 'momo', 'paid', 4040000.00, 'BATECH_1764921138073', 'momo', NULL, '2025-12-05 00:52:57', '2025-12-05 00:52:57', '2025-12-05 00:52:57'),
-(23, 68, 'installment', 'pending', 13280000.00, 'TXN1764921528538897', NULL, NULL, NULL, '2025-12-05 00:58:48', '2025-12-05 00:58:48'),
-(24, 69, 'installment', 'pending', 23280000.00, 'TXN1764921744013568', NULL, NULL, NULL, '2025-12-05 01:02:24', '2025-12-05 01:02:24'),
-(26, 70, 'momo', 'paid', 120000.00, 'BATECH_1764921889136', 'momo', NULL, '2025-12-05 01:07:12', '2025-12-05 01:07:12', '2025-12-05 01:07:12'),
-(28, 71, 'installment', 'pending', 990000.00, 'TXN1764933826608618', NULL, NULL, NULL, '2025-12-05 04:23:46', '2025-12-05 04:23:46'),
-(29, 72, 'installment', 'pending', 2500000.00, 'TXN1764934206695947', NULL, NULL, NULL, '2025-12-05 04:30:06', '2025-12-05 04:30:06'),
-(30, 73, 'installment', 'pending', 2500000.00, 'TXN1764935425069817', NULL, NULL, NULL, '2025-12-05 04:50:25', '2025-12-05 04:50:25'),
-(32, 74, 'installment', 'pending', 9990000.00, 'TXN176493647805661', NULL, NULL, NULL, '2025-12-05 05:07:58', '2025-12-05 05:07:58'),
-(33, 75, 'installment', 'pending', 19980000.00, 'TXN1764937150965119', NULL, NULL, NULL, '2025-12-05 05:19:10', '2025-12-05 05:19:10'),
-(35, 76, 'momo', 'paid', 10040000.00, 'BATECH_1764937406052', 'momo', NULL, '2025-12-05 05:24:41', '2025-12-05 05:24:41', '2025-12-05 05:24:41'),
-(36, 77, 'installment', 'pending', 19980000.00, 'TXN1764938502920835', NULL, NULL, NULL, '2025-12-05 05:41:42', '2025-12-05 05:41:42'),
-(37, 78, 'installment', 'pending', 29970000.00, 'TXN1764938587364484', NULL, NULL, NULL, '2025-12-05 05:43:07', '2025-12-05 05:43:07'),
-(38, 79, 'installment', 'pending', 39960000.00, 'TXN176493974038886', NULL, NULL, NULL, '2025-12-05 06:02:20', '2025-12-05 06:02:20'),
-(39, 80, 'installment', 'pending', 3290000.00, 'TXN176493985546828', NULL, NULL, NULL, '2025-12-05 06:04:15', '2025-12-05 06:04:15'),
-(40, 81, 'installment', 'pending', 6580000.00, 'TXN1764940709135361', NULL, NULL, NULL, '2025-12-05 06:18:29', '2025-12-05 06:18:29'),
-(41, 82, 'installment', 'pending', 9990000.00, 'TXN1765444733626700', NULL, NULL, NULL, '2025-12-11 02:18:53', '2025-12-11 02:18:53'),
-(42, 83, 'installment', 'pending', 10000.00, 'TXN176544613158311', NULL, NULL, NULL, '2025-12-11 02:42:11', '2025-12-11 02:42:11'),
-(43, 84, 'installment', 'pending', 8500000.00, 'TXN1765454478768274', NULL, NULL, NULL, '2025-12-11 05:01:18', '2025-12-11 05:01:18'),
-(44, 85, 'installment', 'pending', 3290000.00, 'TXN1765454974756531', NULL, NULL, NULL, '2025-12-11 05:09:34', '2025-12-11 05:09:34'),
-(50, 86, 'installment', 'pending', 6580000.00, 'TXN1765717972180786', NULL, NULL, NULL, '2025-12-14 06:12:52', '2025-12-14 06:12:52'),
-(53, 87, 'momo', 'paid', 9340000.00, 'BATECH_1766034152899', 'momo', NULL, '2025-12-17 22:03:36', '2025-12-17 22:03:36', '2025-12-17 22:03:36'),
-(54, 88, 'installment', 'pending', 10000.00, 'TXN1766034503947947', NULL, NULL, NULL, '2025-12-17 22:08:23', '2025-12-17 22:08:23'),
-(55, 89, 'installment', 'pending', 990000.00, 'TXN1766042906138375', NULL, NULL, NULL, '2025-12-18 00:28:26', '2025-12-18 00:28:26'),
-(56, 90, 'installment', 'pending', 990000.00, 'TXN1766043054776348', NULL, NULL, NULL, '2025-12-18 00:30:54', '2025-12-18 00:30:54'),
-(57, 91, 'installment', 'pending', 10000.00, 'TXN1766043572171658', NULL, NULL, NULL, '2025-12-18 00:39:32', '2025-12-18 00:39:32'),
-(58, 92, 'installment', 'pending', 10000.00, 'TXN1766044735681184', NULL, NULL, NULL, '2025-12-18 00:58:55', '2025-12-18 00:58:55'),
-(59, 93, 'cod', 'pending', 11030000.00, 'TXN1766155929178767', NULL, NULL, NULL, '2025-12-19 07:52:09', '2025-12-19 07:52:09'),
-(61, 100, 'cod', 'pending', 150000.00, 'TXN1766216034238686', NULL, NULL, NULL, '2025-12-20 00:33:54', '2025-12-20 00:33:54'),
-(62, 101, 'cod', 'pending', 100000.00, 'TXN1766216294509733', NULL, NULL, NULL, '2025-12-20 00:38:14', '2025-12-20 00:38:14'),
-(66, 104, 'momo', 'paid', 100000.00, 'BATECH_1766217650278', 'momo', NULL, '2025-12-20 01:01:49', '2025-12-20 01:01:49', '2025-12-20 01:01:49'),
-(74, 116, 'installment', 'pending', 100000.00, 'TXN176710257656982', NULL, NULL, NULL, '2025-12-30 13:49:36', '2025-12-30 13:49:36'),
-(75, 117, 'installment', 'pending', 3290000.00, 'TXN1767104096769837', NULL, NULL, NULL, '2025-12-30 14:14:56', '2025-12-30 14:14:56'),
-(76, 118, 'installment', 'pending', 3290000.00, 'TXN1767104342531422', NULL, NULL, NULL, '2025-12-30 14:19:02', '2025-12-30 14:19:02'),
-(78, 122, 'installment', 'pending', 3290000.00, 'TXN1767107375661865', NULL, NULL, NULL, '2025-12-30 15:09:35', '2025-12-30 15:09:35'),
-(79, 123, 'cod', 'paid', 3340000.00, 'TXN1767107438055915', NULL, NULL, '2025-12-30 15:10:38', '2025-12-30 15:10:38', '2025-12-30 15:10:38'),
-(81, 124, 'momo', 'paid', 10040000.00, 'BATECH_1767107562628', 'momo', NULL, '2025-12-30 15:13:31', '2025-12-30 15:13:31', '2025-12-30 15:13:31'),
-(82, 125, 'installment', 'pending', 8490000.00, 'TXN1767107854768846', NULL, NULL, NULL, '2025-12-30 15:17:34', '2025-12-30 15:17:34'),
-(83, 126, 'installment', 'pending', 8490000.00, 'TXN1767109914090290', NULL, NULL, NULL, '2025-12-30 15:51:54', '2025-12-30 15:51:54'),
-(84, 127, 'installment', 'pending', 8490000.00, 'TXN1767110038768593', NULL, NULL, NULL, '2025-12-30 15:53:58', '2025-12-30 15:53:58'),
-(89, 132, 'installment', 'pending', 6980000.00, 'TXN1767111954955313', NULL, NULL, NULL, '2025-12-30 16:25:54', '2025-12-30 16:25:54'),
-(90, 133, 'installment', 'pending', 6980000.00, 'TXN1767112511050494', NULL, NULL, NULL, '2025-12-30 16:35:11', '2025-12-30 16:35:11'),
-(91, 134, 'installment', 'pending', 6980000.00, 'TXN1767113194149313', NULL, NULL, NULL, '2025-12-30 16:46:34', '2025-12-30 16:46:34'),
-(92, 135, 'installment', 'pending', 3400000.00, 'TXN1767554760007914', NULL, NULL, NULL, '2026-01-04 19:26:00', '2026-01-04 19:26:00');
+(93, 136, 'cod', 'pending', 8850000.00, 'TXN176857544316032', NULL, NULL, NULL, '2026-01-16 14:57:23', '2026-01-16 14:57:23'),
+(94, 137, 'cod', 'pending', 8850000.00, 'TXN1768575904442972', NULL, NULL, NULL, '2026-01-16 15:05:04', '2026-01-16 15:05:04'),
+(95, 138, 'cod', 'pending', 15050000.00, 'TXN1768576047851321', NULL, NULL, NULL, '2026-01-16 15:07:27', '2026-01-16 15:07:27'),
+(97, 139, 'momo', 'paid', 4314850.00, 'BATECH_1768659949468', 'momo', NULL, '2026-01-17 14:26:49', '2026-01-17 14:26:49', '2026-01-17 14:26:49'),
+(99, 140, '', 'paid', 2435500.00, 'VNPAY_1768660220951', 'vnpay', NULL, '2026-01-17 14:32:03', '2026-01-17 14:32:03', '2026-01-17 14:32:03'),
+(100, 141, 'cod', 'pending', 2435500.00, 'TXN1768660521733344', NULL, NULL, NULL, '2026-01-17 14:35:21', '2026-01-17 14:35:21'),
+(102, 142, 'momo', 'paid', 4293950.00, 'BATECH_1768660867743', 'momo', NULL, '2026-01-17 14:41:55', '2026-01-17 14:41:55', '2026-01-17 14:41:55'),
+(103, 143, 'installment', 'pending', 8060500.00, 'TXN1768662105428439', NULL, NULL, NULL, '2026-01-17 15:01:45', '2026-01-17 15:01:45'),
+(105, 144, 'installment', 'pending', 15097700.00, 'TXN1768662677354941', NULL, NULL, NULL, '2026-01-17 15:11:17', '2026-01-17 15:11:17'),
+(106, 145, 'installment', 'pending', 8062700.00, 'TXN1768663068687121', NULL, NULL, NULL, '2026-01-17 15:17:48', '2026-01-17 15:17:48'),
+(107, 146, 'installment', 'pending', 9067700.00, 'TXN1768663229859474', NULL, NULL, NULL, '2026-01-17 15:20:29', '2026-01-17 15:20:29'),
+(108, 147, 'installment', 'pending', 9065500.00, 'TXN1768663337863163', NULL, NULL, NULL, '2026-01-17 15:22:17', '2026-01-17 15:22:17'),
+(109, 149, 'installment', 'pending', 8083600.00, 'TXN1768663908410163', NULL, NULL, NULL, '2026-01-17 15:31:48', '2026-01-17 15:31:48'),
+(110, 150, 'installment', 'pending', 8864500.00, 'TXN176870865095743', NULL, NULL, NULL, '2026-01-18 03:57:30', '2026-01-18 03:57:30'),
+(111, 152, 'installment', 'paid', 8062700.00, 'TXN1768709110820670', NULL, NULL, '2026-01-18 04:05:10', '2026-01-18 04:05:10', '2026-01-18 04:05:10'),
+(112, 153, 'cod', 'pending', 31678000.00, 'TXN1768809405730132', NULL, NULL, NULL, '2026-01-19 07:56:45', '2026-01-19 07:56:45');
 
 -- --------------------------------------------------------
 
@@ -1315,7 +1346,8 @@ INSERT INTO `products` (`product_id`, `category_id`, `product_name`, `slug`, `de
 (49, 7, 'Vỏ máy tính Corsair FRAME 5000D RS White (ATX/mid tower)', 'vo-may-tinh-corsair-frame-5000d-rs-white-atxmid-tower', NULL, 3800000.00, 1, 0, 0, 0.00, 0, '2026-01-15 12:24:27', '2026-01-15 12:24:27', NULL),
 (50, 7, 'Vỏ Case Asus TUF GAMING GT502 HORIZON WHITE(MATX/Mid tower)', 'vo-case-asus-tuf-gaming-gt502-horizon-whitematxmid-tower', NULL, 4000000.00, 1, 0, 0, 0.00, 0, '2026-01-15 12:25:07', '2026-01-15 12:25:07', NULL),
 (51, 7, 'Vỏ case MSI MAG FORGE 120A AIRFLOW (Mid Tower/Màu Đen/Tặng 6 fan RGB)', 'vo-case-msi-mag-forge-120a-airflow-mid-towermau-dentang-6-fan-rgb', NULL, 900000.00, 1, 0, 0, 0.00, 0, '2026-01-15 12:25:48', '2026-01-15 12:25:48', NULL),
-(52, 7, 'Vỏ case Jonsbo TK-1 White ( Mid Tower/Màu Trắng)', 'vo-case-jonsbo-tk-1-white-mid-towermau-trang', NULL, 2400000.00, 1, 0, 0, 0.00, 0, '2026-01-15 12:26:42', '2026-01-15 12:26:42', NULL);
+(52, 7, 'Vỏ case Jonsbo TK-1 White ( Mid Tower/Màu Trắng)', 'vo-case-jonsbo-tk-1-white-mid-towermau-trang', NULL, 2400000.00, 1, 0, 0, 0.00, 0, '2026-01-15 12:26:42', '2026-01-15 12:26:42', NULL),
+(73, 57, 'PC test buy', 'pc-test-buy', 'Demo test', 35000000.00, 1, 0, 4, 0.00, 0, '2026-01-19 07:47:06', '2026-01-19 07:49:30', NULL);
 
 -- --------------------------------------------------------
 
@@ -1570,66 +1602,68 @@ CREATE TABLE `product_variants` (
   `warranty_period` int(11) DEFAULT NULL,
   `discount_percent` decimal(12,2) DEFAULT 0.00,
   `discount_start_date` datetime DEFAULT NULL,
-  `discount_end_date` datetime DEFAULT NULL
+  `discount_end_date` datetime DEFAULT NULL,
+  `variant_type` enum('component','bundle') DEFAULT 'component'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `product_variants`
 --
 
-INSERT INTO `product_variants` (`variant_id`, `product_id`, `sku`, `variant_name`, `price`, `stock_quantity`, `is_active`, `is_default`, `created_at`, `updated_at`, `warranty_period`, `discount_percent`, `discount_start_date`, `discount_end_date`) VALUES
-(1, 1, 'C01-P0001-V00', 'Mặc định', 3400000.00, 3, 1, 1, '2026-01-15 11:15:43', '2026-01-15 11:15:43', 36, 20.00, '2026-01-01 00:00:00', '2026-01-30 00:00:00'),
-(2, 2, 'C01-P0002-V00', 'Mặc định', 1800000.00, 2, 1, 1, '2026-01-15 11:17:09', '2026-01-15 11:17:09', 36, 10.00, '2026-01-01 00:00:00', '2026-01-30 00:00:00'),
-(3, 3, 'C01-P0003-V00', 'Mặc định', 2100000.00, 2, 1, 1, '2026-01-15 11:19:57', '2026-01-15 11:19:57', 36, 10.00, '2026-01-01 00:00:00', '2026-01-30 00:00:00'),
-(4, 4, 'C01-P0004-V00', 'Mặc định', 2800000.00, 3, 1, 1, '2026-01-15 11:22:44', '2026-01-15 11:22:44', 36, 20.00, '2026-01-01 00:00:00', '2026-01-30 00:00:00'),
-(5, 5, 'C01-P0005-V00', 'Mặc định', 5500000.00, 2, 1, 1, '2026-01-15 11:24:10', '2026-01-15 11:24:10', 36, 10.00, '2026-01-01 00:00:00', '2026-01-30 00:00:00'),
-(6, 6, 'C01-P0006-V00', 'Mặc định', 7000000.00, 2, 1, 1, '2026-01-15 11:25:36', '2026-01-15 11:25:36', 36, 13.00, '2026-01-01 00:00:00', '2026-01-31 00:00:00'),
-(7, 7, 'C01-P0007-V00', 'Mặc định', 6000000.00, 2, 1, 1, '2026-01-15 11:26:39', '2026-01-15 11:26:39', 36, 15.00, '2026-01-01 00:00:00', '2026-01-31 00:00:00'),
-(8, 8, 'C01-P0008-V00', 'Mặc định', 2800000.00, 2, 1, 1, '2026-01-15 11:28:10', '2026-01-15 11:28:10', 36, 15.00, '2026-01-01 00:00:00', '2026-01-30 00:00:00'),
-(9, 9, 'C01-P0009-V00', 'Mặc định', 4500000.00, 2, 1, 1, '2026-01-15 11:29:00', '2026-01-15 11:29:00', 36, 10.00, '2026-01-01 00:00:00', '2026-01-30 00:00:00'),
-(10, 10, 'C01-P0010-V00', 'Mặc định', 3200000.00, 2, 1, 1, '2026-01-15 11:30:05', '2026-01-15 11:30:05', 36, 15.00, '2026-01-01 00:00:00', '2026-01-30 00:00:00'),
-(11, 11, 'C01-P0011-V00', 'Mặc định', 5000000.00, 2, 1, 1, '2026-01-15 11:31:06', '2026-01-15 11:31:06', 36, 15.00, '2026-01-01 00:00:00', '2026-01-31 00:00:00'),
-(12, 12, 'C01-P0012-V00', 'Mặc định', 8000000.00, 2, 1, 1, '2026-01-15 11:32:20', '2026-01-15 11:32:20', 36, 10.00, '2026-01-01 00:00:00', '2026-01-15 00:00:00'),
-(13, 13, 'C01-P0013-V00', 'Mặc định', 9000000.00, 2, 1, 1, '2026-01-15 11:33:06', '2026-01-15 11:33:06', 36, 10.00, '2026-01-01 00:00:00', '2026-01-15 00:00:00'),
-(14, 14, 'C05-P0014-V00', 'Mặc định', 1500000.00, 2, 1, 1, '2026-01-15 11:36:30', '2026-01-15 11:36:30', 36, 20.00, '2026-01-01 00:00:00', NULL),
-(15, 15, 'C05-P0015-V00', 'Mặc định', 2300000.00, 2, 1, 1, '2026-01-15 11:37:27', '2026-01-15 11:37:27', 36, 10.00, '2026-01-01 00:00:00', '2026-01-15 00:00:00'),
-(16, 16, 'C05-P0016-V00', 'Mặc định', 1800000.00, 2, 1, 1, '2026-01-15 11:39:43', '2026-01-15 11:39:43', 36, 10.00, '2026-01-01 00:00:00', '2026-01-15 00:00:00'),
-(17, 17, 'C05-P0017-V00', 'Mặc định', 2800000.00, 2, 1, 1, '2026-01-15 11:40:40', '2026-01-15 11:40:40', 36, 10.00, '2026-01-01 00:00:00', '2026-01-15 00:00:00'),
-(18, 18, 'C05-P0018-V00', 'Mặc định', 4800000.00, 3, 1, 1, '2026-01-15 11:41:54', '2026-01-15 11:41:54', 36, 15.00, '2026-01-01 00:00:00', '2026-01-15 00:00:00'),
-(19, 19, 'C05-P0019-V00', 'Mặc định', 3300000.00, 2, 1, 1, '2026-01-15 11:42:53', '2026-01-15 11:42:53', 36, 10.00, '2026-01-08 00:00:00', '2026-01-15 00:00:00'),
-(20, 20, 'C05-P0020-V00', 'Mặc định', 15000000.00, 2, 1, 1, '2026-01-15 11:44:19', '2026-01-15 11:44:19', 36, 10.00, '2026-01-01 00:00:00', '2026-01-15 00:00:00'),
-(21, 21, 'C05-P0021-V00', 'Mặc định', 2900000.00, 2, 1, 1, '2026-01-15 11:46:18', '2026-01-15 11:46:18', 36, 10.00, '2026-01-01 00:00:00', '2026-01-15 00:00:00'),
-(22, 22, 'C05-P0022-V00', 'Mặc định', 1700000.00, 2, 1, 1, '2026-01-15 11:47:28', '2026-01-15 11:47:28', 24, 15.00, '2026-01-01 00:00:00', '2026-01-15 00:00:00'),
-(23, 23, 'C05-P0023-V00', 'Mặc định', 2600000.00, 2, 1, 1, '2026-01-15 11:48:27', '2026-01-15 11:48:27', 36, 15.00, '2026-01-01 00:00:00', '2026-01-15 00:00:00'),
-(24, 24, 'C05-P0024-V00', 'Mặc định', 4400000.00, 2, 1, 1, '2026-01-15 11:49:36', '2026-01-15 11:49:36', 36, 10.00, '2026-01-01 00:00:00', '2026-01-15 00:00:00'),
-(25, 25, 'C05-P0025-V00', 'Mặc định', 7800000.00, 2, 1, 1, '2026-01-15 11:50:51', '2026-01-15 11:50:51', 36, 10.00, '2026-01-01 00:00:00', '2026-01-15 00:00:00'),
-(26, 26, 'C05-P0026-V00', 'Mặc định', 7500000.00, 2, 1, 1, '2026-01-15 11:51:51', '2026-01-15 11:51:51', 36, 15.00, '2026-01-01 00:00:00', '2026-01-15 00:00:00'),
-(27, 27, 'PRD-8G-1', '8GB ( 1 X 8GB)', 800000.00, 2, 1, 0, '2026-01-15 11:54:48', '2026-01-15 11:54:48', 36, 0.00, NULL, NULL),
-(28, 27, 'PRD-16-2', '16GB (1 X 16GB)', 1400000.00, 2, 1, 0, '2026-01-15 11:54:48', '2026-01-15 11:54:48', 36, 0.00, NULL, NULL),
-(29, 27, 'PRD-16-3', '16GB (2 X 8GB)', 1500000.00, 2, 1, 1, '2026-01-15 11:54:48', '2026-01-15 11:54:48', 36, 10.00, '2026-01-01 00:00:00', '2026-01-15 00:00:00'),
-(30, 28, 'C35-P0028-V00', 'Mặc định', 3000000.00, 2, 1, 1, '2026-01-15 11:56:58', '2026-01-15 11:56:58', 36, 0.00, NULL, NULL),
-(31, 29, 'C35-P0029-V00', 'Mặc định', 7000000.00, 2, 1, 1, '2026-01-15 11:58:13', '2026-01-15 11:58:13', 36, 10.00, '2026-01-01 00:00:00', '2026-01-15 00:00:00'),
-(32, 30, 'C35-P0030-V00', 'Mặc định', 10000000.00, 2, 1, 1, '2026-01-15 11:59:07', '2026-01-15 11:59:07', 36, 0.00, NULL, NULL),
-(33, 31, 'C13-P0031-V00', 'Mặc định', 3500000.00, 2, 1, 1, '2026-01-15 12:00:20', '2026-01-15 12:00:20', 24, 10.00, '2026-01-01 00:00:00', '2026-01-16 00:00:00'),
-(35, 33, 'C13-P0033-V00', 'Mặc định', 3800000.00, 2, 1, 1, '2026-01-15 12:01:41', '2026-01-15 12:01:41', 24, 0.00, NULL, NULL),
-(36, 34, 'C13-P0034-V00', 'Mặc định', 3000000.00, 2, 1, 1, '2026-01-15 12:03:37', '2026-01-15 12:03:37', 24, 0.00, NULL, NULL),
-(37, 35, 'C04-P0035-V00', 'Mặc định', 2.80, 2, 1, 1, '2026-01-15 12:04:55', '2026-01-15 12:04:55', 60, 0.00, NULL, NULL),
-(39, 37, 'C04-P0037-V00', 'Mặc định', 2000000.00, 2, 1, 1, '2026-01-15 12:07:43', '2026-01-15 12:07:43', 60, 0.00, NULL, NULL),
-(40, 38, 'C04-P0038-V00', 'Mặc định', 1600000.00, 2, 1, 1, '2026-01-15 12:08:47', '2026-01-15 12:08:47', 60, 0.00, NULL, NULL),
-(41, 39, 'C04-P0039-V00', 'Mặc định', 3800000.00, 2, 1, 1, '2026-01-15 12:10:01', '2026-01-15 12:10:01', 60, 10.00, '2026-01-15 00:00:00', '2026-01-31 00:00:00'),
-(42, 40, 'C02-P0040-V00', 'Mặc định', 8800000.00, 2, 1, 1, '2026-01-15 12:12:47', '2026-01-15 12:12:47', 36, 0.00, NULL, NULL),
-(43, 41, 'C02-P0041-V00', 'Mặc định', 16000000.00, 2, 1, 1, '2026-01-15 12:13:55', '2026-01-15 12:13:55', 36, 0.00, NULL, NULL),
-(44, 42, 'C02-P0042-V00', 'Mặc định', 9000000.00, 2, 1, 1, '2026-01-15 12:14:48', '2026-01-15 12:14:48', 36, 0.00, NULL, NULL),
-(45, 43, 'C02-P0043-V00', 'Mặc định', 8000000.00, 2, 1, 1, '2026-01-15 12:15:59', '2026-01-15 12:15:59', 36, 0.00, NULL, NULL),
-(46, 44, 'C02-P0044-V00', 'Mặc định', 3600000.00, 2, 1, 1, '2026-01-15 12:17:06', '2026-01-15 12:17:06', 36, 0.00, NULL, NULL),
-(47, 45, 'C06-P0045-V00', 'Mặc định', 1300000.00, 2, 1, 1, '2026-01-15 12:18:59', '2026-01-15 12:18:59', 72, 0.00, NULL, NULL),
-(48, 46, 'C06-P0046-V00', 'Mặc định', 4400000.00, 2, 1, 1, '2026-01-15 12:19:59', '2026-01-15 12:19:59', 84, 0.00, NULL, NULL),
-(49, 47, 'C06-P0047-V00', 'Mặc định', 900000.00, 2, 1, 1, '2026-01-15 12:20:52', '2026-01-15 12:20:52', 36, 0.00, NULL, NULL),
-(50, 48, 'C06-P0048-V00', 'Mặc định', 1100000.00, 2, 1, 1, '2026-01-15 12:21:52', '2026-01-15 12:21:52', 60, 0.00, NULL, NULL),
-(51, 49, 'C07-P0049-V00', 'Mặc định', 3800000.00, 2, 1, 1, '2026-01-15 12:24:27', '2026-01-15 12:24:27', 24, 0.00, NULL, NULL),
-(52, 50, 'C07-P0050-V00', 'Mặc định', 4000000.00, 2, 1, 1, '2026-01-15 12:25:07', '2026-01-15 12:25:07', 24, 0.00, NULL, NULL),
-(53, 51, 'C07-P0051-V00', 'Mặc định', 900000.00, 2, 1, 1, '2026-01-15 12:25:48', '2026-01-15 12:25:48', 12, 0.00, NULL, NULL),
-(54, 52, 'C07-P0052-V00', 'Mặc định', 2400000.00, 2, 1, 1, '2026-01-15 12:26:42', '2026-01-15 12:26:42', 12, 0.00, NULL, NULL);
+INSERT INTO `product_variants` (`variant_id`, `product_id`, `sku`, `variant_name`, `price`, `stock_quantity`, `is_active`, `is_default`, `created_at`, `updated_at`, `warranty_period`, `discount_percent`, `discount_start_date`, `discount_end_date`, `variant_type`) VALUES
+(1, 1, 'C01-P0001-V00', 'Mặc định', 3400000.00, 3, 1, 1, '2026-01-15 11:15:43', '2026-01-15 11:15:43', 36, 20.00, '2026-01-01 00:00:00', '2026-01-30 00:00:00', 'component'),
+(2, 2, 'C01-P0002-V00', 'Mặc định', 1800000.00, 2, 1, 1, '2026-01-15 11:17:09', '2026-01-15 11:17:09', 36, 10.00, '2026-01-01 00:00:00', '2026-01-30 00:00:00', 'component'),
+(3, 3, 'C01-P0003-V00', 'Mặc định', 2100000.00, 2, 1, 1, '2026-01-15 11:19:57', '2026-01-15 11:19:57', 36, 10.00, '2026-01-01 00:00:00', '2026-01-30 00:00:00', 'component'),
+(4, 4, 'C01-P0004-V00', 'Mặc định', 2800000.00, 3, 1, 1, '2026-01-15 11:22:44', '2026-01-15 11:22:44', 36, 20.00, '2026-01-01 00:00:00', '2026-01-30 00:00:00', 'component'),
+(5, 5, 'C01-P0005-V00', 'Mặc định', 5500000.00, 2, 1, 1, '2026-01-15 11:24:10', '2026-01-15 11:24:10', 36, 10.00, '2026-01-01 00:00:00', '2026-01-30 00:00:00', 'component'),
+(6, 6, 'C01-P0006-V00', 'Mặc định', 7000000.00, 2, 1, 1, '2026-01-15 11:25:36', '2026-01-15 11:25:36', 36, 13.00, '2026-01-01 00:00:00', '2026-01-31 00:00:00', 'component'),
+(7, 7, 'C01-P0007-V00', 'Mặc định', 6000000.00, 2, 1, 1, '2026-01-15 11:26:39', '2026-01-15 11:26:39', 36, 15.00, '2026-01-01 00:00:00', '2026-01-31 00:00:00', 'component'),
+(8, 8, 'C01-P0008-V00', 'Mặc định', 2800000.00, 2, 1, 1, '2026-01-15 11:28:10', '2026-01-19 07:24:16', 36, 15.00, '2026-01-01 00:00:00', '2026-01-30 00:00:00', 'component'),
+(9, 9, 'C01-P0009-V00', 'Mặc định', 4500000.00, 2, 1, 1, '2026-01-15 11:29:00', '2026-01-15 11:29:00', 36, 10.00, '2026-01-01 00:00:00', '2026-01-30 00:00:00', 'component'),
+(10, 10, 'C01-P0010-V00', 'Mặc định', 3200000.00, 2, 1, 1, '2026-01-15 11:30:05', '2026-01-15 11:30:05', 36, 15.00, '2026-01-01 00:00:00', '2026-01-30 00:00:00', 'component'),
+(11, 11, 'C01-P0011-V00', 'Mặc định', 5000000.00, 2, 1, 1, '2026-01-15 11:31:06', '2026-01-19 07:24:16', 36, 15.00, '2026-01-01 00:00:00', '2026-01-31 00:00:00', 'component'),
+(12, 12, 'C01-P0012-V00', 'Mặc định', 8000000.00, 2, 1, 1, '2026-01-15 11:32:20', '2026-01-19 07:24:16', 36, 10.00, '2026-01-01 00:00:00', '2026-01-15 00:00:00', 'component'),
+(13, 13, 'C01-P0013-V00', 'Mặc định', 9000000.00, 2, 1, 1, '2026-01-15 11:33:06', '2026-01-15 11:33:06', 36, 10.00, '2026-01-01 00:00:00', '2026-01-15 00:00:00', 'component'),
+(14, 14, 'C05-P0014-V00', 'Mặc định', 1500000.00, 2, 1, 1, '2026-01-15 11:36:30', '2026-01-15 11:36:30', 36, 20.00, '2026-01-01 00:00:00', NULL, 'component'),
+(15, 15, 'C05-P0015-V00', 'Mặc định', 2300000.00, 2, 1, 1, '2026-01-15 11:37:27', '2026-01-15 11:37:27', 36, 10.00, '2026-01-01 00:00:00', '2026-01-15 00:00:00', 'component'),
+(16, 16, 'C05-P0016-V00', 'Mặc định', 1800000.00, 2, 1, 1, '2026-01-15 11:39:43', '2026-01-15 11:39:43', 36, 10.00, '2026-01-01 00:00:00', '2026-01-15 00:00:00', 'component'),
+(17, 17, 'C05-P0017-V00', 'Mặc định', 2800000.00, 2, 1, 1, '2026-01-15 11:40:40', '2026-01-15 11:40:40', 36, 10.00, '2026-01-01 00:00:00', '2026-01-15 00:00:00', 'component'),
+(18, 18, 'C05-P0018-V00', 'Mặc định', 4800000.00, 3, 1, 1, '2026-01-15 11:41:54', '2026-01-15 11:41:54', 36, 15.00, '2026-01-01 00:00:00', '2026-01-15 00:00:00', 'component'),
+(19, 19, 'C05-P0019-V00', 'Mặc định', 3300000.00, 2, 1, 1, '2026-01-15 11:42:53', '2026-01-15 11:42:53', 36, 10.00, '2026-01-08 00:00:00', '2026-01-15 00:00:00', 'component'),
+(20, 20, 'C05-P0020-V00', 'Mặc định', 15000000.00, 2, 1, 1, '2026-01-15 11:44:19', '2026-01-19 07:24:16', 36, 10.00, '2026-01-01 00:00:00', '2026-01-15 00:00:00', 'component'),
+(21, 21, 'C05-P0021-V00', 'Mặc định', 2900000.00, 2, 1, 1, '2026-01-15 11:46:18', '2026-01-15 11:46:18', 36, 10.00, '2026-01-01 00:00:00', '2026-01-15 00:00:00', 'component'),
+(22, 22, 'C05-P0022-V00', 'Mặc định', 1700000.00, 2, 1, 1, '2026-01-15 11:47:28', '2026-01-15 11:47:28', 24, 15.00, '2026-01-01 00:00:00', '2026-01-15 00:00:00', 'component'),
+(23, 23, 'C05-P0023-V00', 'Mặc định', 2600000.00, 2, 1, 1, '2026-01-15 11:48:27', '2026-01-15 11:48:27', 36, 15.00, '2026-01-01 00:00:00', '2026-01-15 00:00:00', 'component'),
+(24, 24, 'C05-P0024-V00', 'Mặc định', 4400000.00, 2, 1, 1, '2026-01-15 11:49:36', '2026-01-15 11:49:36', 36, 10.00, '2026-01-01 00:00:00', '2026-01-15 00:00:00', 'component'),
+(25, 25, 'C05-P0025-V00', 'Mặc định', 7800000.00, 2, 1, 1, '2026-01-15 11:50:51', '2026-01-15 11:50:51', 36, 10.00, '2026-01-01 00:00:00', '2026-01-15 00:00:00', 'component'),
+(26, 26, 'C05-P0026-V00', 'Mặc định', 7500000.00, 2, 1, 1, '2026-01-15 11:51:51', '2026-01-15 11:51:51', 36, 15.00, '2026-01-01 00:00:00', '2026-01-15 00:00:00', 'component'),
+(27, 27, 'PRD-8G-1', '8GB ( 1 X 8GB)', 800000.00, 2, 1, 0, '2026-01-15 11:54:48', '2026-01-15 11:54:48', 36, 0.00, NULL, NULL, 'component'),
+(28, 27, 'PRD-16-2', '16GB (1 X 16GB)', 1400000.00, 2, 1, 0, '2026-01-15 11:54:48', '2026-01-15 11:54:48', 36, 0.00, NULL, NULL, 'component'),
+(29, 27, 'PRD-16-3', '16GB (2 X 8GB)', 1500000.00, 2, 1, 1, '2026-01-15 11:54:48', '2026-01-15 11:54:48', 36, 10.00, '2026-01-01 00:00:00', '2026-01-15 00:00:00', 'component'),
+(30, 28, 'C35-P0028-V00', 'Mặc định', 3000000.00, 2, 1, 1, '2026-01-15 11:56:58', '2026-01-15 11:56:58', 36, 0.00, NULL, NULL, 'component'),
+(31, 29, 'C35-P0029-V00', 'Mặc định', 7000000.00, 2, 1, 1, '2026-01-15 11:58:13', '2026-01-15 11:58:13', 36, 10.00, '2026-01-01 00:00:00', '2026-01-15 00:00:00', 'component'),
+(32, 30, 'C35-P0030-V00', 'Mặc định', 10000000.00, 2, 1, 1, '2026-01-15 11:59:07', '2026-01-15 11:59:07', 36, 0.00, NULL, NULL, 'component'),
+(33, 31, 'C13-P0031-V00', 'Mặc định', 3500000.00, 2, 1, 1, '2026-01-15 12:00:20', '2026-01-15 12:00:20', 24, 10.00, '2026-01-01 00:00:00', '2026-01-16 00:00:00', 'component'),
+(35, 33, 'C13-P0033-V00', 'Mặc định', 3800000.00, 2, 1, 1, '2026-01-15 12:01:41', '2026-01-15 12:01:41', 24, 0.00, NULL, NULL, 'component'),
+(36, 34, 'C13-P0034-V00', 'Mặc định', 3000000.00, 2, 1, 1, '2026-01-15 12:03:37', '2026-01-15 12:03:37', 24, 0.00, NULL, NULL, 'component'),
+(37, 35, 'C04-P0035-V00', 'Mặc định', 2.80, 2, 1, 1, '2026-01-15 12:04:55', '2026-01-15 12:04:55', 60, 0.00, NULL, NULL, 'component'),
+(39, 37, 'C04-P0037-V00', 'Mặc định', 2000000.00, 2, 1, 1, '2026-01-15 12:07:43', '2026-01-15 12:07:43', 60, 0.00, NULL, NULL, 'component'),
+(40, 38, 'C04-P0038-V00', 'Mặc định', 1600000.00, 2, 1, 1, '2026-01-15 12:08:47', '2026-01-15 12:08:47', 60, 0.00, NULL, NULL, 'component'),
+(41, 39, 'C04-P0039-V00', 'Mặc định', 3800000.00, 2, 1, 1, '2026-01-15 12:10:01', '2026-01-15 12:10:01', 60, 10.00, '2026-01-15 00:00:00', '2026-01-31 00:00:00', 'component'),
+(42, 40, 'C02-P0040-V00', 'Mặc định', 8800000.00, 2, 1, 1, '2026-01-15 12:12:47', '2026-01-19 07:24:16', 36, 0.00, NULL, NULL, 'component'),
+(43, 41, 'C02-P0041-V00', 'Mặc định', 16000000.00, 2, 1, 1, '2026-01-15 12:13:55', '2026-01-15 12:13:55', 36, 0.00, NULL, NULL, 'component'),
+(44, 42, 'C02-P0042-V00', 'Mặc định', 9000000.00, 2, 1, 1, '2026-01-15 12:14:48', '2026-01-19 07:23:28', 36, 0.00, NULL, NULL, 'component'),
+(45, 43, 'C02-P0043-V00', 'Mặc định', 8000000.00, 2, 1, 1, '2026-01-15 12:15:59', '2026-01-19 07:24:16', 36, 0.00, NULL, NULL, 'component'),
+(46, 44, 'C02-P0044-V00', 'Mặc định', 3600000.00, 2, 1, 1, '2026-01-15 12:17:06', '2026-01-15 12:17:06', 36, 0.00, NULL, NULL, 'component'),
+(47, 45, 'C06-P0045-V00', 'Mặc định', 1300000.00, 2, 1, 1, '2026-01-15 12:18:59', '2026-01-15 12:18:59', 72, 0.00, NULL, NULL, 'component'),
+(48, 46, 'C06-P0046-V00', 'Mặc định', 4400000.00, 2, 1, 1, '2026-01-15 12:19:59', '2026-01-15 12:19:59', 84, 0.00, NULL, NULL, 'component'),
+(49, 47, 'C06-P0047-V00', 'Mặc định', 900000.00, 2, 1, 1, '2026-01-15 12:20:52', '2026-01-15 12:20:52', 36, 0.00, NULL, NULL, 'component'),
+(50, 48, 'C06-P0048-V00', 'Mặc định', 1100000.00, 2, 1, 1, '2026-01-15 12:21:52', '2026-01-15 12:21:52', 60, 0.00, NULL, NULL, 'component'),
+(51, 49, 'C07-P0049-V00', 'Mặc định', 3800000.00, 2, 1, 1, '2026-01-15 12:24:27', '2026-01-15 12:24:27', 24, 0.00, NULL, NULL, 'component'),
+(52, 50, 'C07-P0050-V00', 'Mặc định', 4000000.00, 2, 1, 1, '2026-01-15 12:25:07', '2026-01-15 12:25:07', 24, 0.00, NULL, NULL, 'component'),
+(53, 51, 'C07-P0051-V00', 'Mặc định', 900000.00, 2, 1, 1, '2026-01-15 12:25:48', '2026-01-15 12:25:48', 12, 0.00, NULL, NULL, 'component'),
+(54, 52, 'C07-P0052-V00', 'Mặc định', 2400000.00, 2, 1, 1, '2026-01-15 12:26:42', '2026-01-15 12:26:42', 12, 0.00, NULL, NULL, 'component'),
+(67, 73, 'BUNDLE-1768808826729', 'PC test buy', 35000000.00, -1, 1, 1, '2026-01-19 07:47:06', '2026-01-19 07:56:45', 24, 10.00, '2026-01-19 00:00:00', '2026-01-30 00:00:00', 'bundle');
 
 -- --------------------------------------------------------
 
@@ -1688,13 +1722,13 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`user_id`, `username`, `email`, `password_hash`, `full_name`, `phone`, `role`, `is_active`, `created_at`, `updated_at`, `last_login`, `session_token`, `admin_session_token`, `user_session_token`, `admin_refresh_token`, `user_refresh_token`) VALUES
-(6, 'admin', 'admin@gmail.com', '$2b$10$84e9xqnTc50CPaf5pOldT.Ob9zW9/RVK.G3Whr.TdAncfRdE.UivG', 'admin', '0123456788', 2, 1, '2025-11-05 09:33:52', '2026-01-16 10:16:07', NULL, NULL, NULL, NULL, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjYsInVzZXJuYW1lIjoiYWRtaW4iLCJlbWFpbCI6ImFkbWluQGdtYWlsLmNvbSIsInJvbGUiOjIsInNlc3Npb25UeXBlIjoiYWRtaW4iLCJpYXQiOjE3Njg1NTg1NjcsImV4cCI6MTc2OTE2MzM2N30.k8yqlXEnRG67XWxIYjtVFB6G3MM2FsndkGAbdJRuJe0', NULL),
-(20, 'tranthib671', 'thib@gmail.com', '$2b$10$KQc2staSc5WX/9OIkHi3reX8XJO8L51YDjK.N5YP5XpPaghoLS.rK', 'Trần Thị B', '0908787671', 0, 1, '2025-11-24 12:44:44', '2026-01-05 08:23:20', NULL, NULL, NULL, NULL, NULL, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIwLCJ1c2VybmFtZSI6InRyYW50aGliNjcxIiwiZW1haWwiOiJ0aGliQGdtYWlsLmNvbSIsInJvbGUiOjAsInNlc3Npb25UeXBlIjoidXNlciIsImlhdCI6MTc2NzYwMTQwMCwiZXhwIjoxNzY4MjA2MjAwfQ.k6c2xDYsV3ksi338eJYpRF2dsrPdqE-cBUiH59gPtmY'),
+(6, 'admin', 'admin@gmail.com', '$2b$10$84e9xqnTc50CPaf5pOldT.Ob9zW9/RVK.G3Whr.TdAncfRdE.UivG', 'admin', '0123456788', 2, 1, '2025-11-05 09:33:52', '2026-01-19 07:45:55', NULL, NULL, NULL, NULL, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjYsInVzZXJuYW1lIjoiYWRtaW4iLCJlbWFpbCI6ImFkbWluQGdtYWlsLmNvbSIsInJvbGUiOjIsInNlc3Npb25UeXBlIjoiYWRtaW4iLCJpYXQiOjE3Njg4MDg3NTUsImV4cCI6MTc2OTQxMzU1NX0.uUrE80HGNjXXJF3a7ZAg6H6yYvA3MXshCnXMYZy49lo', NULL),
+(20, 'tranthib671', 'thib@gmail.com', '$2b$10$KQc2staSc5WX/9OIkHi3reX8XJO8L51YDjK.N5YP5XpPaghoLS.rK', 'Trần Thị B', '0908787671', 0, 1, '2025-11-24 12:44:44', '2026-01-18 03:34:47', NULL, NULL, NULL, NULL, NULL, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIwLCJ1c2VybmFtZSI6InRyYW50aGliNjcxIiwiZW1haWwiOiJ0aGliQGdtYWlsLmNvbSIsInJvbGUiOjAsInNlc3Npb25UeXBlIjoidXNlciIsImlhdCI6MTc2ODcwNzI4NywiZXhwIjoxNzY5MzEyMDg3fQ.AFT5_IFQKneQV0qsWCqt_wXVjsvkD8RQ0LA0v7CRy1k'),
 (21, 'nguyenvana561', 'vana@gmail.com', '$2b$10$AUdU1V0dW6n0Eh1tJ1Nw6.vvvjGnlWOCVmHPXSMuuDCFolwPwXrLO', 'Nguyễn Văn A', '0908786561', 0, 1, '2025-11-24 14:41:59', '2025-12-17 12:58:48', NULL, NULL, NULL, NULL, NULL, NULL),
 (23, 'demo776', 'duyanh0756@gmail.com', '$2b$10$zktOnaEqf4xAlpzcuLwnVuJoxqlh9L.NmN9QELfvohaYMDp6E3Vq2', 'Demo', '0908887776', 0, 1, '2025-12-18 05:08:23', '2025-12-30 13:54:53', NULL, NULL, NULL, NULL, NULL, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIzLCJ1c2VybmFtZSI6ImRlbW83NzYiLCJlbWFpbCI6ImR1eWFuaDA3NTZAZ21haWwuY29tIiwicm9sZSI6MCwic2Vzc2lvblR5cGUiOiJ1c2VyIiwiaWF0IjoxNzY3MTAyODkzLCJleHAiOjE3Njc3MDc2OTN9.8IfB73hjTROn0Nb8dyHUEMipwjSOXj8rkpqGBpD43vM'),
 (25, 'phamvanc881', 'vanc@gmail.com', '$2b$10$vvoggUuo3wInNzqPETBxNeoHvMOmnp6b3mMx/EBxAYhDs/d4PDqQK', 'Phạm Văn C', '0908988881', 0, 1, '2025-12-30 16:25:54', '2025-12-30 16:26:21', NULL, NULL, NULL, NULL, NULL, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjI1LCJ1c2VybmFtZSI6InBoYW12YW5jODgxIiwiZW1haWwiOiJ2YW5jQGdtYWlsLmNvbSIsInJvbGUiOjAsInNlc3Npb25UeXBlIjoidXNlciIsImlhdCI6MTc2NzExMTk4MSwiZXhwIjoxNzY3NzE2NzgxfQ.-NWpuO47fwrariWU3BpAIVHbXnRMaqst-u7NGxdAZPI'),
-(27, 'tonbao123', 'tonbao@gmail.com', '$2b$10$UdUrSEUc8EsIB37O7xbN2udIhKJWKiPQXCkYJe9oEUViRmwAzOVLu', 'Lê Tôn Bảo ', '0908999887', 0, 1, '2026-01-15 06:31:59', '2026-01-15 06:31:59', NULL, NULL, NULL, NULL, NULL, NULL),
-(28, 'duaynh123', 'duyanh@gmail.com', '$2b$10$g2rElS/QnlKLbWgZ/8MQA.xhsJC9cuoIGBBUE5fjQjs9Adov2omha', 'Duy Anh', '0123456789', 0, 1, '2026-01-15 06:41:21', '2026-01-15 07:20:45', NULL, NULL, NULL, NULL, NULL, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjI4LCJ1c2VybmFtZSI6ImR1YXluaDEyMyIsImVtYWlsIjoiZHV5YW5oQGdtYWlsLmNvbSIsInJvbGUiOjAsInNlc3Npb25UeXBlIjoidXNlciIsImlhdCI6MTc2ODQ1OTM3MCwiZXhwIjoxNzY5MDY0MTcwfQ.IWyT2EuWDocwoZ-AVB1Stkq1n5PRIjjSy_9Lw3epOyk');
+(27, 'tonbao123', 'tonbao@gmail.com', '$2b$10$UdUrSEUc8EsIB37O7xbN2udIhKJWKiPQXCkYJe9oEUViRmwAzOVLu', 'Lê Tôn Bảo ', '0908999887', 0, 1, '2026-01-15 06:31:59', '2026-01-16 14:37:51', NULL, NULL, NULL, NULL, NULL, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjI3LCJ1c2VybmFtZSI6InRvbmJhbzEyMyIsImVtYWlsIjoidG9uYmFvQGdtYWlsLmNvbSIsInJvbGUiOjAsInNlc3Npb25UeXBlIjoidXNlciIsImlhdCI6MTc2ODU3NDI3MSwiZXhwIjoxNzY5MTc5MDcxfQ.nagQ2SCxDWuOZdjH7SXzNhh0RcJLsyOVIaLSSS1w9GU'),
+(28, 'duyanh123', 'duyanh@gmail.com', '$2b$10$g2rElS/QnlKLbWgZ/8MQA.xhsJC9cuoIGBBUE5fjQjs9Adov2omha', 'Duy Anh', '0123456789', 0, 1, '2026-01-15 06:41:21', '2026-01-18 03:34:23', NULL, NULL, NULL, NULL, NULL, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjI4LCJ1c2VybmFtZSI6ImR1eWFuaDEyMyIsImVtYWlsIjoiZHV5YW5oQGdtYWlsLmNvbSIsInJvbGUiOjAsInNlc3Npb25UeXBlIjoidXNlciIsImlhdCI6MTc2ODcwNzI2MywiZXhwIjoxNzY5MzEyMDYzfQ.JVnADFgGWlUyZzO0cK5BGrjZaZUWgiFPvr4Ru1tf2IY');
 
 -- --------------------------------------------------------
 
@@ -1796,7 +1830,8 @@ INSERT INTO `variant_images` (`image_id`, `variant_id`, `image_url`, `alt_text`,
 (59, 51, '/uploads/variants/51/92905_vo_may_tinh_corsair_frame_5000d_rs_white_atx_mid_tower__5_1-1768479867096-599807858.jpg', '92905_vo_may_tinh_corsair_frame_5000d_rs_white_atx_mid_tower__5_ (1).jpg', 1, 0, '2026-01-15 12:24:27'),
 (60, 52, '/uploads/variants/52/Vo-Case-Asus-TUF-GAMING-GT502-HORIZON-WHITEATXMid-tower-1-1768479907938-64690349.jpg', 'Vo-Case-Asus-TUF-GAMING-GT502-HORIZON-WHITEATXMid-tower-1.jpg', 1, 0, '2026-01-15 12:25:07'),
 (61, 53, '/uploads/variants/53/77509_msi_mag_forge_120a_airflow__1_-1768479948133-838050615.jpg', '77509_msi_mag_forge_120a_airflow__1_.jpg', 1, 0, '2026-01-15 12:25:48'),
-(62, 54, '/uploads/variants/54/70729_jonsbo_tk_1_white__2_-1768480002589-729536605.jpg', '70729_jonsbo_tk_1_white__2_.jpg', 1, 0, '2026-01-15 12:26:42');
+(62, 54, '/uploads/variants/54/70729_jonsbo_tk_1_white__2_-1768480002589-729536605.jpg', '70729_jonsbo_tk_1_white__2_.jpg', 1, 0, '2026-01-15 12:26:42'),
+(66, 67, '/uploads/variants/67/anh-meme-gau-truc-weibo-1768808826771-528153698.jpg', NULL, 1, 0, '2026-01-19 07:47:06');
 
 -- --------------------------------------------------------
 
@@ -1812,121 +1847,138 @@ CREATE TABLE `variant_serials` (
   `order_item_id` int(11) DEFAULT NULL,
   `warranty_id` int(11) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `serial_type` enum('component','pc_bundle') NOT NULL DEFAULT 'component'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `variant_serials`
 --
 
-INSERT INTO `variant_serials` (`serial_id`, `variant_id`, `serial_number`, `status`, `order_item_id`, `warranty_id`, `created_at`, `updated_at`) VALUES
-(1, 1, 'SN120260001', 'in_stock', NULL, NULL, '2026-01-15 11:15:43', '2026-01-15 11:15:43'),
-(2, 1, 'SN120260002', 'in_stock', NULL, NULL, '2026-01-15 11:15:43', '2026-01-15 11:15:43'),
-(3, 1, 'SN120260003', 'in_stock', NULL, NULL, '2026-01-15 11:15:43', '2026-01-15 11:15:43'),
-(4, 2, 'SN220260001', 'in_stock', NULL, NULL, '2026-01-15 11:17:09', '2026-01-15 11:17:09'),
-(5, 2, 'SN220260002', 'in_stock', NULL, NULL, '2026-01-15 11:17:09', '2026-01-15 11:17:09'),
-(6, 3, 'SN320260001', 'in_stock', NULL, NULL, '2026-01-15 11:19:57', '2026-01-15 11:19:57'),
-(7, 3, 'SN320260002', 'in_stock', NULL, NULL, '2026-01-15 11:19:57', '2026-01-15 11:19:57'),
-(8, 4, 'SN420260001', 'in_stock', NULL, NULL, '2026-01-15 11:22:44', '2026-01-15 11:22:44'),
-(9, 4, 'SN420260002', 'in_stock', NULL, NULL, '2026-01-15 11:22:44', '2026-01-15 11:22:44'),
-(10, 4, 'SN420260003', 'in_stock', NULL, NULL, '2026-01-15 11:22:44', '2026-01-15 11:22:44'),
-(11, 5, 'SN520260001', 'in_stock', NULL, NULL, '2026-01-15 11:24:10', '2026-01-15 11:24:10'),
-(12, 5, 'SN520260002', 'in_stock', NULL, NULL, '2026-01-15 11:24:10', '2026-01-15 11:24:10'),
-(13, 6, 'SN620260001', 'in_stock', NULL, NULL, '2026-01-15 11:25:36', '2026-01-15 11:25:36'),
-(14, 6, 'SN620260002', 'in_stock', NULL, NULL, '2026-01-15 11:25:36', '2026-01-15 11:25:36'),
-(15, 7, 'SN720260001', 'in_stock', NULL, NULL, '2026-01-15 11:26:39', '2026-01-15 11:26:39'),
-(16, 7, 'SN720260002', 'in_stock', NULL, NULL, '2026-01-15 11:26:39', '2026-01-15 11:26:39'),
-(17, 8, 'SN820260001', 'in_stock', NULL, NULL, '2026-01-15 11:28:10', '2026-01-15 11:28:10'),
-(18, 8, 'SN820260002', 'in_stock', NULL, NULL, '2026-01-15 11:28:10', '2026-01-15 11:28:10'),
-(19, 9, 'SN920260001', 'in_stock', NULL, NULL, '2026-01-15 11:29:00', '2026-01-15 11:29:00'),
-(20, 9, 'SN920260002', 'in_stock', NULL, NULL, '2026-01-15 11:29:00', '2026-01-15 11:29:00'),
-(21, 10, 'SN1020260001', 'in_stock', NULL, NULL, '2026-01-15 11:30:05', '2026-01-15 11:30:05'),
-(22, 10, 'SN1020260002', 'in_stock', NULL, NULL, '2026-01-15 11:30:05', '2026-01-15 11:30:05'),
-(23, 11, 'SN1120260001', 'in_stock', NULL, NULL, '2026-01-15 11:31:06', '2026-01-15 11:31:06'),
-(24, 11, 'SN1120260002', 'in_stock', NULL, NULL, '2026-01-15 11:31:06', '2026-01-15 11:31:06'),
-(25, 12, 'SN1220260001', 'in_stock', NULL, NULL, '2026-01-15 11:32:20', '2026-01-15 11:32:20'),
-(26, 12, 'SN1220260002', 'in_stock', NULL, NULL, '2026-01-15 11:32:20', '2026-01-15 11:32:20'),
-(27, 13, 'SN1320260001', 'in_stock', NULL, NULL, '2026-01-15 11:33:06', '2026-01-15 11:33:06'),
-(28, 13, 'SN1320260002', 'in_stock', NULL, NULL, '2026-01-15 11:33:06', '2026-01-15 11:33:06'),
-(29, 14, 'SN1420260001', 'in_stock', NULL, NULL, '2026-01-15 11:36:30', '2026-01-15 11:36:30'),
-(30, 14, 'SN1420260002', 'in_stock', NULL, NULL, '2026-01-15 11:36:30', '2026-01-15 11:36:30'),
-(31, 15, 'SN1520260001', 'in_stock', NULL, NULL, '2026-01-15 11:37:27', '2026-01-15 11:37:27'),
-(32, 15, 'SN1520260002', 'in_stock', NULL, NULL, '2026-01-15 11:37:27', '2026-01-15 11:37:27'),
-(33, 16, 'SN1620260001', 'in_stock', NULL, NULL, '2026-01-15 11:39:43', '2026-01-15 11:39:43'),
-(34, 16, 'SN1620260002', 'in_stock', NULL, NULL, '2026-01-15 11:39:43', '2026-01-15 11:39:43'),
-(35, 17, 'SN1720260001', 'in_stock', NULL, NULL, '2026-01-15 11:40:40', '2026-01-15 11:40:40'),
-(36, 17, 'SN1720260002', 'in_stock', NULL, NULL, '2026-01-15 11:40:40', '2026-01-15 11:40:40'),
-(37, 18, 'SN1820260001', 'in_stock', NULL, NULL, '2026-01-15 11:41:54', '2026-01-15 11:41:54'),
-(38, 18, 'SN1820260002', 'in_stock', NULL, NULL, '2026-01-15 11:41:54', '2026-01-15 11:41:54'),
-(39, 18, 'SN1820260003', 'in_stock', NULL, NULL, '2026-01-15 11:41:54', '2026-01-15 11:41:54'),
-(40, 19, 'SN1920260001', 'in_stock', NULL, NULL, '2026-01-15 11:42:53', '2026-01-15 11:42:53'),
-(41, 19, 'SN1920260002', 'in_stock', NULL, NULL, '2026-01-15 11:42:53', '2026-01-15 11:42:53'),
-(42, 20, 'SN2020260001', 'in_stock', NULL, NULL, '2026-01-15 11:44:19', '2026-01-15 11:44:19'),
-(43, 20, 'SN2020260002', 'in_stock', NULL, NULL, '2026-01-15 11:44:19', '2026-01-15 11:44:19'),
-(44, 21, 'SN2120260001', 'in_stock', NULL, NULL, '2026-01-15 11:46:18', '2026-01-15 11:46:18'),
-(45, 21, 'SN2120260002', 'in_stock', NULL, NULL, '2026-01-15 11:46:18', '2026-01-15 11:46:18'),
-(46, 22, 'SN2220260001', 'in_stock', NULL, NULL, '2026-01-15 11:47:28', '2026-01-15 11:47:28'),
-(47, 22, 'SN2220260002', 'in_stock', NULL, NULL, '2026-01-15 11:47:28', '2026-01-15 11:47:28'),
-(48, 23, 'SN2320260001', 'in_stock', NULL, NULL, '2026-01-15 11:48:27', '2026-01-15 11:48:27'),
-(49, 23, 'SN2320260002', 'in_stock', NULL, NULL, '2026-01-15 11:48:27', '2026-01-15 11:48:27'),
-(50, 24, 'SN2420260001', 'in_stock', NULL, NULL, '2026-01-15 11:49:36', '2026-01-15 11:49:36'),
-(51, 24, 'SN2420260002', 'in_stock', NULL, NULL, '2026-01-15 11:49:36', '2026-01-15 11:49:36'),
-(52, 25, 'SN2520260001', 'in_stock', NULL, NULL, '2026-01-15 11:50:51', '2026-01-15 11:50:51'),
-(53, 25, 'SN2520260002', 'in_stock', NULL, NULL, '2026-01-15 11:50:51', '2026-01-15 11:50:51'),
-(54, 26, 'SN2620260001', 'in_stock', NULL, NULL, '2026-01-15 11:51:51', '2026-01-15 11:51:51'),
-(55, 26, 'SN2620260002', 'in_stock', NULL, NULL, '2026-01-15 11:51:51', '2026-01-15 11:51:51'),
-(56, 27, 'SN2720260001', 'in_stock', NULL, NULL, '2026-01-15 11:54:48', '2026-01-15 11:54:48'),
-(57, 27, 'SN2720260002', 'in_stock', NULL, NULL, '2026-01-15 11:54:48', '2026-01-15 11:54:48'),
-(58, 28, 'SN2820260001', 'in_stock', NULL, NULL, '2026-01-15 11:54:48', '2026-01-15 11:54:48'),
-(59, 28, 'SN2820260002', 'in_stock', NULL, NULL, '2026-01-15 11:54:48', '2026-01-15 11:54:48'),
-(60, 29, 'SN2920260001', 'in_stock', NULL, NULL, '2026-01-15 11:54:48', '2026-01-15 11:54:48'),
-(61, 29, 'SN2920260002', 'in_stock', NULL, NULL, '2026-01-15 11:54:48', '2026-01-15 11:54:48'),
-(62, 30, 'SN3020260001', 'in_stock', NULL, NULL, '2026-01-15 11:56:58', '2026-01-15 11:56:58'),
-(63, 30, 'SN3020260002', 'in_stock', NULL, NULL, '2026-01-15 11:56:58', '2026-01-15 11:56:58'),
-(64, 31, 'SN3120260001', 'in_stock', NULL, NULL, '2026-01-15 11:58:13', '2026-01-15 11:58:13'),
-(65, 31, 'SN3120260002', 'in_stock', NULL, NULL, '2026-01-15 11:58:13', '2026-01-15 11:58:13'),
-(66, 32, 'SN3220260001', 'in_stock', NULL, NULL, '2026-01-15 11:59:07', '2026-01-15 11:59:07'),
-(67, 32, 'SN3220260002', 'in_stock', NULL, NULL, '2026-01-15 11:59:07', '2026-01-15 11:59:07'),
-(68, 33, 'SN3320260001', 'in_stock', NULL, NULL, '2026-01-15 12:00:20', '2026-01-15 12:00:20'),
-(69, 33, 'SN3320260002', 'in_stock', NULL, NULL, '2026-01-15 12:00:20', '2026-01-15 12:00:20'),
-(72, 35, 'SN3520260001', 'in_stock', NULL, NULL, '2026-01-15 12:01:41', '2026-01-15 12:01:41'),
-(73, 35, 'SN3520260002', 'in_stock', NULL, NULL, '2026-01-15 12:01:41', '2026-01-15 12:01:41'),
-(74, 36, 'SN3620260001', 'in_stock', NULL, NULL, '2026-01-15 12:03:37', '2026-01-15 12:03:37'),
-(75, 36, 'SN3620260002', 'in_stock', NULL, NULL, '2026-01-15 12:03:37', '2026-01-15 12:03:37'),
-(76, 37, 'SN3720260001', 'in_stock', NULL, NULL, '2026-01-15 12:04:55', '2026-01-15 12:04:55'),
-(77, 37, 'SN3720260002', 'in_stock', NULL, NULL, '2026-01-15 12:04:55', '2026-01-15 12:04:55'),
-(80, 39, 'SN3920260001', 'in_stock', NULL, NULL, '2026-01-15 12:07:43', '2026-01-15 12:07:43'),
-(81, 39, 'SN3920260002', 'in_stock', NULL, NULL, '2026-01-15 12:07:43', '2026-01-15 12:07:43'),
-(82, 40, 'SN4020260001', 'in_stock', NULL, NULL, '2026-01-15 12:08:47', '2026-01-15 12:08:47'),
-(83, 40, 'SN4020260002', 'in_stock', NULL, NULL, '2026-01-15 12:08:47', '2026-01-15 12:08:47'),
-(84, 41, 'SN4120260001', 'in_stock', NULL, NULL, '2026-01-15 12:10:01', '2026-01-15 12:10:01'),
-(85, 41, 'SN4120260002', 'in_stock', NULL, NULL, '2026-01-15 12:10:01', '2026-01-15 12:10:01'),
-(86, 42, 'SN4220260001', 'in_stock', NULL, NULL, '2026-01-15 12:12:47', '2026-01-15 12:12:47'),
-(87, 42, 'SN4220260002', 'in_stock', NULL, NULL, '2026-01-15 12:12:47', '2026-01-15 12:12:47'),
-(88, 43, 'SN4320260001', 'in_stock', NULL, NULL, '2026-01-15 12:13:55', '2026-01-15 12:13:55'),
-(89, 43, 'SN4320260002', 'in_stock', NULL, NULL, '2026-01-15 12:13:55', '2026-01-15 12:13:55'),
-(90, 44, 'SN4420260001', 'in_stock', NULL, NULL, '2026-01-15 12:14:48', '2026-01-15 12:14:48'),
-(91, 44, 'SN4420260002', 'in_stock', NULL, NULL, '2026-01-15 12:14:48', '2026-01-15 12:14:48'),
-(92, 45, 'SN4520260001', 'in_stock', NULL, NULL, '2026-01-15 12:15:59', '2026-01-15 12:15:59'),
-(93, 45, 'SN4520260002', 'in_stock', NULL, NULL, '2026-01-15 12:15:59', '2026-01-15 12:15:59'),
-(94, 46, 'SN4620260001', 'in_stock', NULL, NULL, '2026-01-15 12:17:06', '2026-01-15 12:17:06'),
-(95, 46, 'SN4620260002', 'in_stock', NULL, NULL, '2026-01-15 12:17:06', '2026-01-15 12:17:06'),
-(96, 47, 'SN4720260001', 'in_stock', NULL, NULL, '2026-01-15 12:18:59', '2026-01-15 12:18:59'),
-(97, 47, 'SN4720260002', 'in_stock', NULL, NULL, '2026-01-15 12:18:59', '2026-01-15 12:18:59'),
-(98, 48, 'SN4820260001', 'in_stock', NULL, NULL, '2026-01-15 12:19:59', '2026-01-15 12:19:59'),
-(99, 48, 'SN4820260002', 'in_stock', NULL, NULL, '2026-01-15 12:19:59', '2026-01-15 12:19:59'),
-(100, 49, 'SN4920260001', 'in_stock', NULL, NULL, '2026-01-15 12:20:52', '2026-01-15 12:20:52'),
-(101, 49, 'SN4920260002', 'in_stock', NULL, NULL, '2026-01-15 12:20:52', '2026-01-15 12:20:52'),
-(102, 50, 'SN5020260001', 'in_stock', NULL, NULL, '2026-01-15 12:21:52', '2026-01-15 12:21:52'),
-(103, 50, 'SN5020260002', 'in_stock', NULL, NULL, '2026-01-15 12:21:52', '2026-01-15 12:21:52'),
-(104, 51, 'SN5120260001', 'in_stock', NULL, NULL, '2026-01-15 12:24:27', '2026-01-15 12:24:27'),
-(105, 51, 'SN5120260002', 'in_stock', NULL, NULL, '2026-01-15 12:24:27', '2026-01-15 12:24:27'),
-(106, 52, 'SN5220260001', 'in_stock', NULL, NULL, '2026-01-15 12:25:07', '2026-01-15 12:25:07'),
-(107, 52, 'SN5220260002', 'in_stock', NULL, NULL, '2026-01-15 12:25:07', '2026-01-15 12:25:07'),
-(108, 53, 'SN5320260001', 'in_stock', NULL, NULL, '2026-01-15 12:25:48', '2026-01-15 12:25:48'),
-(109, 53, 'SN5320260002', 'in_stock', NULL, NULL, '2026-01-15 12:25:48', '2026-01-15 12:25:48'),
-(110, 54, 'SN5420260001', 'in_stock', NULL, NULL, '2026-01-15 12:26:42', '2026-01-15 12:26:42'),
-(111, 54, 'SN5420260002', 'in_stock', NULL, NULL, '2026-01-15 12:26:42', '2026-01-15 12:26:42');
+INSERT INTO `variant_serials` (`serial_id`, `variant_id`, `serial_number`, `status`, `order_item_id`, `warranty_id`, `created_at`, `updated_at`, `serial_type`) VALUES
+(1, 1, 'SN120260001', 'in_stock', NULL, NULL, '2026-01-15 11:15:43', '2026-01-15 11:15:43', 'component'),
+(2, 1, 'SN120260002', 'in_stock', NULL, NULL, '2026-01-15 11:15:43', '2026-01-15 11:15:43', 'component'),
+(3, 1, 'SN120260003', 'in_stock', NULL, NULL, '2026-01-15 11:15:43', '2026-01-15 11:15:43', 'component'),
+(4, 2, 'SN220260001', 'in_stock', NULL, NULL, '2026-01-15 11:17:09', '2026-01-15 11:17:09', 'component'),
+(5, 2, 'SN220260002', 'in_stock', NULL, NULL, '2026-01-15 11:17:09', '2026-01-15 11:17:09', 'component'),
+(6, 3, 'SN320260001', 'in_stock', NULL, NULL, '2026-01-15 11:19:57', '2026-01-15 11:19:57', 'component'),
+(7, 3, 'SN320260002', 'in_stock', NULL, NULL, '2026-01-15 11:19:57', '2026-01-15 11:19:57', 'component'),
+(8, 4, 'SN420260001', 'in_stock', NULL, NULL, '2026-01-15 11:22:44', '2026-01-15 11:22:44', 'component'),
+(9, 4, 'SN420260002', 'in_stock', NULL, NULL, '2026-01-15 11:22:44', '2026-01-15 11:22:44', 'component'),
+(10, 4, 'SN420260003', 'in_stock', NULL, NULL, '2026-01-15 11:22:44', '2026-01-15 11:22:44', 'component'),
+(11, 5, 'SN520260001', 'in_stock', NULL, NULL, '2026-01-15 11:24:10', '2026-01-15 11:24:10', 'component'),
+(12, 5, 'SN520260002', 'in_stock', NULL, NULL, '2026-01-15 11:24:10', '2026-01-15 11:24:10', 'component'),
+(13, 6, 'SN620260001', 'in_stock', NULL, NULL, '2026-01-15 11:25:36', '2026-01-15 11:25:36', 'component'),
+(14, 6, 'SN620260002', 'in_stock', NULL, NULL, '2026-01-15 11:25:36', '2026-01-15 11:25:36', 'component'),
+(15, 7, 'SN720260001', 'in_stock', NULL, NULL, '2026-01-15 11:26:39', '2026-01-15 11:26:39', 'component'),
+(16, 7, 'SN720260002', 'in_stock', NULL, NULL, '2026-01-15 11:26:39', '2026-01-15 11:26:39', 'component'),
+(17, 8, 'SN820260001', 'in_stock', NULL, NULL, '2026-01-15 11:28:10', '2026-01-19 06:04:07', 'component'),
+(18, 8, 'SN820260002', 'in_stock', NULL, NULL, '2026-01-15 11:28:10', '2026-01-19 06:04:07', 'component'),
+(19, 9, 'SN920260001', 'in_stock', NULL, NULL, '2026-01-15 11:29:00', '2026-01-15 11:29:00', 'component'),
+(20, 9, 'SN920260002', 'in_stock', NULL, NULL, '2026-01-15 11:29:00', '2026-01-15 11:29:00', 'component'),
+(21, 10, 'SN1020260001', 'in_stock', NULL, NULL, '2026-01-15 11:30:05', '2026-01-15 11:30:05', 'component'),
+(22, 10, 'SN1020260002', 'in_stock', NULL, NULL, '2026-01-15 11:30:05', '2026-01-15 11:30:05', 'component'),
+(23, 11, 'SN1120260001', 'in_stock', NULL, NULL, '2026-01-15 11:31:06', '2026-01-19 06:04:07', 'component'),
+(24, 11, 'SN1120260002', 'in_stock', NULL, NULL, '2026-01-15 11:31:06', '2026-01-19 06:04:07', 'component'),
+(25, 12, 'SN1220260001', 'in_stock', NULL, NULL, '2026-01-15 11:32:20', '2026-01-19 06:04:07', 'component'),
+(26, 12, 'SN1220260002', 'in_stock', NULL, NULL, '2026-01-15 11:32:20', '2026-01-19 06:04:07', 'component'),
+(27, 13, 'SN1320260001', 'in_stock', NULL, NULL, '2026-01-15 11:33:06', '2026-01-15 11:33:06', 'component'),
+(28, 13, 'SN1320260002', 'in_stock', NULL, NULL, '2026-01-15 11:33:06', '2026-01-15 11:33:06', 'component'),
+(29, 14, 'SN1420260001', 'in_stock', NULL, NULL, '2026-01-15 11:36:30', '2026-01-15 11:36:30', 'component'),
+(30, 14, 'SN1420260002', 'in_stock', NULL, NULL, '2026-01-15 11:36:30', '2026-01-15 11:36:30', 'component'),
+(31, 15, 'SN1520260001', 'in_stock', NULL, NULL, '2026-01-15 11:37:27', '2026-01-15 11:37:27', 'component'),
+(32, 15, 'SN1520260002', 'in_stock', NULL, NULL, '2026-01-15 11:37:27', '2026-01-15 11:37:27', 'component'),
+(33, 16, 'SN1620260001', 'in_stock', NULL, NULL, '2026-01-15 11:39:43', '2026-01-15 11:39:43', 'component'),
+(34, 16, 'SN1620260002', 'in_stock', NULL, NULL, '2026-01-15 11:39:43', '2026-01-15 11:39:43', 'component'),
+(35, 17, 'SN1720260001', 'in_stock', NULL, NULL, '2026-01-15 11:40:40', '2026-01-15 11:40:40', 'component'),
+(36, 17, 'SN1720260002', 'in_stock', NULL, NULL, '2026-01-15 11:40:40', '2026-01-15 11:40:40', 'component'),
+(37, 18, 'SN1820260001', 'in_stock', NULL, NULL, '2026-01-15 11:41:54', '2026-01-15 11:41:54', 'component'),
+(38, 18, 'SN1820260002', 'in_stock', NULL, NULL, '2026-01-15 11:41:54', '2026-01-15 11:41:54', 'component'),
+(39, 18, 'SN1820260003', 'in_stock', NULL, NULL, '2026-01-15 11:41:54', '2026-01-15 11:41:54', 'component'),
+(40, 19, 'SN1920260001', 'in_stock', NULL, NULL, '2026-01-15 11:42:53', '2026-01-15 11:42:53', 'component'),
+(41, 19, 'SN1920260002', 'in_stock', NULL, NULL, '2026-01-15 11:42:53', '2026-01-15 11:42:53', 'component'),
+(42, 20, 'SN2020260001', 'in_stock', NULL, NULL, '2026-01-15 11:44:19', '2026-01-19 06:04:07', 'component'),
+(43, 20, 'SN2020260002', 'in_stock', NULL, NULL, '2026-01-15 11:44:19', '2026-01-19 06:04:07', 'component'),
+(44, 21, 'SN2120260001', 'in_stock', NULL, NULL, '2026-01-15 11:46:18', '2026-01-15 11:46:18', 'component'),
+(45, 21, 'SN2120260002', 'in_stock', NULL, NULL, '2026-01-15 11:46:18', '2026-01-15 11:46:18', 'component'),
+(46, 22, 'SN2220260001', 'in_stock', NULL, NULL, '2026-01-15 11:47:28', '2026-01-15 11:47:28', 'component'),
+(47, 22, 'SN2220260002', 'in_stock', NULL, NULL, '2026-01-15 11:47:28', '2026-01-15 11:47:28', 'component'),
+(48, 23, 'SN2320260001', 'in_stock', NULL, NULL, '2026-01-15 11:48:27', '2026-01-15 11:48:27', 'component'),
+(49, 23, 'SN2320260002', 'in_stock', NULL, NULL, '2026-01-15 11:48:27', '2026-01-15 11:48:27', 'component'),
+(50, 24, 'SN2420260001', 'in_stock', NULL, NULL, '2026-01-15 11:49:36', '2026-01-15 11:49:36', 'component'),
+(51, 24, 'SN2420260002', 'in_stock', NULL, NULL, '2026-01-15 11:49:36', '2026-01-15 11:49:36', 'component'),
+(52, 25, 'SN2520260001', 'in_stock', NULL, NULL, '2026-01-15 11:50:51', '2026-01-15 11:50:51', 'component'),
+(53, 25, 'SN2520260002', 'in_stock', NULL, NULL, '2026-01-15 11:50:51', '2026-01-15 11:50:51', 'component'),
+(54, 26, 'SN2620260001', 'in_stock', NULL, NULL, '2026-01-15 11:51:51', '2026-01-15 11:51:51', 'component'),
+(55, 26, 'SN2620260002', 'in_stock', NULL, NULL, '2026-01-15 11:51:51', '2026-01-15 11:51:51', 'component'),
+(56, 27, 'SN2720260001', 'in_stock', NULL, NULL, '2026-01-15 11:54:48', '2026-01-15 11:54:48', 'component'),
+(57, 27, 'SN2720260002', 'in_stock', NULL, NULL, '2026-01-15 11:54:48', '2026-01-15 11:54:48', 'component'),
+(58, 28, 'SN2820260001', 'in_stock', NULL, NULL, '2026-01-15 11:54:48', '2026-01-15 11:54:48', 'component'),
+(59, 28, 'SN2820260002', 'in_stock', NULL, NULL, '2026-01-15 11:54:48', '2026-01-15 11:54:48', 'component'),
+(60, 29, 'SN2920260001', 'in_stock', NULL, NULL, '2026-01-15 11:54:48', '2026-01-15 11:54:48', 'component'),
+(61, 29, 'SN2920260002', 'in_stock', NULL, NULL, '2026-01-15 11:54:48', '2026-01-15 11:54:48', 'component'),
+(62, 30, 'SN3020260001', 'in_stock', NULL, NULL, '2026-01-15 11:56:58', '2026-01-15 11:56:58', 'component'),
+(63, 30, 'SN3020260002', 'in_stock', NULL, NULL, '2026-01-15 11:56:58', '2026-01-15 11:56:58', 'component'),
+(64, 31, 'SN3120260001', 'in_stock', NULL, NULL, '2026-01-15 11:58:13', '2026-01-15 11:58:13', 'component'),
+(65, 31, 'SN3120260002', 'in_stock', NULL, NULL, '2026-01-15 11:58:13', '2026-01-15 11:58:13', 'component'),
+(66, 32, 'SN3220260001', 'in_stock', NULL, NULL, '2026-01-15 11:59:07', '2026-01-15 11:59:07', 'component'),
+(67, 32, 'SN3220260002', 'in_stock', NULL, NULL, '2026-01-15 11:59:07', '2026-01-15 11:59:07', 'component'),
+(68, 33, 'SN3320260001', 'in_stock', NULL, NULL, '2026-01-15 12:00:20', '2026-01-15 12:00:20', 'component'),
+(69, 33, 'SN3320260002', 'in_stock', NULL, NULL, '2026-01-15 12:00:20', '2026-01-15 12:00:20', 'component'),
+(72, 35, 'SN3520260001', 'in_stock', NULL, NULL, '2026-01-15 12:01:41', '2026-01-15 12:01:41', 'component'),
+(73, 35, 'SN3520260002', 'in_stock', NULL, NULL, '2026-01-15 12:01:41', '2026-01-15 12:01:41', 'component'),
+(74, 36, 'SN3620260001', 'in_stock', NULL, NULL, '2026-01-15 12:03:37', '2026-01-15 12:03:37', 'component'),
+(75, 36, 'SN3620260002', 'in_stock', NULL, NULL, '2026-01-15 12:03:37', '2026-01-15 12:03:37', 'component'),
+(76, 37, 'SN3720260001', 'in_stock', NULL, NULL, '2026-01-15 12:04:55', '2026-01-15 12:04:55', 'component'),
+(77, 37, 'SN3720260002', 'in_stock', NULL, NULL, '2026-01-15 12:04:55', '2026-01-15 12:04:55', 'component'),
+(80, 39, 'SN3920260001', 'in_stock', NULL, NULL, '2026-01-15 12:07:43', '2026-01-15 12:07:43', 'component'),
+(81, 39, 'SN3920260002', 'in_stock', NULL, NULL, '2026-01-15 12:07:43', '2026-01-15 12:07:43', 'component'),
+(82, 40, 'SN4020260001', 'in_stock', NULL, NULL, '2026-01-15 12:08:47', '2026-01-15 12:08:47', 'component'),
+(83, 40, 'SN4020260002', 'in_stock', NULL, NULL, '2026-01-15 12:08:47', '2026-01-15 12:08:47', 'component'),
+(84, 41, 'SN4120260001', 'in_stock', NULL, NULL, '2026-01-15 12:10:01', '2026-01-15 12:10:01', 'component'),
+(85, 41, 'SN4120260002', 'in_stock', NULL, NULL, '2026-01-15 12:10:01', '2026-01-15 12:10:01', 'component'),
+(86, 42, 'SN4220260001', 'in_stock', NULL, NULL, '2026-01-15 12:12:47', '2026-01-19 06:04:07', 'component'),
+(87, 42, 'SN4220260002', 'in_stock', NULL, NULL, '2026-01-15 12:12:47', '2026-01-19 06:04:07', 'component'),
+(88, 43, 'SN4320260001', 'in_stock', NULL, NULL, '2026-01-15 12:13:55', '2026-01-15 12:13:55', 'component'),
+(89, 43, 'SN4320260002', 'in_stock', NULL, NULL, '2026-01-15 12:13:55', '2026-01-15 12:13:55', 'component'),
+(90, 44, 'SN4420260001', 'in_stock', NULL, NULL, '2026-01-15 12:14:48', '2026-01-19 06:04:07', 'component'),
+(91, 44, 'SN4420260002', 'in_stock', NULL, NULL, '2026-01-15 12:14:48', '2026-01-19 06:04:07', 'component'),
+(92, 45, 'SN4520260001', 'in_stock', NULL, NULL, '2026-01-15 12:15:59', '2026-01-19 06:04:07', 'component'),
+(93, 45, 'SN4520260002', 'in_stock', NULL, NULL, '2026-01-15 12:15:59', '2026-01-19 06:04:07', 'component'),
+(94, 46, 'SN4620260001', 'in_stock', NULL, NULL, '2026-01-15 12:17:06', '2026-01-15 12:17:06', 'component'),
+(95, 46, 'SN4620260002', 'in_stock', NULL, NULL, '2026-01-15 12:17:06', '2026-01-15 12:17:06', 'component'),
+(96, 47, 'SN4720260001', 'in_stock', NULL, NULL, '2026-01-15 12:18:59', '2026-01-15 12:18:59', 'component'),
+(97, 47, 'SN4720260002', 'in_stock', NULL, NULL, '2026-01-15 12:18:59', '2026-01-15 12:18:59', 'component'),
+(98, 48, 'SN4820260001', 'in_stock', NULL, NULL, '2026-01-15 12:19:59', '2026-01-15 12:19:59', 'component'),
+(99, 48, 'SN4820260002', 'in_stock', NULL, NULL, '2026-01-15 12:19:59', '2026-01-15 12:19:59', 'component'),
+(100, 49, 'SN4920260001', 'in_stock', NULL, NULL, '2026-01-15 12:20:52', '2026-01-15 12:20:52', 'component'),
+(101, 49, 'SN4920260002', 'in_stock', NULL, NULL, '2026-01-15 12:20:52', '2026-01-15 12:20:52', 'component'),
+(102, 50, 'SN5020260001', 'in_stock', NULL, NULL, '2026-01-15 12:21:52', '2026-01-15 12:21:52', 'component'),
+(103, 50, 'SN5020260002', 'in_stock', NULL, NULL, '2026-01-15 12:21:52', '2026-01-15 12:21:52', 'component'),
+(104, 51, 'SN5120260001', 'in_stock', NULL, NULL, '2026-01-15 12:24:27', '2026-01-15 12:24:27', 'component'),
+(105, 51, 'SN5120260002', 'in_stock', NULL, NULL, '2026-01-15 12:24:27', '2026-01-15 12:24:27', 'component'),
+(106, 52, 'SN5220260001', 'in_stock', NULL, NULL, '2026-01-15 12:25:07', '2026-01-15 12:25:07', 'component'),
+(107, 52, 'SN5220260002', 'in_stock', NULL, NULL, '2026-01-15 12:25:07', '2026-01-15 12:25:07', 'component'),
+(108, 53, 'SN5320260001', 'in_stock', NULL, NULL, '2026-01-15 12:25:48', '2026-01-15 12:25:48', 'component'),
+(109, 53, 'SN5320260002', 'in_stock', NULL, NULL, '2026-01-15 12:25:48', '2026-01-15 12:25:48', 'component'),
+(110, 54, 'SN5420260001', 'in_stock', NULL, NULL, '2026-01-15 12:26:42', '2026-01-15 12:26:42', 'component'),
+(111, 54, 'SN5420260002', 'in_stock', NULL, NULL, '2026-01-15 12:26:42', '2026-01-15 12:26:42', 'component'),
+(125, 67, 'BUNDLE6720260001', 'reserved', 185, NULL, '2026-01-19 07:47:06', '2026-01-19 07:56:45', 'pc_bundle'),
+(126, 67, 'BUNDLE6720260002', 'in_stock', NULL, NULL, '2026-01-19 07:47:06', '2026-01-19 07:47:06', 'pc_bundle');
+
+-- --------------------------------------------------------
+
+--
+-- Stand-in structure for view `v_bundle_stock`
+-- (See below for the actual view)
+--
+CREATE TABLE `v_bundle_stock` (
+`variant_id` int(11)
+,`product_id` int(11)
+,`sku` varchar(100)
+,`variant_name` varchar(255)
+,`available_stock` decimal(21,0)
+);
 
 -- --------------------------------------------------------
 
@@ -1947,6 +1999,15 @@ CREATE TABLE `warranties` (
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- --------------------------------------------------------
+
+--
+-- Structure for view `v_bundle_stock`
+--
+DROP TABLE IF EXISTS `v_bundle_stock`;
+
+CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v_bundle_stock`  AS SELECT `pv`.`variant_id` AS `variant_id`, `pv`.`product_id` AS `product_id`, `pv`.`sku` AS `sku`, `pv`.`variant_name` AS `variant_name`, coalesce(floor(min((select count(0) from `variant_serials` `vs` where `vs`.`variant_id` = `bi`.`component_variant_id` and `vs`.`status` = 'in_stock' and `vs`.`serial_type` = 'component') / `bi`.`quantity`)),0) AS `available_stock` FROM (`product_variants` `pv` left join `bundle_items` `bi` on(`pv`.`variant_id` = `bi`.`bundle_variant_id`)) WHERE `pv`.`variant_type` = 'bundle' AND `pv`.`is_active` = 1 GROUP BY `pv`.`variant_id`, `pv`.`product_id`, `pv`.`sku`, `pv`.`variant_name` ;
+
 --
 -- Indexes for dumped tables
 --
@@ -1957,7 +2018,10 @@ CREATE TABLE `warranties` (
 ALTER TABLE `addresses`
   ADD PRIMARY KEY (`address_id`),
   ADD KEY `idx_user_id` (`user_id`),
-  ADD KEY `idx_is_default` (`is_default`);
+  ADD KEY `idx_is_default` (`is_default`),
+  ADD KEY `idx_province_id` (`province_id`),
+  ADD KEY `idx_district_id` (`district_id`),
+  ADD KEY `idx_ward_code` (`ward_code`);
 
 --
 -- Indexes for table `attributes`
@@ -2002,6 +2066,14 @@ ALTER TABLE `build_items`
   ADD PRIMARY KEY (`build_item_id`),
   ADD KEY `idx_build_id` (`build_id`),
   ADD KEY `idx_variant_id` (`variant_id`);
+
+--
+-- Indexes for table `bundle_items`
+--
+ALTER TABLE `bundle_items`
+  ADD PRIMARY KEY (`bundle_item_id`),
+  ADD KEY `bundle_variant_id` (`bundle_variant_id`),
+  ADD KEY `component_variant_id` (`component_variant_id`);
 
 --
 -- Indexes for table `carts`
@@ -2220,7 +2292,7 @@ ALTER TABLE `warranties`
 -- AUTO_INCREMENT for table `addresses`
 --
 ALTER TABLE `addresses`
-  MODIFY `address_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=115;
+  MODIFY `address_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=131;
 
 --
 -- AUTO_INCREMENT for table `attributes`
@@ -2253,22 +2325,28 @@ ALTER TABLE `build_items`
   MODIFY `build_item_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT for table `bundle_items`
+--
+ALTER TABLE `bundle_items`
+  MODIFY `bundle_item_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=103;
+
+--
 -- AUTO_INCREMENT for table `carts`
 --
 ALTER TABLE `carts`
-  MODIFY `cart_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
+  MODIFY `cart_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
 
 --
 -- AUTO_INCREMENT for table `cart_items`
 --
 ALTER TABLE `cart_items`
-  MODIFY `cart_item_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=167;
+  MODIFY `cart_item_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=188;
 
 --
 -- AUTO_INCREMENT for table `categories`
 --
 ALTER TABLE `categories`
-  MODIFY `category_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=57;
+  MODIFY `category_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=58;
 
 --
 -- AUTO_INCREMENT for table `categories_attributes_values`
@@ -2298,13 +2376,13 @@ ALTER TABLE `coupons`
 -- AUTO_INCREMENT for table `installments`
 --
 ALTER TABLE `installments`
-  MODIFY `installment_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=55;
+  MODIFY `installment_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=63;
 
 --
 -- AUTO_INCREMENT for table `installment_payments`
 --
 ALTER TABLE `installment_payments`
-  MODIFY `payment_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=178;
+  MODIFY `payment_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=220;
 
 --
 -- AUTO_INCREMENT for table `installment_policies`
@@ -2316,31 +2394,31 @@ ALTER TABLE `installment_policies`
 -- AUTO_INCREMENT for table `orders`
 --
 ALTER TABLE `orders`
-  MODIFY `order_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=136;
+  MODIFY `order_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=154;
 
 --
 -- AUTO_INCREMENT for table `order_items`
 --
 ALTER TABLE `order_items`
-  MODIFY `order_item_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=167;
+  MODIFY `order_item_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=186;
 
 --
 -- AUTO_INCREMENT for table `payments`
 --
 ALTER TABLE `payments`
-  MODIFY `payment_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=93;
+  MODIFY `payment_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=113;
 
 --
 -- AUTO_INCREMENT for table `products`
 --
 ALTER TABLE `products`
-  MODIFY `product_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=53;
+  MODIFY `product_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=74;
 
 --
 -- AUTO_INCREMENT for table `product_variants`
 --
 ALTER TABLE `product_variants`
-  MODIFY `variant_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=55;
+  MODIFY `variant_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=68;
 
 --
 -- AUTO_INCREMENT for table `service_requests`
@@ -2358,13 +2436,13 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `variant_images`
 --
 ALTER TABLE `variant_images`
-  MODIFY `image_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=63;
+  MODIFY `image_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=67;
 
 --
 -- AUTO_INCREMENT for table `variant_serials`
 --
 ALTER TABLE `variant_serials`
-  MODIFY `serial_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=112;
+  MODIFY `serial_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=127;
 
 --
 -- AUTO_INCREMENT for table `warranties`
@@ -2407,6 +2485,13 @@ ALTER TABLE `builds`
 ALTER TABLE `build_items`
   ADD CONSTRAINT `build_items_ibfk_1` FOREIGN KEY (`build_id`) REFERENCES `builds` (`build_id`) ON DELETE CASCADE,
   ADD CONSTRAINT `build_items_ibfk_2` FOREIGN KEY (`variant_id`) REFERENCES `product_variants` (`variant_id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `bundle_items`
+--
+ALTER TABLE `bundle_items`
+  ADD CONSTRAINT `bundle_items_ibfk_1` FOREIGN KEY (`bundle_variant_id`) REFERENCES `product_variants` (`variant_id`),
+  ADD CONSTRAINT `bundle_items_ibfk_2` FOREIGN KEY (`component_variant_id`) REFERENCES `product_variants` (`variant_id`);
 
 --
 -- Constraints for table `carts`

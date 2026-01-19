@@ -134,11 +134,6 @@ const ProductDetail = () => {
     
     const isProductActive = variantToAdd.is_active && currentStock > 0;
     
-    console.log('=== ADD TO CART - STOCK CHECK ===');
-    console.log('Variant type:', variantToAdd.variant_type);
-    console.log('Available stock:', currentStock);
-    console.log('Requested quantity:', quantity);
-    console.log('Is bundle:', variantToAdd.variant_type === 'bundle');
     
     if (!isProductActive) {
       toast.error('Sản phẩm hiện đang hết hàng');
