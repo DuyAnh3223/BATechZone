@@ -244,18 +244,15 @@ export const bulkUploadImages = async (req, res) => {
     }
 
     const uploadedImages = [];
-    let primarySet = false;
-
-    // Check if variant already has a primary image
-    const existingPrimary = await VariantImage.getPrimaryByVariant(variantId);
-    if (existingPrimary) {
-      primarySet = true;
-    }
+    
+    // Delete all existing images for this variant before uploading new ones
+    // This ensures only the new images are kept
+    await VariantImage.deleteByVariant(variantId);
 
     for (let i = 0; i < req.files.length; i++) {
       const file = req.files[i];
       const imageUrl = getPublicUrlForVariant(variantId, file.filename);
-      const isPrimary = !primarySet && i === 0; // First image becomes primary if no primary exists
+      const isPrimary = i === 0; // First uploaded image becomes primary
 
       const imageId = await VariantImage.create({
         variant_id: variantId,
@@ -264,10 +261,6 @@ export const bulkUploadImages = async (req, res) => {
         is_primary: isPrimary,
         display_order: i
       });
-
-      if (isPrimary) {
-        primarySet = true;
-      }
 
       uploadedImages.push({
         image_id: imageId,

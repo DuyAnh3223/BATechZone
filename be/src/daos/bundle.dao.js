@@ -319,6 +319,7 @@ class BundleDAO {
         product_name = ?,
         description = ?,
         img_path = ?,
+        category_id = ?,
         is_active = ?,
         is_featured = ?,
         updated_at = CURRENT_TIMESTAMP
@@ -329,6 +330,7 @@ class BundleDAO {
       productData.product_name,
       productData.description,
       productData.img_path,
+      productData.category_id,
       productData.is_active,
       productData.is_featured,
       productId

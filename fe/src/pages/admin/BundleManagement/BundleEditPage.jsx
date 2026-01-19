@@ -61,6 +61,8 @@ const formatPrice = (price) =>
   new Intl.NumberFormat("vi-VN", {
     style: "currency",
     currency: "VND",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
   }).format(price || 0);
 
 const BundleEditPage = () => {
@@ -131,7 +133,7 @@ const BundleEditPage = () => {
         bundle_name: bundle.variant_name || bundle.product_name,
         category_id: bundle.category_id || 1,
         description: bundle.description || '',
-        price: bundle.price,
+        price: Math.floor(bundle.price),
         warranty_period: bundle.warranty_period,
         is_active: bundle.is_active === 1,
         is_featured: bundle.is_featured === 1 || false,
@@ -148,11 +150,13 @@ const BundleEditPage = () => {
         console.log('Variant images response:', variantImages);
         const images = variantImages?.data || variantImages || [];
         console.log('Images array:', images);
+        // Get the primary image (the newly uploaded image is set as primary)
         const primaryImage = images.find(img => img.is_primary) || images[0];
         console.log('Primary image:', primaryImage);
         
         if (primaryImage?.image_url) {
-          const imageUrl = `${import.meta.env.VITE_API_URL || 'http://localhost:5001'}${primaryImage.image_url}`;
+          // Add timestamp to prevent caching
+          const imageUrl = `${import.meta.env.VITE_API_URL || 'http://localhost:5001'}${primaryImage.image_url}?t=${Date.now()}`;
           console.log('Setting bundle image URL:', imageUrl);
           setCurrentImagePath(imageUrl);
           setImagePreview(imageUrl);
@@ -257,6 +261,15 @@ const BundleEditPage = () => {
   }, [totalComponentPrice, formData.price]);
 
   const handleChange = (field, value) => {
+    // Convert price to integer to remove decimals
+    if (field === 'price' && value !== '') {
+      value = Math.floor(parseFloat(value) || 0);
+    }
+    // Validate discount_percent to be between 0-100
+    if (field === 'discount_percent') {
+      const numValue = parseFloat(value) || 0;
+      value = Math.max(0, Math.min(100, numValue));
+    }
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -595,6 +608,25 @@ const BundleEditPage = () => {
         try {
           await variantService.uploadVariantImages(bundleId, formDataImg);
           console.log('Image uploaded successfully for variant:', bundleId);
+          
+          // Reload images after successful upload
+          try {
+            const variantImages = await variantService.getVariantImages(bundleId);
+            const images = variantImages?.data || variantImages || [];
+            // Get the newest image (last in array) instead of primary
+            const newestImage = images[images.length - 1] || images.find(img => img.is_primary) || images[0];
+            
+            if (newestImage?.image_url) {
+              // Add timestamp to force refresh and avoid cache
+              const imageUrl = `${import.meta.env.VITE_API_URL || 'http://localhost:5001'}${newestImage.image_url}?t=${Date.now()}`;
+              setCurrentImagePath(imageUrl);
+              setImagePreview(imageUrl);
+              setImageFile(null); // Clear the file input
+              console.log('Updated image preview with new URL:', imageUrl);
+            }
+          } catch (error) {
+            console.error('Error reloading image after upload:', error);
+          }
         } catch (error) {
           console.error('Error uploading image:', error);
           toast.warning('Bundle đã cập nhật nhưng không thể upload ảnh');
@@ -602,6 +634,8 @@ const BundleEditPage = () => {
       }
       
       toast.success('Cập nhật bundle thành công!');
+      
+      // Navigate back to bundles list after successful update
       navigate('/admin/bundles');
     } catch (error) {
       console.error('Error updating bundle:', error);
@@ -717,7 +751,11 @@ const BundleEditPage = () => {
               <img
                 src={imagePreview}
                 alt="Preview"
-                className="w-20 h-20 object-cover rounded"
+                className="w-20 h-20 object-cover rounded border"
+                onError={(e) => {
+                  console.error('Image load error:', imagePreview);
+                  e.target.src = '/placeholder.png';
+                }}
               />
               {imageFile && (
                 <Button
@@ -792,9 +830,6 @@ const BundleEditPage = () => {
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       <h3 className="font-semibold">{componentType.name}</h3>
-                      {componentType.required && (
-                        <Badge variant="destructive">Bắt buộc</Badge>
-                      )}
                     </div>
                     
                     {selected ? (
@@ -893,6 +928,8 @@ const BundleEditPage = () => {
           value={formData.price}
           onChange={(e) => handleChange('price', e.target.value)}
           placeholder="0"
+          min="0"
+          step="1"
         />
       </div>
 

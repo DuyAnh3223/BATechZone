@@ -31,10 +31,12 @@ const BundleItem = ({ bundle, onEdit }) => {
       try {
         const variantImages = await variantService.getVariantImages(bundle.variant_id);
         const images = variantImages?.data || variantImages || [];
+        // Get the primary image (the newly uploaded image is set as primary)
         const primaryImage = images.find(img => img.is_primary) || images[0];
         
         if (primaryImage?.image_url) {
-          const imageUrl = `${import.meta.env.VITE_API_URL || 'http://localhost:5001'}${primaryImage.image_url}`;
+          // Add timestamp to prevent caching
+          const imageUrl = `${import.meta.env.VITE_API_URL || 'http://localhost:5001'}${primaryImage.image_url}?t=${Date.now()}`;
           setBundleImage(imageUrl);
         } else if (bundle.img_path) {
           // Fallback to product image
@@ -64,7 +66,9 @@ const BundleItem = ({ bundle, onEdit }) => {
   const formatPrice = (price) => {
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
-      currency: 'VND'
+      currency: 'VND',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
     }).format(price);
   };
 

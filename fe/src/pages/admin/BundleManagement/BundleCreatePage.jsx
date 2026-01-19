@@ -47,6 +47,8 @@ const formatPrice = (price) =>
   new Intl.NumberFormat("vi-VN", {
     style: "currency",
     currency: "VND",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
   }).format(price || 0);
 
 const BundleCreatePage = () => {
@@ -127,6 +129,15 @@ const BundleCreatePage = () => {
   }, [totalComponentPrice, formData.price]);
 
   const handleChange = (field, value) => {
+    // Convert price to integer to remove decimals
+    if (field === 'price' && value !== '') {
+      value = Math.floor(parseFloat(value) || 0);
+    }
+    // Validate discount_percent to be between 0-100
+    if (field === 'discount_percent') {
+      const numValue = parseFloat(value) || 0;
+      value = Math.max(0, Math.min(100, numValue));
+    }
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -567,7 +578,11 @@ const BundleCreatePage = () => {
               <img
                 src={imagePreview}
                 alt="Preview"
-                className="w-20 h-20 object-cover rounded"
+                className="w-20 h-20 object-cover rounded border"
+                onError={(e) => {
+                  console.error('Image load error:', imagePreview);
+                  e.target.src = '/placeholder.png';
+                }}
               />
               <Button
                 variant="ghost"
@@ -633,9 +648,6 @@ const BundleCreatePage = () => {
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       <h3 className="font-semibold">{componentType.name}</h3>
-                      {componentType.required && (
-                        <Badge variant="destructive">Bắt buộc</Badge>
-                      )}
                     </div>
                     
                     {selected ? (
@@ -735,6 +747,8 @@ const BundleCreatePage = () => {
             value={formData.price}
             onChange={(e) => handleChange('price', e.target.value)}
             placeholder="0"
+            min="0"
+            step="1"
           />
         </div>
 

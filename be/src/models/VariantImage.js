@@ -71,6 +71,16 @@ class VariantImage {
         return result.affectedRows > 0;
     }
 
+    static async removeAllPrimaryFlags(variantId) {
+        const result = await query(
+            `UPDATE variant_images 
+             SET is_primary = 0
+             WHERE variant_id = ?`,
+            [variantId]
+        );
+        return result.affectedRows > 0;
+    }
+
     static async delete(imageId) {
         const result = await query(`DELETE FROM variant_images WHERE image_id = ?`, [imageId]);
         return result.affectedRows > 0;

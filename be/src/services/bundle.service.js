@@ -201,11 +201,12 @@ class BundleService {
       }
       
       // Cập nhật product
-      if (bundleData.bundle_name || bundleData.description || bundleData.img_path) {
+      if (bundleData.bundle_name || bundleData.description || bundleData.img_path || bundleData.category_id) {
         const productData = {
           product_name: bundleData.bundle_name || bundle.product_name,
           description: bundleData.description || null,
           img_path: bundleData.img_path || bundle.img_path,
+          category_id: bundleData.category_id || bundle.category_id,
           is_active: bundleData.is_active ?? bundle.is_active,
           is_featured: bundleData.is_featured ?? bundle.is_featured
         };
