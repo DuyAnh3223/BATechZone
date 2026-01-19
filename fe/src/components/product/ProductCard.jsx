@@ -60,10 +60,19 @@ const ProductCard = ({ product }) => {
   const discountPrice = isDiscountActive ? price * (1 - discountPercent / 100) : price;
   
   // Check stock: prioritize backend total_stock, fallback to variants check
+  // For bundles (variant_type='bundle'), use 'stock' or 'available_stock' field
   const hasStock = product.total_stock !== undefined
     ? product.total_stock > 0
     : (variants.length > 0 
-        ? variants.some(v => v.is_active && (v.stock_quantity > 0 || v.stockQuantity > 0))
+        ? variants.some(v => {
+            if (!v.is_active) return false;
+            // For bundles, check 'stock' or 'available_stock' field
+            if (v.variant_type === 'bundle') {
+              return (v.stock > 0 || v.available_stock > 0);
+            }
+            // For regular components, check 'stock_quantity'
+            return (v.stock_quantity > 0 || v.stockQuantity > 0);
+          })
         : (product.is_active !== undefined ? product.is_active : true));
   
   const isActive = hasStock;
@@ -94,6 +103,18 @@ const ProductCard = ({ product }) => {
         
         if (loadedVariants && loadedVariants.length > 0) {
           const firstVariant = loadedVariants.find(v => v.is_default) || loadedVariants[0];
+          console.log('=== PRODUCTCARD VARIANT DEBUG ===');
+          console.log('Full variant object:', JSON.stringify(firstVariant, null, 2));
+          console.log('Variant type:', firstVariant?.variant_type);
+          console.log('Stock quantity:', firstVariant?.stock_quantity);
+          console.log('Stock field:', firstVariant?.stock);
+          console.log('Available stock field:', firstVariant?.available_stock);
+          console.log('All stock-related fields:', {
+            stock: firstVariant?.stock,
+            available_stock: firstVariant?.available_stock,
+            stock_quantity: firstVariant?.stock_quantity,
+            stockQuantity: firstVariant?.stockQuantity
+          });
           setDefaultVariant(firstVariant); // Lưu default variant để lấy giá
           
           if (firstVariant?.variant_id) {
@@ -144,11 +165,16 @@ const ProductCard = ({ product }) => {
         return;
       }
 
-      // // Kiểm tra tồn kho
-      // if (!defaultVariant.is_active || (defaultVariant.stock_quantity ?? 0) <= 0) {
-      //   toast.error('Biến thể này hiện đang hết hàng');
-      //   return;
-      // }
+      // Kiểm tra tồn kho
+      // For bundles, check 'stock' or 'available_stock' field
+      const variantStock = defaultVariant.variant_type === 'bundle'
+        ? (defaultVariant.stock ?? defaultVariant.available_stock ?? 0)
+        : (defaultVariant.stock_quantity ?? 0);
+      
+      if (!defaultVariant.is_active || variantStock <= 0) {
+        toast.error('Biến thể này hiện đang hết hàng');
+        return;
+      }
 
       // Tính giá discount cho variant
       const variantPrice = defaultVariant.price || 0;

@@ -29,7 +29,7 @@ import serviceRequestRoutes from './serviceRequest.routes.js';
 //import compatibilityRoutes from './compatibilityRoutes.js';
 import compatibilityRoutes from './compatibility.routes.js';
 import shippingRoutes from './shipping.routes.js';
-
+import bundleRoutes from './bundle.routes.js';
 
 const router = express.Router();
 router.use('/attributes', attributesRoutes);
@@ -55,7 +55,7 @@ router.use('/warranty', warrantyRoutes);
 router.use('/service-requests', serviceRequestRoutes);
 router.use('/compatibility', compatibilityRoutes);
 router.use('/shipping', shippingRoutes);
-
+router.use('/bundles', bundleRoutes);
 
 
 

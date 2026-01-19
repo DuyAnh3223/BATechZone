@@ -55,6 +55,9 @@ import PaymentCancel from './pages/user/PaymentCancel';
 import OrderTracking from './pages/user/OrderTracking';
 import ProductPage from './pages/admin/Product&VariantManagement/ProductPage';
 import EditProductPage from './pages/admin/Product&VariantManagement/EditProductPage';
+import BundlePage from './pages/admin/BundleManagement/BundlePage';
+import BundleCreatePage from './pages/admin/BundleManagement/BundleCreatePage';
+import BundleEditPage from './pages/admin/BundleManagement/BundleEditPage';
 
 function App() {
   return (
@@ -119,6 +122,9 @@ function App() {
             <Route path="warranty" element={<AdminWarrantyPage />} />
             <Route path="service-center" element={<AdminServiceCenter />} />
             <Route path="products/:productId/edit" element={<EditProductPage />} />
+            <Route path="bundles" element={<BundlePage />} />
+            <Route path="bundles/create" element={<BundleCreatePage />} />
+            <Route path="bundles/edit/:bundleId" element={<BundleEditPage />} />
           </Route>
       </Routes>
     </BrowserRouter>

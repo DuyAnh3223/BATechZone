@@ -278,14 +278,15 @@ class VariantSerialDAO {
 
     const sql = `
       INSERT INTO variant_serials 
-      (variant_id, serial_number, status) 
+      (variant_id, serial_number, status, serial_type) 
       VALUES ?
     `;
     
     const values = serials.map(s => [
       s.variant_id,
       s.serial_number,
-      s.status || 'in_stock'
+      s.status || 'in_stock',
+      s.serial_type || 'component'
     ]);
 
     console.log(`💾 Executing bulk insert SQL with ${values.length} rows...`);

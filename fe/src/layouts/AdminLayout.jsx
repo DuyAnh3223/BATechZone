@@ -7,14 +7,14 @@ import adminAvatar from "../assets/react.svg"; // dùng tạm hình có sẵn
 const menu = [
   { icon: <Home size={18} />, label: "Bảng điều khiển", to: "/admin/dashboard" },
   { icon: <Users size={18} />, label: "Người dùng", to: "/admin/users" },
-  { icon: <Box size={18} />, label: "Sản phẩm", to: "/admin/products" },
   { icon: <Tags size={18} />, label: "Danh mục", to: "/admin/categories" },
+  { icon: <Box size={18} />, label: "Sản phẩm", to: "/admin/products" },
+  { icon: <Box size={18} />, label: "Bộ máy vi tính", to: "/admin/bundles" },
   { icon: <ListOrdered size={18} />, label: "Đơn hàng", to: "/admin/orders" },
   { icon: <CreditCard size={18} />, label: "Trả góp", to: "/admin/installments" },
   { icon: <Shield size={18} />, label: "Bảo hành", to: "/admin/warranty" },
   { icon: <Percent size={18} />, label: "Mã giảm giá", to: "/admin/coupons" },
-  { icon: <Bell size={18} />, label: "Thông báo", to: "/admin/notifications" },
-  { icon: <Book size={18} />, label: "Bài viết", to: "/admin/posts" },
+  
 ];
 
 const AdminLayout = () => {

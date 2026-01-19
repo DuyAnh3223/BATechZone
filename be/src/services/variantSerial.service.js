@@ -70,6 +70,63 @@ class VariantSerialService {
   }
 
   /**
+   * Auto-generate serials for PC Bundle (serial_type = 'pc_bundle')
+   * This will create serial numbers starting from the next available sequence
+   * FORMAT: BUNDLE + {Variant_ID} + {YYYY} + Sequential Number (4 digits)
+   * @param {number} variantId - Bundle variant ID
+   * @param {number} quantity - Number of bundle serials to generate
+   */
+  async autoGenerateSerialsForBundle(variantId, quantity) {
+    console.log(`🔵 autoGenerateSerialsForBundle called - variantId: ${variantId}, quantity: ${quantity}`);
+    
+    if (!variantId || variantId <= 0) {
+      throw new Error('variant_id không hợp lệ');
+    }
+
+    if (!quantity || quantity <= 0) {
+      throw new Error('quantity phải là số nguyên dương');
+    }
+
+    // Get existing serials count for this variant to determine starting sequence
+    console.log(`🔍 Fetching existing serials for bundle variant ${variantId}...`);
+    const existingSerials = await VariantSerialDAO.findByVariantId(variantId);
+    console.log(`📊 Found ${existingSerials.length} existing serials`);
+    const startingSequence = existingSerials.length + 1;
+    console.log(`🔢 Starting sequence: ${startingSequence}`);
+
+    // Generate serial numbers with BUNDLE prefix
+    const serialNumbers = [];
+    for (let i = 0; i < quantity; i++) {
+      const serialNumber = this.generateSerialNumber(variantId, 'BUNDLE', startingSequence + i);
+      serialNumbers.push(serialNumber);
+    }
+    console.log(`✅ Generated bundle serial numbers:`, serialNumbers);
+
+    // Bulk create serials with serial_type = 'pc_bundle'
+    const serials = serialNumbers.map(sn => ({
+      variant_id: variantId,
+      serial_number: sn,
+      status: 'in_stock',
+      serial_type: 'pc_bundle'
+    }));
+
+    console.log(`💾 Inserting ${serials.length} bundle serials into database...`);
+    const result = await VariantSerialDAO.bulkInsert(serials);
+    console.log(`✅ Bulk insert result:`, result);
+
+    return {
+      success: true,
+      message: `Đã tạo ${quantity} serial cho PC Bundle`,
+      data: {
+        variant_id: variantId,
+        quantity: quantity,
+        serial_type: 'pc_bundle',
+        serial_numbers: serialNumbers
+      }
+    };
+  }
+
+  /**
    * Create new serial
    */
   async createSerial(data) {

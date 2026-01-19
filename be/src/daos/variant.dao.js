@@ -103,7 +103,18 @@ class VariantDAO {
 
     async getVariantsByProductId(product_id)
     {
-        const sql = `SELECT * FROM product_variants WHERE product_id = ? ORDER BY variant_name ASC`;
+        const sql = `
+            SELECT 
+                pv.*,
+                CASE 
+                    WHEN pv.variant_type = 'bundle' 
+                    THEN COALESCE((SELECT available_stock FROM v_bundle_stock WHERE variant_id = pv.variant_id), 0)
+                    ELSE pv.stock_quantity
+                END as stock
+            FROM product_variants pv
+            WHERE pv.product_id = ? 
+            ORDER BY pv.variant_name ASC
+        `;
         const params = [product_id];
         const rows = await query(sql, params);
         return rows;

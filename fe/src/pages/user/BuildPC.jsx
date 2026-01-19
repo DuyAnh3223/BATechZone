@@ -1062,9 +1062,9 @@ const BuildPC = () => {
                   {filterOptions?. attributes && filterOptions. attributes.map((attr) => (
                       <section key={attr.attribute_id} className="space-y-3">
                           <p className="text-sm font-semibold">
-                              {attr. attribute_name}
+                              {attr.attribute_name}
                               {/* ✨ Badge cho compatibility filter */}
-                              {compatibilityFiltersData?.filters?.some(f => f.attributeId === attr. attribute_id) && (
+                              {compatibilityFiltersData?.filters?.some(f => f.attributeId === attr.attribute_id) && (
                                   <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
                                       Tự động lọc
                                   </span>
@@ -1072,7 +1072,7 @@ const BuildPC = () => {
                           </p>
                           <div className="space-y-2">
                               {attr.values.map((value) => {
-                                  const isAutoChecked = attributeFilters[attr.attribute_id]?.includes(value. attribute_value_id);
+                                  const isAutoChecked = attributeFilters[attr.attribute_id]?.includes(value.attribute_value_id);
                                   const isCompatibility = compatibilityFiltersData?.filters
                                       ?.find(f => f.attributeId === attr.attribute_id)
                                       ?.compatibleValues.some(cv => cv.attribute_value_id === value.attribute_value_id);

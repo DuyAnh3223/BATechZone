@@ -82,9 +82,19 @@ const ProductDetail = () => {
   // Fetch variant images when selected variant changes
   useEffect(() => {
     if (selectedVariant?.variant_id) {
-      console.log('🔍 ProductDetail: Fetching images for variant_id:', selectedVariant.variant_id);
-      console.log('🔍 ProductDetail: Product ID:', productId);
-      console.log('🔍 ProductDetail: Selected Variant:', selectedVariant);
+      console.log('=== PRODUCTDETAIL VARIANT DEBUG ===');
+      console.log('Full variant object:', JSON.stringify(selectedVariant, null, 2));
+      console.log('Variant ID:', selectedVariant.variant_id);
+      console.log('Product ID:', productId);
+      console.log('Variant type:', selectedVariant.variant_type);
+      console.log('All stock fields:', {
+        stock: selectedVariant.stock,
+        available_stock: selectedVariant.available_stock,
+        stock_quantity: selectedVariant.stock_quantity,
+        stockQuantity: selectedVariant.stockQuantity
+      });
+      console.log('Calculated current stock:', getCurrentStock());
+      console.log('Is available:', isCurrentAvailable());
       fetchVariantImages(selectedVariant.variant_id).catch(err => console.error('Error loading variant images:', err));
     }
   }, [selectedVariant?.variant_id, fetchVariantImages, productId]);
@@ -112,7 +122,12 @@ const ProductDetail = () => {
       return;
     }
 
-    const isProductActive = variantToAdd.is_active && (variantToAdd.stock_quantity ?? variantToAdd.stock ?? 0) > 0;
+    // For bundles, use 'stock' or 'available_stock' field (calculated from components)
+    const currentStock = variantToAdd.variant_type === 'bundle'
+      ? (variantToAdd.stock ?? variantToAdd.available_stock ?? 0)
+      : (variantToAdd.stock_quantity ?? variantToAdd.stock ?? 0);
+    
+    const isProductActive = variantToAdd.is_active && currentStock > 0;
     
     if (!isProductActive) {
       toast.error('Sản phẩm hiện đang hết hàng');
@@ -120,7 +135,6 @@ const ProductDetail = () => {
     }
 
     // Kiểm tra số lượng tồn kho
-    const currentStock = variantToAdd.stock_quantity ?? variantToAdd.stock ?? 0;
     if (quantity > currentStock) {
       toast.error(`Chỉ còn ${currentStock} sản phẩm trong kho`);
       return;
@@ -204,6 +218,11 @@ const ProductDetail = () => {
   // Get current stock
   const getCurrentStock = () => {
     if (selectedVariant) {
+      // For bundles, prioritize 'stock' or 'available_stock' field (calculated dynamically)
+      if (selectedVariant.variant_type === 'bundle') {
+        return selectedVariant.stock ?? selectedVariant.available_stock ?? 0;
+      }
+      // For regular components, use 'stock_quantity'
       return selectedVariant.stock_quantity ?? selectedVariant.stock ?? 0;
     }
     return null; // Base product doesn't have stock
@@ -212,7 +231,11 @@ const ProductDetail = () => {
   // Check if current selection is available
   const isCurrentAvailable = () => {
     if (selectedVariant) {
-      return selectedVariant.is_active && (selectedVariant.stock_quantity ?? selectedVariant.stock ?? 0) > 0;
+      // For bundles, check 'stock' or 'available_stock' field (calculated from components)
+      const variantStock = selectedVariant.variant_type === 'bundle'
+        ? (selectedVariant.stock ?? selectedVariant.available_stock ?? 0)
+        : (selectedVariant.stock_quantity ?? selectedVariant.stock ?? 0);
+      return selectedVariant.is_active && variantStock > 0;
     }
     return currentProduct?.is_active;
   };
