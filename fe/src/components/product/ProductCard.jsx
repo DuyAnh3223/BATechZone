@@ -60,18 +60,18 @@ const ProductCard = ({ product }) => {
   const discountPrice = isDiscountActive ? price * (1 - discountPercent / 100) : price;
   
   // Check stock: prioritize backend total_stock, fallback to variants check
-  // For bundles (variant_type='bundle'), use 'stock' or 'available_stock' field
+  // For bundles (variant_type='bundle'), use 'available_stock' field (stock động)
   const hasStock = product.total_stock !== undefined
     ? product.total_stock > 0
     : (variants.length > 0 
         ? variants.some(v => {
             if (!v.is_active) return false;
-            // For bundles, check 'stock' or 'available_stock' field
+            // For bundles, check 'available_stock' field (calculated from components)
             if (v.variant_type === 'bundle') {
-              return (v.stock > 0 || v.available_stock > 0);
+              return (v.available_stock ?? v.stock ?? 0) > 0;
             }
             // For regular components, check 'stock_quantity'
-            return (v.stock_quantity > 0 || v.stockQuantity > 0);
+            return (v.stock_quantity ?? v.stockQuantity ?? 0) > 0;
           })
         : (product.is_active !== undefined ? product.is_active : true));
   
@@ -165,16 +165,25 @@ const ProductCard = ({ product }) => {
         return;
       }
 
-      // Kiểm tra tồn kho
-      // For bundles, check 'stock' or 'available_stock' field
-      const variantStock = defaultVariant.variant_type === 'bundle'
-        ? (defaultVariant.stock ?? defaultVariant.available_stock ?? 0)
-        : (defaultVariant.stock_quantity ?? 0);
+      // Kiểm tra tồn kho - Bundle sử dụng stock động, variant thường dùng stock_quantity
+      let variantStock;
+      if (defaultVariant.variant_type === 'bundle') {
+        // Bundle: ưu tiên available_stock (được tính từ components), fallback sang stock
+        variantStock = defaultVariant.available_stock ?? defaultVariant.stock ?? 0;
+      } else {
+        // Regular variant: dùng stock_quantity
+        variantStock = defaultVariant.stock_quantity ?? defaultVariant.stock ?? 0;
+      }
       
       if (!defaultVariant.is_active || variantStock <= 0) {
         toast.error('Biến thể này hiện đang hết hàng');
         return;
       }
+
+      console.log('=== ADD TO CART - STOCK CHECK ===');
+      console.log('Variant type:', defaultVariant.variant_type);
+      console.log('Available stock:', variantStock);
+      console.log('Is bundle:', defaultVariant.variant_type === 'bundle');
 
       // Tính giá discount cho variant
       const variantPrice = defaultVariant.price || 0;

@@ -57,10 +57,20 @@ class CartItemService {
         throw new Error('Sản phẩm không còn kinh doanh');
       }
 
-      // Kiểm tra tồn kho
-      if (variant.stock_quantity < quantity) {
+      // Kiểm tra tồn kho - Bundle dùng available_stock (stock động), variant thường dùng stock_quantity
+      const currentStock = variant.variant_type === 'bundle' 
+        ? (variant.available_stock ?? 0)
+        : (variant.stock_quantity ?? 0);
+      
+      console.log('=== BACKEND ADD TO CART - STOCK CHECK ===');
+      console.log('Variant ID:', variantId);
+      console.log('Variant type:', variant.variant_type);
+      console.log('Available stock:', currentStock);
+      console.log('Requested quantity:', quantity);
+      
+      if (currentStock < quantity) {
         await conn.rollback();
-        throw new Error(`Chỉ còn ${variant.stock_quantity} sản phẩm trong kho`);
+        throw new Error(`Chỉ còn ${currentStock} sản phẩm trong kho`);
       }
 
       // Tính giá discount
@@ -78,10 +88,14 @@ class CartItemService {
         // Cập nhật số lượng và giá
         const newQuantity = existingItem.quantity + quantity;
         
-        // Kiểm tra tồn kho cho số lượng mới
-        if (variant.stock_quantity < newQuantity) {
+        // Kiểm tra tồn kho cho số lượng mới - Bundle dùng available_stock
+        const currentStock = variant.variant_type === 'bundle' 
+          ? (variant.available_stock ?? 0)
+          : (variant.stock_quantity ?? 0);
+        
+        if (currentStock < newQuantity) {
           await conn.rollback();
-          throw new Error(`Chỉ còn ${variant.stock_quantity} sản phẩm trong kho`);
+          throw new Error(`Chỉ còn ${currentStock} sản phẩm trong kho`);
         }
 
         await cartItemDAO.updateQuantityAndPrice(
@@ -137,10 +151,14 @@ class CartItemService {
         throw new Error('Không tìm thấy sản phẩm trong giỏ hàng');
       }
 
-      // Kiểm tra tồn kho
-      if (cartItem.stock_quantity < quantity) {
+      // Kiểm tra tồn kho - Bundle dùng available_stock, variant thường dùng stock_quantity
+      const currentStock = cartItem.variant_type === 'bundle'
+        ? (cartItem.available_stock ?? 0)
+        : (cartItem.stock_quantity ?? 0);
+      
+      if (currentStock < quantity) {
         await conn.rollback();
-        throw new Error(`Chỉ còn ${cartItem.stock_quantity} sản phẩm trong kho`);
+        throw new Error(`Chỉ còn ${currentStock} sản phẩm trong kho`);
       }
 
       // Cập nhật số lượng

@@ -119,10 +119,21 @@ class CartItemDAO {
         pv.discount_start_date,
         pv.discount_end_date,
         pv.stock_quantity,
+        pv.variant_type,
         pv.is_active,
         p.product_id,
         p.product_name,
-        vi.image_url
+        vi.image_url,
+        CASE 
+          WHEN pv.variant_type = 'bundle' THEN (
+            SELECT MIN(FLOOR(c.stock_quantity / bi.quantity))
+            FROM bundle_items bi
+            JOIN product_variants c ON bi.component_variant_id = c.variant_id
+            WHERE bi.bundle_variant_id = pv.variant_id
+              AND c.is_active = 1
+          )
+          ELSE pv.stock_quantity
+        END AS available_stock
       FROM cart_items ci
       JOIN product_variants pv ON ci.variant_id = pv.variant_id
       JOIN products p ON pv.product_id = p.product_id
@@ -134,7 +145,7 @@ class CartItemDAO {
   }
 
   /**
-   * Lấy tất cả items trong giỏ hàng
+   * Lấy tất cả items trong giỏ hàng với thông tin bundle
    */
   async findByCartId(cartId) {
     const [items] = await db.query(
@@ -147,6 +158,7 @@ class CartItemDAO {
         pv.discount_start_date,
         pv.discount_end_date,
         pv.stock_quantity,
+        pv.variant_type,
         pv.is_active,
         p.product_id,
         p.product_name,
@@ -154,7 +166,17 @@ class CartItemDAO {
           (SELECT image_url FROM variant_images WHERE variant_id = pv.variant_id AND is_primary = 1 LIMIT 1),
           (SELECT image_url FROM variant_images WHERE variant_id = pv.variant_id LIMIT 1)
         ) as image_url,
-        (ci.quantity * ci.price) as subtotal
+        (ci.quantity * ci.price) as subtotal,
+        CASE 
+          WHEN pv.variant_type = 'bundle' THEN (
+            SELECT MIN(FLOOR(c.stock_quantity / bi.quantity))
+            FROM bundle_items bi
+            JOIN product_variants c ON bi.component_variant_id = c.variant_id
+            WHERE bi.bundle_variant_id = pv.variant_id
+              AND c.is_active = 1
+          )
+          ELSE pv.stock_quantity
+        END AS available_stock
       FROM cart_items ci
       JOIN product_variants pv ON ci.variant_id = pv.variant_id
       JOIN products p ON pv.product_id = p.product_id
@@ -212,12 +234,23 @@ class CartItemDAO {
 
   /**
    * Lấy thông tin variant
+   * Với bundle: tính available_stock động từ components
    */
   async getVariantInfo(variantId) {
     const [variants] = await db.query(
       `SELECT 
         pv.*,
-        p.product_name
+        p.product_name,
+        CASE 
+          WHEN pv.variant_type = 'bundle' THEN (
+            SELECT MIN(FLOOR(c.stock_quantity / bi.quantity))
+            FROM bundle_items bi
+            JOIN product_variants c ON bi.component_variant_id = c.variant_id
+            WHERE bi.bundle_variant_id = pv.variant_id
+              AND c.is_active = 1
+          )
+          ELSE pv.stock_quantity
+        END AS available_stock
       FROM product_variants pv
       JOIN products p ON pv.product_id = p.product_id
       WHERE pv.variant_id = ?`,

@@ -122,12 +122,23 @@ const ProductDetail = () => {
       return;
     }
 
-    // For bundles, use 'stock' or 'available_stock' field (calculated from components)
-    const currentStock = variantToAdd.variant_type === 'bundle'
-      ? (variantToAdd.stock ?? variantToAdd.available_stock ?? 0)
-      : (variantToAdd.stock_quantity ?? variantToAdd.stock ?? 0);
+    // Kiểm tra tồn kho - Bundle sử dụng stock động, variant thường dùng stock_quantity
+    let currentStock;
+    if (variantToAdd.variant_type === 'bundle') {
+      // Bundle: ưu tiên available_stock (được tính từ components), fallback sang stock
+      currentStock = variantToAdd.available_stock ?? variantToAdd.stock ?? 0;
+    } else {
+      // Regular variant: dùng stock_quantity
+      currentStock = variantToAdd.stock_quantity ?? variantToAdd.stock ?? 0;
+    }
     
     const isProductActive = variantToAdd.is_active && currentStock > 0;
+    
+    console.log('=== ADD TO CART - STOCK CHECK ===');
+    console.log('Variant type:', variantToAdd.variant_type);
+    console.log('Available stock:', currentStock);
+    console.log('Requested quantity:', quantity);
+    console.log('Is bundle:', variantToAdd.variant_type === 'bundle');
     
     if (!isProductActive) {
       toast.error('Sản phẩm hiện đang hết hàng');
@@ -218,9 +229,9 @@ const ProductDetail = () => {
   // Get current stock
   const getCurrentStock = () => {
     if (selectedVariant) {
-      // For bundles, prioritize 'stock' or 'available_stock' field (calculated dynamically)
+      // For bundles, prioritize 'available_stock' (calculated from components dynamically)
       if (selectedVariant.variant_type === 'bundle') {
-        return selectedVariant.stock ?? selectedVariant.available_stock ?? 0;
+        return selectedVariant.available_stock ?? selectedVariant.stock ?? 0;
       }
       // For regular components, use 'stock_quantity'
       return selectedVariant.stock_quantity ?? selectedVariant.stock ?? 0;
@@ -231,10 +242,13 @@ const ProductDetail = () => {
   // Check if current selection is available
   const isCurrentAvailable = () => {
     if (selectedVariant) {
-      // For bundles, check 'stock' or 'available_stock' field (calculated from components)
-      const variantStock = selectedVariant.variant_type === 'bundle'
-        ? (selectedVariant.stock ?? selectedVariant.available_stock ?? 0)
-        : (selectedVariant.stock_quantity ?? selectedVariant.stock ?? 0);
+      // For bundles, check 'available_stock' field (calculated from components dynamically)
+      let variantStock;
+      if (selectedVariant.variant_type === 'bundle') {
+        variantStock = selectedVariant.available_stock ?? selectedVariant.stock ?? 0;
+      } else {
+        variantStock = selectedVariant.stock_quantity ?? selectedVariant.stock ?? 0;
+      }
       return selectedVariant.is_active && variantStock > 0;
     }
     return currentProduct?.is_active;
