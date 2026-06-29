@@ -248,7 +248,7 @@ User redirected to MoMo gateway
 | Name | Role |
 |---|---|
 | Mai Trần Duy Anh | Backend, Database, Payment & Shipping Integration |
-| [Teammate] | Frontend, UI/UX |
+| Lê Tôn Bảo | Frontend, UI/UX |
 
 ---
 
